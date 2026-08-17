@@ -16,6 +16,49 @@ const ALLOWED_MIME_TYPES = new Set([
 
 const ALLOWED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.pdf', '.doc', '.docx', '.txt']);
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const MAX_TITLE_LENGTH = 200;
+
+function normalizeAttachmentTitle(value: string | null | undefined): string {
+  return String(value ?? '').trim().slice(0, MAX_TITLE_LENGTH);
+}
+
+async function resolveAttachmentTitle(
+  supabaseAdmin: { from: (table: string) => any },
+  taskId: string,
+  attachmentType: 'file' | 'link',
+  providedTitle: string | null | undefined,
+  fileName?: string | null
+): Promise<string> {
+  const normalizedTitle = normalizeAttachmentTitle(providedTitle);
+  if (normalizedTitle) {
+    return normalizedTitle;
+  }
+
+  if (attachmentType === 'file') {
+    const extractedFileName = String(fileName ?? '')
+      .split(/[\\/]/)
+      .pop();
+    const normalizedFileName = normalizeAttachmentTitle(extractedFileName);
+    if (normalizedFileName) {
+      return normalizedFileName;
+    }
+  }
+
+  const { count, error } = await supabaseAdmin
+    .from('pa_task_attachments')
+    .select('id', { count: 'exact', head: true })
+    .eq('pa_task_id', taskId)
+    .eq('attachment_type', attachmentType)
+    .is('deleted_at', null);
+
+  if (error) {
+    console.error('Failed to resolve PA task attachment fallback title:', error);
+    return attachmentType === 'file' ? 'File 1' : 'Link 1';
+  }
+
+  const nextIndex = (count ?? 0) + 1;
+  return attachmentType === 'file' ? `File ${nextIndex}` : `Link ${nextIndex}`;
+}
 
 function getAttachmentFileError(file: File): string | null {
   const fileName = file.name.toLowerCase();
@@ -138,10 +181,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const title = String(formData.get('title') ?? '').trim();
       const file = formData.get('file');
 
-      if (!title) {
-        return NextResponse.json({ error: 'Title is required' }, { status: 400 });
-      }
-
       if (!(file instanceof File)) {
         return NextResponse.json({ error: 'A file is required' }, { status: 400 });
       }
@@ -150,6 +189,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       if (fileValidationError) {
         return NextResponse.json({ error: fileValidationError }, { status: 400 });
       }
+
+      const resolvedTitle = await resolveAttachmentTitle(supabaseAdmin, id, 'file', title, file.name);
 
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const storagePath = `${id}/${crypto.randomUUID()}-${safeName}`;
@@ -169,7 +210,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         .insert({
           pa_task_id: id,
           attachment_type: 'file',
-          title,
+          title: resolvedTitle,
           storage_path: storagePath,
           file_size_bytes: file.size,
           mime_type: file.type,
@@ -211,7 +252,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
               .insert({
                 pa_task_id: id,
                 attachment_type: 'link',
-                title: parsed.data.title,
+                title: await resolveAttachmentTitle(supabaseAdmin, id, 'link', parsed.data.title),
                 url: parsed.data.url,
                 created_by: user.id,
               })
@@ -221,7 +262,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
               .insert({
                 pa_task_id: id,
                 attachment_type: 'file',
-                title: parsed.data.title,
+                title: await resolveAttachmentTitle(supabaseAdmin, id, 'file', parsed.data.title, parsed.data.storagePath),
                 storage_path: parsed.data.storagePath,
                 file_size_bytes: parsed.data.fileSizeBytes ?? null,
                 mime_type: parsed.data.mimeType ?? null,

@@ -102,6 +102,8 @@ const ALLOWED_ATTACHMENT_MIME_TYPES = new Set([
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'text/plain',
 ]);
+const ATTACHMENT_CHIP_CLASS =
+  'inline-flex max-w-full items-center gap-1 rounded-full border border-zinc-300 bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700';
 
 function colorClass(color: PaTaskLookupColor) {
   const map: Record<PaTaskLookupColor, string> = {
@@ -201,6 +203,7 @@ export default function PaTasksPage() {
   const [categoryId, setCategoryId] = useState('all');
   const [assigneeId, setAssigneeId] = useState('all');
   const [dueStatus, setDueStatus] = useState<'all' | 'overdue' | 'on_time' | 'completed' | 'no_due_date'>('all');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -241,11 +244,13 @@ export default function PaTasksPage() {
       dueStatus?: 'overdue' | 'on_time' | 'completed' | 'no_due_date';
       sortBy: 'updated_at';
       sortOrder: 'desc';
+      page: number;
       pageSize: number;
     } = {
       sortBy: 'updated_at',
       sortOrder: 'desc',
-      pageSize: 50,
+      page: currentPage,
+      pageSize: 7,
     };
 
     const normalizedSearch = search.trim();
@@ -257,10 +262,17 @@ export default function PaTasksPage() {
     if (dueStatus !== 'all') nextFilters.dueStatus = dueStatus;
 
     return nextFilters;
+  }, [search, statusId, priorityId, categoryId, assigneeId, dueStatus, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
   }, [search, statusId, priorityId, categoryId, assigneeId, dueStatus]);
 
   const tasksQuery = usePaTasks(filters, { enabled: canAccess });
   const taskRows = (tasksQuery.data?.data ?? []) as PaTaskListRow[];
+  const totalPages = Math.max(tasksQuery.data?.pagination.totalPages ?? 1, 1);
+  const hasPreviousPage = currentPage > 1;
+  const hasNextPage = currentPage < totalPages;
   const filteredTaskRows = useMemo(() => {
     if (dueStatus === 'all') {
       return taskRows;
@@ -352,13 +364,18 @@ export default function PaTasksPage() {
   });
 
   const createAttachmentError = useMemo(
-    () => createAttachmentDrafts.find((attachment) => attachment.title.trim() || attachment.url.trim() || attachment.file) ? createAttachmentDrafts.map((attachment) => getAttachmentValidationError(attachment)).find((error) => Boolean(error)) ?? null : null,
+    () =>
+      createAttachmentDrafts.find((attachment) => hasAttachmentDraftContent(attachment))
+        ? createAttachmentDrafts
+            .map((attachment) => getAttachmentValidationError(attachment))
+            .find((error) => Boolean(error)) ?? null
+        : null,
     [createAttachmentDrafts]
   );
 
   const detailAttachmentError = useMemo(
     () =>
-      attachmentForm.title.trim() || attachmentForm.url.trim() || attachmentForm.file
+      hasAttachmentDraftContent(attachmentForm)
         ? getAttachmentValidationError(attachmentForm)
         : null,
     [attachmentForm]
@@ -464,10 +481,6 @@ export default function PaTasksPage() {
   }
 
   function getAttachmentValidationError(attachment: Pick<AttachmentDraft, 'type' | 'title' | 'url' | 'file'>): string | null {
-    if (!attachment.title.trim()) {
-      return 'Attachment title is required.';
-    }
-
     if (attachment.type === 'link') {
       if (!attachment.url.trim()) {
         return 'Attachment link is required.';
@@ -495,11 +508,36 @@ export default function PaTasksPage() {
     return null;
   }
 
-  function isValidAttachmentDraft(attachment: AttachmentDraft) {
-    if (!attachment.title.trim()) {
-      return false;
+  function hasAttachmentDraftContent(attachment: Pick<AttachmentDraft, 'type' | 'url' | 'file'>): boolean {
+    if (attachment.type === 'link') {
+      return attachment.url.trim().length > 0;
     }
 
+    return Boolean(attachment.file);
+  }
+
+  function resolveAttachmentTitle(
+    attachment: Pick<AttachmentDraft, 'type' | 'title' | 'file'>,
+    fallbackIndexes: { file: number; link: number }
+  ): { title: string; usedGeneric: boolean } {
+    const manualTitle = attachment.title.trim();
+    if (manualTitle) {
+      return { title: manualTitle, usedGeneric: false };
+    }
+
+    if (attachment.type === 'file') {
+      const fileNameTitle = attachment.file?.name?.trim() ?? '';
+      if (fileNameTitle) {
+        return { title: fileNameTitle, usedGeneric: false };
+      }
+
+      return { title: `File ${fallbackIndexes.file}`, usedGeneric: true };
+    }
+
+    return { title: `Link ${fallbackIndexes.link}`, usedGeneric: true };
+  }
+
+  function isValidAttachmentDraft(attachment: AttachmentDraft) {
     if (attachment.type === 'link') {
       return attachment.url.trim().length > 0 && !getAttachmentValidationError(attachment);
     }
@@ -801,8 +839,8 @@ export default function PaTasksPage() {
           <CardTitle className="text-base">Filters</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-            <div className="space-y-1.5 xl:col-span-2">
+          <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-6">
+            <div className="space-y-1.5">
               <Label>Search</Label>
               <div className="relative">
                 <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -918,11 +956,29 @@ export default function PaTasksPage() {
                             {task.attachments.slice(0, 3).map((attachment) => (
                               <div key={attachment.id} className="truncate text-xs">
                                 {attachment.attachment_type === 'link' && attachment.url ? (
-                                  <Link href={attachment.url} target="_blank" rel="noreferrer" className="text-primary underline" onClick={(event) => event.stopPropagation()}>
-                                    {attachment.title}
+                                  <Link
+                                    href={attachment.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className={ATTACHMENT_CHIP_CLASS}
+                                    onClick={(event) => event.stopPropagation()}
+                                  >
+                                    <Paperclip className="h-3 w-3 shrink-0" />
+                                    <span className="truncate">{attachment.title.trim() || 'Open link'}</span>
                                   </Link>
                                 ) : (
-                                  <span className="text-muted-foreground">{attachment.title}</span>
+                                  <button
+                                    type="button"
+                                    className={ATTACHMENT_CHIP_CLASS}
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      setSelectedTaskId(task.id);
+                                      setDetailOpen(true);
+                                    }}
+                                  >
+                                    <Paperclip className="h-3 w-3 shrink-0" />
+                                    <span className="truncate">{attachment.title.trim() || 'File attachment'}</span>
+                                  </button>
                                 )}
                               </div>
                             ))}
@@ -943,6 +999,29 @@ export default function PaTasksPage() {
                 )}
               </TableBody>
             </Table>
+          </div>
+          <div className="flex items-center justify-center gap-3 border-t border-border px-4 py-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={tasksQuery.isLoading || !hasPreviousPage}
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            >
+              Previous
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={tasksQuery.isLoading || !hasNextPage}
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            >
+              Next
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -1140,7 +1219,7 @@ export default function PaTasksPage() {
                           </SelectContent>
                         </Select>
                         <Input
-                          placeholder="Attachment title"
+                          placeholder="Attachment title (optional)"
                           value={attachment.title}
                           onChange={(e) =>
                             setCreateAttachmentDrafts((prev) =>
@@ -1197,7 +1276,7 @@ export default function PaTasksPage() {
                 !createForm.priorityId ||
                 createAttachmentDrafts.some(
                   (attachment) =>
-                    (attachment.title.trim() || attachment.url.trim() || attachment.file) &&
+                    hasAttachmentDraftContent(attachment) &&
                     Boolean(getAttachmentValidationError(attachment))
                 )
               }
@@ -1219,19 +1298,33 @@ export default function PaTasksPage() {
                     const validAttachments = createAttachmentDrafts.filter(isValidAttachmentDraft);
                     let attachmentSuccessCount = 0;
                     let attachmentFailureCount = 0;
+                    let nextGenericFileTitleIndex = 1;
+                    let nextGenericLinkTitleIndex = 1;
 
                     for (const attachment of validAttachments) {
                       try {
+                        const resolvedTitle = resolveAttachmentTitle(attachment, {
+                          file: nextGenericFileTitleIndex,
+                          link: nextGenericLinkTitleIndex,
+                        });
+                        if (resolvedTitle.usedGeneric) {
+                          if (attachment.type === 'file') {
+                            nextGenericFileTitleIndex += 1;
+                          } else {
+                            nextGenericLinkTitleIndex += 1;
+                          }
+                        }
+
                         const attachmentPayload =
                           attachment.type === 'link'
                             ? {
                                 attachmentType: 'link' as const,
-                                title: attachment.title.trim(),
+                                title: resolvedTitle.title,
                                 url: attachment.url.trim(),
                               }
                             : {
                                 attachmentType: 'file' as const,
-                                title: attachment.title.trim(),
+                                title: resolvedTitle.title,
                                 file: attachment.file as File,
                               };
 
@@ -1260,6 +1353,8 @@ export default function PaTasksPage() {
                             : 'PA task has been added.',
                       });
                     }
+
+                    void tasksQuery.refetch();
 
                     setCreateOpen(false);
                     setCreateForm({
@@ -1386,7 +1481,7 @@ export default function PaTasksPage() {
                           <SelectItem value="file">File</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Input placeholder="Title" value={attachmentForm.title} onChange={(e) => setAttachmentForm((p) => ({ ...p, title: e.target.value }))} />
+                      <Input placeholder="Title (optional)" value={attachmentForm.title} onChange={(e) => setAttachmentForm((p) => ({ ...p, title: e.target.value }))} />
                       {attachmentForm.type === 'link' ? (
                         <Input
                           key="detail-link-input"
@@ -1411,20 +1506,28 @@ export default function PaTasksPage() {
                       disabled={
                         createAttachment.isPending ||
                         Boolean(detailAttachmentError) ||
-                        !attachmentForm.title.trim() ||
                         (attachmentForm.type === 'link' ? !attachmentForm.url.trim() : !attachmentForm.file)
                       }
                       onClick={() => {
+                        const existingAttachments = attachmentsQuery.data?.data ?? [];
+                        const existingTypeCount = existingAttachments.filter(
+                          (attachment) => attachment.attachment_type === attachmentForm.type
+                        ).length;
+                        const resolvedTitle = resolveAttachmentTitle(attachmentForm, {
+                          file: existingTypeCount + 1,
+                          link: existingTypeCount + 1,
+                        });
+
                         const request =
                           attachmentForm.type === 'link'
                             ? createAttachment.mutateAsync({
                                 attachmentType: 'link',
-                                title: attachmentForm.title.trim(),
+                                title: resolvedTitle.title,
                                 url: attachmentForm.url.trim(),
                               })
                             : createAttachment.mutateAsync({
                                 attachmentType: 'file',
-                                title: attachmentForm.title.trim(),
+                                title: resolvedTitle.title,
                                 file: attachmentForm.file as File,
                               });
 
@@ -1453,17 +1556,21 @@ export default function PaTasksPage() {
                       (attachmentsQuery.data?.data ?? []).map((attachment) => (
                         <div key={attachment.id} className="flex items-center justify-between rounded-md border p-3">
                           <div>
-                            <p className="text-sm font-medium">{attachment.title}</p>
                             {attachment.attachment_type === 'link' && attachment.url ? (
-                              <Link href={attachment.url} target="_blank" className="text-xs text-primary underline">
-                                Open link
+                              <Link href={attachment.url} target="_blank" className={ATTACHMENT_CHIP_CLASS}>
+                                <Paperclip className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{attachment.title.trim() || 'Open link'}</span>
                               </Link>
                             ) : attachment.signed_url ? (
-                              <Link href={attachment.signed_url} target="_blank" className="text-xs text-primary underline">
-                                Download file
+                              <Link href={attachment.signed_url} target="_blank" className={ATTACHMENT_CHIP_CLASS}>
+                                <Paperclip className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{attachment.title.trim() || 'Download file'}</span>
                               </Link>
                             ) : (
-                              <p className="text-xs text-muted-foreground">File unavailable</p>
+                              <span className="inline-flex items-center gap-1 rounded-full border border-zinc-300 bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400">
+                                <Paperclip className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{attachment.title.trim() || 'File unavailable'}</span>
+                              </span>
                             )}
                           </div>
                           <Button

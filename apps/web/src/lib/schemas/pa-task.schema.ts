@@ -89,13 +89,13 @@ export const paTaskAccessGrantDeleteSchema = z.object({
 
 const paTaskLinkAttachmentSchema = z.object({
   attachmentType: z.literal('link'),
-  title: z.string().trim().min(1, 'Title is required').max(200),
+  title: z.string().trim().max(200).optional(),
   url: z.string().url('A valid URL is required'),
 });
 
 const paTaskFileAttachmentSchema = z.object({
   attachmentType: z.literal('file'),
-  title: z.string().trim().min(1, 'Title is required').max(200),
+  title: z.string().trim().max(200).optional(),
   storagePath: z.string().trim().min(1, 'storagePath is required'),
   fileSizeBytes: z.coerce.number().int().min(0).nullable().optional(),
   mimeType: z.string().trim().max(120).nullable().optional(),

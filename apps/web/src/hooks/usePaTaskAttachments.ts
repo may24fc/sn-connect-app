@@ -59,6 +59,7 @@ export function useCreatePaTaskAttachment(taskId: string) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.paTasks.attachments(taskId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.paTasks.detail(taskId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.paTasks.lists() });
     },
   });
 }
@@ -75,6 +76,7 @@ export function useDeletePaTaskAttachment(taskId: string) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.paTasks.attachments(taskId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.paTasks.detail(taskId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.paTasks.lists() });
     },
   });
 }
