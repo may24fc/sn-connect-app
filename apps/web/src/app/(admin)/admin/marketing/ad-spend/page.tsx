@@ -683,7 +683,7 @@ export default function MarketingAdSpendPage() {
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="ml-auto"
+                        className="ml-auto border-zinc-600 bg-zinc-800 text-zinc-100 hover:bg-zinc-700 hover:text-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
                         onClick={() => setFullEntriesPlatform(platform.value)}
                       >
                         View full
@@ -694,14 +694,14 @@ export default function MarketingAdSpendPage() {
                     <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
-                          <TableRow className="bg-zinc-800 text-zinc-50 dark:bg-zinc-900">
-                            <TableHead className="min-w-[120px] text-zinc-50">Date</TableHead>
-                            <TableHead className="text-zinc-50">Category</TableHead>
-                            <TableHead className="text-zinc-50">Transaction ID</TableHead>
-                            <TableHead className="text-zinc-50">Payment Method</TableHead>
-                            <TableHead className="text-zinc-50">Amount</TableHead>
-                            <TableHead className="text-zinc-50">Invoice</TableHead>
-                            <TableHead className="text-zinc-50">Actions</TableHead>
+                          <TableRow className="bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100">
+                            <TableHead className="min-w-[120px] text-zinc-900 dark:text-zinc-100">Date</TableHead>
+                            <TableHead className="text-zinc-900 dark:text-zinc-100">Category</TableHead>
+                            <TableHead className="text-zinc-900 dark:text-zinc-100">Transaction ID</TableHead>
+                            <TableHead className="text-zinc-900 dark:text-zinc-100">Payment Method</TableHead>
+                            <TableHead className="text-zinc-900 dark:text-zinc-100">Amount</TableHead>
+                            <TableHead className="text-zinc-900 dark:text-zinc-100">Invoice</TableHead>
+                            <TableHead className="text-zinc-900 dark:text-zinc-100">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
