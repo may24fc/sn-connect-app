@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getMarketingAuthedContext, hasMarketingAccess, isMarketingAdmin } from '@/app/api/marketing/_lib';
+import { getMarketingAuthedContext, isMarketingAdmin } from '@/app/api/marketing/_lib';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 
 const grantSchema = z.object({
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    if (!hasMarketingAccess(auth.role, auth.hasAccessGrant)) {
+    if (!isMarketingAdmin(auth.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

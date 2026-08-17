@@ -615,6 +615,14 @@ export const queryKeys = {
     },
   },
 
+  marketing: {
+    all: ['marketing'] as const,
+    adSpend: {
+      all: () => [...queryKeys.marketing.all, 'ad-spend'] as const,
+      access: () => [...queryKeys.marketing.adSpend.all(), 'access'] as const,
+    },
+  },
+
   revenueForecast: {
     all: ['revenue-forecast'] as const,
     access: () => [...queryKeys.revenueForecast.all, 'access'] as const,

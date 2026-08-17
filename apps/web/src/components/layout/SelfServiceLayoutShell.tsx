@@ -15,6 +15,7 @@ import {
 } from '@/hooks/useConversations';
 import { useCrmAccess } from '@/hooks/useCrmAccess';
 import { useExpensesAccess } from '@/hooks/useExpensesAccess';
+import { useMarketingAdSpendAccess } from '@/hooks/useMarketingAdSpendAccess';
 import { useMarketingReportsAccess } from '@/hooks/useMarketingReportsAccess';
 import {
   useDeleteNotification,
@@ -148,6 +149,9 @@ function SelfServiceLayoutInner({
   const revenueForecastAccess = useRevenueForecastAccess(
     user.role === 'employee' || user.role === 'associate'
   );
+  const marketingAdSpendAccess = useMarketingAdSpendAccess(
+    user.role === 'employee' || user.role === 'associate'
+  );
   const expensesAccess = useExpensesAccess();
   const sidebarVariant =
     user.role === 'associate'
@@ -170,6 +174,7 @@ function SelfServiceLayoutInner({
           showAtsAccess={Boolean(atsAccess.data?.canAccess)}
           showPaTaskAccess={Boolean(paTaskAccess.data?.canAccess)}
           showCrmAccess={Boolean(crmAccess.data?.canAccess)}
+          showMarketingAdSpendAccess={Boolean(marketingAdSpendAccess.data?.canAccess)}
           showRevenueForecastAccess={Boolean(revenueForecastAccess.data?.canAccess)}
           showExpenseDeskAccess={
             expensesAccess.capabilities.canViewDeskGlobal ||
@@ -201,6 +206,7 @@ function SelfServiceLayoutInner({
               showAtsAccess={Boolean(atsAccess.data?.canAccess)}
               showPaTaskAccess={Boolean(paTaskAccess.data?.canAccess)}
               showCrmAccess={Boolean(crmAccess.data?.canAccess)}
+              showMarketingAdSpendAccess={Boolean(marketingAdSpendAccess.data?.canAccess)}
               showRevenueForecastAccess={Boolean(revenueForecastAccess.data?.canAccess)}
               showExpenseDeskAccess={
                 expensesAccess.capabilities.canViewDeskGlobal ||

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { MarketingAdSpendAccessManagerDialog } from '@/components/admin/MarketingAdSpendAccessManagerDialog';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Button,
   Card,
@@ -171,6 +172,8 @@ function resolveInvoiceLabel(invoiceFileName: string | null, invoiceReference: s
 }
 
 export default function MarketingAdSpendPage() {
+  const { user } = useAuth();
+  const canManageMarketingAccess = user?.role === 'admin' || user?.role === 'super_admin';
   const currentYear = new Date().getFullYear();
   const periodOptions = [
     { value: 'all', label: 'All Time' },
@@ -510,14 +513,16 @@ export default function MarketingAdSpendPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setShowGrantAccess(true)}
-            className="inline-flex items-center gap-2 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition-colors hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/30 dark:text-indigo-300 dark:hover:bg-indigo-900/50"
-          >
-            <UserPlus className="h-4 w-4" />
-            Grant Access
-          </button>
+          {canManageMarketingAccess ? (
+            <button
+              type="button"
+              onClick={() => setShowGrantAccess(true)}
+              className="inline-flex items-center gap-2 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition-colors hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/30 dark:text-indigo-300 dark:hover:bg-indigo-900/50"
+            >
+              <UserPlus className="h-4 w-4" />
+              Grant Access
+            </button>
+          ) : null}
 
           <label className="flex items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
             <CalendarRange className="h-4 w-4" />
@@ -538,11 +543,13 @@ export default function MarketingAdSpendPage() {
         </div>
       </div>
 
-      <MarketingAdSpendAccessManagerDialog
-        open={showGrantAccess}
-        onOpenChange={setShowGrantAccess}
-        platforms={platforms}
-      />
+      {canManageMarketingAccess ? (
+        <MarketingAdSpendAccessManagerDialog
+          open={showGrantAccess}
+          onOpenChange={setShowGrantAccess}
+          platforms={platforms}
+        />
+      ) : null}
 
       {errorText ? (
         <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">

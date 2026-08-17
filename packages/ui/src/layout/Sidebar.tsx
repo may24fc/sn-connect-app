@@ -52,6 +52,7 @@ export interface SidebarProps {
   showAtsAccess?: boolean;
   showPaTaskAccess?: boolean;
   showCrmAccess?: boolean;
+  showMarketingAdSpendAccess?: boolean;
   showRevenueForecastAccess?: boolean;
   showExpenseDeskAccess?: boolean;
 }
@@ -204,6 +205,7 @@ export function Sidebar({
   showAtsAccess = false,
   showPaTaskAccess = false,
   showCrmAccess = false,
+  showMarketingAdSpendAccess = false,
   showRevenueForecastAccess = false,
   showExpenseDeskAccess = true,
 }: SidebarProps): React.ReactNode {
@@ -256,6 +258,21 @@ export function Sidebar({
       navItems = [...navItems.slice(0, tasksIndex + 1), paTaskItem, ...navItems.slice(tasksIndex + 1)];
     } else {
       navItems = [...navItems, paTaskItem];
+    }
+  }
+
+  // Insert CRM nav item for granted non-admin users directly below Marketing Reports
+  if ((variant === 'employee' || variant === 'associate') && showMarketingAdSpendAccess) {
+    const adSpendItem: NavItem = { label: 'Ad Spend', href: '/marketing/ad-spend', icon: Megaphone };
+    const reportsIndex = navItems.findIndex((it) => it.href === '/reports');
+    if (reportsIndex >= 0) {
+      navItems = [
+        ...navItems.slice(0, reportsIndex + 1),
+        adSpendItem,
+        ...navItems.slice(reportsIndex + 1),
+      ];
+    } else {
+      navItems = [...navItems, adSpendItem];
     }
   }
 
