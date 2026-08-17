@@ -114,6 +114,7 @@ const adminNavItems: Array<NavItem> = [
   { label: 'Company Leaderboard', href: '/leaderboard', icon: Trophy },
   { label: 'OKRs & KPIs', href: '/admin/performance', icon: Target },
   { label: 'Marketing Reports', href: '/admin/reports', icon: FileText },
+  { label: 'Ad Spend', href: '/admin/marketing/ad-spend', icon: Megaphone },
   { label: 'CRM Tracker', href: '/admin/crm', icon: Store },
   { label: 'Expenses Desk', href: '/admin/expenses', icon: Receipt },
   {
@@ -142,6 +143,7 @@ const superAdminNavItems: Array<NavItem> = [
   { label: 'Company Leaderboard', href: '/leaderboard', icon: Trophy },
   { label: 'OKRs & KPIs', href: '/admin/performance', icon: Target },
   { label: 'Marketing Reports', href: '/admin/reports', icon: FileText },
+  { label: 'Ad Spend', href: '/admin/marketing/ad-spend', icon: Megaphone },
   { label: 'Revenue Forecast', href: '/super-admin/revenue-forecast', icon: TrendingUp },
   { label: 'CRM Tracker', href: '/admin/crm', icon: Store },
   { label: 'Expenses Desk', href: '/admin/expenses', icon: Receipt },
