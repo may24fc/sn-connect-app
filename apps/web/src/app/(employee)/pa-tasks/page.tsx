@@ -304,6 +304,16 @@ export default function PaTasksPage() {
     waitingOn: '',
     notes: '',
   });
+  const [quickAddForm, setQuickAddForm] = useState({
+    title: '',
+    statusId: '',
+    priorityId: '',
+    categoryId: NONE_VALUE,
+    assignedTo: NONE_VALUE,
+    dueDate: '',
+    dateGiven: new Date().toISOString().slice(0, 10),
+    notes: '',
+  });
 
   const [editForm, setEditForm] = useState({
     title: '',
@@ -364,6 +374,21 @@ export default function PaTasksPage() {
         : null,
     [createAttachmentDrafts]
   );
+  const quickAddValidationError = useMemo(() => {
+    if (!quickAddForm.title.trim()) {
+      return 'Task title is required.';
+    }
+
+    if (!quickAddForm.statusId) {
+      return 'Status is required.';
+    }
+
+    if (!quickAddForm.priorityId) {
+      return 'Priority is required.';
+    }
+
+    return null;
+  }, [quickAddForm]);
 
   const detailAttachmentError = useMemo(
     () =>
@@ -419,6 +444,19 @@ export default function PaTasksPage() {
 
   function resetCategoryForm() {
     setCategoryForm({ id: '', label: '', color: 'zinc', sortOrder: 0 });
+  }
+
+  function resetQuickAddForm() {
+    setQuickAddForm({
+      title: '',
+      statusId: '',
+      priorityId: '',
+      categoryId: NONE_VALUE,
+      assignedTo: NONE_VALUE,
+      dueDate: '',
+      dateGiven: new Date().toISOString().slice(0, 10),
+      notes: '',
+    });
   }
 
   async function handleCategorySubmit() {
@@ -582,6 +620,15 @@ export default function PaTasksPage() {
       priorityId: prev.priorityId || defaultPriority?.id || '',
     }));
   }, [createOpen, statuses, priorities]);
+  useEffect(() => {
+    const defaultStatus = selectableStatuses.find((item) => item.is_default) ?? selectableStatuses[0];
+    const defaultPriority = priorities.find((item) => item.is_default) ?? priorities[0];
+    setQuickAddForm((prev) => ({
+      ...prev,
+      statusId: prev.statusId || defaultStatus?.id || '',
+      priorityId: prev.priorityId || defaultPriority?.id || '',
+    }));
+  }, [selectableStatuses, priorities]);
 
   useEffect(() => {
     if (!selectedTask) return;
@@ -643,6 +690,180 @@ export default function PaTasksPage() {
           </Button>
         </div>
       </div>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Quick Add Task</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Fast task entry with essential fields only. Use "New Task" for full details and attachments.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-1.5">
+            <Label>Task</Label>
+            <Input
+              value={quickAddForm.title}
+              onChange={(event) => setQuickAddForm((prev) => ({ ...prev, title: event.target.value }))}
+              placeholder="Enter task"
+            />
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-1.5">
+              <Label>Status</Label>
+              <Select
+                value={quickAddForm.statusId}
+                onValueChange={(value) => setQuickAddForm((prev) => ({ ...prev, statusId: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {selectableStatuses.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Priority</Label>
+              <Select
+                value={quickAddForm.priorityId}
+                onValueChange={(value) => setQuickAddForm((prev) => ({ ...prev, priorityId: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  {priorities.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Due Date</Label>
+              <Input
+                type="date"
+                value={quickAddForm.dueDate}
+                onChange={(event) => setQuickAddForm((prev) => ({ ...prev, dueDate: event.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Date Given</Label>
+              <Input
+                type="date"
+                value={quickAddForm.dateGiven}
+                onChange={(event) => setQuickAddForm((prev) => ({ ...prev, dateGiven: event.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Category (optional)</Label>
+              <Select
+                value={quickAddForm.categoryId}
+                onValueChange={(value) => setQuickAddForm((prev) => ({ ...prev, categoryId: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE_VALUE}>None</SelectItem>
+                  {categories.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Assigned To</Label>
+              <Select
+                value={quickAddForm.assignedTo}
+                onValueChange={(value) => setQuickAddForm((prev) => ({ ...prev, assignedTo: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE_VALUE}>Unassigned</SelectItem>
+                  {assignees.map((item) => (
+                    <SelectItem key={item.userId} value={item.userId}>
+                      {item.fullName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Notes (optional)</Label>
+            <Input
+              value={quickAddForm.notes}
+              onChange={(event) => setQuickAddForm((prev) => ({ ...prev, notes: event.target.value }))}
+              placeholder="Optional context"
+            />
+          </div>
+
+          {quickAddValidationError ? (
+            <p className="text-sm text-red-600 dark:text-red-400">{quickAddValidationError}</p>
+          ) : null}
+
+          <div className="flex items-center gap-2">
+            <Button
+              disabled={createTask.isPending || Boolean(quickAddValidationError)}
+              onClick={() => {
+                void createTask
+                  .mutateAsync({
+                    title: quickAddForm.title.trim(),
+                    statusId: quickAddForm.statusId,
+                    priorityId: quickAddForm.priorityId,
+                    categoryId: quickAddForm.categoryId === NONE_VALUE ? null : quickAddForm.categoryId,
+                    assignedTo: quickAddForm.assignedTo === NONE_VALUE ? null : quickAddForm.assignedTo,
+                    dueDate: quickAddForm.dueDate || null,
+                    dateGiven: quickAddForm.dateGiven || null,
+                    blockerReason: null,
+                    waitingOn: null,
+                    notes: quickAddForm.notes.trim() || null,
+                  })
+                  .then(() => {
+                    addToast({
+                      title: 'Task added',
+                      description: 'Quick task entry has been created.',
+                    });
+                    resetQuickAddForm();
+                    void tasksQuery.refetch();
+                  })
+                  .catch((error: unknown) => {
+                    addToast({
+                      title: 'Quick add failed',
+                      description: error instanceof Error ? error.message : 'Unable to create quick task',
+                      variant: 'error',
+                    });
+                  });
+              }}
+            >
+              {createTask.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Quick Add
+            </Button>
+            <Button variant="outline" onClick={resetQuickAddForm} disabled={createTask.isPending}>
+              Clear
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <Dialog open={accessManagerOpen} onOpenChange={setAccessManagerOpen}>
         <DialogContent className="max-h-[85vh] max-w-3xl overflow-hidden">
