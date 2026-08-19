@@ -30,8 +30,11 @@ const updateEntrySchema = z
       .string()
       .trim()
       .max(2000)
+      .nullable()
       .optional()
-      .transform((value) => (value === undefined ? undefined : value.length > 0 ? value : null)),
+      .transform((value) =>
+        value === undefined ? undefined : value === null ? null : value.length > 0 ? value : null
+      ),
     currency: z.string().trim().length(3).optional(),
   })
   .refine(

@@ -578,6 +578,7 @@ export const queryKeys = {
     list: (filters: PaTaskFilters) => [...queryKeys.paTasks.lists(), filters] as const,
     detail: (id: string) => [...queryKeys.paTasks.all, 'detail', id] as const,
     attachments: (taskId: string) => [...queryKeys.paTasks.all, 'attachments', taskId] as const,
+    bootstrap: () => [...queryKeys.paTasks.all, 'bootstrap'] as const,
     statuses: () => [...queryKeys.paTasks.all, 'statuses'] as const,
     priorities: () => [...queryKeys.paTasks.all, 'priorities'] as const,
     categories: () => [...queryKeys.paTasks.all, 'categories'] as const,

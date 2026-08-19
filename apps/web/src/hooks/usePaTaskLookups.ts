@@ -50,6 +50,7 @@ function useLookupCreateMutation<T>(
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.paTasks.bootstrap() });
     },
   });
 }
@@ -78,6 +79,7 @@ function useLookupUpdateMutation<T>(
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.paTasks.bootstrap() });
     },
   });
 }
@@ -95,6 +97,7 @@ function useLookupDeleteMutation(lookup: LookupName, queryKey: readonly unknown[
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.paTasks.bootstrap() });
     },
   });
 }

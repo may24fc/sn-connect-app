@@ -3,7 +3,7 @@ import {
   paTaskCreateSchema,
   paTaskFiltersSchema,
 } from '@/lib/schemas/pa-task.schema';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import {
   getPaTaskAuthedContext,
   getPaTaskWriteErrorMessage,
@@ -14,6 +14,17 @@ interface EmployeeNameRow {
   user_id: string;
   first_name: string;
   last_name: string;
+}
+
+interface TaskAttachmentRow {
+  id: string;
+  pa_task_id: string;
+  title: string;
+  attachment_type: 'file' | 'link';
+  url: string | null;
+  storage_path: string | null;
+  mime_type: string | null;
+  created_at: string;
 }
 
 function parseQueryFilters(request: NextRequest) {
@@ -63,12 +74,11 @@ export async function GET(request: NextRequest) {
       .from('pa_tasks')
       .select(
         `
-        *,
-        status:pa_task_statuses!pa_tasks_status_id_fkey(id,label,color,is_terminal),
-        priority:pa_task_priorities!pa_tasks_priority_id_fkey(id,label,color),
-        category:pa_task_categories!pa_tasks_category_id_fkey(id,label,color),
-        attachments:pa_task_attachments!pa_task_id(id,title,attachment_type,url,storage_path,mime_type,created_at,deleted_at)
-      `,
+      *,
+      status:pa_task_statuses!pa_tasks_status_id_fkey(id,label,color,is_terminal),
+      priority:pa_task_priorities!pa_tasks_priority_id_fkey(id,label,color),
+      category:pa_task_categories!pa_tasks_category_id_fkey(id,label,color)
+    `,
         { count: 'exact' }
       )
       .is('deleted_at', null)
@@ -144,6 +154,32 @@ export async function GET(request: NextRequest) {
     );
 
     const namesByUserId = new Map<string, string>();
+    const attachmentsByTaskId = new Map<string, Array<TaskAttachmentRow>>();
+
+    const taskIds = taskRows
+      .map((row) => row.id)
+      .filter((value): value is string => typeof value === 'string' && value.length > 0);
+
+    if (taskIds.length > 0) {
+      const { data: attachments, error: attachmentsError } = await supabaseAdmin
+        .from('pa_task_attachments')
+        .select('id, pa_task_id, title, attachment_type, url, storage_path, mime_type, created_at')
+        .in('pa_task_id', taskIds)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false });
+
+      if (attachmentsError) {
+        console.error('Failed to fetch PA task attachments:', attachmentsError);
+        return NextResponse.json({ error: 'Failed to fetch PA tasks' }, { status: 500 });
+      }
+
+      for (const attachment of (attachments ?? []) as Array<TaskAttachmentRow>) {
+        const existing = attachmentsByTaskId.get(attachment.pa_task_id) ?? [];
+        existing.push(attachment);
+        attachmentsByTaskId.set(attachment.pa_task_id, existing);
+      }
+    }
+
     if (userIds.length > 0) {
       const { data: employees } = await supabaseAdmin
         .from('employees')
@@ -151,13 +187,14 @@ export async function GET(request: NextRequest) {
         .in('user_id', userIds)
         .is('deleted_at', null);
 
-      ((employees ?? []) as EmployeeNameRow[]).forEach((employee) => {
+      for (const employee of (employees ?? []) as Array<EmployeeNameRow>) {
         namesByUserId.set(employee.user_id, `${employee.first_name} ${employee.last_name}`);
-      });
+      }
     }
 
     const data = taskRows.map((row) => ({
       ...row,
+      attachments: attachmentsByTaskId.get(row.id) ?? [],
       assignee_name: row.assigned_to ? namesByUserId.get(row.assigned_to) ?? null : null,
       creator_name: namesByUserId.get(row.created_by) ?? null,
     }));

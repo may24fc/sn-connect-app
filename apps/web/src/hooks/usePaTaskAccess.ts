@@ -40,6 +40,51 @@ interface PaTaskAssignableUsersEnvelope {
   }>;
 }
 
+interface PaTaskBootstrapEnvelope {
+  data: {
+    access: {
+      canAccess: boolean;
+      canManage: boolean;
+      hasGrant: boolean;
+      accessLevel: PaTaskAccessLevel | null;
+      role: string | null;
+    };
+    lookups: {
+      statuses: Array<{
+        id: string;
+        label: string;
+        color: string;
+        sort_order: number;
+        is_default: boolean;
+        is_terminal: boolean;
+        deleted_at: string | null;
+      }>;
+      priorities: Array<{
+        id: string;
+        label: string;
+        color: string;
+        sort_order: number;
+        is_default: boolean;
+        deleted_at: string | null;
+      }>;
+      categories: Array<{
+        id: string;
+        label: string;
+        color: string;
+        sort_order: number;
+        is_default: boolean;
+        deleted_at: string | null;
+      }>;
+      assignees: Array<{
+        userId: string;
+        fullName: string;
+        role: string | null;
+        accessLevel: PaTaskAccessLevel;
+      }>;
+    };
+  };
+}
+
 async function readJson<T>(response: Response, fallbackMessage: string): Promise<T> {
   if (!response.ok) {
     const payload = await response.json().catch(() => ({ error: fallbackMessage }));
@@ -83,6 +128,17 @@ export function usePaTaskAssignableUsers(enabled = true) {
   });
 }
 
+export function usePaTaskBootstrap(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.paTasks.bootstrap(),
+    enabled,
+    queryFn: async () => {
+      const response = await fetch('/api/pa-tasks/bootstrap');
+      return readJson<PaTaskBootstrapEnvelope>(response, 'Failed to load PA task bootstrap data');
+    },
+  });
+}
+
 export function useGrantPaTaskAccess() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -98,6 +154,7 @@ export function useGrantPaTaskAccess() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.paTasks.access() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.paTasks.accessGrants() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.paTasks.assignableUsers() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.paTasks.bootstrap() });
     },
   });
 }
@@ -117,6 +174,7 @@ export function useRevokePaTaskAccess() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.paTasks.access() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.paTasks.accessGrants() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.paTasks.assignableUsers() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.paTasks.bootstrap() });
     },
   });
 }

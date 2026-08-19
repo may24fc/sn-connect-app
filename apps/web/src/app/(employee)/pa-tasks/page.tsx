@@ -9,17 +9,13 @@ import {
 } from '@/hooks/usePaTaskAttachments';
 import {
   useGrantPaTaskAccess,
-  usePaTaskAccess,
   usePaTaskAccessGrants,
-  usePaTaskAssignableUsers,
+  usePaTaskBootstrap,
   useRevokePaTaskAccess,
 } from '@/hooks/usePaTaskAccess';
 import {
   useCreatePaTaskCategory,
   useDeletePaTaskCategory,
-  usePaTaskCategories,
-  usePaTaskPriorities,
-  usePaTaskStatuses,
   useUpdatePaTaskCategory,
 } from '@/hooks/usePaTaskLookups';
 import { useCreatePaTask, useDeletePaTask, usePaTask, usePaTasks, useUpdatePaTask } from '@/hooks/usePaTasks';
@@ -186,14 +182,14 @@ function formatRole(role: string | null): string {
 export default function PaTasksPage() {
   const { user } = useAuth();
   const { addToast } = useToast();
-  const accessQuery = usePaTaskAccess(
+  const bootstrapQuery = usePaTaskBootstrap(
     Boolean(user) &&
       (user?.role === 'employee' ||
         user?.role === 'associate' ||
         user?.role === 'admin' ||
         user?.role === 'super_admin')
   );
-  const canAccess = Boolean(accessQuery.data?.canAccess);
+  const canAccess = Boolean(bootstrapQuery.data?.data.access.canAccess);
 
   const [search, setSearch] = useState('');
   const [accessSearch, setAccessSearch] = useState('');
@@ -211,7 +207,7 @@ export default function PaTasksPage() {
   const [accessManagerOpen, setAccessManagerOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
-  const canManage = Boolean(accessQuery.data?.canManage);
+  const canManage = Boolean(bootstrapQuery.data?.data.access.canManage);
 
   const directoryQuery = useDirectory({
     search: accessSearch,
@@ -228,11 +224,6 @@ export default function PaTasksPage() {
   const createCategory = useCreatePaTaskCategory();
   const updateCategory = useUpdatePaTaskCategory();
   const deleteCategory = useDeletePaTaskCategory();
-
-  const statusesQuery = usePaTaskStatuses(canAccess);
-  const prioritiesQuery = usePaTaskPriorities(canAccess);
-  const categoriesQuery = usePaTaskCategories(canAccess);
-  const assigneesQuery = usePaTaskAssignableUsers(canAccess);
 
   const filters = useMemo(() => {
     const nextFilters: {
@@ -292,13 +283,14 @@ export default function PaTasksPage() {
   const createAttachment = useCreatePaTaskAttachment(selectedTaskId ?? '');
   const deleteAttachment = useDeletePaTaskAttachment(selectedTaskId ?? '');
 
-  const statuses = (statusesQuery.data?.data ?? []) as LookupItem[];
+  const statuses = (bootstrapQuery.data?.data.lookups.statuses ?? []) as LookupItem[];
   const selectableStatuses = useMemo(
     () => statuses.filter((item) => !item.label || item.label.toLowerCase() !== 'overdue'),
     [statuses]
   );
-  const priorities = (prioritiesQuery.data?.data ?? []) as LookupItem[];
-  const categories = (categoriesQuery.data?.data ?? []) as LookupItem[];
+  const priorities = (bootstrapQuery.data?.data.lookups.priorities ?? []) as LookupItem[];
+  const categories = (bootstrapQuery.data?.data.lookups.categories ?? []) as LookupItem[];
+  const assignees = bootstrapQuery.data?.data.lookups.assignees ?? [];
 
   const [createForm, setCreateForm] = useState({
     title: '',
@@ -607,7 +599,7 @@ export default function PaTasksPage() {
     });
   }, [selectedTask]);
 
-  if (accessQuery.isLoading) {
+  if (bootstrapQuery.isLoading) {
     return (
       <div className="flex h-[55vh] items-center justify-center text-muted-foreground">
         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -873,7 +865,7 @@ export default function PaTasksPage() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
-                  {(assigneesQuery.data?.data ?? []).map((item) => (
+                  {assignees.map((item) => (
                     <SelectItem key={item.userId} value={item.userId}>{item.fullName}</SelectItem>
                   ))}
                 </SelectContent>
@@ -1152,7 +1144,7 @@ export default function PaTasksPage() {
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value={NONE_VALUE}>Unassigned</SelectItem>
-                      {(assigneesQuery.data?.data ?? []).map((item) => (
+                      {assignees.map((item) => (
                         <SelectItem key={item.userId} value={item.userId}>{item.fullName}</SelectItem>
                       ))}
                     </SelectContent>
@@ -1440,7 +1432,7 @@ export default function PaTasksPage() {
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value={NONE_VALUE}>Unassigned</SelectItem>
-                          {(assigneesQuery.data?.data ?? []).map((item) => (
+                          {assignees.map((item) => (
                             <SelectItem key={item.userId} value={item.userId}>{item.fullName}</SelectItem>
                           ))}
                         </SelectContent>

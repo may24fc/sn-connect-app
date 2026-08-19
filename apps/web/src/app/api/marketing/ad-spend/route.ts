@@ -36,6 +36,7 @@ const adSpendEntrySchema = z.object({
     .string()
     .trim()
     .max(2000)
+    .nullable()
     .optional()
     .transform((value) => (value && value.length > 0 ? value : null)),
   currency: z.string().trim().length(3).optional().default('AUD'),
