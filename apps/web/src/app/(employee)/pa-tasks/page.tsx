@@ -199,6 +199,9 @@ export default function PaTasksPage() {
   const [categoryId, setCategoryId] = useState('all');
   const [assigneeId, setAssigneeId] = useState('all');
   const [dueStatus, setDueStatus] = useState<'all' | 'overdue' | 'on_time' | 'completed' | 'no_due_date'>('all');
+  const [sortPreset, setSortPreset] = useState<'recently_updated' | 'due_date_asc' | 'due_date_desc'>(
+    'recently_updated'
+  );
   const [currentPage, setCurrentPage] = useState(1);
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -233,13 +236,18 @@ export default function PaTasksPage() {
       categoryId?: string;
       assigneeId?: string;
       dueStatus?: 'overdue' | 'on_time' | 'completed' | 'no_due_date';
-      sortBy: 'updated_at';
-      sortOrder: 'desc';
+      sortBy: 'updated_at' | 'due_date';
+      sortOrder: 'asc' | 'desc';
       page: number;
       pageSize: number;
     } = {
-      sortBy: 'updated_at',
-      sortOrder: 'desc',
+      sortBy: sortPreset === 'recently_updated' ? 'updated_at' : 'due_date',
+      sortOrder:
+        sortPreset === 'due_date_asc'
+          ? 'asc'
+          : sortPreset === 'due_date_desc'
+            ? 'desc'
+            : 'desc',
       page: currentPage,
       pageSize: 7,
     };
@@ -253,11 +261,11 @@ export default function PaTasksPage() {
     if (dueStatus !== 'all') nextFilters.dueStatus = dueStatus;
 
     return nextFilters;
-  }, [search, statusId, priorityId, categoryId, assigneeId, dueStatus, currentPage]);
+  }, [search, statusId, priorityId, categoryId, assigneeId, dueStatus, sortPreset, currentPage]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, statusId, priorityId, categoryId, assigneeId, dueStatus]);
+  }, [search, statusId, priorityId, categoryId, assigneeId, dueStatus, sortPreset]);
 
   const tasksQuery = usePaTasks(filters, { enabled: canAccess });
   const taskRows = (tasksQuery.data?.data ?? []) as PaTaskListRow[];
@@ -1052,7 +1060,7 @@ export default function PaTasksPage() {
           <CardTitle className="text-base">Filters</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-6">
+          <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-7">
             <div className="space-y-1.5">
               <Label>Search</Label>
               <div className="relative">
@@ -1112,6 +1120,24 @@ export default function PaTasksPage() {
                   <SelectItem value="on_time">On Time</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="no_due_date">No Due Date</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Sort</Label>
+              <Select
+                value={sortPreset}
+                onValueChange={(value) =>
+                  setSortPreset(value as 'recently_updated' | 'due_date_asc' | 'due_date_desc')
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recently_updated">Recently Updated</SelectItem>
+                  <SelectItem value="due_date_asc">Due Date (Oldest first)</SelectItem>
+                  <SelectItem value="due_date_desc">Due Date (Latest first)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

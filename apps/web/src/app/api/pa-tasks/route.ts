@@ -81,8 +81,16 @@ export async function GET(request: NextRequest) {
     `,
         { count: 'exact' }
       )
-      .is('deleted_at', null)
-      .order(filters.sortBy, { ascending: filters.sortOrder === 'asc' });
+    .is('deleted_at', null);
+
+    if (filters.sortBy === 'due_date') {
+    query = query.order(filters.sortBy, {
+      ascending: filters.sortOrder === 'asc',
+      nullsFirst: false,
+    });
+    } else {
+    query = query.order(filters.sortBy, { ascending: filters.sortOrder === 'asc' });
+    }
 
     if (filters.search) {
       query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
