@@ -776,26 +776,6 @@ export default function PaTasksPage() {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>Category (optional)</Label>
-              <Select
-                value={quickAddForm.categoryId}
-                onValueChange={(value) => setQuickAddForm((prev) => ({ ...prev, categoryId: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE_VALUE}>None</SelectItem>
-                  {categories.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
               <Label>Assigned To</Label>
               <Select
                 value={quickAddForm.assignedTo}
@@ -809,6 +789,26 @@ export default function PaTasksPage() {
                   {assignees.map((item) => (
                     <SelectItem key={item.userId} value={item.userId}>
                       {item.fullName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Category (optional)</Label>
+              <Select
+                value={quickAddForm.categoryId}
+                onValueChange={(value) => setQuickAddForm((prev) => ({ ...prev, categoryId: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE_VALUE}>None</SelectItem>
+                  {categories.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
