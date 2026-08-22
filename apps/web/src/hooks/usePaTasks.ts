@@ -34,6 +34,7 @@ function buildTaskParams(filters: PaTaskFilters) {
   if (filters.priorityId) params.append('priorityId', filters.priorityId);
   if (filters.categoryId) params.append('categoryId', filters.categoryId);
   if (filters.assigneeId) params.append('assigneeId', filters.assigneeId);
+  if (filters.dueStatus) params.append('dueStatus', filters.dueStatus);
   if (filters.dueDateFrom) params.append('dueDateFrom', filters.dueDateFrom);
   if (filters.dueDateTo) params.append('dueDateTo', filters.dueDateTo);
   if (filters.dateGivenFrom) params.append('dateGivenFrom', filters.dateGivenFrom);
