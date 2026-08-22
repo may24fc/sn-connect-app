@@ -52,6 +52,7 @@ export type PaTaskDueStatusFilter = 'overdue' | 'on_time' | 'completed' | 'no_du
 export interface PaTaskFilters {
   search?: string;
   statusId?: string;
+  statusScope?: 'active' | 'archive' | 'all';
   priorityId?: string;
   categoryId?: string;
   assigneeId?: string;

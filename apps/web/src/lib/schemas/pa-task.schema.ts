@@ -48,6 +48,7 @@ export const paTaskUpdateSchema = paTaskBaseSchema.partial();
 export const paTaskFiltersSchema = z.object({
   search: z.string().trim().optional(),
   statusId: z.string().uuid().optional(),
+  statusScope: z.enum(['active', 'archive', 'all']).default('all'),
   priorityId: z.string().uuid().optional(),
   categoryId: z.string().uuid().optional(),
   assigneeId: z.string().uuid().optional(),
@@ -57,7 +58,7 @@ export const paTaskFiltersSchema = z.object({
   dateGivenFrom: dateOnlySchema.optional(),
   dateGivenTo: dateOnlySchema.optional(),
   page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+  pageSize: z.coerce.number().int().min(1).max(10).default(10),
   sortBy: z.enum(['updated_at', 'due_date', 'date_given', 'created_at', 'title']).default('updated_at'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });

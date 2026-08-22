@@ -48,6 +48,9 @@ import {
   SlidePanelHeader,
   SlidePanelSection,
   SlidePanelTitle,
+  Tabs,
+  TabsList,
+  TabsTrigger,
   Table,
   TableBody,
   TableCell,
@@ -59,6 +62,7 @@ import {
 } from '@hr-portal/ui';
 import { Loader2, Paperclip, Plus, Search, ShieldCheck, ShieldX, Trash2, UserPlus } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 type LookupItem = {
@@ -100,6 +104,12 @@ const ALLOWED_ATTACHMENT_MIME_TYPES = new Set([
 ]);
 const ATTACHMENT_CHIP_CLASS =
   'inline-flex max-w-full items-center gap-1 rounded-full border border-zinc-300 bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700';
+const DUE_STATUS_COL_CLASS = 'min-w-[130px] w-[130px] max-w-[130px]';
+const STICKY_HEAD_CELL_CLASS = 'sticky top-0 z-30 bg-card';
+const STICKY_BODY_CELL_CLASS = 'sticky z-20 bg-card';
+const STICKY_DUE_COL_CLASS = 'left-0 min-w-[120px] w-[120px]';
+const STICKY_PRIORITY_COL_CLASS = 'left-[120px] min-w-[120px] w-[120px]';
+const STICKY_TASK_COL_CLASS = 'left-[240px] min-w-[370px] w-[370px] max-w-[370px] border-r border-border';
 
 function colorClass(color: PaTaskLookupColor) {
   const map: Record<PaTaskLookupColor, string> = {
@@ -117,6 +127,20 @@ function colorClass(color: PaTaskLookupColor) {
 function formatDate(value: string | null) {
   if (!value) return '—';
   return new Date(value).toLocaleDateString();
+}
+
+function getTaskTitleTextClass(title: string) {
+  const length = title.trim().length;
+  if (length <= 70) {
+    return 'text-sm';
+  }
+  if (length <= 130) {
+    return 'text-[13px]';
+  }
+  if (length <= 190) {
+    return 'text-xs';
+  }
+  return 'text-[11px]';
 }
 
 function getTaskDueStatus(task: PaTaskListRow): 'completed' | 'overdue' | 'on_time' | 'no_due_date' {
@@ -182,6 +206,10 @@ function formatRole(role: string | null): string {
 export default function PaTasksPage() {
   const { user } = useAuth();
   const { addToast } = useToast();
+  const pathname = usePathname();
+  const isArchiveView = pathname.endsWith('/archive');
+  const activePath = isArchiveView ? pathname.slice(0, -'/archive'.length) : pathname;
+  const archivePath = isArchiveView ? pathname : `${pathname.replace(/\/$/, '')}/archive`;
   const bootstrapQuery = usePaTaskBootstrap(
     Boolean(user) &&
       (user?.role === 'employee' ||
@@ -232,6 +260,7 @@ export default function PaTasksPage() {
     const nextFilters: {
       search?: string;
       statusId?: string;
+      statusScope?: 'active' | 'archive' | 'all';
       priorityId?: string;
       categoryId?: string;
       assigneeId?: string;
@@ -249,7 +278,8 @@ export default function PaTasksPage() {
             ? 'desc'
             : 'desc',
       page: currentPage,
-      pageSize: 7,
+      pageSize: 10,
+      statusScope: isArchiveView ? 'archive' : 'active',
     };
 
     const normalizedSearch = search.trim();
@@ -261,7 +291,7 @@ export default function PaTasksPage() {
     if (dueStatus !== 'all') nextFilters.dueStatus = dueStatus;
 
     return nextFilters;
-  }, [search, statusId, priorityId, categoryId, assigneeId, dueStatus, sortPreset, currentPage]);
+  }, [search, statusId, priorityId, categoryId, assigneeId, dueStatus, sortPreset, currentPage, isArchiveView]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -272,13 +302,6 @@ export default function PaTasksPage() {
   const totalPages = Math.max(tasksQuery.data?.pagination.totalPages ?? 1, 1);
   const hasPreviousPage = currentPage > 1;
   const hasNextPage = currentPage < totalPages;
-  const filteredTaskRows = useMemo(() => {
-    if (dueStatus === 'all') {
-      return taskRows;
-    }
-
-    return taskRows.filter((task) => getTaskDueStatus(task) === dueStatus);
-  }, [taskRows, dueStatus]);
   const selectedTaskQuery = usePaTask(selectedTaskId, detailOpen && Boolean(selectedTaskId));
   const selectedTask = (selectedTaskQuery.data?.data ?? null) as (PaTaskListRow & {
     attachments?: Array<{ id: string }>;
@@ -295,6 +318,17 @@ export default function PaTasksPage() {
   const selectableStatuses = useMemo(
     () => statuses.filter((item) => !item.label || item.label.toLowerCase() !== 'overdue'),
     [statuses]
+  );
+  const statusFilterOptions = useMemo(
+    () =>
+      statuses.filter((item) => {
+        const normalizedLabel = item.label?.toLowerCase();
+        if (normalizedLabel === 'overdue') {
+          return false;
+        }
+        return isArchiveView ? Boolean(item.is_terminal) : !item.is_terminal;
+      }),
+    [statuses, isArchiveView]
   );
   const priorities = (bootstrapQuery.data?.data.lookups.priorities ?? []) as LookupItem[];
   const categories = (bootstrapQuery.data?.data.lookups.categories ?? []) as LookupItem[];
@@ -622,20 +656,38 @@ export default function PaTasksPage() {
     }
     const defaultStatus = selectableStatuses.find((item) => item.is_default) ?? selectableStatuses[0];
     const defaultPriority = priorities.find((item) => item.is_default) ?? priorities[0];
-    setCreateForm((prev) => ({
-      ...prev,
-      statusId: prev.statusId || defaultStatus?.id || '',
-      priorityId: prev.priorityId || defaultPriority?.id || '',
-    }));
-  }, [createOpen, statuses, priorities]);
+    setCreateForm((prev) => {
+      const nextStatusId = prev.statusId || defaultStatus?.id || '';
+      const nextPriorityId = prev.priorityId || defaultPriority?.id || '';
+
+      if (prev.statusId === nextStatusId && prev.priorityId === nextPriorityId) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        statusId: nextStatusId,
+        priorityId: nextPriorityId,
+      };
+    });
+  }, [createOpen, selectableStatuses, priorities]);
   useEffect(() => {
     const defaultStatus = selectableStatuses.find((item) => item.is_default) ?? selectableStatuses[0];
     const defaultPriority = priorities.find((item) => item.is_default) ?? priorities[0];
-    setQuickAddForm((prev) => ({
-      ...prev,
-      statusId: prev.statusId || defaultStatus?.id || '',
-      priorityId: prev.priorityId || defaultPriority?.id || '',
-    }));
+    setQuickAddForm((prev) => {
+      const nextStatusId = prev.statusId || defaultStatus?.id || '';
+      const nextPriorityId = prev.priorityId || defaultPriority?.id || '';
+
+      if (prev.statusId === nextStatusId && prev.priorityId === nextPriorityId) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        statusId: nextStatusId,
+        priorityId: nextPriorityId,
+      };
+    });
   }, [selectableStatuses, priorities]);
 
   useEffect(() => {
@@ -677,8 +729,12 @@ export default function PaTasksPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">PA Task Tracker</h1>
-          <p className="text-sm text-muted-foreground">Centralized PA/EA task tracking with attachments and blockers.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">{isArchiveView ? 'PA Task Archive' : 'PA Task Tracker'}</h1>
+          <p className="text-sm text-muted-foreground">
+            {isArchiveView
+              ? 'Completed and cancelled PA/EA tasks.'
+              : 'Centralized PA/EA task tracking with attachments and blockers.'}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {canManage ? (
@@ -692,13 +748,27 @@ export default function PaTasksPage() {
               </Button>
             </>
           ) : null}
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Task
-          </Button>
+          {!isArchiveView ? (
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Task
+            </Button>
+          ) : null}
         </div>
       </div>
 
+      <Tabs value={isArchiveView ? 'archive' : 'main'}>
+        <TabsList className="w-full justify-start">
+          <TabsTrigger value="main" asChild>
+            <Link href={activePath}>Main</Link>
+          </TabsTrigger>
+          <TabsTrigger value="archive" asChild>
+            <Link href={archivePath}>Archive</Link>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {!isArchiveView ? (
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Quick Add Task</CardTitle>
@@ -872,6 +942,7 @@ export default function PaTasksPage() {
           </div>
         </CardContent>
       </Card>
+      ) : null}
 
       <Dialog open={accessManagerOpen} onOpenChange={setAccessManagerOpen}>
         <DialogContent className="max-h-[85vh] max-w-3xl overflow-hidden">
@@ -1074,7 +1145,7 @@ export default function PaTasksPage() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
-                  {selectableStatuses.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}
+                  {statusFilterOptions.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -1148,30 +1219,30 @@ export default function PaTasksPage() {
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <Table className="min-w-[1700px]">
+            <Table className="table-fixed min-w-[2000px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date Given</TableHead>
-                  <TableHead>Due Date</TableHead>
-                  <TableHead>Due Status</TableHead>
-                  <TableHead>Assigned To</TableHead>
-                  <TableHead>Task</TableHead>
-                  <TableHead>Document / Email Link (if available)</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead className={DUE_STATUS_COL_CLASS}>Due Status</TableHead>
+                  <TableHead className={`${STICKY_HEAD_CELL_CLASS} ${STICKY_DUE_COL_CLASS}`}>Due Date</TableHead>
+                  <TableHead className={`${STICKY_HEAD_CELL_CLASS} ${STICKY_PRIORITY_COL_CLASS}`}>Priority</TableHead>
+                  <TableHead className={`${STICKY_HEAD_CELL_CLASS} ${STICKY_TASK_COL_CLASS}`}>Task</TableHead>
                   <TableHead>Waiting On</TableHead>
+                  <TableHead>Assigned To</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Category</TableHead>
                   <TableHead>Notes / Remarks</TableHead>
+                  <TableHead>Document / Email Link (if available)</TableHead>
+                  <TableHead>Date Given</TableHead>
                   <TableHead>Last Updated</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {tasksQuery.isLoading ? (
                   <TableRow><TableCell colSpan={12} className="py-8 text-center text-muted-foreground">Loading tasks...</TableCell></TableRow>
-                ) : filteredTaskRows.length === 0 ? (
+                ) : taskRows.length === 0 ? (
                   <TableRow><TableCell colSpan={12} className="py-8 text-center text-muted-foreground">No tasks found.</TableCell></TableRow>
                 ) : (
-                  filteredTaskRows.map((task) => (
+                  taskRows.map((task) => (
                     <TableRow
                       key={task.id}
                       className="cursor-pointer align-top"
@@ -1180,15 +1251,24 @@ export default function PaTasksPage() {
                         setDetailOpen(true);
                       }}
                     >
-                      <TableCell>{formatDate(task.date_given)}</TableCell>
-                      <TableCell>{formatDate(task.due_date)}</TableCell>
-                      <TableCell>
+                      <TableCell className={DUE_STATUS_COL_CLASS}>
                         <Badge className={getDueStatusBadgeClass(getTaskDueStatus(task))}>
                           {getDueStatusLabel(getTaskDueStatus(task))}
                         </Badge>
                       </TableCell>
+                      <TableCell className={`${STICKY_BODY_CELL_CLASS} ${STICKY_DUE_COL_CLASS}`}>{formatDate(task.due_date)}</TableCell>
+                      <TableCell className={`${STICKY_BODY_CELL_CLASS} ${STICKY_PRIORITY_COL_CLASS}`}><Badge variant="secondary" className={task.priority ? colorClass(task.priority.color) : ''}>{task.priority?.label ?? '—'}</Badge></TableCell>
+                      <TableCell
+                        className={`${STICKY_BODY_CELL_CLASS} ${STICKY_TASK_COL_CLASS} overflow-hidden whitespace-normal break-words font-medium leading-tight ${getTaskTitleTextClass(task.title)}`}
+                        title={task.title}
+                      >
+                        {task.title}
+                      </TableCell>
+                      <TableCell className="max-w-[220px] truncate">{task.waiting_on ?? '—'}</TableCell>
                       <TableCell>{task.assignee_name ?? 'Unassigned'}</TableCell>
-                      <TableCell className="max-w-[320px] truncate font-medium">{task.title}</TableCell>
+                      <TableCell><Badge className={task.status ? colorClass(task.status.color) : ''}>{task.status?.label ?? '—'}</Badge></TableCell>
+                      <TableCell>{task.category?.label ?? '—'}</TableCell>
+                      <TableCell className="max-w-[260px] truncate">{task.notes ?? '—'}</TableCell>
                       <TableCell className="max-w-[220px] align-top">
                         {task.attachments && task.attachments.length > 0 ? (
                           <div className="flex flex-col gap-1">
@@ -1227,11 +1307,7 @@ export default function PaTasksPage() {
                           '—'
                         )}
                       </TableCell>
-                      <TableCell>{task.category?.label ?? '—'}</TableCell>
-                      <TableCell><Badge variant="secondary" className={task.priority ? colorClass(task.priority.color) : ''}>{task.priority?.label ?? '—'}</Badge></TableCell>
-                      <TableCell><Badge className={task.status ? colorClass(task.status.color) : ''}>{task.status?.label ?? '—'}</Badge></TableCell>
-                      <TableCell className="max-w-[220px] truncate">{task.waiting_on ?? '—'}</TableCell>
-                      <TableCell className="max-w-[260px] truncate">{task.notes ?? '—'}</TableCell>
+                      <TableCell>{formatDate(task.date_given)}</TableCell>
                       <TableCell>{formatDate(task.updated_at)}</TableCell>
                     </TableRow>
                   ))

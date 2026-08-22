@@ -27,11 +27,16 @@ interface TaskAttachmentRow {
   created_at: string;
 }
 
+interface StatusScopeRow {
+  id: string;
+}
+
 function parseQueryFilters(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const parsed = paTaskFiltersSchema.safeParse({
     search: searchParams.get('search') ?? undefined,
     statusId: searchParams.get('statusId') ?? undefined,
+    statusScope: searchParams.get('statusScope') ?? undefined,
     priorityId: searchParams.get('priorityId') ?? undefined,
     categoryId: searchParams.get('categoryId') ?? undefined,
     assigneeId: searchParams.get('assigneeId') ?? undefined,
@@ -70,6 +75,18 @@ export async function GET(request: NextRequest) {
     }
 
     const filters = parsedFilters.data;
+    const { data: terminalStatusRows, error: terminalStatusError } = await supabaseAdmin
+      .from('pa_task_statuses')
+      .select('id')
+      .eq('is_terminal', true)
+      .is('deleted_at', null);
+
+    if (terminalStatusError) {
+      console.error('Error loading terminal PA task statuses:', terminalStatusError);
+      return NextResponse.json({ error: 'Failed to fetch PA tasks' }, { status: 500 });
+    }
+
+    const terminalStatusIds = (terminalStatusRows ?? []).map((row) => (row as StatusScopeRow).id);
     let query = supabaseAdmin
       .from('pa_tasks')
       .select(
@@ -82,6 +99,25 @@ export async function GET(request: NextRequest) {
         { count: 'exact' }
       )
     .is('deleted_at', null);
+
+    if (filters.statusScope === 'active' && terminalStatusIds.length > 0) {
+      query = query.not('status_id', 'in', `(${terminalStatusIds.join(',')})`);
+    }
+
+    if (filters.statusScope === 'archive') {
+      if (terminalStatusIds.length === 0) {
+        return NextResponse.json({
+          data: [],
+          pagination: {
+            page: filters.page,
+            pageSize: filters.pageSize,
+            total: 0,
+            totalPages: 0,
+          },
+        });
+      }
+      query = query.in('status_id', terminalStatusIds);
+    }
 
     if (filters.sortBy === 'due_date') {
     query = query.order(filters.sortBy, {
@@ -122,7 +158,10 @@ export async function GET(request: NextRequest) {
 
     const from = (filters.page - 1) * filters.pageSize;
     const to = from + filters.pageSize - 1;
-    query = query.range(from, to);
+    const hasDueStatusFilter = Boolean(filters.dueStatus);
+    if (!hasDueStatusFilter) {
+      query = query.range(from, to);
+    }
 
     const { data: rows, error, count } = await query;
     if (error) {
@@ -136,8 +175,12 @@ export async function GET(request: NextRequest) {
       }
 
       const statusLabel = row.status?.label?.toLowerCase();
-      if (statusLabel === 'overdue' || row.status?.is_terminal) {
-        return filters.dueStatus === 'overdue' || (row.status?.is_terminal && filters.dueStatus === 'completed');
+      if (statusLabel === 'overdue') {
+        return filters.dueStatus === 'overdue';
+      }
+
+      if (row.status?.is_terminal) {
+        return filters.dueStatus === 'completed';
       }
 
       if (!row.due_date) {
@@ -153,9 +196,11 @@ export async function GET(request: NextRequest) {
       return filters.dueStatus === (dueDate < today ? 'overdue' : 'on_time');
     });
 
+    const paginatedTaskRows = hasDueStatusFilter ? taskRows.slice(from, to + 1) : taskRows;
+
     const userIds = Array.from(
       new Set(
-        taskRows
+        paginatedTaskRows
           .flatMap((row) => [row.assigned_to, row.created_by])
           .filter((value): value is string => Boolean(value))
       )
@@ -164,7 +209,7 @@ export async function GET(request: NextRequest) {
     const namesByUserId = new Map<string, string>();
     const attachmentsByTaskId = new Map<string, Array<TaskAttachmentRow>>();
 
-    const taskIds = taskRows
+    const taskIds = paginatedTaskRows
       .map((row) => row.id)
       .filter((value): value is string => typeof value === 'string' && value.length > 0);
 
@@ -200,20 +245,22 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const data = taskRows.map((row) => ({
+    const data = paginatedTaskRows.map((row) => ({
       ...row,
       attachments: attachmentsByTaskId.get(row.id) ?? [],
       assignee_name: row.assigned_to ? namesByUserId.get(row.assigned_to) ?? null : null,
       creator_name: namesByUserId.get(row.created_by) ?? null,
     }));
 
+    const filteredTotal = hasDueStatusFilter ? taskRows.length : (count ?? 0);
+
     return NextResponse.json({
       data,
       pagination: {
         page: filters.page,
         pageSize: filters.pageSize,
-        total: count ?? 0,
-        totalPages: Math.ceil((count ?? 0) / filters.pageSize),
+        total: filteredTotal,
+        totalPages: Math.ceil(filteredTotal / filters.pageSize),
       },
     });
   } catch (error) {

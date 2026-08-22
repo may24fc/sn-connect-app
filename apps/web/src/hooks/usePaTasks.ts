@@ -30,6 +30,7 @@ function buildTaskParams(filters: PaTaskFilters) {
   const params = new URLSearchParams();
   if (filters.search) params.append('search', filters.search);
   if (filters.statusId) params.append('statusId', filters.statusId);
+  if (filters.statusScope) params.append('statusScope', filters.statusScope);
   if (filters.priorityId) params.append('priorityId', filters.priorityId);
   if (filters.categoryId) params.append('categoryId', filters.categoryId);
   if (filters.assigneeId) params.append('assigneeId', filters.assigneeId);
