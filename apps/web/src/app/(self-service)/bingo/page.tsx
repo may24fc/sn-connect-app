@@ -444,13 +444,36 @@ function AdminWeeklySummaryCard({
     partnershipSummaries.map((s) => [s.partnershipId, s])
   );
 
+  const submissionsByPartnershipId = new Map<string, number>();
+  for (const item of items) {
+    submissionsByPartnershipId.set(
+      item.partnershipId,
+      (submissionsByPartnershipId.get(item.partnershipId) ?? 0) + 1
+    );
+  }
+
+  const pairTotals = partnershipSummaries
+    .map((summary) => {
+      const submissionCount = submissionsByPartnershipId.get(summary.partnershipId) ?? 0;
+      return {
+        ...summary,
+        submissionCount,
+        totalPartnerAPoints: summary.partnerAPoints * submissionCount,
+        totalPartnerBPoints: summary.partnerBPoints * submissionCount,
+        totalCombinedPoints: summary.combinedPoints * submissionCount,
+      };
+    })
+    .sort((left, right) => right.totalCombinedPoints - left.totalCombinedPoints);
+
   const weeks = Array.from({ length: totalWeeks }, (_, i) => i + 1);
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Weekly Progress Summary</CardTitle>
-        <CardDescription>Pair participation, recordings, and cycle-to-date points.</CardDescription>
+        <CardDescription>
+          Pair participation, recordings, and partner totals accumulated across all weeks.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {weeks.map((weekNum) => {
@@ -531,6 +554,43 @@ function AdminWeeklySummaryCard({
             </div>
           );
         })}
+
+        {pairTotals.length > 0 ? (
+          <div className="rounded-xl border border-border bg-background p-4">
+            <div className="text-sm font-semibold">Pair totals (all weeks)</div>
+            <div className="mt-2 space-y-2">
+              {pairTotals.map((pairTotal) => (
+                <div
+                  key={pairTotal.partnershipId}
+                  className="rounded-lg border border-border bg-muted/20 px-3 py-2 text-sm"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">
+                      {pairTotal.partnerAName} &amp; {pairTotal.partnerBName}
+                    </span>
+                    <span className="text-muted-foreground">
+                      <strong className="text-foreground">{pairTotal.totalCombinedPoints}</strong>{' '}
+                      pts
+                    </span>
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {pairTotal.submissionCount} {pairTotal.submissionCount === 1 ? 'week' : 'weeks'} submitted
+                  </div>
+                  <div className="mt-1.5 flex gap-4 text-xs text-muted-foreground">
+                    <span>
+                      {pairTotal.partnerAName.split(' ')[0]}:{' '}
+                      <strong className="text-foreground">{pairTotal.totalPartnerAPoints} pts</strong>
+                    </span>
+                    <span>
+                      {pairTotal.partnerBName.split(' ')[0]}:{' '}
+                      <strong className="text-foreground">{pairTotal.totalPartnerBPoints} pts</strong>
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );
