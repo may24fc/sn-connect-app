@@ -39,6 +39,11 @@ export interface NavItem {
   badge?: string | number;
 }
 
+interface NavSection {
+  title?: string;
+  items: Array<NavItem>;
+}
+
 export type UserRole = 'employee' | 'associate' | 'admin' | 'super_admin';
 
 export interface SidebarProps {
@@ -193,6 +198,92 @@ function getNavMatchLength(currentPath: string, href: string): number {
   return normalizedCurrentPath.startsWith(`${normalizedHref}/`) ? normalizedHref.length : -1;
 }
 
+const adminSectionConfig: ReadonlyArray<{ title: string; hrefs: ReadonlyArray<string> }> = [
+  {
+    title: 'Overview',
+    hrefs: ['/admin/dashboard', '/super-admin/dashboard'],
+  },
+  {
+    title: 'People Operations',
+    hrefs: [
+      '/admin/directory',
+      '/admin/employee-management',
+      '/admin/interns',
+      '/admin/recruitment',
+      '/admin/jobs',
+      '/admin/checklists',
+      '/admin/calendar',
+      '/super-admin/calendar',
+    ],
+  },
+  {
+    title: 'Performance & Culture',
+    hrefs: [
+      '/admin/performance',
+      '/admin/performance/monthly-self-evaluations',
+      '/leaderboard',
+      '/admin/announcements',
+      '/super-admin/announcements',
+    ],
+  },
+  {
+    title: 'Commercial & Finance',
+    hrefs: [
+      '/admin/reports',
+      '/admin/marketing/ad-spend',
+      '/admin/crm',
+      '/super-admin/revenue-forecast',
+      '/admin/expenses',
+      '/admin/invoice',
+      '/super-admin/payroll-approvals',
+    ],
+  },
+  {
+    title: 'Delivery & Work Management',
+    hrefs: ['/admin/war-room', '/super-admin/tasks', '/pa-tasks'],
+  },
+  {
+    title: 'Knowledge & Support',
+    hrefs: [
+      '/admin/ai-knowledge',
+      '/super-admin/ai-knowledge',
+      '/admin/resources',
+      '/super-admin/resources',
+      '/admin/tickets',
+    ],
+  },
+];
+
+function createRoleBasedSections(variant: UserRole, navItems: Array<NavItem>): Array<NavSection> {
+  if (variant !== 'admin' && variant !== 'super_admin') {
+    return [{ items: navItems }];
+  }
+
+  const itemByHref = new Map(navItems.map((item) => [item.href, item]));
+  const usedHrefs = new Set<string>();
+  const sections: Array<NavSection> = [];
+
+  for (const config of adminSectionConfig) {
+    const sectionItems = config.hrefs
+      .map((href) => itemByHref.get(href))
+      .filter((item): item is NavItem => item !== undefined);
+
+    if (sectionItems.length > 0) {
+      sections.push({ title: config.title, items: sectionItems });
+      for (const item of sectionItems) {
+        usedHrefs.add(item.href);
+      }
+    }
+  }
+
+  const remainingItems = navItems.filter((item) => !usedHrefs.has(item.href));
+  if (remainingItems.length > 0) {
+    sections.push({ title: 'Other', items: remainingItems });
+  }
+
+  return sections;
+}
+
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Existing role-based navigation and conditional visibility logic is intentionally centralized.
 export function Sidebar({
   variant,
@@ -248,14 +339,20 @@ export function Sidebar({
       : filteredNavItems;
 
   if (
-    (variant === 'employee' || variant === 'associate'
+    variant === 'employee' || variant === 'associate'
       ? showPaTaskAccess
-      : variant === 'admin' || variant === 'super_admin')
+      : variant === 'admin' || variant === 'super_admin'
   ) {
     const paTaskItem: NavItem = { label: 'PA Tracker', href: '/pa-tasks', icon: ClipboardList };
-    const tasksIndex = navItems.findIndex((it) => it.href === '/tasks' || it.href === '/super-admin/tasks');
+    const tasksIndex = navItems.findIndex(
+      (it) => it.href === '/tasks' || it.href === '/super-admin/tasks'
+    );
     if (tasksIndex >= 0) {
-      navItems = [...navItems.slice(0, tasksIndex + 1), paTaskItem, ...navItems.slice(tasksIndex + 1)];
+      navItems = [
+        ...navItems.slice(0, tasksIndex + 1),
+        paTaskItem,
+        ...navItems.slice(tasksIndex + 1),
+      ];
     } else {
       navItems = [...navItems, paTaskItem];
     }
@@ -263,7 +360,11 @@ export function Sidebar({
 
   // Insert CRM nav item for granted non-admin users directly below Marketing Reports
   if ((variant === 'employee' || variant === 'associate') && showMarketingAdSpendAccess) {
-    const adSpendItem: NavItem = { label: 'Ad Spend', href: '/marketing/ad-spend', icon: Megaphone };
+    const adSpendItem: NavItem = {
+      label: 'Ad Spend',
+      href: '/marketing/ad-spend',
+      icon: Megaphone,
+    };
     const reportsIndex = navItems.findIndex((it) => it.href === '/reports');
     if (reportsIndex >= 0) {
       navItems = [
@@ -326,6 +427,7 @@ export function Sidebar({
     },
     null
   )?.href;
+  const navSections = createRoleBasedSections(variant, navItems);
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -358,61 +460,72 @@ export function Sidebar({
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          <ul className="space-y-1">
-            {navItems.map((item) => {
-              const isActive = activeHref === item.href;
-              const Icon = item.icon;
+          <ul className="space-y-4">
+            {navSections.map((section) => (
+              <li key={section.title ?? 'default'}>
+                {!collapsed && section.title && (
+                  <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                    {section.title}
+                  </p>
+                )}
+                <ul className="space-y-1">
+                  {section.items.map((item) => {
+                    const isActive = activeHref === item.href;
+                    const Icon = item.icon;
 
-              const navButton = (
-                <button
-                  type="button"
-                  onClick={() => onNavigate(item.href)}
-                  className={cn(
-                    'group flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors relative',
-                    isActive
-                      ? 'text-zinc-900 dark:text-zinc-100 before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-0.5 before:h-5 before:bg-zinc-900 dark:before:bg-zinc-100 before:rounded-r'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50',
-                    collapsed && 'justify-center px-2'
-                  )}
-                >
-                  <Icon
-                    className={cn(
-                      'h-5 w-5 flex-shrink-0 transition-colors',
-                      isActive
-                        ? 'text-zinc-900 dark:text-zinc-100'
-                        : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200'
-                    )}
-                    strokeWidth={1.5}
-                  />
-                  {!collapsed && (
-                    <>
-                      <span className="flex-1 text-left">{item.label}</span>
-                      {item.badge !== undefined && (
-                        <CountBadge variant="contrast" size="md">
-                          {item.badge}
-                        </CountBadge>
-                      )}
-                    </>
-                  )}
-                </button>
-              );
+                    const navButton = (
+                      <button
+                        type="button"
+                        onClick={() => onNavigate(item.href)}
+                        className={cn(
+                          'group flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors relative',
+                          isActive
+                            ? 'text-zinc-900 dark:text-zinc-100 before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-0.5 before:h-5 before:bg-zinc-900 dark:before:bg-zinc-100 before:rounded-r'
+                            : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50',
+                          collapsed && 'justify-center px-2'
+                        )}
+                      >
+                        <Icon
+                          className={cn(
+                            'h-5 w-5 flex-shrink-0 transition-colors',
+                            isActive
+                              ? 'text-zinc-900 dark:text-zinc-100'
+                              : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200'
+                          )}
+                          strokeWidth={1.5}
+                        />
+                        {!collapsed && (
+                          <>
+                            <span className="flex-1 text-left">{item.label}</span>
+                            {item.badge !== undefined && (
+                              <CountBadge variant="contrast" size="md">
+                                {item.badge}
+                              </CountBadge>
+                            )}
+                          </>
+                        )}
+                      </button>
+                    );
 
-              return (
-                <li key={item.href}>
-                  {collapsed ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>{navButton}</TooltipTrigger>
-                      <TooltipContent side="right" className="font-medium">
-                        {item.label}
-                        {item.badge !== undefined && ` (${item.badge})`}
-                      </TooltipContent>
-                    </Tooltip>
-                  ) : (
-                    navButton
-                  )}
-                </li>
-              );
-            })}
+                    return (
+                      <li key={item.href}>
+                        {collapsed ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>{navButton}</TooltipTrigger>
+                            <TooltipContent side="right" className="font-medium">
+                              {item.label}
+                              {item.badge !== undefined && ` (${item.badge})`}
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          navButton
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </li>
+            ))}
           </ul>
         </nav>
 
