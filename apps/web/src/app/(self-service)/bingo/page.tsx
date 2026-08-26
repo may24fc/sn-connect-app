@@ -2,6 +2,7 @@
 
 import type { BingoPartnerOption } from '@/app/api/wellness-bingo/_lib';
 import {
+  useBingoAdminSummary,
   useBingoPartners,
   useCurrentBingo,
   useUpdateBingoBoard,
@@ -228,10 +229,13 @@ function BingoPageContent({
       </div>
 
       <AdminWeeklySummaryCard
-        items={data.adminWeeklyRecordings}
-        partnershipSummaries={data.adminPartnershipSummaries}
-        totalWeeks={data.activeWeek.totalWeeks}
-        activeWeekIndex={data.activeWeek.index}
+        isAdminViewer={data.isAdminViewer}
+        defaultCycleId={data.cycle.id}
+        defaultCycle={data.cycle}
+        defaultItems={data.adminWeeklyRecordings}
+        defaultPartnershipSummaries={data.adminPartnershipSummaries}
+        defaultTotalWeeks={data.activeWeek.totalWeeks}
+        defaultActiveWeekIndex={data.activeWeek.index}
       />
     </div>
   );
@@ -412,19 +416,36 @@ function WeeklyRecordingCard({
 }
 
 function AdminWeeklySummaryCard({
-  items,
-  partnershipSummaries,
-  totalWeeks,
-  activeWeekIndex,
+  isAdminViewer,
+  defaultCycleId,
+  defaultCycle,
+  defaultItems,
+  defaultPartnershipSummaries,
+  defaultTotalWeeks,
+  defaultActiveWeekIndex,
 }: {
-  items: Array<BingoSnapshot['adminWeeklyRecordings'][number]>;
-  partnershipSummaries: Array<BingoSnapshot['adminPartnershipSummaries'][number]>;
-  totalWeeks: number;
-  activeWeekIndex: number;
+  isAdminViewer: boolean;
+  defaultCycleId: string;
+  defaultCycle: BingoSnapshot['cycle'];
+  defaultItems: Array<BingoSnapshot['adminWeeklyRecordings'][number]>;
+  defaultPartnershipSummaries: Array<BingoSnapshot['adminPartnershipSummaries'][number]>;
+  defaultTotalWeeks: number;
+  defaultActiveWeekIndex: number;
 }) {
-  if (items.length === 0 && partnershipSummaries.length === 0) {
+  if (!isAdminViewer) {
     return null;
   }
+
+  const [selectedCycleId, setSelectedCycleId] = useState(defaultCycleId);
+  const { data: adminSummary, isLoading: isLoadingAdminSummary, error: adminSummaryError } =
+    useBingoAdminSummary(selectedCycleId, isAdminViewer);
+
+  const selectedCycle = adminSummary?.cycle ?? defaultCycle;
+  const availableCycles = adminSummary?.availableCycles ?? [defaultCycle];
+  const items = adminSummary?.adminWeeklyRecordings ?? defaultItems;
+  const partnershipSummaries = adminSummary?.adminPartnershipSummaries ?? defaultPartnershipSummaries;
+  const totalWeeks = adminSummary?.activeWeek.totalWeeks ?? defaultTotalWeeks;
+  const activeWeekIndex = adminSummary?.activeWeek.index ?? defaultActiveWeekIndex;
 
   const byWeek = new Map<number, typeof items>();
   for (const item of items) {
@@ -469,13 +490,44 @@ function AdminWeeklySummaryCard({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Weekly Progress Summary</CardTitle>
-        <CardDescription>
-          Pair participation, recordings, and partner totals accumulated across all weeks.
-        </CardDescription>
+      <CardHeader className="gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <CardTitle>Weekly Progress Summary</CardTitle>
+            <CardDescription>
+              Pair participation, recordings, and partner totals for the selected cycle.
+            </CardDescription>
+          </div>
+          <div className="w-full sm:w-[320px]">
+            <Select value={selectedCycleId} onValueChange={setSelectedCycleId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select cycle" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableCycles.map((cycleOption) => (
+                  <SelectItem key={cycleOption.id} value={cycleOption.id}>
+                    {cycleOption.startDate} to {cycleOption.endDate}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Viewing cycle: {selectedCycle.startDate} to {selectedCycle.endDate}
+        </p>
       </CardHeader>
       <CardContent className="space-y-3">
+        {adminSummaryError ? (
+          <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-800 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-200">
+            {adminSummaryError.message}
+          </div>
+        ) : null}
+        {isLoadingAdminSummary ? (
+          <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+            Loading selected cycle summary...
+          </div>
+        ) : null}
         {weeks.map((weekNum) => {
           const recordings = byWeek.get(weekNum) ?? [];
           const dates = weekDates.get(weekNum);

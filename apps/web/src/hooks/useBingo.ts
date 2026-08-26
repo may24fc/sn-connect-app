@@ -1,4 +1,8 @@
-import type { BingoPartnerOption, WellnessBingoSnapshot } from '@/app/api/wellness-bingo/_lib';
+import type {
+  BingoAdminCycleSnapshot,
+  BingoPartnerOption,
+  WellnessBingoSnapshot,
+} from '@/app/api/wellness-bingo/_lib';
 import { STALE_TIMES } from '@/lib/query-client';
 import { queryKeys } from '@/lib/query-keys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -32,6 +36,24 @@ export function useBingoPartners() {
   });
 }
 
+export function useBingoAdminSummary(cycleId: string | null, enabled = true) {
+  const searchParams = new URLSearchParams();
+  if (cycleId) {
+    searchParams.set('cycleId', cycleId);
+  }
+  const url = `/api/wellness-bingo/admin-summary${
+    searchParams.toString() ? `?${searchParams.toString()}` : ''
+  }`;
+
+  return useQuery({
+    queryKey: queryKeys.bingo.adminSummary(cycleId),
+    queryFn: () => fetchJson<{ data: BingoAdminCycleSnapshot }>(url),
+    staleTime: STALE_TIMES.dynamic,
+    select: (response) => response.data,
+    enabled,
+  });
+}
+
 export function useUpdateBingoBoard() {
   const queryClient = useQueryClient();
 
@@ -56,6 +78,7 @@ export function useUpdateBingoBoard() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.bingo.current() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.bingo.all });
     },
   });
 }
@@ -81,6 +104,7 @@ export function useUpdateBingoPartner() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.bingo.current() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.bingo.partners() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.bingo.all });
     },
   });
 }
@@ -105,6 +129,7 @@ export function useUpdateBingoWeeklyRecording() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.bingo.current() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.bingo.all });
     },
   });
 }

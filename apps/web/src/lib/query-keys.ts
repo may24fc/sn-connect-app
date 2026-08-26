@@ -682,6 +682,8 @@ export const queryKeys = {
     all: ['bingo'] as const,
     current: () => [...queryKeys.bingo.all, 'current'] as const,
     partners: () => [...queryKeys.bingo.all, 'partners'] as const,
+    adminSummary: (cycleId: string | null) =>
+      [...queryKeys.bingo.all, 'admin-summary', cycleId ?? 'current'] as const,
   },
 
   gamification: {

@@ -68,6 +68,7 @@ export interface BingoAdminPartnershipSummary {
 }
 
 export interface WellnessBingoSnapshot {
+  isAdminViewer: boolean;
   cycle: BingoCycleSummary;
   activeWeek: BingoWeekSummary;
   board: BingoBoardSummary;
@@ -78,6 +79,14 @@ export interface WellnessBingoSnapshot {
   personalScore: BingoScoreSummary;
   partnerScore: BingoScoreSummary | null;
   combinedScore: number;
+  adminWeeklyRecordings: Array<BingoAdminWeeklyRecordingSummary>;
+  adminPartnershipSummaries: Array<BingoAdminPartnershipSummary>;
+}
+
+export interface BingoAdminCycleSnapshot {
+  cycle: BingoCycleSummary;
+  activeWeek: BingoWeekSummary;
+  availableCycles: Array<BingoCycleSummary>;
   adminWeeklyRecordings: Array<BingoAdminWeeklyRecordingSummary>;
   adminPartnershipSummaries: Array<BingoAdminPartnershipSummary>;
 }
@@ -405,15 +414,17 @@ export async function buildWellnessBingoSnapshot(
     partner = profiles[0] ?? null;
   }
 
-  const adminWeeklyRecordings = isAdminRole(requesterRole)
+  const isAdminViewer = isAdminRole(requesterRole);
+  const adminWeeklyRecordings = isAdminViewer
     ? await fetchAdminWeeklyRecordings(adminClient, cycle.id)
     : [];
 
-  const adminPartnershipSummaries = isAdminRole(requesterRole)
+  const adminPartnershipSummaries = isAdminViewer
     ? await fetchAdminPartnershipSummaries(adminClient, cycle)
     : [];
 
   return {
+    isAdminViewer,
     cycle,
     activeWeek,
     board: {
@@ -431,6 +442,83 @@ export async function buildWellnessBingoSnapshot(
     adminWeeklyRecordings,
     adminPartnershipSummaries,
   } satisfies WellnessBingoSnapshot;
+}
+
+export async function buildBingoAdminCycleSnapshot(
+  adminClient: ReturnType<typeof createSupabaseAdminClient>,
+  selectedCycleId?: string | null
+): Promise<BingoAdminCycleSnapshot> {
+  const activeCycle = await resolveActiveCycle(adminClient);
+  const selectedCycle = selectedCycleId
+    ? await findCycleById(adminClient, selectedCycleId)
+    : activeCycle;
+
+  if (!selectedCycle) {
+    throw new Error('Selected wellness bingo cycle was not found');
+  }
+
+  const availableCycles = await listBingoCycles(adminClient);
+  const activeWeek = getActiveWeekSummary(selectedCycle);
+  const [adminWeeklyRecordings, adminPartnershipSummaries] = await Promise.all([
+    fetchAdminWeeklyRecordings(adminClient, selectedCycle.id),
+    fetchAdminPartnershipSummaries(adminClient, selectedCycle),
+  ]);
+
+  return {
+    cycle: selectedCycle,
+    activeWeek,
+    availableCycles,
+    adminWeeklyRecordings,
+    adminPartnershipSummaries,
+  } satisfies BingoAdminCycleSnapshot;
+}
+
+async function listBingoCycles(adminClient: ReturnType<typeof createSupabaseAdminClient>) {
+  const { data, error } = await adminClient
+    .from('wellness_bingo_cycles')
+    .select('id, title, description, start_date, end_date')
+    .is('deleted_at', null)
+    .order('start_date', { ascending: false });
+
+  if (error) {
+    throw new Error('Failed to fetch wellness bingo cycles');
+  }
+
+  return (data ?? []).map((cycle) => ({
+    id: cycle.id,
+    title: cycle.title,
+    description: cycle.description,
+    startDate: cycle.start_date,
+    endDate: cycle.end_date,
+  })) satisfies Array<BingoCycleSummary>;
+}
+
+async function findCycleById(
+  adminClient: ReturnType<typeof createSupabaseAdminClient>,
+  cycleId: string
+) {
+  const { data, error } = await adminClient
+    .from('wellness_bingo_cycles')
+    .select('id, title, description, start_date, end_date')
+    .eq('id', cycleId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error('Failed to fetch selected wellness bingo cycle');
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return {
+    id: data.id,
+    title: data.title,
+    description: data.description,
+    startDate: data.start_date,
+    endDate: data.end_date,
+  } satisfies BingoCycleSummary;
 }
 
 export function normalizePartnershipUsers(userId: string, partnerUserId: string) {
