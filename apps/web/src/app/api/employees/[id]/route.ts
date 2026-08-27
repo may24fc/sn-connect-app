@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { resolveDepartmentById, resolveDivisionById } from '@/app/api/users/_organization';
 
 const employeePatchSchema = z.object({
+  first_name: z.string().trim().min(1).nullable().optional(),
+  last_name: z.string().trim().min(1).nullable().optional(),
   departmentId: z.string().uuid().nullable().optional(),
   divisionId: z.string().uuid().nullable().optional(),
   department: z.string().optional(),
@@ -105,6 +107,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     // Admin-only fields require role check
     const adminOnlyFields = [
+      'first_name',
+      'last_name',
       'department',
       'departmentId',
       'division',
@@ -139,12 +143,20 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       immediate_head?: string | null;
     } = {};
 
+    if (typeof body.first_name !== 'undefined') {
+      updates.first_name = body.first_name as Employee['first_name'];
+    }
+
+    if (typeof body.last_name !== 'undefined') {
+      updates.last_name = body.last_name as Employee['last_name'];
+    }
+
     if (typeof body.position !== 'undefined') {
-      updates.position = body.position;
+      updates.position = body.position as Employee['position'];
     }
 
     if (typeof body.date_hired !== 'undefined') {
-      updates.date_hired = body.date_hired;
+      updates.date_hired = body.date_hired as Employee['date_hired'];
     }
 
     if (typeof body.employment_type !== 'undefined') {
@@ -152,7 +164,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     if (typeof body.immediate_head !== 'undefined') {
-      updates.immediate_head = body.immediate_head;
+      updates.immediate_head = body.immediate_head as Employee['immediate_head'];
     }
 
     let resolvedDepartmentId: string | null | undefined;

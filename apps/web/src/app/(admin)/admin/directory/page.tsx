@@ -150,6 +150,8 @@ export default function AdminDirectoryPage(): ReactNode {
   // Edit employee state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [employeeToEdit, setEmployeeToEdit] = useState<DirectoryEntry | null>(null);
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
   const [editDepartment, setEditDepartment] = useState('');
   const [editDivision, setEditDivision] = useState('');
   const [editPosition, setEditPosition] = useState('');
@@ -258,6 +260,8 @@ export default function AdminDirectoryPage(): ReactNode {
     }: {
       employeeId: string;
       data: {
+        first_name?: string | null;
+        last_name?: string | null;
         departmentId?: string | null;
         divisionId?: string | null;
         position?: string;
@@ -304,6 +308,8 @@ export default function AdminDirectoryPage(): ReactNode {
 
   const handleEditClick = (entry: DirectoryEntry) => {
     setEmployeeToEdit(entry);
+    setEditFirstName(entry.first_name || '');
+    setEditLastName(entry.last_name || '');
     setEditDepartment(entry.department_id || '');
     setEditDivision(entry.division_id || '');
     setEditPosition(entry.position || '');
@@ -320,6 +326,8 @@ export default function AdminDirectoryPage(): ReactNode {
   const closeEditDialog = () => {
     setEditDialogOpen(false);
     setEmployeeToEdit(null);
+    setEditFirstName('');
+    setEditLastName('');
     setEditDepartment('');
     setEditDivision('');
     setEditPosition('');
@@ -335,6 +343,16 @@ export default function AdminDirectoryPage(): ReactNode {
   const handleEditSubmit = () => {
     if (!employeeToEdit?.employee_id) return;
 
+    if (!editFirstName.trim()) {
+      addToast({ title: 'First name is required', variant: 'error' });
+      return;
+    }
+
+    if (!editLastName.trim()) {
+      addToast({ title: 'Surname is required', variant: 'error' });
+      return;
+    }
+
     if (!editDepartment) {
       addToast({ title: 'Department is required', variant: 'error' });
       return;
@@ -348,6 +366,8 @@ export default function AdminDirectoryPage(): ReactNode {
     updateEmployeeMutation.mutate({
       employeeId: employeeToEdit.employee_id,
       data: {
+        first_name: editFirstName.trim(),
+        last_name: editLastName.trim(),
         departmentId: editDepartment,
         divisionId: editDivision,
         position: editPosition,
@@ -1054,6 +1074,24 @@ export default function AdminDirectoryPage(): ReactNode {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-first-name">First Name</Label>
+              <Input
+                id="edit-first-name"
+                value={editFirstName}
+                onChange={(event) => setEditFirstName(event.target.value)}
+                placeholder="Enter first name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-last-name">Surname</Label>
+              <Input
+                id="edit-last-name"
+                value={editLastName}
+                onChange={(event) => setEditLastName(event.target.value)}
+                placeholder="Enter surname"
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="edit-department">Department</Label>
               <Select
