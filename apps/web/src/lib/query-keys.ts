@@ -367,6 +367,12 @@ export const queryKeys = {
       [...queryKeys.aiKnowledge.conversationsList(), id, 'messages'] as const,
   },
 
+  aiSpending: {
+    all: ['ai-spending'] as const,
+    access: () => [...queryKeys.aiSpending.all, 'access'] as const,
+    accessGrants: () => [...queryKeys.aiSpending.all, 'access-grants'] as const,
+  },
+
   // Dashboard
   dashboard: {
     all: ['dashboard'] as const,

@@ -60,6 +60,7 @@ export interface SidebarProps {
   showMarketingAdSpendAccess?: boolean;
   showRevenueForecastAccess?: boolean;
   showExpenseDeskAccess?: boolean;
+  showAiSpendingAccess?: boolean;
 }
 
 const employeeAtsNavItems: Array<NavItem> = [
@@ -78,6 +79,7 @@ const employeeNavItems: Array<NavItem> = [
   { label: 'Evaluations', href: '/performance/self-evaluation', icon: FileText },
   { label: 'Invoice', href: '/invoice', icon: Receipt },
   { label: 'Expenses', href: '/expenses', icon: Receipt },
+  { label: 'AI Spending', href: '/ai-spending', icon: Sparkles },
   { label: 'Expenses Desk', href: '/expenses/desk', icon: Receipt },
   { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Tickets', href: '/tickets', icon: LifeBuoy },
@@ -99,6 +101,7 @@ const internNavItems: Array<NavItem> = [
   { label: 'Company Leaderboard', href: '/leaderboard', icon: Trophy },
   { label: 'Evaluations', href: '/performance/self-evaluation', icon: FileText },
   { label: 'Expenses', href: '/expenses', icon: Receipt },
+  { label: 'AI Spending', href: '/ai-spending', icon: Sparkles },
   { label: 'Expenses Desk', href: '/expenses/desk', icon: Receipt },
   { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Tickets', href: '/tickets', icon: LifeBuoy },
@@ -130,6 +133,7 @@ const adminNavItems: Array<NavItem> = [
   },
   { label: 'Recruitment', href: '/admin/recruitment', icon: Briefcase },
   { label: 'Jobs', href: '/admin/jobs', icon: Briefcase },
+  { label: 'AI Spending', href: '/ai-spending', icon: Sparkles },
   { label: 'AI Knowledge', href: '/admin/ai-knowledge', icon: Sparkles },
   { label: 'Resources', href: '/admin/resources', icon: Library },
   { label: 'Calendar', href: '/admin/calendar', icon: Calendar },
@@ -160,6 +164,7 @@ const superAdminNavItems: Array<NavItem> = [
   },
   { label: 'Task Management', href: '/super-admin/tasks', icon: CheckSquare },
   { label: 'Payroll Approvals', href: '/super-admin/payroll-approvals', icon: FileCheck },
+  { label: 'AI Spending', href: '/ai-spending', icon: Sparkles },
   { label: 'AI Knowledge', href: '/super-admin/ai-knowledge', icon: Sparkles },
   { label: 'Resources', href: '/super-admin/resources', icon: Library },
   { label: 'Calendar', href: '/super-admin/calendar', icon: Calendar },
@@ -234,6 +239,7 @@ const adminSectionConfig: ReadonlyArray<{ title: string; hrefs: ReadonlyArray<st
       '/admin/crm',
       '/super-admin/revenue-forecast',
       '/admin/expenses',
+      '/ai-spending',
       '/admin/invoice',
       '/super-admin/payroll-approvals',
     ],
@@ -299,6 +305,7 @@ export function Sidebar({
   showMarketingAdSpendAccess = false,
   showRevenueForecastAccess = false,
   showExpenseDeskAccess = true,
+  showAiSpendingAccess = true,
 }: SidebarProps): React.ReactNode {
   const baseNavItems =
     variant === 'employee'
@@ -326,6 +333,14 @@ export function Sidebar({
       (variant === 'employee' || variant === 'associate') &&
       !showExpenseDeskAccess &&
       item.href === '/expenses/desk'
+    ) {
+      return false;
+    }
+
+    if (
+      (variant === 'employee' || variant === 'associate') &&
+      !showAiSpendingAccess &&
+      item.href === '/ai-spending'
     ) {
       return false;
     }

@@ -5,6 +5,7 @@ import { TourProvider, useTour } from '@/components/TourProvider';
 import { type UserRoleType, useAuth, useRequireAuth } from '@/contexts/AuthContext';
 import { useAIChat } from '@/hooks/useAIChat';
 import { useAIChatSuggestions } from '@/hooks/useAIChatSuggestions';
+import { useAiSpendingAccess } from '@/hooks/useAiSpendingAccess';
 import { useAtsAccess } from '@/hooks/useAtsAccess';
 import { usePaTaskAccess } from '@/hooks/usePaTaskAccess';
 import {
@@ -141,6 +142,7 @@ function SelfServiceLayoutInner({
   const { startTour, currentGroup } = useTour();
   const { theme, setTheme } = useTheme();
   const marketingReportsAccess = useMarketingReportsAccess();
+  const aiSpendingAccess = useAiSpendingAccess(user.role === 'employee' || user.role === 'associate');
   const atsAccess = useAtsAccess(user.role === 'employee' || user.role === 'associate');
   const crmAccess = useCrmAccess(user.role === 'employee' || user.role === 'associate');
   const paTaskAccess = usePaTaskAccess(
@@ -180,6 +182,7 @@ function SelfServiceLayoutInner({
             expensesAccess.capabilities.canViewDeskGlobal ||
             expensesAccess.capabilities.canViewDeskDepartment
           }
+          showAiSpendingAccess={Boolean(aiSpendingAccess.data?.canAccess)}
         />
       </div>
 
@@ -212,6 +215,7 @@ function SelfServiceLayoutInner({
                 expensesAccess.capabilities.canViewDeskGlobal ||
                 expensesAccess.capabilities.canViewDeskDepartment
               }
+              showAiSpendingAccess={Boolean(aiSpendingAccess.data?.canAccess)}
             />
           </div>
         </div>
