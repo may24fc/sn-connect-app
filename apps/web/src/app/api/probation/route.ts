@@ -24,6 +24,19 @@ function daysBetweenToday(dateValue: string): number {
   return Math.ceil(ms / (1000 * 60 * 60 * 24));
 }
 
+function parseIsoDateOnly(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+  return match ? match[1] : null;
+}
+
+function addDaysToDateOnly(dateOnly: string, days: number): string {
+  const [year, month, day] = dateOnly.split('-').map((part) => Number(part));
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
 function getStage(dateHired: string, probationEndDate: string): 1 | 2 | 3 | 4 {
   const start = new Date(dateHired);
   const end = new Date(probationEndDate);
@@ -95,11 +108,12 @@ export async function GET() {
     }
 
     const employeeIds = activeEmployees.map((employee: any) => employee.id);
+    const userIds = activeEmployees.map((employee: any) => employee.user_id).filter(Boolean);
     const managerIds = Array.from(
       new Set(activeEmployees.map((employee: any) => employee.immediate_head).filter(Boolean))
     );
 
-    const [{ data: okrs }, { data: kpis }, { data: documents }, { data: activeCycle }] =
+    const [{ data: okrs }, { data: kpis }, { data: documents }, { data: activeCycle }, { data: roleMetadataRows }] =
       await Promise.all([
         supabaseAdmin
           .from('okrs')
@@ -119,6 +133,13 @@ export async function GET() {
           .order('start_date', { ascending: false })
           .limit(1)
           .maybeSingle(),
+        userIds.length > 0
+          ? supabaseAdmin
+              .from('user_role_metadata')
+              .select('user_id, role_type, metadata')
+              .in('user_id', userIds)
+              .eq('role_type', 'other')
+          : Promise.resolve({ data: [] }),
       ]);
 
     const { data: managerEmployees } =
@@ -157,12 +178,40 @@ export async function GET() {
     }
 
     const currentCycleId = activeCycle?.id ?? null;
+    const roleMetadataByUserId = new Map(
+      (roleMetadataRows || []).map((row: any) => [row.user_id, row.metadata ?? {}])
+    );
 
     const data = activeEmployees.map((employee: any) => {
-      const daysRemaining = daysBetweenToday(employee.probation_end_date);
-      const baselineEnd = new Date(employee.date_hired);
+      const roleMetadata = roleMetadataByUserId.get(employee.user_id) as Record<string, unknown> | undefined;
+      const convertedFromAssociate = roleMetadata?.converted_from === 'associate';
+      const metadataHiredDate = parseIsoDateOnly(roleMetadata?.hired_date) || parseIsoDateOnly(roleMetadata?.converted_at);
+      const metadataProbationEndDate = parseIsoDateOnly(roleMetadata?.probation_end_date);
+
+      const effectiveDateHired =
+        convertedFromAssociate && metadataHiredDate
+          ? metadataHiredDate
+          : employee.date_hired;
+
+      let effectiveProbationEndDate = employee.probation_end_date;
+      if (convertedFromAssociate && metadataProbationEndDate) {
+        effectiveProbationEndDate = metadataProbationEndDate;
+      }
+
+      if (effectiveDateHired && effectiveProbationEndDate) {
+        if (new Date(effectiveProbationEndDate) <= new Date(effectiveDateHired)) {
+          effectiveProbationEndDate = addDaysToDateOnly(effectiveDateHired, 90);
+        }
+      }
+
+      if (!effectiveDateHired || !effectiveProbationEndDate) {
+        return null;
+      }
+
+      const daysRemaining = daysBetweenToday(effectiveProbationEndDate);
+      const baselineEnd = new Date(effectiveDateHired);
       baselineEnd.setDate(baselineEnd.getDate() + 90);
-      const isExtended = new Date(employee.probation_end_date) > baselineEnd;
+      const isExtended = new Date(effectiveProbationEndDate) > baselineEnd;
 
       const computedStatus =
         daysRemaining <= 0
@@ -218,9 +267,9 @@ export async function GET() {
         avatarUrl: employee.users?.avatar_url ?? null,
         department: employee.department,
         position: employee.position,
-        startDate: employee.date_hired,
-        probationEndDate: employee.probation_end_date,
-        stage: getStage(employee.date_hired, employee.probation_end_date),
+        startDate: effectiveDateHired,
+        probationEndDate: effectiveProbationEndDate,
+        stage: getStage(effectiveDateHired, effectiveProbationEndDate),
         status,
         daysRemaining: Math.max(0, daysRemaining),
         manager: managerMap.get(employee.immediate_head) || 'Unassigned',
@@ -229,7 +278,7 @@ export async function GET() {
         okrs: employeeOkrs,
         kpis: employeeKpis,
       };
-    });
+    }).filter((employee): employee is NonNullable<typeof employee> => employee !== null);
 
     return NextResponse.json({ data });
   } catch (error) {

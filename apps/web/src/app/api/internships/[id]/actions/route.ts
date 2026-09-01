@@ -19,6 +19,45 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
+function todayInPhDate(): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+
+  const year = parts.find((part) => part.type === 'year')?.value;
+  const month = parts.find((part) => part.type === 'month')?.value;
+  const day = parts.find((part) => part.type === 'day')?.value;
+
+  if (!(year && month && day)) {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  return `${year}-${month}-${day}`;
+}
+
+function addDaysToDateOnly(dateOnly: string, days: number): string {
+  const parts = dateOnly.split('-');
+  if (parts.length !== 3) {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  const [yearPart, monthPart, dayPart] = parts as [string, string, string];
+  const year = Number(yearPart);
+  const month = Number(monthPart);
+  const day = Number(dayPart);
+
+  if (![year, month, day].every((value) => Number.isFinite(value))) {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  const utcDate = new Date(Date.UTC(year, month - 1, day));
+  utcDate.setUTCDate(utcDate.getUTCDate() + days);
+  return utcDate.toISOString().slice(0, 10);
+}
+
 function toInternshipRecord(value: Record<string, unknown>): InternshipRecord | null {
   const internshipId = value.id;
   const employeeId = value.employee_id;
@@ -150,6 +189,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const typedEmployee = employee as EmployeeRecord;
 
+    const hiredDate = todayInPhDate();
+    const probationEndDate = addDaysToDateOnly(hiredDate, 90);
+
     const [{ error: convertError }, { error: userRoleError }, { error: employmentTypeError }, { error: authUpdateError }] =
       await Promise.all([
         adminClient
@@ -164,7 +206,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           .is('deleted_at', null),
         adminClient
           .from('employees')
-          .update({ employment_type: 'probationary', updated_at: nowIso() })
+          .update({
+            employment_type: 'probationary',
+            date_hired: hiredDate,
+            probation_end_date: probationEndDate,
+            manual_probation_status: null,
+            updated_at: nowIso(),
+          })
           .eq('id', typedEmployee.id)
           .is('deleted_at', null),
         adminClient.auth.admin.updateUserById(typedEmployee.user_id, {
@@ -202,6 +250,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       converted_from: 'associate',
       internship_id: id,
       employment_type: 'probationary',
+      hired_date: hiredDate,
+      probation_end_date: probationEndDate,
       converted_at: nowIso(),
     };
 
@@ -231,11 +281,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         internship_status: 'converted',
         user_role: 'employee',
         employment_type: 'probationary',
+        hired_date: hiredDate,
+        probation_end_date: probationEndDate,
       },
       metadata: {
         internshipId: id,
         employeeId: typedEmployee.id,
         userId: typedEmployee.user_id,
+        hiredDate,
+        probationEndDate,
       },
       performed_by: user.id,
     });
@@ -248,6 +302,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         employeeId: typedEmployee.id,
         userRole: 'employee',
         employmentType: 'probationary',
+        hiredDate,
+        probationEndDate,
       },
     });
   } catch (error) {

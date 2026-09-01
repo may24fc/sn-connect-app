@@ -84,7 +84,6 @@ import {
   Search,
   RotateCcw,
   Star,
-  ThumbsUp,
   Trash2,
   TrendingUp,
   UserPlus,

@@ -526,6 +526,10 @@ export function useUpdateInternship() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.internships.detail(variables.internshipId),
       });
+      queryClient.invalidateQueries({ queryKey: queryKeys.employees.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.probation.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.directory.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.milestones.all });
     },
   });
 }

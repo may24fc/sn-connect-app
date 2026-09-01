@@ -1116,11 +1116,6 @@ export default function EmployeeManagementPage(): ReactNode {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem
-                                    onClick={() => openEmployeeProbationFromRecord(emp, 'employee-assignment')}
-                                  >
-                                    Edit assignment
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
                                     onClick={() => openEmployeeProbationFromRecord(emp, 'employee-probation')}
                                   >
                                     Edit probation
@@ -1236,11 +1231,6 @@ export default function EmployeeManagementPage(): ReactNode {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => openEmployeeProbationFromRecord(emp, 'employee-assignment')}
-                              >
-                                Edit assignment
-                              </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => openEmployeeProbationFromRecord(emp, 'employee-probation')}
                               >
