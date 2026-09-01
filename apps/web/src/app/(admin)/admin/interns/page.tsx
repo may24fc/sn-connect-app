@@ -1762,27 +1762,21 @@ export default function AdminInternsPage(): ReactNode {
                 
               </CardTitle>
               <CardDescription>
-                Monitor daily reports submitted by interns. Pending approvals require supervisor
-                review.
+                Monitor daily reports submitted by associates.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {/* Summary Stats */}
-                <StatCardGrid columns={3}>
+                <StatCardGrid columns={2}>
                   <StatCard
                     label="Total Reports"
                     value={dailyLogs.length}
                     icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
                   />
                   <StatCard
-                    label="Pending Approval"
-                    value={dailyLogs.filter((log) => !log.is_approved).length}
-                    icon={<Clock className="h-4 w-4" strokeWidth={1.5} />}
-                  />
-                  <StatCard
-                    label="Approved"
-                    value={dailyLogs.filter((log) => log.is_approved).length}
+                    label="Total Hours Logged"
+                    value={dailyLogs.reduce((sum, log) => sum + Number(log.hours_worked || 0), 0)}
                     icon={<CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />}
                   />
                 </StatCardGrid>
@@ -1796,7 +1790,6 @@ export default function AdminInternsPage(): ReactNode {
                       <SortableTableHead column="school" {...eodSortHeadProps}>School</SortableTableHead>
                       <SortableTableHead column="department" {...eodSortHeadProps}>Department</SortableTableHead>
                       <SortableTableHead column="hours" {...eodSortHeadProps}>Hours</SortableTableHead>
-                      <SortableTableHead column="status" {...eodSortHeadProps}>Status</SortableTableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1850,19 +1843,6 @@ export default function AdminInternsPage(): ReactNode {
                                 <span className="font-medium">{log.hours_worked}h</span>
                               </div>
                             </TableCell>
-                            <TableCell>
-                              {log.is_approved ? (
-                                <Badge variant="success" className="flex items-center gap-1 w-fit">
-                                  <ThumbsUp className="h-3 w-3" />
-                                  Approved
-                                </Badge>
-                              ) : (
-                                <Badge variant="warning" className="flex items-center gap-1 w-fit">
-                                  <Clock className="h-3 w-3" />
-                                  Pending
-                                </Badge>
-                              )}
-                            </TableCell>
                             <TableCell className="text-right">
                               <Button
                                 variant="ghost"
@@ -1878,7 +1858,7 @@ export default function AdminInternsPage(): ReactNode {
                       })
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={7} className="py-12">
+                        <TableCell colSpan={6} className="py-12">
                           <EmptyState
                             icon={FileText}
                             title="No daily reports found"
