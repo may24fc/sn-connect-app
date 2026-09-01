@@ -141,6 +141,12 @@ export async function POST(request: NextRequest) {
           end_date: endDate,
           required_hours: requiredHours,
           weekly_required_hours: weeklyRequiredHours,
+          status: 'active',
+          department: resolvedDepartment.name,
+          division: resolvedDivision.name,
+          school: school || null,
+          program: program || null,
+          updated_at: new Date().toISOString(),
         })
         .eq('id', existingInternship.id);
 

@@ -29,6 +29,7 @@ const PUBLIC_ROUTES = new Set([
   '/forgot-password',
   '/forgot-password/confirmation',
   '/reset-password',
+  '/account-disabled',
 ]);
 
 // Prefixes that are always public (auth callback, API health, static assets).

@@ -66,23 +66,7 @@ const AuthContext = React.createContext<AuthContextValue | undefined>(undefined)
 const AUTH_TIMEOUT_MS = 12000;
 
 function getHomeRedirectPath(user: Pick<User, 'role' | 'status'>): string {
-  const statusRedirect = getAuthenticatedHomeRedirect(user.role, user.status);
-  if (statusRedirect === '/onboarding/setup' || statusRedirect === '/onboarding/awaiting-approval') {
-    return statusRedirect;
-  }
-
-  switch (user.role) {
-    case 'employee':
-      return '/dashboard';
-    case 'associate':
-      return '/associate/dashboard';
-    case 'admin':
-      return '/admin/dashboard';
-    case 'super_admin':
-      return '/super-admin/dashboard';
-    default:
-      return '/dashboard';
-  }
+  return getAuthenticatedHomeRedirect(user.role, user.status);
 }
 
 async function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
@@ -689,11 +673,18 @@ export function useRequireAuth(allowedRoles?: Array<UserRoleType>): User | null 
   React.useEffect(() => {
     const currentPath =
       typeof window !== 'undefined' ? window.location.pathname : '';
+    const isAccountDisabledRoute = currentPath === '/account-disabled';
     const isOnboardingRoute = currentPath.startsWith('/onboarding/');
+    const isDisabledAccount = user?.status === 'terminated' || user?.status === 'inactive';
     const canAccessOnboardingDuringPendingState =
       isOnboardingRoute &&
       user &&
       (user.status === 'pending_onboarding' || user.status === 'awaiting_approval');
+
+    if (user && isDisabledAccount && !isAccountDisabledRoute) {
+      router.replace('/account-disabled');
+      return;
+    }
 
     if (!(isLoading || user)) {
       // If we previously had a valid user but now don't, this is likely a

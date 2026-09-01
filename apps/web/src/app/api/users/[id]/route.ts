@@ -127,13 +127,44 @@ export async function PATCH(
       return NextResponse.json({ error: 'Failed to update user status' }, { status: 500 });
     }
 
-    // When restoring a terminated employee, clear the termination date
+    // When restoring a terminated employee/associate, clear the termination date
+    // and re-activate the latest terminated internship (if no active one exists).
     if (newStatus === 'active') {
-      await adminClient
+      const { data: restoredEmployee } = await adminClient
         .from('employees')
         .update({ date_terminated: null })
         .eq('user_id', id)
-        .is('deleted_at', null);
+        .is('deleted_at', null)
+        .select('id')
+        .maybeSingle();
+
+      if (targetUser.role === 'associate' && restoredEmployee?.id) {
+        const { data: activeInternship } = await adminClient
+          .from('internships')
+          .select('id')
+          .eq('employee_id', restoredEmployee.id)
+          .eq('status', 'active')
+          .limit(1)
+          .maybeSingle();
+
+        if (!activeInternship) {
+          const { data: latestTerminatedInternship } = await adminClient
+            .from('internships')
+            .select('id')
+            .eq('employee_id', restoredEmployee.id)
+            .eq('status', 'terminated')
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (latestTerminatedInternship?.id) {
+            await adminClient
+              .from('internships')
+              .update({ status: 'active', updated_at: new Date().toISOString() })
+              .eq('id', latestTerminatedInternship.id);
+          }
+        }
+      }
     }
 
     const auditAction = newStatus === 'active' ? 'restore_user' : 'deactivate_user';

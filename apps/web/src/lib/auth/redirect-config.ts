@@ -197,6 +197,10 @@ export function getAuthenticatedHomeRedirect(
   status?: string | null,
   returnTo?: string | null
 ): string {
+  if (status === 'terminated' || status === 'inactive') {
+    return '/account-disabled';
+  }
+
   if (status === 'pending_onboarding') {
     return '/onboarding/setup';
   }

@@ -1013,7 +1013,7 @@ export default function AdminInternsPage(): ReactNode {
 
           {/* Interns Header */}
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Interns ({filteredInterns.length})</h2>
+            <h2 className="text-lg font-semibold">Associates ({filteredInterns.length})</h2>
             <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
               <button
                 type="button"
