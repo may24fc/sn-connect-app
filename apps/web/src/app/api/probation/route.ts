@@ -27,12 +27,28 @@ function daysBetweenToday(dateValue: string): number {
 function parseIsoDateOnly(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
-  return match ? match[1] : null;
+  return match?.[1] ?? null;
 }
 
 function addDaysToDateOnly(dateOnly: string, days: number): string {
-  const [year, month, day] = dateOnly.split('-').map((part) => Number(part));
+  const [yearPart, monthPart, dayPart] = dateOnly.split('-');
+  if (!yearPart || !monthPart || !dayPart) {
+    return dateOnly;
+  }
+
+  const year = Number(yearPart);
+  const month = Number(monthPart);
+  const day = Number(dayPart);
+
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+    return dateOnly;
+  }
+
   const date = new Date(Date.UTC(year, month - 1, day));
+  if (Number.isNaN(date.getTime())) {
+    return dateOnly;
+  }
+
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
 }

@@ -1,5 +1,5 @@
 import { getAuthenticatedHomeRedirect } from '@/lib/auth/redirect-config';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseServerClient, hasSupabaseAuthEnv } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 
@@ -9,6 +9,10 @@ interface UserRoleRecord {
 }
 
 export default async function Home(): Promise<ReactNode> {
+  if (!hasSupabaseAuthEnv()) {
+    redirect('/login');
+  }
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },

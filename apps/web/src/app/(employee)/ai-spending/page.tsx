@@ -803,13 +803,13 @@ export default function AiSpendingPage() {
       </Tabs>
 
       <Dialog open={isManualEntryDialogOpen} onOpenChange={handleManualEntryDialogOpenChange}>
-        <DialogContent className="max-h-[85vh] max-w-2xl overflow-hidden">
+        <DialogContent className="flex max-h-[85vh] max-w-2xl flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle>{editingId ? 'Edit manual entry' : 'Add manual entry'}</DialogTitle>
             <DialogDescription>Submit your own AI expense records.</DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 overflow-y-auto pr-1">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground" htmlFor="provider">
                 AI Provider
@@ -975,14 +975,15 @@ export default function AiSpendingPage() {
               />
             </div>
 
-            <div className="flex gap-3 pt-2">
-              <Button type="button" onClick={submitEntry} disabled={isMutating} className="flex-1">
-                {isMutating ? 'Saving...' : editingId ? 'Update entry' : 'Save entry'}
-              </Button>
-              <Button type="button" variant="outline" onClick={() => setIsManualEntryDialogOpen(false)}>
-                Cancel
-              </Button>
-            </div>
+          </div>
+
+          <div className="flex gap-3 border-t border-border pt-4">
+            <Button type="button" onClick={submitEntry} disabled={isMutating} className="flex-1">
+              {isMutating ? 'Saving...' : editingId ? 'Update entry' : 'Save entry'}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setIsManualEntryDialogOpen(false)}>
+              Cancel
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
