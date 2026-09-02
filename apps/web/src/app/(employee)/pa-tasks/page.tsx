@@ -1742,12 +1742,12 @@ export default function PaTasksPage() {
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-1.5">
-                      <Label>Due Date</Label>
-                      <Input type="date" value={editForm.dueDate} onChange={(e) => setEditForm((p) => ({ ...p, dueDate: e.target.value }))} />
-                    </div>
-                    <div className="space-y-1.5">
                       <Label>Date Given</Label>
                       <Input type="date" value={editForm.dateGiven} onChange={(e) => setEditForm((p) => ({ ...p, dateGiven: e.target.value }))} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Due Date</Label>
+                      <Input type="date" value={editForm.dueDate} onChange={(e) => setEditForm((p) => ({ ...p, dueDate: e.target.value }))} />
                     </div>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
