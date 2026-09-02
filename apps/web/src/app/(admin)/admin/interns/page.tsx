@@ -843,14 +843,6 @@ export default function AdminInternsPage(): ReactNode {
             <TabsTrigger value="onboarding">Onboarding Data</TabsTrigger>
             <TabsTrigger value="eod-reports">
               EOD Reports
-              {dailyLogs.filter((log) => !log.is_approved).length > 0 && (
-                <CountBadge
-                  className="ml-2"
-                  variant="danger"
-                  size="md"
-                  count={dailyLogs.filter((log) => !log.is_approved).length}
-                />
-              )}
             </TabsTrigger>
           </TabsList>
 

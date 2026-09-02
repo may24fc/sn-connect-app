@@ -1,6 +1,5 @@
 'use client';
 
-import { useUpdateInternDailyLog } from '@/hooks/useInternships';
 import type { InternDailyLog } from '@/hooks/useRealtimeInternDailyLogs';
 import {
   Avatar,
@@ -15,8 +14,6 @@ import {
   DialogTitle,
   Label,
   Separator,
-  Textarea,
-  useToast,
 } from '@hr-portal/ui';
 import {
   Calendar,
@@ -30,7 +27,7 @@ import {
   ThumbsUp,
   TriangleAlert,
 } from 'lucide-react';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode } from 'react';
 
 interface EODReportDetailModalProps {
   open: boolean;
@@ -63,11 +60,6 @@ export function EODReportDetailModal({
   onOpenChange,
   log,
 }: EODReportDetailModalProps): ReactNode {
-  const [supervisorNotes, setSupervisorNotes] = useState('');
-  const [isApproving, setIsApproving] = useState(false);
-  const updateLog = useUpdateInternDailyLog();
-  const { addToast, updateToast } = useToast();
-
   if (!log) return null;
 
   const internName = log.internship?.employee
@@ -84,43 +76,6 @@ export function EODReportDetailModal({
   const blockers = log.blockers ?? [];
   const nextSteps = log.next_steps ?? [];
   const attachments = log.attachments ?? [];
-
-  const handleApprove = async (): Promise<void> => {
-    setIsApproving(true);
-    const toastId = addToast({
-      title: 'Approving EOD report...',
-      description: 'Saving supervisor approval and notes.',
-      duration: 0,
-    });
-
-    try {
-      await updateLog.mutateAsync({
-        internshipId: log.internship_id,
-        logId: log.id,
-        isApproved: true,
-        ...(supervisorNotes.trim() ? { supervisorNotes: supervisorNotes.trim() } : {}),
-      });
-      updateToast(toastId, {
-        title: 'EOD report approved',
-        description: `${internName}'s report has been marked as approved.`,
-        variant: 'success',
-        duration: 3000,
-      });
-      setSupervisorNotes('');
-      onOpenChange(false);
-    } catch (error) {
-      updateToast(toastId, {
-        title: 'Unable to approve EOD report',
-        ...(error instanceof Error && error.message
-          ? { description: error.message }
-          : {}),
-        variant: 'error',
-        duration: 5000,
-      });
-    } finally {
-      setIsApproving(false);
-    }
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -311,50 +266,9 @@ export function EODReportDetailModal({
           </>
         )}
 
-        {/* Approval Section (only for pending reports) */}
-        {!log.is_approved && (
-          <>
-            <Separator />
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                <Label htmlFor="supervisor-notes" className="text-sm font-medium">
-                  Supervisor Notes (Optional)
-                </Label>
-              </div>
-              <Textarea
-                id="supervisor-notes"
-                placeholder="Add feedback or notes for this associate's report..."
-                value={supervisorNotes}
-                onChange={(e) => setSupervisorNotes(e.target.value)}
-                className="min-h-[80px] text-sm resize-none"
-              />
-            </div>
-          </>
-        )}
-
         <DialogFooter>
-          {!log.is_approved && (
-            <Button
-              variant="success"
-              onClick={handleApprove}
-              disabled={isApproving}
-            >
-              {isApproving ? (
-                <>
-                  <Clock className="mr-2 h-4 w-4 animate-spin" />
-                  Approving...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Approve Report
-                </>
-              )}
-            </Button>
-          )}
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {log.is_approved ? 'Close' : 'Cancel'}
+            Close
           </Button>
         </DialogFooter>
 

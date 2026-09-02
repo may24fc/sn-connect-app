@@ -41,6 +41,7 @@ import {
   TabsTrigger,
   useToast,
 } from '@hr-portal/ui';
+import { CalendarRange } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 const CURRENCY_OPTIONS: AiExpenseCurrency[] = [...AI_EXPENSE_CURRENCIES];
@@ -49,6 +50,7 @@ const SPEND_TYPE_OPTIONS: { value: AiSpendType; label: string }[] = [
   { value: 'subscription', label: 'Subscription' },
 ];
 const ENTRY_PAGE_SIZE_OPTIONS = [5, 10, 20, 50] as const;
+const PERIOD_START_YEAR = 2026;
 type ManualSpendTypeFilter = AiSpendType | 'all';
 
 function formatCurrency(amountCents: number, currency = 'AUD'): string {
@@ -92,6 +94,15 @@ export default function AiSpendingPage() {
   const { user } = useAuth();
   const { addToast } = useToast();
   const canManageAccess = user?.role === 'admin' || user?.role === 'super_admin';
+  const currentYear = new Date().getFullYear();
+  const latestPeriodYear = Math.max(currentYear, PERIOD_START_YEAR);
+  const periodOptions = [
+    { value: 'all', label: 'All-time' },
+    ...Array.from({ length: latestPeriodYear - PERIOD_START_YEAR + 1 }, (_, index) => {
+      const year = String(latestPeriodYear - index);
+      return { value: year, label: year };
+    }),
+  ];
 
   const providersQuery = useAiExpenseProviders();
   const expensesQuery = useAiExpenses();
@@ -108,6 +119,7 @@ export default function AiSpendingPage() {
   const [tab, setTab] = useState<'dashboard' | 'manual'>('dashboard');
   const [entryPage, setEntryPage] = useState(1);
   const [entryPageSize, setEntryPageSize] = useState<(typeof ENTRY_PAGE_SIZE_OPTIONS)[number]>(10);
+  const [selectedPeriod, setSelectedPeriod] = useState(String(latestPeriodYear));
   const [providerFilterId, setProviderFilterId] = useState('all');
   const [spendTypeFilter, setSpendTypeFilter] = useState<ManualSpendTypeFilter>('all');
   const [dateFromFilter, setDateFromFilter] = useState('');
@@ -131,14 +143,28 @@ export default function AiSpendingPage() {
     }
   }, [providers, form.providerId]);
 
+  const periodFilteredExpenses = useMemo(() => {
+    if (selectedPeriod === 'all') {
+      return expenses;
+    }
+
+    const periodYear = Number(selectedPeriod);
+    return expenses.filter((expense) => {
+      const date = new Date(`${expense.transaction_date}T00:00:00`);
+      return date.getFullYear() === periodYear;
+    });
+  }, [expenses, selectedPeriod]);
+
   const monthlyRows = useMemo(() => {
-    const now = new Date();
-    const year = now.getFullYear();
+    const selectedYear = selectedPeriod === 'all' ? null : Number(selectedPeriod);
 
     return Array.from({ length: 12 }, (_, monthIndex) => {
-      const monthEntries = expenses.filter((expense) => {
+      const monthEntries = periodFilteredExpenses.filter((expense) => {
         const date = new Date(`${expense.transaction_date}T00:00:00`);
-        return date.getFullYear() === year && date.getMonth() === monthIndex;
+        if (selectedYear !== null && date.getFullYear() !== selectedYear) {
+          return false;
+        }
+        return date.getMonth() === monthIndex;
       });
 
       const totalCents = monthEntries.reduce((sum, entry) => sum + entry.amount_cents, 0);
@@ -148,12 +174,12 @@ export default function AiSpendingPage() {
         totalCents,
       };
     });
-  }, [expenses]);
+  }, [periodFilteredExpenses, selectedPeriod]);
 
   const providerBreakdown = useMemo(() => {
     const byProvider = new Map<string, number>();
 
-    for (const expense of expenses) {
+    for (const expense of periodFilteredExpenses) {
       byProvider.set(expense.provider_id, (byProvider.get(expense.provider_id) ?? 0) + expense.amount_cents);
     }
 
@@ -162,25 +188,26 @@ export default function AiSpendingPage() {
         const provider = providers.find((entry) => entry.id === providerId);
         return {
           providerId,
-          providerName: provider?.name ?? expenseProviderName(expenses, providerId),
+          providerName: provider?.name ?? expenseProviderName(periodFilteredExpenses, providerId),
           totalCents,
         };
       })
       .sort((left, right) => right.totalCents - left.totalCents);
-  }, [providers, expenses]);
+  }, [providers, periodFilteredExpenses]);
 
   const dashboardTotals = useMemo(() => {
     const now = new Date();
     const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    const thisYear = now.getFullYear();
 
     let monthTotal = 0;
     let monthCount = 0;
     let yearlyTotal = 0;
+    const allTimeTotal = expenses.reduce((sum, expense) => sum + expense.amount_cents, 0);
 
-    for (const expense of expenses) {
+    for (const expense of periodFilteredExpenses) {
       const date = new Date(`${expense.transaction_date}T00:00:00`);
-      if (date.getFullYear() !== currentYear) {
+      if (selectedPeriod === 'all' ? date.getFullYear() !== thisYear : false) {
         continue;
       }
 
@@ -194,15 +221,31 @@ export default function AiSpendingPage() {
     return {
       monthTotal,
       monthCount,
-      yearlyTotal,
-      totalCount: expenses.length,
+      yearlyTotal: selectedPeriod === 'all' ? yearlyTotal : periodFilteredExpenses.reduce((sum, expense) => sum + expense.amount_cents, 0),
+      allTimeTotal,
     };
-  }, [expenses]);
+  }, [expenses, periodFilteredExpenses, selectedPeriod]);
+
+  const selectedPeriodYear = selectedPeriod === 'all' ? null : Number(selectedPeriod);
+  const isSelectedCurrentYear = selectedPeriodYear === currentYear;
+  const monthCardLabel =
+    selectedPeriod === 'all' || isSelectedCurrentYear
+      ? 'This month'
+      : new Date(Date.UTC(selectedPeriodYear ?? currentYear, new Date().getMonth(), 1)).toLocaleDateString('en-AU', {
+          month: 'long',
+          year: 'numeric',
+        });
+  const monthCardDescription =
+    selectedPeriod === 'all' || isSelectedCurrentYear
+      ? `${dashboardTotals.monthCount} entries this month.`
+      : `${dashboardTotals.monthCount} entries in ${monthCardLabel}.`;
+  const yearCardLabel = selectedPeriod === 'all' ? 'This year' : selectedPeriod;
+  const yearCardDescription = selectedPeriod === 'all' ? 'Year-to-date AI spend total.' : `AI spend total for ${selectedPeriod}.`;
 
   const filteredEntries = useMemo(() => {
     const search = searchFilter.trim().toLowerCase();
 
-    return expenses.filter((entry) => {
+    return periodFilteredExpenses.filter((entry) => {
       if (providerFilterId !== 'all' && entry.provider_id !== providerFilterId) {
         return false;
       }
@@ -233,7 +276,7 @@ export default function AiSpendingPage() {
         transactionId.includes(search)
       );
     });
-  }, [dateFromFilter, dateToFilter, expenses, providerFilterId, searchFilter, spendTypeFilter]);
+  }, [dateFromFilter, dateToFilter, periodFilteredExpenses, providerFilterId, searchFilter, spendTypeFilter]);
 
   const paginatedEntries = useMemo(() => {
     const start = (entryPage - 1) * entryPageSize;
@@ -254,7 +297,7 @@ export default function AiSpendingPage() {
 
   useEffect(() => {
     setEntryPage(1);
-  }, [providerFilterId, spendTypeFilter, dateFromFilter, dateToFilter, searchFilter]);
+  }, [selectedPeriod, providerFilterId, spendTypeFilter, dateFromFilter, dateToFilter, searchFilter]);
 
   function resetForm() {
     setEditingId(null);
@@ -480,6 +523,23 @@ export default function AiSpendingPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <label className="flex items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
+            <CalendarRange className="h-4 w-4" />
+            <span>Period</span>
+            <select
+              value={selectedPeriod}
+              onChange={(event) => setSelectedPeriod(event.target.value)}
+              className="bg-transparent font-medium outline-none"
+              aria-label="Select AI spending period"
+            >
+              {periodOptions.map((period) => (
+                <option key={period.value} value={period.value}>
+                  {period.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <Button type="button" variant="outline" size="sm" onClick={() => setIsProviderDialogOpen(true)}>
             Manage providers
           </Button>
@@ -505,31 +565,31 @@ export default function AiSpendingPage() {
           <div className="grid gap-4 md:grid-cols-4">
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription>This month</CardDescription>
+                <CardDescription>{monthCardLabel}</CardDescription>
                 <CardTitle>{formatCurrency(dashboardTotals.monthTotal, 'AUD')}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">{dashboardTotals.monthCount} entries this month.</p>
+                <p className="text-sm text-muted-foreground">{monthCardDescription}</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription>This year</CardDescription>
+                <CardDescription>{yearCardLabel}</CardDescription>
                 <CardTitle>{formatCurrency(dashboardTotals.yearlyTotal, 'AUD')}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">Year-to-date AI spend total.</p>
+                <p className="text-sm text-muted-foreground">{yearCardDescription}</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription>Total entries</CardDescription>
-                <CardTitle>{dashboardTotals.totalCount}</CardTitle>
+                <CardDescription>All-time spend</CardDescription>
+                <CardTitle>{formatCurrency(dashboardTotals.allTimeTotal, 'AUD')}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">All manual records in your history.</p>
+                <p className="text-sm text-muted-foreground">Total lifetime AI spending across all records.</p>
               </CardContent>
             </Card>
 
@@ -582,8 +642,10 @@ export default function AiSpendingPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Monthly spend (current year)</CardTitle>
-                <CardDescription>Tracks monthly totals and entry counts.</CardDescription>
+                <CardTitle className="text-base">{selectedPeriod === 'all' ? 'Monthly spend (all-time)' : `Monthly spend (${selectedPeriod})`}</CardTitle>
+                <CardDescription>
+                  {selectedPeriod === 'all' ? 'Tracks monthly totals across all years.' : 'Tracks monthly totals and entry counts.'}
+                </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
