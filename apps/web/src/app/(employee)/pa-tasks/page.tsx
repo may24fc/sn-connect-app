@@ -104,12 +104,13 @@ const ALLOWED_ATTACHMENT_MIME_TYPES = new Set([
 ]);
 const ATTACHMENT_CHIP_CLASS =
   'inline-flex max-w-full items-center gap-1 rounded-full border border-zinc-300 bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700';
-const DUE_STATUS_COL_CLASS = 'min-w-[130px] w-[130px] max-w-[130px]';
+const DUE_STATUS_COL_CLASS = 'min-w-[108px] w-[108px] max-w-[108px]';
 const STICKY_HEAD_CELL_CLASS = 'sticky top-0 z-30 bg-card';
 const STICKY_BODY_CELL_CLASS = 'sticky z-20 bg-card';
-const STICKY_DUE_COL_CLASS = 'left-0 min-w-[120px] w-[120px]';
-const STICKY_PRIORITY_COL_CLASS = 'left-[120px] min-w-[120px] w-[120px]';
-const STICKY_TASK_COL_CLASS = 'left-[240px] min-w-[370px] w-[370px] max-w-[370px] border-r border-border';
+const STICKY_DATE_GIVEN_COL_CLASS = 'left-0 min-w-[104px] w-[104px] max-w-[104px]';
+const STICKY_DUE_COL_CLASS = 'left-[104px] min-w-[104px] w-[104px] max-w-[104px]';
+const STICKY_PRIORITY_COL_CLASS = 'left-[208px] min-w-[92px] w-[92px] max-w-[92px]';
+const STICKY_TASK_COL_CLASS = 'left-[300px] min-w-[370px] w-[370px] max-w-[370px] border-r border-border';
 
 function colorClass(color: PaTaskLookupColor) {
   const map: Record<PaTaskLookupColor, string> = {
@@ -826,20 +827,20 @@ export default function PaTasksPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>Due Date</Label>
-              <Input
-                type="date"
-                value={quickAddForm.dueDate}
-                onChange={(event) => setQuickAddForm((prev) => ({ ...prev, dueDate: event.target.value }))}
-              />
-            </div>
-
-            <div className="space-y-1.5">
               <Label>Date Given</Label>
               <Input
                 type="date"
                 value={quickAddForm.dateGiven}
                 onChange={(event) => setQuickAddForm((prev) => ({ ...prev, dateGiven: event.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Due Date</Label>
+              <Input
+                type="date"
+                value={quickAddForm.dueDate}
+                onChange={(event) => setQuickAddForm((prev) => ({ ...prev, dueDate: event.target.value }))}
               />
             </div>
           </div>
@@ -1223,6 +1224,7 @@ export default function PaTasksPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className={DUE_STATUS_COL_CLASS}>Due Status</TableHead>
+                  <TableHead className={`${STICKY_HEAD_CELL_CLASS} ${STICKY_DATE_GIVEN_COL_CLASS}`}>Date Given</TableHead>
                   <TableHead className={`${STICKY_HEAD_CELL_CLASS} ${STICKY_DUE_COL_CLASS}`}>Due Date</TableHead>
                   <TableHead className={`${STICKY_HEAD_CELL_CLASS} ${STICKY_PRIORITY_COL_CLASS}`}>Priority</TableHead>
                   <TableHead className={`${STICKY_HEAD_CELL_CLASS} ${STICKY_TASK_COL_CLASS}`}>Task</TableHead>
@@ -1256,6 +1258,7 @@ export default function PaTasksPage() {
                           {getDueStatusLabel(getTaskDueStatus(task))}
                         </Badge>
                       </TableCell>
+                      <TableCell className={`${STICKY_BODY_CELL_CLASS} ${STICKY_DATE_GIVEN_COL_CLASS}`}>{formatDate(task.date_given)}</TableCell>
                       <TableCell className={`${STICKY_BODY_CELL_CLASS} ${STICKY_DUE_COL_CLASS}`}>{formatDate(task.due_date)}</TableCell>
                       <TableCell className={`${STICKY_BODY_CELL_CLASS} ${STICKY_PRIORITY_COL_CLASS}`}><Badge variant="secondary" className={task.priority ? colorClass(task.priority.color) : ''}>{task.priority?.label ?? '—'}</Badge></TableCell>
                       <TableCell
@@ -1307,7 +1310,6 @@ export default function PaTasksPage() {
                           '—'
                         )}
                       </TableCell>
-                      <TableCell>{formatDate(task.date_given)}</TableCell>
                       <TableCell>{formatDate(task.updated_at)}</TableCell>
                     </TableRow>
                   ))
@@ -1452,12 +1454,12 @@ export default function PaTasksPage() {
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label>Due Date</Label>
-                  <Input type="date" value={createForm.dueDate} onChange={(e) => setCreateForm((p) => ({ ...p, dueDate: e.target.value }))} />
-                </div>
-                <div className="space-y-1.5">
                   <Label>Date Given</Label>
                   <Input type="date" value={createForm.dateGiven} onChange={(e) => setCreateForm((p) => ({ ...p, dateGiven: e.target.value }))} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Due Date</Label>
+                  <Input type="date" value={createForm.dueDate} onChange={(e) => setCreateForm((p) => ({ ...p, dueDate: e.target.value }))} />
                 </div>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
