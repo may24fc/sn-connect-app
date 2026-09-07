@@ -4,10 +4,22 @@ import { FivePercentReflectionForm } from '@/components/performance/FivePercentR
 import { MonthlyCallFeedbackForm } from '@/components/performance/MonthlyCallFeedbackForm';
 import { MonthlySelfEvaluationForm } from '@/components/performance/MonthlySelfEvaluationForm';
 import { QuarterlyTemperatureCheckForm } from '@/components/performance/QuarterlyTemperatureCheckForm';
-import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@hr-portal/ui';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 type SelfEvaluationWorkspaceProps = {
   defaultTab?: 'monthly' | 'monthly-call-feedback' | 'five-percent' | 'quarterly';
@@ -23,6 +35,8 @@ const EVALUATION_OPTIONS = [
   { value: 'five-percent', label: '5% Reflection' },
   { value: 'quarterly', label: 'Quarterly Temperature Check' },
 ] as const;
+const FIVE_PERCENT_REFLECTION_VIDEO_URL = 'https://youtu.be/Ns724WGc3lY';
+const FIVE_PERCENT_REFLECTION_VIDEO_EMBED_URL = 'https://www.youtube.com/embed/Ns724WGc3lY?autoplay=1';
 
 export function SelfEvaluationWorkspace({
   defaultTab = 'monthly',
@@ -30,6 +44,39 @@ export function SelfEvaluationWorkspace({
   backLabel = 'Back',
 }: SelfEvaluationWorkspaceProps): ReactNode {
   const [activeTab, setActiveTab] = useState<SelfEvaluationTab>(defaultTab);
+  const [isReflectionVideoOpen, setIsReflectionVideoOpen] = useState(false);
+  const [shouldAutoOpenReflectionVideo, setShouldAutoOpenReflectionVideo] = useState(
+    defaultTab === 'five-percent'
+  );
+
+  const handleTabChange = (value: string): void => {
+    const nextTab = value as SelfEvaluationTab;
+    setActiveTab(nextTab);
+    if (nextTab === 'five-percent') {
+      setShouldAutoOpenReflectionVideo(true);
+      return;
+    }
+
+    setShouldAutoOpenReflectionVideo(false);
+    if (nextTab !== 'five-percent') {
+      setIsReflectionVideoOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab !== 'five-percent' || !shouldAutoOpenReflectionVideo) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setIsReflectionVideoOpen(true);
+      setShouldAutoOpenReflectionVideo(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [activeTab, shouldAutoOpenReflectionVideo]);
 
   return (
     <div className="space-y-6">
@@ -54,7 +101,7 @@ export function SelfEvaluationWorkspace({
         </div>
 
         <div>
-          <Select value={activeTab} onValueChange={(value) => setActiveTab(value as SelfEvaluationTab)}>
+          <Select value={activeTab} onValueChange={handleTabChange}>
             <SelectTrigger>
               <SelectValue placeholder="Select a form" />
             </SelectTrigger>
@@ -66,8 +113,49 @@ export function SelfEvaluationWorkspace({
               ))}
             </SelectContent>
           </Select>
-        </div >
+        </div>
+        {activeTab === 'five-percent' && !isReflectionVideoOpen ? (
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setShouldAutoOpenReflectionVideo(false);
+                setIsReflectionVideoOpen(true);
+              }}
+            >
+              Watch video
+            </Button>
+          </div>
+        ) : null}
       </div>
+
+      <Dialog open={isReflectionVideoOpen} onOpenChange={setIsReflectionVideoOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>5% Reflection Video Guide</DialogTitle>
+            <DialogDescription>
+              Watch the quick guide for completing the 5% Reflection evaluation.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-hidden rounded-lg border border-border bg-black">
+            <iframe
+              className="h-[360px] w-full md:h-[420px]"
+              src={FIVE_PERCENT_REFLECTION_VIDEO_EMBED_URL}
+              title="5% Reflection video guide"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
+          </div>
+          <div className="flex justify-end">
+            <Button asChild variant="outline" size="sm">
+              <a href={FIVE_PERCENT_REFLECTION_VIDEO_URL} target="_blank" rel="noopener noreferrer">
+                Watch on YouTube
+              </a>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {activeTab === 'monthly' ? <MonthlySelfEvaluationForm /> : null}
       {activeTab === 'monthly-call-feedback' ? <MonthlyCallFeedbackForm /> : null}

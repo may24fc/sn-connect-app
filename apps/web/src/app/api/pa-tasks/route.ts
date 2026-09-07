@@ -127,6 +127,8 @@ export async function GET(request: NextRequest) {
     } else {
     query = query.order(filters.sortBy, { ascending: filters.sortOrder === 'asc' });
     }
+    // Stabilize pagination: avoid duplicate/missing rows across pages when primary sort ties.
+    query = query.order('id', { ascending: true });
 
     if (filters.search) {
       query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
