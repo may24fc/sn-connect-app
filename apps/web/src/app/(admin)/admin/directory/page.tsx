@@ -113,7 +113,12 @@ function formatDate(dateStr: string | null): string {
 }
 
 function isManageableDirectoryEntry(entry: DirectoryEntry): boolean {
-  return entry.role === 'employee' || entry.role === 'associate';
+  return (
+    entry.role === 'employee' ||
+    entry.role === 'associate' ||
+    entry.role === 'admin' ||
+    entry.role === 'super_admin'
+  );
 }
 
 export default function AdminDirectoryPage(): ReactNode {
@@ -928,7 +933,7 @@ export default function AdminDirectoryPage(): ReactNode {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
               <UserMinus className="h-5 w-5" />
-              Terminate Employee / Associate
+              Terminate Directory Account
             </DialogTitle>
             <DialogDescription>
               Are you sure you want to terminate{' '}
@@ -1010,7 +1015,7 @@ export default function AdminDirectoryPage(): ReactNode {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UserX className="h-5 w-5" />
-              Deactivate Employee/Associate
+              Deactivate Directory Account
             </DialogTitle>
             <DialogDescription>
               This will set{' '}
