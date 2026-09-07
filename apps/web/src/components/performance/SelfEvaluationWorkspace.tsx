@@ -58,9 +58,7 @@ export function SelfEvaluationWorkspace({
     }
 
     setShouldAutoOpenReflectionVideo(false);
-    if (nextTab !== 'five-percent') {
-      setIsReflectionVideoOpen(false);
-    }
+    setIsReflectionVideoOpen(false);
   };
 
   useEffect(() => {
