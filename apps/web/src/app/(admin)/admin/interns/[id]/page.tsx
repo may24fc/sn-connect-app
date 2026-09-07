@@ -164,7 +164,6 @@ export default function InternDetailPage({
 
   const daysRemaining = getDaysRemaining(associate.endDate);
   const progressPercentage = calculateHoursProgress(associate.completedHours, associate.requiredHours);
-  const pendingReports = uiReports.filter((r) => r.status === 'submitted').length;
 
   const handleProvideFeedback = (report: DailyReport): void => {
     setSelectedReport(report);
@@ -370,11 +369,6 @@ export default function InternDetailPage({
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="reports">
             Daily Reports
-            {pendingReports > 0 && (
-              <Badge variant="warning" className="ml-2">
-                {pendingReports}
-              </Badge>
-            )}
           </TabsTrigger>
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
           <TabsTrigger value="projects">Projects</TabsTrigger>
@@ -481,26 +475,6 @@ export default function InternDetailPage({
 
         {/* Reports Tab */}
         <TabsContent value="reports" className="space-y-4">
-          {pendingReports > 0 && (
-            <Card className="border-warning/50 bg-warning/5">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
-                    <Clock className="h-5 w-5 text-warning" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-warning">
-                      {pendingReports} Report{pendingReports > 1 ? 's' : ''} Pending Review
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Provide feedback to help the associate improve
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           <DailyReportList reports={uiReports} />
 
           {/* Add feedback button for pending reports */}

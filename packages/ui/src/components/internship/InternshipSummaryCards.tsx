@@ -102,7 +102,6 @@ export function InternshipSummaryCards({
       <StatCard
         title="Reports This Week"
         value={stats.reportsThisWeek}
-        subtitle={`${stats.pendingReports} pending review`}
         icon={FileText}
         iconBgColor="bg-warning/10"
         iconColor="text-warning"

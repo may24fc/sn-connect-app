@@ -51,7 +51,6 @@ export interface InternshipSummaryRecord {
   weeklyRequiredHours: number;
   weeklyCompletedHours: number;
   status: 'active' | 'completed' | 'terminated' | 'converted';
-  pendingReports: number;
   lastReportDate: string | null;
   reportsThisWeek: number;
   createdAt: string;
@@ -118,7 +117,6 @@ interface InternshipListResponse {
     completedInterns: number;
     averageProgress: number;
     totalHoursLogged: number;
-    pendingReports: number;
     reportsThisWeek: number;
   };
   pagination: {

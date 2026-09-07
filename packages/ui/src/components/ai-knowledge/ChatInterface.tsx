@@ -179,18 +179,21 @@ export function ChatInterface({
 
       {/* Input Area - Fixed at bottom */}
       <div className="flex-shrink-0 border-t border-border px-6 py-4 bg-card">
-        <div className="flex gap-3">
-          <Textarea
-            ref={textareaRef}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask the HR Agent a question..."
-            disabled={isLoading}
-            className="min-h-[44px] max-h-28 resize-none text-sm py-3 rounded-xl border-border/60 focus:border-primary/40"
-            rows={1}
-            aria-label="Type your message"
-          />
+        <div className="flex items-end gap-3">
+          <div className="flex-1 min-w-0">
+            <Textarea
+              ref={textareaRef}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask the HR Agent a question..."
+              disabled={isLoading}
+              showCounter={false}
+              className="w-full min-h-[44px] max-h-28 resize-none text-sm py-3 rounded-xl border-border/60 focus:border-primary/40"
+              rows={1}
+              aria-label="Type your message"
+            />
+          </div>
           {isStreaming && onAbort ? (
             <Button
               type="button"

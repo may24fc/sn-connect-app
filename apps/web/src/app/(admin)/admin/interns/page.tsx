@@ -419,7 +419,6 @@ export default function AdminInternsPage(): ReactNode {
         weeklyCompletedHours: internship.weeklyCompletedHours,
         status: internship.status === 'converted' ? 'completed' : internship.status,
         ...(internship.lastReportDate ? { lastReportDate: internship.lastReportDate } : {}),
-        pendingReports: internship.pendingReports,
       })),
     [internshipsQuery.data]
   );
@@ -462,7 +461,6 @@ export default function AdminInternsPage(): ReactNode {
     completedInterns: 0,
     averageProgress: 0,
     totalHoursLogged: 0,
-    pendingReports: 0,
     reportsThisWeek: 0,
   };
 
@@ -870,7 +868,6 @@ export default function AdminInternsPage(): ReactNode {
             <StatCard
               label="Reports This Week"
               value={stats.reportsThisWeek}
-              trend={{ direction: 'stable', value: `${stats.pendingReports} pending review` }}
               icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
             />
             <StatCard
@@ -980,26 +977,6 @@ export default function AdminInternsPage(): ReactNode {
                 Clear All Filters
               </Button>
             </div>
-          )}
-
-          {/* Pending Reports Alert */}
-          {stats.pendingReports > 0 && (
-            <Card className="border-warning/50 bg-warning/5">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
-                    <FileText className="h-5 w-5 text-warning" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-warning">Pending Report Reviews</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      There are {stats.pendingReports} daily reports waiting for supervisor review.
-                      Timely feedback helps interns improve their performance.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           )}
 
           {/* Interns Header */}

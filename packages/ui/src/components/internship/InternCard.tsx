@@ -163,9 +163,6 @@ export function InternCard({
         {associate.lastReportDate && (
           <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border">
             <span>Last report: {new Date(associate.lastReportDate).toLocaleDateString()}</span>
-            {associate.pendingReports > 0 && (
-              <span className="text-warning">{associate.pendingReports} pending review</span>
-            )}
           </div>
         )}
 

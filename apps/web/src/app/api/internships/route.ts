@@ -119,7 +119,6 @@ export async function GET(request: NextRequest) {
           completedInterns: 0,
           averageProgress: 0,
           totalHoursLogged: 0,
-          pendingReports: 0,
           reportsThisWeek: 0,
         },
         pagination: {
@@ -157,7 +156,7 @@ export async function GET(request: NextRequest) {
           : Promise.resolve({ data: [] }),
         supabase
           .from('intern_daily_logs')
-          .select('internship_id, log_date, is_approved, hours_worked')
+          .select('internship_id, log_date, hours_worked')
           .in('internship_id', internshipIds)
           .order('log_date', { ascending: false }),
       ]
@@ -191,7 +190,6 @@ export async function GET(request: NextRequest) {
         if (!employee) return null;
 
         const logs = logsByInternship.get(row.id) || [];
-        const pendingReports = logs.filter((log) => !log.is_approved).length;
         const lastReportDate = logs.at(0)?.log_date || null;
         const thisWeekLogs = logs.filter((log) => new Date(log.log_date) >= startOfWeek);
         const reportsThisWeek = thisWeekLogs.length;
@@ -233,7 +231,6 @@ export async function GET(request: NextRequest) {
           weeklyRequiredHours,
           weeklyCompletedHours,
           status: row.status,
-          pendingReports,
           lastReportDate,
           reportsThisWeek,
           createdAt: row.created_at,
@@ -255,7 +252,6 @@ export async function GET(request: NextRequest) {
     const activeInterns = normalized.filter((item) => item.status === 'active').length;
     const completedInterns = normalized.filter((item) => item.status === 'completed').length;
     const totalHoursLogged = normalized.reduce((sum, item) => sum + item.completedHours, 0);
-    const pendingReports = normalized.reduce((sum, item) => sum + item.pendingReports, 0);
     const reportsThisWeek = normalized.reduce((sum, item) => sum + item.reportsThisWeek, 0);
     const averageProgress =
       totalInterns > 0
@@ -272,7 +268,6 @@ export async function GET(request: NextRequest) {
         completedInterns,
         averageProgress,
         totalHoursLogged,
-        pendingReports,
         reportsThisWeek,
       },
       pagination: {

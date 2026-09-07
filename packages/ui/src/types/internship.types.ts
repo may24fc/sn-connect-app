@@ -99,7 +99,6 @@ export interface InternSummary {
   progressPercentage: number;
   status: InternshipStatus;
   lastReportDate?: string;
-  pendingReports: number;
 }
 
 // Dashboard Stats
@@ -109,7 +108,6 @@ export interface InternDashboardStats {
   completedInterns: number;
   averageProgress: number;
   totalHoursLogged: number;
-  pendingReports: number;
   reportsThisWeek: number;
 }
 
