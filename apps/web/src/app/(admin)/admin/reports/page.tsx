@@ -258,34 +258,29 @@ export default function AdminReportsPage() {
             </SelectContent>
           </Select>
 
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                className={cn(
-                  'h-10 w-[330px] justify-between gap-2 px-3 text-left font-normal',
-                  !periodRange?.from && 'text-muted-foreground'
-                )}
-              >
-                <span className="flex min-w-0 flex-1 items-center">
-                  <span className={cn('min-w-0 flex-1 truncate', !periodRange?.from && 'text-muted-foreground')}>
+          <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    'h-10 w-[160px] justify-between px-3 text-left font-normal',
+                    !periodRange?.from && 'text-muted-foreground'
+                  )}
+                >
+                  <span className="truncate">
                     {periodRange?.from ? format(periodRange.from, 'MMM d, yyyy') : 'Start date'}
                   </span>
-                  <span className="mx-3 h-5 w-px shrink-0 bg-border" aria-hidden="true" />
-                  <span className={cn('min-w-0 flex-1 truncate', !periodRange?.to && 'text-muted-foreground')}>
-                    {periodRange?.to ? format(periodRange.to, 'MMM d, yyyy') : 'End date'}
-                  </span>
-                </span>
-                <CalendarRange className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-auto p-3">
-              <div className="space-y-3">
+                  <CalendarRange className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-auto p-3">
                 <DayPicker
-                  mode="range"
-                  selected={periodRange}
-                  onSelect={setPeriodRange}
+                  mode="single"
+                  selected={periodRange?.from}
+                  onSelect={(from) => setPeriodRange((current) => ({ from, to: current?.to }))}
+                  disabled={periodRange?.to ? { after: periodRange.to } : undefined}
                   className="mx-auto"
                   classNames={{
                     months: 'flex justify-center',
@@ -303,28 +298,73 @@ export default function AdminReportsPage() {
                     day: 'h-9 w-9 p-0',
                     day_button: 'flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                     day_selected: 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground',
-                    day_range_middle: 'rounded-none bg-muted',
-                    day_range_start: 'rounded-r-none',
-                    day_range_end: 'rounded-l-none',
                     day_today: 'font-bold',
                     day_outside: 'text-muted-foreground opacity-50',
                   }}
                 />
-                {periodRange?.from ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="ml-auto"
-                    onClick={() => setPeriodRange(undefined)}
-                  >
-                    <X className="mr-2 h-4 w-4" />
-                    Clear range
-                  </Button>
-                ) : null}
-              </div>
-            </PopoverContent>
-          </Popover>
+              </PopoverContent>
+            </Popover>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    'h-10 w-[160px] justify-between px-3 text-left font-normal',
+                    !periodRange?.to && 'text-muted-foreground'
+                  )}
+                >
+                  <span className="truncate">
+                    {periodRange?.to ? format(periodRange.to, 'MMM d, yyyy') : 'End date'}
+                  </span>
+                  <CalendarRange className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-auto p-3">
+                <div className="space-y-3">
+                  <DayPicker
+                    mode="single"
+                    selected={periodRange?.to}
+                    onSelect={(to) => setPeriodRange((current) => ({ from: current?.from, to }))}
+                    disabled={periodRange?.from ? { before: periodRange.from } : undefined}
+                    className="mx-auto"
+                    classNames={{
+                      months: 'flex justify-center',
+                      month: 'space-y-2',
+                      caption: 'relative flex h-9 items-center justify-center',
+                      caption_label: 'text-sm font-medium',
+                      nav: 'absolute inset-x-0 top-0 flex items-center justify-between',
+                      button_previous: 'inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted',
+                      button_next: 'inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted',
+                      table: 'w-full border-collapse',
+                      head_row: 'grid grid-cols-7 gap-1',
+                      head_cell: 'h-8 text-center text-xs font-medium text-muted-foreground',
+                      row: 'mt-1 grid grid-cols-7 gap-1',
+                      cell: 'h-9 w-9 p-0 text-center text-sm',
+                      day: 'h-9 w-9 p-0',
+                      day_button: 'flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                      day_selected: 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground',
+                      day_today: 'font-bold',
+                      day_outside: 'text-muted-foreground opacity-50',
+                    }}
+                  />
+                  {periodRange?.from || periodRange?.to ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="ml-auto"
+                      onClick={() => setPeriodRange(undefined)}
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      Clear dates
+                    </Button>
+                  ) : null}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
 
           {/* Time range selector
           <Select
