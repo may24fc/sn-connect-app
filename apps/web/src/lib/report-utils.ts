@@ -148,6 +148,10 @@ const MARKETING_REPORT_TYPE_DESCRIPTIONS: Record<MarketingReportType, string> = 
 };
 
 const MARKETING_REPORT_TYPE_SET = new Set<MarketingReportType>(marketingReportTypeValues);
+const MARKETING_REPORT_TYPE_BY_NORMALIZED_VALUE = new Map<string, MarketingReportType>([
+  ...marketingReportTypeValues.map((reportType) => [reportType.toLowerCase(), reportType] as const),
+  ['email', 'Email Marketing'],
+]);
 
 export const MARKETING_REPORT_TYPE_OPTIONS: Array<{
   value: MarketingReportType;
@@ -617,10 +621,26 @@ function inferMarketingReportType(
     return normalizedReportType as MarketingReportType;
   }
 
+  const normalizedReportTypeAlias = MARKETING_REPORT_TYPE_BY_NORMALIZED_VALUE.get(
+    normalizedReportType.toLowerCase()
+  );
+
+  if (normalizedReportTypeAlias) {
+    return normalizedReportTypeAlias;
+  }
+
   const normalizedCampaignName = typeof campaignName === 'string' ? campaignName.trim() : '';
 
   if (MARKETING_REPORT_TYPE_SET.has(normalizedCampaignName as MarketingReportType)) {
     return normalizedCampaignName as MarketingReportType;
+  }
+
+  const normalizedCampaignNameAlias = MARKETING_REPORT_TYPE_BY_NORMALIZED_VALUE.get(
+    normalizedCampaignName.toLowerCase()
+  );
+
+  if (normalizedCampaignNameAlias) {
+    return normalizedCampaignNameAlias;
   }
 
   const normalizedPrimaryChannel = typeof primaryChannel === 'string' ? primaryChannel.trim() : '';
@@ -631,6 +651,14 @@ function inferMarketingReportType(
 
   if (normalizedPrimaryChannel === 'Google Ads') {
     return 'Google Ads';
+  }
+
+  const normalizedPrimaryChannelAlias = MARKETING_REPORT_TYPE_BY_NORMALIZED_VALUE.get(
+    normalizedPrimaryChannel.toLowerCase()
+  );
+
+  if (normalizedPrimaryChannelAlias) {
+    return normalizedPrimaryChannelAlias;
   }
 
   return undefined;

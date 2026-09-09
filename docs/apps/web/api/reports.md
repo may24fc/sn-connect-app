@@ -35,6 +35,8 @@ List reports with pagination. Non-admins see only their own reports; admins see 
 | `status` | `string` | — | `draft`, `submitted`, `approved`, `rejected` |
 | `reportType` | `string` | — | `weekly`, `monthly`, `marketing` |
 | `employeeId` | `uuid` | — | Filter by employee (admin only) |
+| `periodOverlapStart` | `YYYY-MM-DD` | — | Include reports whose period ends on or after this date |
+| `periodOverlapEnd` | `YYYY-MM-DD` | — | Include reports whose period starts on or before this date |
 | `page` | `number` | `1` | Page number |
 | `pageSize` | `number` | `10` | Results per page |
 

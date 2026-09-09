@@ -88,6 +88,8 @@ export interface ReportFilters {
   parentReportId?: string;
   periodStart?: string;
   periodEnd?: string;
+  periodOverlapStart?: string;
+  periodOverlapEnd?: string;
   department?: string;
   page?: number;
   pageSize?: number;

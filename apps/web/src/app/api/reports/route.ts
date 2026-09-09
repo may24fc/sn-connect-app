@@ -60,6 +60,8 @@ export async function GET(request: NextRequest) {
     const parentReportId = searchParams.get('parentReportId') || '';
     const periodStart = searchParams.get('periodStart') || '';
     const periodEnd = searchParams.get('periodEnd') || '';
+    const periodOverlapStart = searchParams.get('periodOverlapStart') || '';
+    const periodOverlapEnd = searchParams.get('periodOverlapEnd') || '';
     const department = searchParams.get('department') || '';
     const page = Number.parseInt(searchParams.get('page') || '1', 10);
     const pageSize = Number.parseInt(searchParams.get('pageSize') || '10', 10);
@@ -92,6 +94,15 @@ export async function GET(request: NextRequest) {
     }
     if (periodEnd) {
       query = query.lte('period_end', periodEnd);
+    }
+
+    // A reporting period intersects the selected range when it ends on or after
+    // the range start and begins on or before the range end.
+    if (periodOverlapStart) {
+      query = query.gte('period_end', periodOverlapStart);
+    }
+    if (periodOverlapEnd) {
+      query = query.lte('period_start', periodOverlapEnd);
     }
 
     // Grouped view: return only root reports (no parent)

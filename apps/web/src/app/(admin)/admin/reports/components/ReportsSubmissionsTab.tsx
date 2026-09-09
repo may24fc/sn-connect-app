@@ -46,7 +46,6 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  Textarea,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import { AlertCircle, ArchiveRestore, CheckCircle2, Eye, Loader2, MoreHorizontal, Search, Trash2, XCircle } from 'lucide-react';
@@ -71,55 +70,8 @@ interface ReportsSubmissionsTabProps {
   reportType: MarketingReportTypeFilterValue;
   campaignType: MarketingCampaignFilterValue;
   objective: MarketingObjectiveFilterValue;
-  timeRange: 'weekly' | 'monthly' | 'custom';
   customStartDate?: string;
   customEndDate?: string;
-}
-
-/**
- * Safely extract date string (YYYY-MM-DD) from an ISO string or return as-is
- */
-function extractDateString(dateStr: string): string {
-  if (dateStr.includes('T')) {
-    return dateStr.substring(0, 10);
-  }
-  return dateStr;
-}
-
-/**
- * Calculate period dates based on the time range
- */
-function getPeriodDates(
-  timeRange: 'weekly' | 'monthly' | 'custom',
-  customStartDate?: string,
-  customEndDate?: string
-): { start: string; end: string } | null {
-  const now = new Date();
-
-  if (timeRange === 'custom' && customStartDate && customEndDate) {
-    return { start: customStartDate, end: customEndDate };
-  }
-
-  if (timeRange === 'monthly') {
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    return {
-      start: extractDateString(start.toISOString()),
-      end: extractDateString(end.toISOString()),
-    };
-  }
-
-  if (timeRange === 'weekly') {
-    const end = new Date(now);
-    const start = new Date(now);
-    start.setDate(start.getDate() - 7);
-    return {
-      start: extractDateString(start.toISOString()),
-      end: extractDateString(end.toISOString()),
-    };
-  }
-
-  return null;
 }
 
 export function ReportsSubmissionsTab({
@@ -127,14 +79,11 @@ export function ReportsSubmissionsTab({
   reportType,
   campaignType,
   objective,
-  timeRange: _timeRange,
   customStartDate,
   customEndDate,
 }: ReportsSubmissionsTabProps) {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<ReportReviewFilter>('all');
-  const [localPeriod, setLocalPeriod] = useState<'all' | 'weekly' | 'monthly' | 'custom'>('all');
-  const [actionNotes, setActionNotes] = useState<Record<string, string>>({});
   const [workingId, setWorkingId] = useState<string | null>(null);
   const [reportPendingDelete, setReportPendingDelete] = useState<ReportRecord | null>(null);
   const archivedView = status === 'archived';
@@ -143,16 +92,6 @@ export function ReportsSubmissionsTab({
   const deleteReport = useDeleteReport();
   const restoreReport = useRestoreReport();
 
-  // Calculate period dates for API filtering
-  const periodDates = useMemo(() => {
-    if (localPeriod === 'all') return null;
-    return getPeriodDates(
-      localPeriod === 'custom' ? 'custom' : localPeriod,
-      customStartDate,
-      customEndDate
-    );
-  }, [localPeriod, customStartDate, customEndDate]);
-
   const filters = {
     ...(status !== 'all' && status !== 'archived'
       ? { status: status as 'draft' | 'submitted' | 'approved' | 'rejected' }
@@ -160,7 +99,9 @@ export function ReportsSubmissionsTab({
     archived: archivedView ? 'only' as const : 'exclude' as const,
     ...(department !== 'all' ? { department } : {}),
     reportType: 'marketing' as const,
-    ...(periodDates ? { periodStart: periodDates.start, periodEnd: periodDates.end } : {}),
+    ...(customStartDate && customEndDate
+      ? { periodOverlapStart: customStartDate, periodOverlapEnd: customEndDate }
+      : {}),
     page: 1,
     pageSize: 100,
   };
@@ -220,7 +161,7 @@ export function ReportsSubmissionsTab({
       const res = await fetch(`/api/reports/${id}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, notes: actionNotes[id] || undefined }),
+        body: JSON.stringify({ action }),
       });
       if (!res.ok) {
         const payload = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -332,19 +273,6 @@ export function ReportsSubmissionsTab({
             className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
           />
         </div>
-        <Select value={localPeriod} onValueChange={(v) => setLocalPeriod(v as typeof localPeriod)}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Submission Window" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Time</SelectItem>
-            <SelectItem value="weekly">This Week</SelectItem>
-            <SelectItem value="monthly">This Month</SelectItem>
-            {customStartDate && customEndDate && (
-              <SelectItem value="custom">Custom Range</SelectItem>
-            )}
-          </SelectContent>
-        </Select>
         <Select value={status} onValueChange={(value) => setStatus(value as ReportReviewFilter)}>
           <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="Review Status" />
@@ -395,14 +323,13 @@ export function ReportsSubmissionsTab({
                   <SortableTableHead column="goal" {...sortHeadProps}>Goal</SortableTableHead>
                   <SortableTableHead column="status" {...sortHeadProps}>Status</SortableTableHead>
                   <SortableTableHead column="period" {...sortHeadProps}>Period</SortableTableHead>
-                  <TableHead>Review Notes</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {reports.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-10">
+                    <TableCell colSpan={7} className="py-10">
                       <EmptyState
                         icon={Search}
                         title={archivedView ? 'No archived marketing reports found' : 'No marketing reports found'}
@@ -458,34 +385,6 @@ export function ReportsSubmissionsTab({
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {formatDate(report.period_start)} – {formatDate(report.period_end)}
-                      </TableCell>
-                      <TableCell className="min-w-[220px]">
-                        <Textarea
-                          rows={2}
-                          value={
-                            report.status === 'submitted'
-                              ? (actionNotes[report.id] ?? report.review_notes ?? '')
-                              : (report.review_notes ?? '')
-                          }
-                          readOnly={report.status !== 'submitted'}
-                          disabled={workingId === report.id}
-                          placeholder={
-                            report.status === 'submitted'
-                              ? 'Add optional review notes'
-                              : 'Review notes are locked after the report is reviewed'
-                          }
-                          onChange={(event) =>
-                            setActionNotes((prev) => ({
-                              ...prev,
-                              [report.id]: event.target.value,
-                            }))
-                          }
-                          className={
-                            report.status !== 'submitted'
-                              ? 'bg-muted/40 text-muted-foreground'
-                              : undefined
-                          }
-                        />
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end" onClick={(event) => event.stopPropagation()}>

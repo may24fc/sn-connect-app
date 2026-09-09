@@ -54,19 +54,28 @@ export function useReports(filters: ReportFilters = {}) {
     queryKey: queryKeys.reports.list(filters),
     queryFn: async (): Promise<ReportListResponse> => {
       const params = new URLSearchParams();
+      const queryParams: Array<[string, string | number | undefined]> = [
+        ['search', filters.search],
+        ['status', filters.status],
+        ['archived', filters.archived],
+        ['reportType', filters.reportType],
+        ['employeeId', filters.employeeId],
+        ['groupBy', filters.groupBy],
+        ['parentReportId', filters.parentReportId],
+        ['periodStart', filters.periodStart],
+        ['periodEnd', filters.periodEnd],
+        ['periodOverlapStart', filters.periodOverlapStart],
+        ['periodOverlapEnd', filters.periodOverlapEnd],
+        ['department', filters.department],
+        ['page', filters.page],
+        ['pageSize', filters.pageSize],
+      ];
 
-      if (filters.search) params.append('search', filters.search);
-      if (filters.status) params.append('status', filters.status);
-      if (filters.archived) params.append('archived', filters.archived);
-      if (filters.reportType) params.append('reportType', filters.reportType);
-      if (filters.employeeId) params.append('employeeId', filters.employeeId);
-      if (filters.groupBy) params.append('groupBy', filters.groupBy);
-      if (filters.parentReportId) params.append('parentReportId', filters.parentReportId);
-      if (filters.periodStart) params.append('periodStart', filters.periodStart);
-      if (filters.periodEnd) params.append('periodEnd', filters.periodEnd);
-      if (filters.department) params.append('department', filters.department);
-      if (filters.page) params.append('page', String(filters.page));
-      if (filters.pageSize) params.append('pageSize', String(filters.pageSize));
+      for (const [key, value] of queryParams) {
+        if (value) {
+          params.append(key, String(value));
+        }
+      }
 
       const response = await fetch(`/api/reports?${params.toString()}`);
 
