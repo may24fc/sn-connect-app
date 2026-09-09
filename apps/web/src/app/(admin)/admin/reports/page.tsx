@@ -48,18 +48,6 @@ function isFilterEligibleStatus(status: string): boolean {
   return FILTER_INCLUDED_STATUSES.includes(status as (typeof FILTER_INCLUDED_STATUSES)[number]);
 }
 
-function formatPeriodRange(range: DateRange | undefined): string {
-  if (!range?.from) {
-    return 'Period range';
-  }
-
-  if (!range.to) {
-    return `From ${format(range.from, 'MMM d, yyyy')}`;
-  }
-
-  return `${format(range.from, 'MMM d, yyyy')} - ${format(range.to, 'MMM d, yyyy')}`;
-}
-
 // Lazy-load the analytics tab (contains recharts / D3)
 const ReportsAnalyticsTab = dynamic(
   () =>
@@ -276,11 +264,19 @@ export default function AdminReportsPage() {
                 type="button"
                 variant="outline"
                 className={cn(
-                  'h-10 w-[250px] justify-between px-3 text-left font-normal',
+                  'h-10 w-[330px] justify-between gap-2 px-3 text-left font-normal',
                   !periodRange?.from && 'text-muted-foreground'
                 )}
               >
-                <span className="truncate">{formatPeriodRange(periodRange)}</span>
+                <span className="flex min-w-0 flex-1 items-center">
+                  <span className={cn('min-w-0 flex-1 truncate', !periodRange?.from && 'text-muted-foreground')}>
+                    {periodRange?.from ? format(periodRange.from, 'MMM d, yyyy') : 'Start date'}
+                  </span>
+                  <span className="mx-3 h-5 w-px shrink-0 bg-border" aria-hidden="true" />
+                  <span className={cn('min-w-0 flex-1 truncate', !periodRange?.to && 'text-muted-foreground')}>
+                    {periodRange?.to ? format(periodRange.to, 'MMM d, yyyy') : 'End date'}
+                  </span>
+                </span>
                 <CalendarRange className="h-4 w-4 shrink-0 text-muted-foreground" />
               </Button>
             </PopoverTrigger>

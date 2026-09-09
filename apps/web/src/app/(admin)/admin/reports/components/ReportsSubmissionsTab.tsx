@@ -99,11 +99,12 @@ export function ReportsSubmissionsTab({
     archived: archivedView ? 'only' as const : 'exclude' as const,
     ...(department !== 'all' ? { department } : {}),
     reportType: 'marketing' as const,
+    ...(reportType !== 'all' ? { marketingReportType: reportType } : {}),
     ...(customStartDate && customEndDate
       ? { periodOverlapStart: customStartDate, periodOverlapEnd: customEndDate }
       : {}),
     page: 1,
-    pageSize: 100,
+    pageSize: 500,
   };
 
   const { data, isLoading, error, refetch } = useReports(filters);

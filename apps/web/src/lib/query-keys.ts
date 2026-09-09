@@ -90,6 +90,7 @@ export interface ReportFilters {
   periodEnd?: string;
   periodOverlapStart?: string;
   periodOverlapEnd?: string;
+  marketingReportType?: string;
   department?: string;
   page?: number;
   pageSize?: number;

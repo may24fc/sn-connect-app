@@ -66,6 +66,7 @@ export function useReports(filters: ReportFilters = {}) {
         ['periodEnd', filters.periodEnd],
         ['periodOverlapStart', filters.periodOverlapStart],
         ['periodOverlapEnd', filters.periodOverlapEnd],
+        ['marketingReportType', filters.marketingReportType],
         ['department', filters.department],
         ['page', filters.page],
         ['pageSize', filters.pageSize],

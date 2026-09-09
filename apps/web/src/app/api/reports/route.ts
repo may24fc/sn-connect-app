@@ -9,7 +9,7 @@ import {
   normalizeReportRecord,
   serializeReportNotes,
 } from '@/lib/report-utils';
-import { reportCreateSchema } from '@/lib/schemas/report.schema';
+import { marketingReportTypeValues, reportCreateSchema } from '@/lib/schemas/report.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -62,6 +62,12 @@ export async function GET(request: NextRequest) {
     const periodEnd = searchParams.get('periodEnd') || '';
     const periodOverlapStart = searchParams.get('periodOverlapStart') || '';
     const periodOverlapEnd = searchParams.get('periodOverlapEnd') || '';
+    const requestedMarketingReportType = searchParams.get('marketingReportType') || '';
+    const marketingReportType = marketingReportTypeValues.includes(
+      requestedMarketingReportType as (typeof marketingReportTypeValues)[number]
+    )
+      ? requestedMarketingReportType
+      : '';
     const department = searchParams.get('department') || '';
     const page = Number.parseInt(searchParams.get('page') || '1', 10);
     const pageSize = Number.parseInt(searchParams.get('pageSize') || '10', 10);
@@ -86,6 +92,10 @@ export async function GET(request: NextRequest) {
 
     if (reportType) {
       query = query.eq('report_type', reportType);
+    }
+
+    if (marketingReportType) {
+      query = query.ilike('notes', `%${marketingReportType}%`);
     }
 
     // Period filtering: filter by period_start and period_end ranges
