@@ -144,13 +144,14 @@ const MARKETING_REPORT_TYPE_DESCRIPTIONS: Record<MarketingReportType, string> = 
   'Facebook Ads': 'Paid campaigns running across Facebook and Instagram placements.',
   'Google Ads': 'Search, Display, YouTube, and Performance Max campaign reporting.',
   'Email Marketing': 'Lifecycle, nurture, newsletter, and promotional email performance.',
-  'Content Creation': 'Creative production and content output performance reporting.',
+  'Organic Creation': 'Creative production and organic content output performance reporting.',
 };
 
 const MARKETING_REPORT_TYPE_SET = new Set<MarketingReportType>(marketingReportTypeValues);
 const MARKETING_REPORT_TYPE_BY_NORMALIZED_VALUE = new Map<string, MarketingReportType>([
   ...marketingReportTypeValues.map((reportType) => [reportType.toLowerCase(), reportType] as const),
   ['email', 'Email Marketing'],
+  ['content creation', 'Organic Creation'],
 ]);
 
 export const MARKETING_REPORT_TYPE_OPTIONS: Array<{
@@ -343,7 +344,7 @@ const MARKETING_CAMPAIGN_TYPES_BY_REPORT_TYPE: Record<MarketingReportType, Array
     'call_only_campaign',
   ],
   'Email Marketing': [],
-  'Content Creation': [],
+  'Organic Creation': [],
 };
 
 export interface MarketingMetricTemplate {
@@ -765,7 +766,7 @@ export function hydrateMarketingContextWithDerivedSpend(
     return null;
   }
 
-  if (resolveMarketingReportType(sanitizedMarketingContext) === 'Content Creation') {
+  if (resolveMarketingReportType(sanitizedMarketingContext) === 'Organic Creation') {
     return sanitizedMarketingContext;
   }
 
@@ -826,7 +827,7 @@ function sanitizeMarketingContext(
     return null;
   }
 
-  if (resolveMarketingReportType(marketingContext) !== 'Content Creation') {
+  if (resolveMarketingReportType(marketingContext) !== 'Organic Creation') {
     return marketingContext;
   }
 
@@ -1146,7 +1147,7 @@ function normalizeMarketingContextPayload(payload: unknown): MarketingContext | 
     contentCreation:
       normalizedSubmissionKind === 'weekly_plan'
         ? null
-        : normalizedReportType === 'Content Creation'
+        : normalizedReportType === 'Organic Creation'
         ? contentCreationDetailsSchema.safeParse(candidate.contentCreation).data ?? null
         : null,
   });

@@ -16,7 +16,7 @@ export const MARKETING_REPORT_TYPE_BEHAVIOR = {
     objective: 'hidden',
     presetMetrics: true,
   },
-  'Content Creation': {
+  'Organic Creation': {
     campaignType: 'hidden',
     objective: 'hidden',
     presetMetrics: false,

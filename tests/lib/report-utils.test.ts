@@ -23,3 +23,11 @@ describe('Email Marketing report resolution', () => {
     ).toBe(true);
   });
 });
+
+describe('Organic Creation report resolution', () => {
+  it('normalizes legacy Content Creation records to Organic Creation', () => {
+    expect(resolveMarketingReportType({ marketingReportType: 'Content Creation' })).toBe(
+      'Organic Creation'
+    );
+  });
+});

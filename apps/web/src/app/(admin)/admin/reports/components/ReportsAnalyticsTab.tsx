@@ -237,7 +237,7 @@ function ForecastRequirementsCard({
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600" />
-                  Email Marketing and Content Creation rely on Report Type, spend, and measurable
+                  Email Marketing and Organic Creation rely on Report Type, spend, and measurable
                   outcome metrics instead
                 </li>
               </>

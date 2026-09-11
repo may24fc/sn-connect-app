@@ -63,12 +63,18 @@ export const marketingReportTypeValues = [
   'Facebook Ads',
   'Google Ads',
   'Email Marketing',
-  'Content Creation',
+  'Organic Creation',
 ] as const;
 
 export const marketingReportTypeSchema = z.enum(marketingReportTypeValues, {
   errorMap: () => ({ message: 'Select a marketing report type' }),
 });
+
+const storedMarketingReportTypeSchema = z
+  .union([marketingReportTypeSchema, z.literal('Content Creation')])
+  .transform((reportType) =>
+    reportType === 'Content Creation' ? 'Organic Creation' : reportType
+  );
 
 export const marketingPrimaryChannelValues = ['Google Ads', 'Meta Ads'] as const;
 
@@ -83,6 +89,7 @@ export const marketingSubmissionKindSchema = z.enum(marketingSubmissionKindValue
 export const contentCreationEntrySchema = z.object({
   platform: z.string().trim().min(1, 'Platform or app is required').max(80),
   posts: z.coerce.number().int().min(0, 'Posts cannot be negative'),
+  imagePath: z.string().trim().max(500).optional().nullable(),
 });
 
 export const contentCreationDetailsSchema = z.object({
@@ -99,7 +106,7 @@ export const weeklyPlanDetailsSchema = z.object({
 
 export const marketingContextSchema = z.object({
   submissionKind: marketingSubmissionKindSchema.optional().nullable(),
-  marketingReportType: marketingReportTypeSchema.optional().nullable(),
+  marketingReportType: storedMarketingReportTypeSchema.optional().nullable(),
   campaignName: z.string().trim().max(120).optional().nullable(),
   campaignType: marketingCampaignTypeSchema.optional().nullable(),
   objective: marketingObjectiveSchema.optional().nullable(),
@@ -200,7 +207,7 @@ export const reportCreateSchema = reportSchema.extend({
     }
   }
 
-  if (payload.marketingContext.marketingReportType === 'Content Creation') {
+  if (payload.marketingContext.marketingReportType === 'Organic Creation') {
     const contentCreation = payload.marketingContext.contentCreation;
 
     if (!contentCreation || contentCreation.entries.length === 0) {
@@ -215,7 +222,7 @@ export const reportCreateSchema = reportSchema.extend({
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['marketingContext', 'contentCreation', 'results'],
-        message: 'Results are required for content creation reports',
+        message: 'Results are required for organic creation reports',
       });
     }
 
@@ -223,7 +230,7 @@ export const reportCreateSchema = reportSchema.extend({
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['marketingContext', 'contentCreation', 'observations'],
-        message: 'Observations are required for content creation reports',
+        message: 'Observations are required for organic creation reports',
       });
     }
   }

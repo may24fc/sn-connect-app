@@ -66,7 +66,8 @@ function normalizeMetricName(name: string): string {
 }
 
 function isContentCreationLabel(value: string | null | undefined): boolean {
-  return normalizeMetricName(value ?? '') === 'content creation';
+  const normalizedValue = normalizeMetricName(value ?? '');
+  return normalizedValue === 'organic creation' || normalizedValue === 'content creation';
 }
 
 function getDisplayMetricName(name: string): string {

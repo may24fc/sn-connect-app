@@ -71,6 +71,7 @@ import {
   ArrowLeft,
   Calendar,
   FileText,
+  ImagePlus,
   Loader2,
   Plus,
   RotateCcw,
@@ -88,6 +89,8 @@ import {
 
 type MetricEntry = MarketingMetricTemplate & {
   id: string;
+  imagePath?: string | null;
+  imagePreviewUrl?: string | null;
 };
 
 const REPORT_TYPE = 'marketing' as const;
@@ -420,6 +423,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
   const hydratedDraftIdRef = useRef<string | null>(null);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSavingRef = useRef(false);
+  const contentImageInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const [activeReportId, setActiveReportId] = useState<string | null>(reportId ?? null);
   const [isFormReady, setIsFormReady] = useState(!isEditMode);
@@ -437,6 +441,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [metrics, setMetrics] = useState<Array<MetricEntry>>([]);
+  const [uploadingMetricIds, setUploadingMetricIds] = useState<Array<string>>([]);
 
   const selectedMarketingReportType = useMemo(
     () => MARKETING_REPORT_TYPE_OPTIONS.find((option) => option.value === marketingReportType),
@@ -468,7 +473,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
   const selectedObjectiveInfo = !isGoogleAdsReport && objective ? MARKETING_OBJECTIVE_INFO[objective] : undefined;
   const isMutating = createReport.isPending || updateReport.isPending;
   const totalSpendAdornment = getNumericInputAdornment(REPORT_CURRENCY_CODE);
-  const isContentCreationReport = marketingReportType === 'Content Creation';
+  const isContentCreationReport = marketingReportType === 'Organic Creation';
   const normalizedWeeklyPlanItems = useMemo(
     () => weeklyPlanItems.map((item) => item.trim()).filter(Boolean),
     [weeklyPlanItems]
@@ -555,6 +560,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
       unit: 'count',
       locked: false,
       analyticsCategory: 'outcome' as const,
+      imagePath: entry.imagePath ?? null,
     }));
     const nextReportType = normalizeMarketingReportType(
       marketingContext?.marketingReportType,
@@ -595,7 +601,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     setNotes(getContentCreationObservations(marketingContext, noteSections));
     setResults(getContentCreationResults(marketingContext, noteSections));
     setMetrics(
-      nextReportType === 'Content Creation'
+      nextReportType === 'Organic Creation'
         ? contentCreationEntries
         : usesMarketingPresetMetrics(nextReportType) && resolvedNextReportType
         ? mapMetricsFromDraft(
@@ -665,16 +671,20 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
 
     if (!notes.trim()) {
       return isContentCreationReport
-        ? 'Observations are required for content creation reports.'
+        ? 'Observations are required for organic creation reports.'
         : 'Campaign summary is required.';
     }
 
     if (isContentCreationReport && !results.trim()) {
-      return 'Results are required for content creation reports.';
+      return 'Results are required for organic creation reports.';
+    }
+
+    if (uploadingMetricIds.length > 0) {
+      return 'Wait for image uploads to finish before saving.';
     }
 
     return null;
-  }, [campaignType, isContentCreationReport, isGoogleAdsReport, isWeeklyPlanMode, marketingReportType, normalizedWeeklyPlanItems.length, notes, objective, periodEnd, periodStart, results, selectedObjectives, totalSpend]);
+  }, [campaignType, isContentCreationReport, isGoogleAdsReport, isWeeklyPlanMode, marketingReportType, normalizedWeeklyPlanItems.length, notes, objective, periodEnd, periodStart, results, selectedObjectives, totalSpend, uploadingMetricIds.length]);
 
   const buildReportPayload = useCallback(
     (asDraft: boolean): ReportCreateInput => {
@@ -724,10 +734,13 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
         }));
 
       const contentCreationEntries = isContentCreationReport
-        ? validMetrics.map((metric) => ({
-            platform: metric.metricName,
-            posts: Math.max(0, Math.round(metric.metricValue)),
-          }))
+        ? metrics
+            .filter((metric) => metric.name.trim().length > 0)
+            .map((metric) => ({
+              platform: metric.name,
+              posts: Math.max(0, Math.round(parseMetricValue(metric.value, metric.name, metric.unit))),
+              imagePath: metric.imagePath || undefined,
+            }))
         : undefined;
 
       const contentCreation = isContentCreationReport
@@ -878,6 +891,64 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
           : metric
       )
     );
+  };
+
+  const handleContentImageUpload = async (metricId: string, file: File) => {
+    const formData = new FormData();
+    formData.set('file', file);
+    setUploadingMetricIds((previous) => [...previous, metricId]);
+
+    try {
+      const response = await fetch('/api/reports/content-images', {
+        method: 'POST',
+        body: formData,
+      });
+      const payload = await response.json() as { data?: { path: string; signedUrl: string }; error?: string };
+
+      if (!response.ok || !payload.data) {
+        throw new Error(payload.error || 'Failed to upload image.');
+      }
+
+      const uploadedImage = payload.data;
+
+      setMetrics((previous) =>
+        previous.map((metric) =>
+          metric.id === metricId
+            ? { ...metric, imagePath: uploadedImage.path, imagePreviewUrl: uploadedImage.signedUrl }
+            : metric
+        )
+      );
+    } catch (error) {
+      addToast({
+        title: 'Image upload failed',
+        description: error instanceof Error ? error.message : 'Failed to upload image.',
+        variant: 'error',
+      });
+    } finally {
+      setUploadingMetricIds((previous) => previous.filter((id) => id !== metricId));
+    }
+  };
+
+  const handleRemoveContentImage = async (metricId: string, imagePath: string) => {
+    setMetrics((previous) =>
+      previous.map((metric) =>
+        metric.id === metricId ? { ...metric, imagePath: null, imagePreviewUrl: null } : metric
+      )
+    );
+
+    const response = await fetch('/api/reports/content-images', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: imagePath }),
+    });
+
+    if (!response.ok) {
+      addToast({
+        title: 'Image removal failed',
+        description: 'The image was removed from this form but could not be deleted from storage.',
+        variant: 'error',
+      });
+    }
   };
 
   const handleCampaignTypeChange = (value: MarketingCampaignType) => {
@@ -1566,6 +1637,59 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
                           ) : null}
                         </div>
                       </div>
+                      {isContentCreationReport ? (
+                        <div className="space-y-2">
+                          <input
+                            ref={(element) => {
+                              contentImageInputRefs.current[metric.id] = element;
+                            }}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            className="sr-only"
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              if (file) {
+                                void handleContentImageUpload(metric.id, file);
+                              }
+                              event.currentTarget.value = '';
+                            }}
+                          />
+                          {metric.imagePreviewUrl ? (
+                            <div className="relative max-w-2xl overflow-hidden rounded-md border bg-muted">
+                              <img
+                                src={metric.imagePreviewUrl}
+                                alt={`Uploaded ${metric.name || 'app'} content preview`}
+                                className="h-64 w-full object-contain"
+                              />
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                className="absolute right-2 top-2"
+                                onClick={() => void handleRemoveContentImage(metric.id, metric.imagePath ?? '')}
+                              >
+                                <X className="mr-1 h-4 w-4" />
+                                Remove image
+                              </Button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              className="flex min-h-28 w-full max-w-2xl flex-col items-center justify-center gap-2 rounded-md border border-dashed bg-muted/30 px-4 text-sm text-muted-foreground transition-colors hover:border-primary hover:bg-muted/60"
+                              onClick={() => contentImageInputRefs.current[metric.id]?.click()}
+                              disabled={uploadingMetricIds.includes(metric.id)}
+                            >
+                              {uploadingMetricIds.includes(metric.id) ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                              ) : (
+                                <ImagePlus className="h-5 w-5" />
+                              )}
+                              <span>{uploadingMetricIds.includes(metric.id) ? 'Uploading image...' : 'Add optional image'}</span>
+                              <span className="text-xs">JPEG, PNG, or WebP up to 5MB</span>
+                            </button>
+                          )}
+                        </div>
+                      ) : null}
                     </div>
                   );
                 })}

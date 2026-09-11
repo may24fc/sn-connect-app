@@ -260,16 +260,60 @@ const adminSectionConfig: ReadonlyArray<{ title: string; hrefs: ReadonlyArray<st
   },
 ];
 
+const selfServiceSectionConfig: ReadonlyArray<{ title: string; hrefs: ReadonlyArray<string> }> = [
+  {
+    title: 'Overview',
+    hrefs: ['/profile', '/associate/profile', '/dashboard', '/associate/dashboard'],
+  },
+  {
+    title: 'My Work',
+    hrefs: [
+      '/tasks',
+      '/pa-tasks',
+      '/projects',
+      '/reports',
+      '/associate/reports',
+      '/invoice',
+      '/expenses',
+      '/expenses/desk',
+    ],
+  },
+  {
+    title: 'Growth & Performance',
+    hrefs: [
+      '/performance',
+      '/performance/self-evaluation',
+      '/leaderboard',
+      '/onboarding',
+    ],
+  },
+  {
+    title: 'Company Tools',
+    hrefs: [
+      '/calendar',
+      '/announcements',
+      '/information-hub',
+      '/files',
+      '/tickets',
+      '/ai-spending',
+      '/ats/recruitment',
+      '/ats/jobs',
+      '/marketing/ad-spend',
+      '/crm',
+      '/revenue-forecast',
+    ],
+  },
+];
+
 function createRoleBasedSections(variant: UserRole, navItems: Array<NavItem>): Array<NavSection> {
-  if (variant !== 'admin' && variant !== 'super_admin') {
-    return [{ items: navItems }];
-  }
+  const sectionConfig =
+    variant === 'admin' || variant === 'super_admin' ? adminSectionConfig : selfServiceSectionConfig;
 
   const itemByHref = new Map(navItems.map((item) => [item.href, item]));
   const usedHrefs = new Set<string>();
   const sections: Array<NavSection> = [];
 
-  for (const config of adminSectionConfig) {
+  for (const config of sectionConfig) {
     const sectionItems = config.hrefs
       .map((href) => itemByHref.get(href))
       .filter((item): item is NavItem => item !== undefined);
@@ -288,6 +332,10 @@ function createRoleBasedSections(variant: UserRole, navItems: Array<NavItem>): A
   }
 
   return sections;
+}
+
+function isSelfServiceRole(variant: UserRole): boolean {
+  return variant === 'employee' || variant === 'associate';
 }
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Existing role-based navigation and conditional visibility logic is intentionally centralized.
@@ -321,27 +369,15 @@ export function Sidebar({
       return false;
     }
 
-    if (
-      (variant === 'employee' || variant === 'associate') &&
-      !showMarketingReports &&
-      item.href === '/reports'
-    ) {
+    if (isSelfServiceRole(variant) && !showMarketingReports && item.href === '/reports') {
       return false;
     }
 
-    if (
-      (variant === 'employee' || variant === 'associate') &&
-      !showExpenseDeskAccess &&
-      item.href === '/expenses/desk'
-    ) {
+    if (isSelfServiceRole(variant) && !showExpenseDeskAccess && item.href === '/expenses/desk') {
       return false;
     }
 
-    if (
-      (variant === 'employee' || variant === 'associate') &&
-      !showAiSpendingAccess &&
-      item.href === '/ai-spending'
-    ) {
+    if (isSelfServiceRole(variant) && !showAiSpendingAccess && item.href === '/ai-spending') {
       return false;
     }
 
@@ -349,12 +385,12 @@ export function Sidebar({
   });
 
   let navItems =
-    (variant === 'employee' || variant === 'associate') && showAtsAccess
+    isSelfServiceRole(variant) && showAtsAccess
       ? [...filteredNavItems, ...employeeAtsNavItems]
       : filteredNavItems;
 
   if (
-    variant === 'employee' || variant === 'associate'
+    isSelfServiceRole(variant)
       ? showPaTaskAccess
       : variant === 'admin' || variant === 'super_admin'
   ) {
@@ -374,7 +410,7 @@ export function Sidebar({
   }
 
   // Insert CRM nav item for granted non-admin users directly below Marketing Reports
-  if ((variant === 'employee' || variant === 'associate') && showMarketingAdSpendAccess) {
+  if (isSelfServiceRole(variant) && showMarketingAdSpendAccess) {
     const adSpendItem: NavItem = {
       label: 'Ad Spend',
       href: '/marketing/ad-spend',
@@ -393,7 +429,7 @@ export function Sidebar({
   }
 
   // Insert CRM nav item for granted non-admin users directly below Marketing Reports
-  if ((variant === 'employee' || variant === 'associate') && showCrmAccess) {
+  if (isSelfServiceRole(variant) && showCrmAccess) {
     const crmItem: NavItem = { label: 'CRM Tracker', href: '/crm', icon: Store };
     const reportsIndex = navItems.findIndex((it) => it.href === '/reports');
     if (reportsIndex >= 0) {
@@ -408,7 +444,7 @@ export function Sidebar({
     }
   }
 
-  if ((variant === 'employee' || variant === 'associate') && showRevenueForecastAccess) {
+  if (isSelfServiceRole(variant) && showRevenueForecastAccess) {
     const revenueItem: NavItem = {
       label: 'Revenue Forecast',
       href: '/revenue-forecast',

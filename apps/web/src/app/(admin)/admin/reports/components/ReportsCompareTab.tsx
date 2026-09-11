@@ -182,7 +182,7 @@ function aggregateReportMetrics(
     const reportType = resolveMarketingReportType(report.marketing_context);
     const reportLabel = getMarketingReportDisplayName(report.marketing_context);
 
-    if (reportType === 'Content Creation') {
+    if (reportType === 'Organic Creation') {
       const contentEntries = getContentCreationEntries(
         report.marketing_context,
         report.report_metrics

@@ -112,7 +112,7 @@ export default function ReportDetailPage({
   const weeklyPlanItems = getWeeklyPlanItems(marketingContext, report?.notes);
   const submittedTimestamp = report ? getSubmittedTimestamp(report) : null;
   const contentCreationEntries = getContentCreationEntries(marketingContext, metrics);
-  const isContentCreationReport = marketingContext?.marketingReportType === 'Content Creation';
+  const isContentCreationReport = marketingContext?.marketingReportType === 'Organic Creation';
 
   const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({
     initialColumn: 'metric_name',

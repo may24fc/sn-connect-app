@@ -1,6 +1,7 @@
 'use client';
 
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import { MarketingContentImagePreview } from '@/components/reports/MarketingContentImagePreview';
 import { useDeleteReport } from '@/hooks/useDeleteReport';
 import { useRestoreReport } from '@/hooks/useRestoreReport';
 import { type ReportRecord, useReports } from '@/hooks/useReports';
@@ -11,8 +12,12 @@ import {
   getMarketingObjectiveSummaryLabel,
   getMarketingReportContextSummary,
   getMarketingReportDisplayName,
+  getContentCreationEntries,
+  getContentCreationObservations,
+  getContentCreationResults,
   isMarketingWeeklyPlan,
   matchesMarketingReportFilters,
+  parseNoteSections,
   type MarketingCampaignFilterValue,
   type MarketingObjectiveFilterValue,
   type MarketingReportTypeFilterValue,
@@ -46,14 +51,16 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  ToggleGroup,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
-import { AlertCircle, ArchiveRestore, CheckCircle2, Eye, Loader2, MoreHorizontal, Search, Trash2, XCircle } from 'lucide-react';
+import { AlertCircle, ArchiveRestore, CheckCircle2, ChevronLeft, ChevronRight, Eye, Loader2, MoreHorizontal, Search, Trash2, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 type ReportReviewFilter = 'all' | 'submitted' | 'approved' | 'rejected' | 'archived';
+type SubmissionView = 'table' | 'latest';
 
 const statusVariant: Record<
   'draft' | 'submitted' | 'approved' | 'rejected',
@@ -84,6 +91,8 @@ export function ReportsSubmissionsTab({
 }: ReportsSubmissionsTabProps) {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<ReportReviewFilter>('all');
+  const [view, setView] = useState<SubmissionView>('latest');
+  const [latestReportIndex, setLatestReportIndex] = useState(0);
   const [workingId, setWorkingId] = useState<string | null>(null);
   const [reportPendingDelete, setReportPendingDelete] = useState<ReportRecord | null>(null);
   const archivedView = status === 'archived';
@@ -148,6 +157,16 @@ export function ReportsSubmissionsTab({
   });
 
   const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
+
+  const latestFirstReports = useMemo(
+    () => [...reports].sort((first, second) => (second.period_start ?? '').localeCompare(first.period_start ?? '')),
+    [reports]
+  );
+  const selectedLatestReport = latestFirstReports[latestReportIndex] ?? null;
+
+  useEffect(() => {
+    setLatestReportIndex(0);
+  }, [archivedView, campaignType, customEndDate, customStartDate, department, objective, reportType, search, status]);
 
   const stats = useMemo(() => {
     const submitted = reports.filter((report) => report.status === 'submitted').length;
@@ -286,20 +305,207 @@ export function ReportsSubmissionsTab({
             <SelectItem value="archived">Archived</SelectItem>
           </SelectContent>
         </Select>
+        <ToggleGroup
+          value={view}
+          onChange={(value) => setView(value as SubmissionView)}
+          options={[
+            { value: 'table', label: 'Table' },
+            { value: 'latest', label: 'Latest first' },
+          ]}
+        />
       </div>
 
-      {/* Table */}
-      {isLoading ? (
-        <Card>
-          <CardContent className="p-6">
-            <EmptyState
-              icon={<Loader2 className="h-5 w-5 animate-spin" />}
-              title="Loading marketing reports"
-              description="Retrieving report submissions for the selected filters."
-              size="sm"
-            />
-          </CardContent>
-        </Card>
+      {/* Results */}
+      {isLoading || (view === 'latest' && !error) ? (
+        view === 'latest' && !isLoading ? (
+          selectedLatestReport ? (
+            <Card>
+              <CardContent className="space-y-6 p-6">
+                <div className="flex flex-wrap items-start justify-between gap-4 border-b pb-5">
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">
+                      Report {latestReportIndex + 1} of {latestFirstReports.length}
+                    </p>
+                    <h2 className="text-xl font-semibold text-foreground">
+                      {getMarketingReportDisplayName(selectedLatestReport.marketing_context)}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      {formatDate(selectedLatestReport.period_start)} - {formatDate(selectedLatestReport.period_end)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={statusVariant[selectedLatestReport.status]}>
+                      {formatLabel(selectedLatestReport.status)}
+                    </Badge>
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={`/admin/reports/${selectedLatestReport.id}`}>
+                        <Eye className="mr-1.5 h-4 w-4" />
+                        Open
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid gap-5 lg:grid-cols-2">
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-foreground">Submission details</h3>
+                    <dl className="grid gap-3 text-sm sm:grid-cols-2">
+                      <div>
+                        <dt className="text-muted-foreground">Employee</dt>
+                        <dd className="font-medium text-foreground">
+                          {selectedLatestReport.employees
+                            ? `${selectedLatestReport.employees.first_name} ${selectedLatestReport.employees.last_name}`
+                            : '-'}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-muted-foreground">Report type</dt>
+                        <dd className="font-medium text-foreground">
+                          {getMarketingReportContextSummary(selectedLatestReport.marketing_context)}
+                        </dd>
+                      </div>
+                      {selectedLatestReport.marketing_context?.campaignType ? (
+                        <div>
+                          <dt className="text-muted-foreground">Campaign type</dt>
+                          <dd className="font-medium text-foreground">
+                            {getMarketingCampaignTypeLabel(selectedLatestReport.marketing_context.campaignType)}
+                          </dd>
+                        </div>
+                      ) : null}
+                      {getMarketingObjectiveSummaryLabel(selectedLatestReport.marketing_context) ? (
+                        <div>
+                          <dt className="text-muted-foreground">Goal</dt>
+                          <dd className="font-medium text-foreground">
+                            {getMarketingObjectiveSummaryLabel(selectedLatestReport.marketing_context)}
+                          </dd>
+                        </div>
+                      ) : null}
+                    </dl>
+                  </div>
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-foreground">Report narrative</h3>
+                    <div className="space-y-3 text-sm">
+                      {(() => {
+                        const noteSections = parseNoteSections(selectedLatestReport.notes || '');
+                        const isOrganicCreation = selectedLatestReport.marketing_context?.marketingReportType === 'Organic Creation';
+                        const observations = getContentCreationObservations(selectedLatestReport.marketing_context, noteSections);
+                        const results = getContentCreationResults(selectedLatestReport.marketing_context, noteSections);
+
+                        return (
+                          <>
+                            <div className="rounded-md border bg-muted/20 p-3">
+                              <p className="mb-1 text-xs font-medium text-muted-foreground">
+                                {isOrganicCreation ? 'Observations' : 'Summary'}
+                              </p>
+                              <p className="whitespace-pre-wrap text-foreground">
+                                {(isOrganicCreation ? observations : noteSections.summary) || 'No narrative was provided.'}
+                              </p>
+                            </div>
+                            {isOrganicCreation ? (
+                              <div className="rounded-md border bg-muted/20 p-3">
+                                <p className="mb-1 text-xs font-medium text-muted-foreground">Results</p>
+                                <p className="whitespace-pre-wrap text-foreground">{results || 'No results were provided.'}</p>
+                              </div>
+                            ) : null}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                </div>
+
+                {(selectedLatestReport.report_metrics?.length ?? 0) > 0 ? (
+                  <div className="border-t pt-5">
+                    <h3 className="mb-3 text-sm font-semibold text-foreground">Metrics</h3>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                      {(selectedLatestReport.report_metrics ?? []).map((metric) => (
+                        <div key={metric.id} className="rounded-md border p-3">
+                          <p className="text-xs text-muted-foreground">{metric.metric_name}</p>
+                          <p className="mt-1 text-lg font-semibold text-foreground">
+                            {metric.metric_value} {metric.metric_unit ?? ''}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {selectedLatestReport.marketing_context?.marketingReportType === 'Organic Creation' ? (
+                  <div className="border-t pt-5">
+                    <h3 className="mb-3 text-sm font-semibold text-foreground">Contents Published</h3>
+                    <div className="grid gap-4 lg:grid-cols-2">
+                      {getContentCreationEntries(
+                        selectedLatestReport.marketing_context,
+                        selectedLatestReport.report_metrics ?? []
+                      ).map((entry, index) => (
+                        <div key={`${entry.platform}-${index}`} className="space-y-3 rounded-md border p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="font-medium text-foreground">{entry.platform}</p>
+                            <p className="text-sm text-muted-foreground">{entry.posts} posts</p>
+                          </div>
+                          {entry.imagePath ? (
+                            <MarketingContentImagePreview
+                              imagePath={entry.imagePath}
+                              alt={`${entry.platform} published content evidence`}
+                              className="h-96"
+                            />
+                          ) : (
+                            <p className="text-sm text-muted-foreground">No image attached.</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="flex items-center justify-between border-t pt-5">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={latestReportIndex === 0}
+                    onClick={() => setLatestReportIndex((index) => index - 1)}
+                  >
+                    <ChevronLeft className="mr-1 h-4 w-4" />
+                    Previous
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={latestReportIndex >= latestFirstReports.length - 1}
+                    onClick={() => setLatestReportIndex((index) => index + 1)}
+                  >
+                    Next
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="p-6">
+                <EmptyState
+                  icon={Search}
+                  title={archivedView ? 'No archived marketing reports found' : 'No marketing reports found'}
+                  description="Adjust the filters to view a report."
+                  size="sm"
+                />
+              </CardContent>
+            </Card>
+          )
+        ) : (
+          <Card>
+            <CardContent className="p-6">
+              <EmptyState
+                icon={<Loader2 className="h-5 w-5 animate-spin" />}
+                title="Loading marketing reports"
+                description="Retrieving report submissions for the selected filters."
+                size="sm"
+              />
+            </CardContent>
+          </Card>
+        )
       ) : error ? (
         <Card>
           <CardContent className="p-6">
@@ -458,7 +664,8 @@ export function ReportsSubmissionsTab({
             </Table>
           </CardContent>
         </Card>
-      )}
+        )
+      }
 
       <Dialog open={Boolean(reportPendingDelete)} onOpenChange={(open) => !open && setReportPendingDelete(null)}>
         <DialogContent className="sm:max-w-md">

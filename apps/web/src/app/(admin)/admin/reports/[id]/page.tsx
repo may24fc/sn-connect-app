@@ -1,6 +1,7 @@
 'use client';
 
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import { MarketingContentImagePreview } from '@/components/reports/MarketingContentImagePreview';
 import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { useReport } from '@/hooks/useReport';
 import { useTableSort } from '@/hooks/useTableSort';
@@ -93,7 +94,7 @@ export default function AdminReportDetailPage({
   const weeklyPlanItems = getWeeklyPlanItems(marketingContext, report?.notes);
   const submittedTimestamp = report ? getSubmittedTimestamp(report) : null;
   const contentCreationEntries = getContentCreationEntries(marketingContext, metrics);
-  const isContentCreationReport = marketingContext?.marketingReportType === 'Content Creation';
+  const isContentCreationReport = marketingContext?.marketingReportType === 'Organic Creation';
 
   const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({
     initialColumn: 'metric_name',
@@ -392,6 +393,31 @@ export default function AdminReportDetailPage({
         </CardContent>
       </Card>
       )}
+
+      {isContentCreationReport && contentCreationEntries.some((entry) => entry.imagePath) ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Content Images</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 lg:grid-cols-2">
+            {contentCreationEntries.map((entry, index) =>
+              entry.imagePath ? (
+                <div key={`${entry.platform}-${index}`} className="space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-medium text-foreground">{entry.platform}</p>
+                    <p className="text-sm text-muted-foreground">{entry.posts} posts</p>
+                  </div>
+                  <MarketingContentImagePreview
+                    imagePath={entry.imagePath}
+                    alt={`${entry.platform} published content evidence`}
+                    className="h-96"
+                  />
+                </div>
+              ) : null
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
 
       {/* Next Steps */}
       {weeklyPlanItems.length > 0 && (
