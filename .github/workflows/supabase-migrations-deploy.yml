@@ -65,6 +65,23 @@ jobs:
             echo "pw=${{ secrets.SUPABASE_STAGING_DB_PASSWORD }}" >> $GITHUB_OUTPUT
           fi
 
+      - name: Validate Supabase deployment credentials
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ steps.project.outputs.ref }}
+          SUPABASE_DB_PASSWORD: ${{ steps.project.outputs.pw }}
+        run: |
+          missing=()
+          [[ -n "$SUPABASE_ACCESS_TOKEN" ]] || missing+=("SUPABASE_ACCESS_TOKEN (Supabase personal access token)")
+          [[ -n "$SUPABASE_PROJECT_REF" ]] || missing+=("environment project reference")
+          [[ -n "$SUPABASE_DB_PASSWORD" ]] || missing+=("environment database password")
+
+          if (( ${#missing[@]} )); then
+            echo "::error::Missing Supabase deployment credential(s): ${missing[*]}"
+            echo "::error::Set GitHub Environment secrets for the selected environment, or repository-level secrets available to it."
+            exit 1
+          fi
+
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
