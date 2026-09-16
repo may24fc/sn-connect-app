@@ -1,0 +1,97 @@
+name: Deploy Supabase Migrations
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - 'supabase/migrations/**'
+      - '.github/workflows/supabase-migrations-deploy.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      dry_run:
+        description: 'List pending migrations without applying them'
+        required: false
+        default: true
+        type: boolean
+
+# Never cancel a migration mid-flight: a half-applied batch leaves the database
+# with some objects created and later corrective migrations missing.
+concurrency:
+  group: supabase-migrations-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy Migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.environment) || (github.ref == 'refs/heads/main' && 'production') || 'staging' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            ENV="${{ github.event.inputs.environment }}"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            ENV="production"
+          else
+            ENV="staging"
+          fi
+          echo "name=$ENV" >> $GITHUB_OUTPUT
+          echo "Target environment: $ENV"
+
+      - name: Select project credentials
+        id: project
+        run: |
+          if [[ "${{ steps.env.outputs.name }}" == "production" ]]; then
+            echo "ref=${{ secrets.SUPABASE_PROJECT_REF }}" >> $GITHUB_OUTPUT
+            echo "::add-mask::${{ secrets.SUPABASE_DB_PASSWORD }}"
+            echo "pw=${{ secrets.SUPABASE_DB_PASSWORD }}" >> $GITHUB_OUTPUT
+          else
+            echo "ref=${{ secrets.SUPABASE_STAGING_PROJECT_REF }}" >> $GITHUB_OUTPUT
+            echo "::add-mask::${{ secrets.SUPABASE_STAGING_DB_PASSWORD }}"
+            echo "pw=${{ secrets.SUPABASE_STAGING_DB_PASSWORD }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link project
+        run: supabase link --project-ref ${{ steps.project.outputs.ref }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ steps.project.outputs.pw }}
+
+      - name: Show pending migrations
+        run: supabase migration list --linked
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ steps.project.outputs.pw }}
+
+      - name: Apply migrations
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true' }}
+        run: supabase db push --linked
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ steps.project.outputs.pw }}
+
+      - name: Confirm no migrations remain pending
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true' }}
+        run: supabase migration list --linked
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ steps.project.outputs.pw }}
