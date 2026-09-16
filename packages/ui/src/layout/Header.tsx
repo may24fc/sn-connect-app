@@ -1,6 +1,20 @@
 'use client';
 
-import { Bell, ChevronDown, CircleHelp, LogOut, Menu, Moon, Search, Settings, Sun, User, Phone, Grid2x2 } from 'lucide-react';
+import {
+  Bell,
+  ChevronDown,
+  CircleHelp,
+  Gift,
+  Grid2x2,
+  LogOut,
+  Menu,
+  Moon,
+  Phone,
+  Search,
+  Settings,
+  Sun,
+  User,
+} from 'lucide-react';
 import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../primitives/avatar';
 import { Badge } from '../primitives/badge';
@@ -93,7 +107,8 @@ export function Header({
   const bookingUrl =
     process.env.NEXT_PUBLIC_CALL_WITH_STEVEN_URL ?? process.env.NEXT_PUBLIC_STEVEN_BOOKING_URL;
   const embedUrl =
-    process.env.NEXT_PUBLIC_CALL_WITH_STEVEN_EMBED_URL ?? process.env.NEXT_PUBLIC_STEVEN_BOOKING_EMBED_URL;
+    process.env.NEXT_PUBLIC_CALL_WITH_STEVEN_EMBED_URL ??
+    process.env.NEXT_PUBLIC_STEVEN_BOOKING_EMBED_URL;
 
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
@@ -143,8 +158,8 @@ export function Header({
       {/* Right Section */}
       <div className="flex items-center gap-2">
         {/* Call with Steven: show when booking or embed env is provided. If an embed URL is configured, open the internal embed page; otherwise open the external booking link in a new tab. */}
-        {(bookingUrl || embedUrl) && (
-          embedUrl ? (
+        {(bookingUrl || embedUrl) &&
+          (embedUrl ? (
             <a href="/booking/steven" aria-label="Call with Steven (embed)">
               <div className="flex items-center gap-1 group text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md px-2 py-1 pr-3">
                 <Button
@@ -153,15 +168,20 @@ export function Header({
                   className="group text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 >
                   <Phone
-                  className="h-5 w-5 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
-                  strokeWidth={1.5}
+                    className="h-5 w-5 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
+                    strokeWidth={1.5}
                   />
                 </Button>
                 <p>Call with Steven</p>
               </div>
             </a>
           ) : (
-            <a href={bookingUrl} target="_blank" rel="noopener noreferrer" aria-label="Call with Steven">
+            <a
+              href={bookingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Call with Steven"
+            >
               <Button
                 variant="ghost"
                 size="icon"
@@ -173,8 +193,7 @@ export function Header({
                 />
               </Button>
             </a>
-          )
-        )}
+          ))}
         <a href="/bingo" aria-label="Open wellness bingo">
           <div className="flex items-center gap-1 group text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md px-2 py-1 pr-3">
             <Button
@@ -189,6 +208,15 @@ export function Header({
             </Button>
             <p>Wellness Bingo</p>
           </div>
+        </a>
+        <a href="/christmas-tree" aria-label="Open Christmas Wish Tree">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+          >
+            <Gift className="h-5 w-5" strokeWidth={1.5} />
+          </Button>
         </a>
         {/* Help / Guided Tour */}
         {onHelpClick && (
@@ -261,16 +289,10 @@ export function Header({
                   {formatRoleLabel(user.role)}
                 </Badge>
               </div>
-              <ChevronDown
-                className="h-4 w-4 text-zinc-500 dark:text-zinc-400"
-                strokeWidth={1.5}
-              />
+              <ChevronDown className="h-4 w-4 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className="w-56 bg-popover border border-border"
-          >
+          <DropdownMenuContent align="end" className="w-56 bg-popover border border-border">
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{user.name}</p>

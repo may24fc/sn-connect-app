@@ -410,7 +410,8 @@ export const queryKeys = {
     all: ['payroll'] as const,
     lists: () => [...queryKeys.payroll.all, 'list'] as const,
     list: (filters: InvoiceFilters) => [...queryKeys.payroll.lists(), filters] as const,
-    fxRateToAud: (sourceCurrency: string) => [...queryKeys.payroll.all, 'fx-rate-to-aud', sourceCurrency] as const,
+    fxRateToAud: (sourceCurrency: string) =>
+      [...queryKeys.payroll.all, 'fx-rate-to-aud', sourceCurrency] as const,
     details: () => [...queryKeys.payroll.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.payroll.details(), id] as const,
     approvals: () => [...queryKeys.payroll.all, 'approvals'] as const,
@@ -693,6 +694,11 @@ export const queryKeys = {
     partners: () => [...queryKeys.bingo.all, 'partners'] as const,
     adminSummary: (cycleId: string | null) =>
       [...queryKeys.bingo.all, 'admin-summary', cycleId ?? 'current'] as const,
+  },
+
+  christmasTree: {
+    all: ['christmas-tree'] as const,
+    current: () => [...queryKeys.christmasTree.all, 'current'] as const,
   },
 
   gamification: {
