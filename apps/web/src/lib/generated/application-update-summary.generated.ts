@@ -6,10 +6,10 @@ export interface GeneratedApplicationUpdateSummary {
 export const generatedApplicationUpdateSummary: GeneratedApplicationUpdateSummary = {
   "title": "What's new in Control Hub",
   "items": [
-    "A new ticketing workspace makes it easier to submit, assign, and track requests in one place.",
-    "The AI assistant is easier to return to, with saved conversations, smarter prompts, and clearer answer context.",
-    "New analytics and activity views give teams clearer visibility into progress, trends, and important updates.",
-    "Checklist, onboarding, and follow-through workflows are easier to manage with clearer review steps and submission tools.",
-    "Recruitment tracking is easier with a dedicated pipeline view for following hiring progress."
+    "Marketing reporting now brings spend, content performance, images, and reporting schedules into one workflow.",
+    "The PA task tracker adds a focused workspace for prioritizing work, managing due dates, and sharing attachments.",
+    "AI spending is easier to oversee with provider-level tracking and access controls.",
+    "The virtual Christmas tree creates a shared, live space for employees to add and enjoy wishes together.",
+    "Database updates now follow a more reliable deployment process across staging and production."
   ]
 };

@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
-const WORKSPACE_ROOT = path.resolve(SCRIPT_DIR, '..');
+const WORKSPACE_ROOT = path.resolve(SCRIPT_DIR, '..', '..');
 const CHANGELOG_PATH = path.join(WORKSPACE_ROOT, 'CHANGELOG.md');
 const OUTPUT_PATH = path.join(
   WORKSPACE_ROOT,
@@ -22,6 +22,36 @@ const FALLBACK_SUMMARY = {
 };
 
 const SUMMARY_RULES = [
+  {
+    key: 'marketing-reporting',
+    priority: 110,
+    matcher: /marketing performance reporting/i,
+    text: 'Marketing reporting now brings spend, content performance, images, and reporting schedules into one workflow.',
+  },
+  {
+    key: 'pa-task-tracker',
+    priority: 108,
+    matcher: /pa task tracker/i,
+    text: 'The PA task tracker adds a focused workspace for prioritizing work, managing due dates, and sharing attachments.',
+  },
+  {
+    key: 'ai-spending',
+    priority: 106,
+    matcher: /ai spending controls/i,
+    text: 'AI spending is easier to oversee with provider-level tracking and access controls.',
+  },
+  {
+    key: 'christmas-tree',
+    priority: 104,
+    matcher: /virtual christmas tree/i,
+    text: 'The virtual Christmas tree creates a shared, live space for employees to add and enjoy wishes together.',
+  },
+  {
+    key: 'migration-reliability',
+    priority: 102,
+    matcher: /migration deployment workflow/i,
+    text: 'Database updates now follow a more reliable deployment process across staging and production.',
+  },
   {
     key: 'ticketing',
     priority: 100,
@@ -271,7 +301,25 @@ async function loadSummary() {
   }
 }
 
+async function validateChangelog() {
+  const changelog = await readFile(CHANGELOG_PATH, 'utf8');
+  const summary = parseChangelogSummary(changelog);
+
+  if (!/^## \[Unreleased\]$/m.test(changelog)) {
+    throw new Error('CHANGELOG.md must include an [Unreleased] section.');
+  }
+
+  if (summary.title !== DEFAULT_SUMMARY_TITLE) {
+    throw new Error('CHANGELOG.md [Unreleased] section could not be parsed.');
+  }
+}
+
 async function main() {
+  if (process.argv.includes('--check')) {
+    await validateChangelog();
+    return;
+  }
+
   const summary = await loadSummary();
 
   await mkdir(path.dirname(OUTPUT_PATH), { recursive: true });

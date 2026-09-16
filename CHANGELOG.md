@@ -10,6 +10,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Marketing performance reporting** — Marketing spend tracking, organic-content reporting, ad-platform filters, report calendars, image uploads, and audit coverage; supporting schema and storage migrations (`20260812000001`, `20260814000001`, `20260909000001` through `20260916000001`)
+- **PA task tracker** — Personal-assistant task workspace with access grants, lookup tables, due dates, sorting, pagination, attachments, and protected storage (`20260813000001` through `20260814232637`)
+- **AI spending controls** — Provider-level spend tracking, all-time spend visibility, role-gated access, and legacy-constraint repairs (`20260828000001` through `20260828000004`)
+- **Virtual Christmas tree** — Shared wish-tree experience with ornament submission, hardened role policies, realtime updates, and recursion-safe update policies (`20260911000002`, `20260912000001`, `20260915000001` through `20260915000003`)
+- **Migration deployment workflow** — GitHub Actions workflow deploys migrations to staging from `dev` and production from `main`, shows pending migrations before and after deployment, and defaults manual runs to dry-run mode
 - **Ticketing system** — `tickets`, `ticket_handlers`, `ticket_comments` tables; `ticket_team`, `ticket_priority`, `ticket_status` enums; `GET/POST /api/tickets`, `GET/PATCH /api/tickets/[id]`, `GET /api/tickets/assignees`, `GET/POST/DELETE /api/ticket-handlers`, `GET /api/ticket-handlers/me`; `TicketListTable`, `TicketWorkDialog`, `TicketAssignmentDialog`, `ManageTicketHandlersDialog`, `SuperAdminTicketsPanel`, ticket-badges components; `/tickets`, `/tickets/[id]` employee pages; `/admin/tickets`, `/super-admin/tickets` admin pages (`20260329000006`)
 - **Checklist templates** — `checklist_templates` table; `checklist_template_flow`, `checklist_template_scope` enums; `GET/PUT /api/checklist-templates`; `ChecklistsDashboardPage`, `ChecklistManagementDialog` components; `/admin/checklists`, `/super-admin/checklists` pages (`20260329000005`)
 - **AI conversation history** — `GET/POST /api/ai/conversations`, `PATCH/DELETE /api/ai/conversations/[id]`, `GET /api/ai/conversations/[id]/messages`; users can save, name, and revisit AI chat sessions
@@ -63,6 +68,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Marketing schema preservation** — Kept established marketing tables and platform data intact during report-context normalization (`20260916000001`)
+- **Christmas tree access policies** — Hardened ornament access controls and resolved recursive update-policy behavior (`20260912000001`, `20260915000002`, `20260915000003`)
 - `fix(api)`: Use `supabaseAdmin` for all DB operations in POST routes (invoices, OKRs, KPIs, reports) to prevent nested RLS failures
 - `fix(api)`: Use admin client for DB operations to bypass nested RLS failures
 - `fix(db)`: Update offboarding and onboarding RLS policies to use consolidated role enum (`20260227000002`)

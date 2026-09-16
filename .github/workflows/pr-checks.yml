@@ -2,10 +2,35 @@ name: PR Checks
 
 on:
   pull_request:
-    branches: [master]
+    branches: [main, dev]
     types: [opened, synchronize, reopened]
 
 jobs:
+  changelog-check:
+    name: Changelog Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Require changelog for product changes
+        run: |
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          if echo "$CHANGED_FILES" | grep -Eq '^(apps/|packages/|supabase/migrations/)'; then
+            if ! echo "$CHANGED_FILES" | grep -qx 'CHANGELOG.md'; then
+              echo "::error::Product code or migration changes require a curated CHANGELOG.md update."
+              exit 1
+            fi
+          fi
+
+      - name: Validate changelog format
+        run: node scripts/reports/generate-application-update-summary.mjs --check
+
   # PR title validation
   validate-pr:
     name: Validate PR
