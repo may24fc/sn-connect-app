@@ -30,24 +30,34 @@ DECLARE
     steven_user_id uuid;
     may_user_id uuid;
     cef_user_id uuid;
+    steven_employee_id uuid;
+    may_employee_id uuid;
+    cef_employee_id uuid;
 BEGIN
     -- Fetch user IDs from the users table based on their email
     SELECT id INTO steven_user_id FROM auth.users WHERE email = 'steven@snap-raise.com';
     SELECT id INTO may_user_id FROM auth.users WHERE email = 'may@snap-raise.com';
     SELECT id INTO cef_user_id FROM auth.users WHERE email = 'cef@snap-raise.com';
 
-    -- Insert historical data only if the table is empty to prevent duplication on re-seeding
-    IF NOT EXISTS (SELECT 1 FROM public.expense_entries) THEN
+    SELECT id INTO steven_employee_id FROM public.employees WHERE user_id = steven_user_id;
+    SELECT id INTO may_employee_id FROM public.employees WHERE user_id = may_user_id;
+    SELECT id INTO cef_employee_id FROM public.employees WHERE user_id = cef_user_id;
+
+    -- A fresh environment has none of these accounts, and this file promises no
+    -- fake auth-linked rows, so skip rather than fail the reset.
+    IF steven_employee_id IS NULL OR may_employee_id IS NULL OR cef_employee_id IS NULL THEN
+        RAISE NOTICE 'Skipping expense_entries baseline: seed employees are not present in this environment.';
+    ELSIF NOT EXISTS (SELECT 1 FROM public.expense_entries) THEN
         INSERT INTO public.expense_entries (
+            employee_id,
             submitted_by,
-            receipt_path,
             vendor_name,
             transaction_date,
             tax_amount,
             total_amount,
             currency,
-            draft_debit_account,
-            draft_credit_account,
+            ai_debit_account,
+            ai_credit_account,
             verified_debit_account,
             verified_credit_account,
             business_justification,
@@ -61,8 +71,8 @@ BEGIN
         ) VALUES
         -- #1: Standard Recurring: OpenAI (last 3 months for Steven)
         (
+            steven_employee_id,
             steven_user_id,
-            'expense-receipts/seed/openai_apr.png',
             'OpenAI',
             '2026-04-20T10:00:00Z',
             0.00,
@@ -80,8 +90,8 @@ BEGIN
             '2026-04-21T10:00:00Z'
         ),
         (
+            steven_employee_id,
             steven_user_id,
-            'expense-receipts/seed/openai_may.png',
             'OpenAI',
             '2026-05-20T10:00:00Z',
             0.00,
@@ -99,8 +109,8 @@ BEGIN
             '2026-05-21T10:00:00Z'
         ),
         (
+            steven_employee_id,
             steven_user_id,
-            'expense-receipts/seed/openai_jun.png',
             'OpenAI',
             '2026-06-20T10:00:00Z',
             0.00,
@@ -120,8 +130,8 @@ BEGIN
 
         -- #2: Price Spike Example: AWS (May had a sudden increase)
         (
+            may_employee_id,
             may_user_id,
-            'expense-receipts/seed/aws_apr.png',
             'Amazon Web Services',
             '2026-04-15T14:00:00Z',
             10.50,
@@ -139,8 +149,8 @@ BEGIN
             '2026-04-16T11:00:00Z'
         ),
         (
+            may_employee_id,
             may_user_id,
-            'expense-receipts/seed/aws_may_spike.png',
             'Amazon Web Services',
             '2026-05-15T14:00:00Z',
             25.00,
@@ -160,8 +170,8 @@ BEGIN
 
         -- #3: Non-Recurring Example: A new software purchase
         (
+            cef_employee_id,
             cef_user_id,
-            'expense-receipts/seed/figma.png',
             'Figma',
             '2026-06-01T12:00:00Z',
             15.00,
@@ -181,8 +191,8 @@ BEGIN
         
         -- #4: Awaiting associate review (this will show up in the queue)
         (
+            steven_employee_id,
             steven_user_id,
-            'expense-receipts/seed/vercel_jun.png',
             'Vercel',
             '2026-06-15T18:00:00Z',
             0.00,
