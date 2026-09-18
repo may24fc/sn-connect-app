@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import AdminCrmPage from '@/app/(admin)/admin/crm/page';
+import { CrmPageContent } from '@/components/crm/CrmPageContent';
 import { getCrmAuthedContext } from '@/app/api/crm/_lib';
 import { SelfServiceLayoutShell } from '@/components/layout/SelfServiceLayoutShell';
 
@@ -15,7 +15,7 @@ export default async function CrmPage() {
 
   return (
     <SelfServiceLayoutShell allowedRoles={['employee', 'associate', 'admin', 'super_admin']}>
-      <AdminCrmPage allowedTrackers={auth.context.grantedTrackers} />
+      <CrmPageContent allowedTrackers={auth.context.grantedTrackers} />
     </SelfServiceLayoutShell>
   );
 }

@@ -759,7 +759,7 @@ export default function PaTasksPage() {
       </div>
 
       <Tabs value={isArchiveView ? 'archive' : 'main'}>
-        <TabsList className="w-full justify-start">
+        <TabsList className="w-fit max-w-full justify-start overflow-x-auto">
           <TabsTrigger value="main" asChild>
             <Link href={activePath}>Main</Link>
           </TabsTrigger>

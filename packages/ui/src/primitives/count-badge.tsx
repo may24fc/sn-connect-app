@@ -11,7 +11,7 @@ const countBadgeVariants = cva(
       variant: {
         neutral: 'bg-primary-muted text-primary',
         contrast:
-          'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900',
+          'bg-primary text-primary-foreground',
         accent:
           'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',
         info:

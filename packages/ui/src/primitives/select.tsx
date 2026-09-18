@@ -18,19 +18,18 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      'flex h-9 w-full cursor-pointer items-center justify-between rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none ring-offset-background transition-all',
-      'hover:border-zinc-300 hover:bg-zinc-50/50',
-      'focus:border-zinc-700 focus:ring-2 focus:ring-zinc-700/20 focus:ring-offset-0',
+      'flex h-9 w-full cursor-pointer items-center justify-between rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground shadow-sm outline-none ring-offset-background transition-all',
+      'hover:border-primary/35 hover:bg-primary-muted/20',
+      'focus:border-primary/60 focus:ring-2 focus:ring-ring/20 focus:ring-offset-0',
       'disabled:cursor-not-allowed disabled:opacity-50',
-      'dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/50 dark:focus:border-zinc-400 dark:focus:ring-zinc-400/20',
-      '[&>span]:line-clamp-1',
+      '[&>span]:min-w-0 [&>span]:truncate',
       className
     )}
     {...props}
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <ChevronDown className="h-4 w-4 shrink-0 text-zinc-400 transition-transform duration-200 dark:text-zinc-500" />
+      <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200" />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ));
@@ -78,9 +77,8 @@ const SelectContent = React.forwardRef<
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
-        'relative z-50 min-w-[8rem] overflow-hidden rounded-xl border border-zinc-200 bg-white text-zinc-900 shadow-xl shadow-zinc-200/60',
+        'relative z-50 min-w-[8rem] overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-xl shadow-primary/10',
         'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
-        'dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:shadow-none',
         position === 'popper' &&
           'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
         className
@@ -113,7 +111,7 @@ const SelectLabel = React.forwardRef<
   <SelectPrimitive.Label
     ref={ref}
     className={cn(
-      'px-2 py-1.5 text-xs font-semibold text-zinc-400 dark:text-zinc-500',
+      'px-2 py-1.5 text-xs font-semibold text-muted-foreground',
       className
     )}
     {...props}
@@ -147,12 +145,10 @@ const SelectItem = React.forwardRef<
       value={safeValue}
       data-original-value={value ?? undefined}
       className={cn(
-        'relative flex w-full cursor-pointer select-none items-center rounded-lg py-2 pl-8 pr-3 text-sm text-zinc-700 outline-none transition-colors',
-        'focus:bg-slate-50 focus:text-slate-900',
-        'data-[state=checked]:bg-slate-900 data-[state=checked]:font-medium data-[state=checked]:text-white',
+        'relative flex w-full cursor-pointer select-none items-center rounded-md py-2 pl-8 pr-3 text-sm text-foreground outline-none transition-colors',
+        'focus:bg-primary-muted/70 focus:text-primary',
+        'data-[state=checked]:bg-primary data-[state=checked]:font-medium data-[state=checked]:text-primary-foreground',
         'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-        'dark:text-zinc-300 dark:focus:bg-slate-800/50 dark:focus:text-slate-200',
-        'dark:data-[state=checked]:bg-slate-700 dark:data-[state=checked]:text-white',
         className
       )}
       {...(rest as any)}
@@ -175,7 +171,7 @@ const SelectSeparator = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Separator
     ref={ref}
-    className={cn('-mx-1 my-1.5 h-px bg-zinc-100 dark:bg-zinc-800', className)}
+    className={cn('-mx-1 my-1.5 h-px bg-border', className)}
     {...props}
   />
 ));

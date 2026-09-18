@@ -203,7 +203,7 @@ export default function AdminProjectsPage() {
                   </h2>
                   <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
                     <table className="w-full text-sm">
-                      <thead className="border-b border-zinc-200 bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
+                      <thead className="border-b border-border bg-muted/55 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                         <tr>
                           <th className="px-4 py-2">Department</th>
                           <th className="px-4 py-2 text-center">Interns</th>
@@ -212,7 +212,7 @@ export default function AdminProjectsPage() {
                           <th className="px-4 py-2 text-center">Overdue</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                      <tbody className="divide-y divide-border/80">
                         {isLoading ? (
                           <tr>
                             <td colSpan={5} className="px-4 py-6">
@@ -336,7 +336,7 @@ export default function AdminProjectsPage() {
                 ) : (
                   <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
                     <table className="w-full text-sm">
-                      <thead className="border-b border-zinc-200 bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
+                      <thead className="border-b border-border bg-muted/55 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                         <tr>
                           <th className="px-4 py-2">Project</th>
                           <th className="px-4 py-2">Health</th>
@@ -344,7 +344,7 @@ export default function AdminProjectsPage() {
                           <th className="px-4 py-2 text-right">Progress</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                      <tbody className="divide-y divide-border/80">
                         {allProjects.map((project) => (
                           <tr key={project.id}>
                             <td className="px-4 py-3">

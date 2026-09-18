@@ -110284,7 +110284,7 @@
       "file_type": "code",
       "norm_label": "adminroutes",
       "source_file": "e2e/ui-consistency-agent/routes.config.ts",
-      "source_location": "L47"
+      "source_location": "L49"
     },
     {
       "id": "e2e_ui_consistency_agent_routes_config_allroutes",
@@ -110295,7 +110295,7 @@
       "file_type": "code",
       "norm_label": "allroutes",
       "source_file": "e2e/ui-consistency-agent/routes.config.ts",
-      "source_location": "L106"
+      "source_location": "L118"
     },
     {
       "id": "e2e_ui_consistency_agent_routes_config_defaultchecks",
@@ -110306,7 +110306,7 @@
       "file_type": "code",
       "norm_label": "defaultchecks",
       "source_file": "e2e/ui-consistency-agent/routes.config.ts",
-      "source_location": "L114"
+      "source_location": "L126"
     },
     {
       "id": "e2e_ui_consistency_agent_routes_config_defaultconfig",
@@ -110317,7 +110317,7 @@
       "file_type": "code",
       "norm_label": "defaultconfig",
       "source_file": "e2e/ui-consistency-agent/routes.config.ts",
-      "source_location": "L123"
+      "source_location": "L135"
     },
     {
       "id": "e2e_ui_consistency_agent_routes_config_employeeroutes",
@@ -110339,7 +110339,7 @@
       "file_type": "code",
       "norm_label": "internroutes",
       "source_file": "e2e/ui-consistency-agent/routes.config.ts",
-      "source_location": "L43"
+      "source_location": "L42"
     },
     {
       "id": "e2e_ui_consistency_agent_routes_config_publicroutes",
@@ -110361,7 +110361,7 @@
       "file_type": "code",
       "norm_label": "superadminroutes",
       "source_file": "e2e/ui-consistency-agent/routes.config.ts",
-      "source_location": "L79"
+      "source_location": "L91"
     },
     {
       "id": "e2e_ui_consistency_agent_types",
@@ -405262,7 +405262,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "e2e/ui-consistency-agent/routes.config.ts",
-      "source_location": "L106",
+      "source_location": "L118",
       "weight": 1.0
     },
     {
@@ -405273,7 +405273,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "e2e/ui-consistency-agent/routes.config.ts",
-      "source_location": "L114",
+      "source_location": "L126",
       "weight": 1.0
     },
     {
@@ -405284,7 +405284,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "e2e/ui-consistency-agent/routes.config.ts",
-      "source_location": "L123",
+      "source_location": "L135",
       "weight": 1.0
     },
     {
@@ -405306,7 +405306,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "e2e/ui-consistency-agent/routes.config.ts",
-      "source_location": "L43",
+      "source_location": "L42",
       "weight": 1.0
     },
     {
@@ -405317,18 +405317,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "e2e/ui-consistency-agent/routes.config.ts",
-      "source_location": "L47",
-      "weight": 1.0
-    },
-    {
-      "source": "e2e_ui_consistency_agent_routes_config",
-      "target": "e2e_ui_consistency_agent_routes_config_superadminroutes",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "e2e/ui-consistency-agent/routes.config.ts",
-      "source_location": "L79",
+      "source_location": "L49",
       "weight": 1.0
     },
     {
@@ -405340,6 +405329,17 @@
       "confidence_score": 1.0,
       "source_file": "e2e/ui-consistency-agent/routes.config.ts",
       "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "e2e_ui_consistency_agent_routes_config",
+      "target": "e2e_ui_consistency_agent_routes_config_superadminroutes",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "e2e/ui-consistency-agent/routes.config.ts",
+      "source_location": "L91",
       "weight": 1.0
     },
     {

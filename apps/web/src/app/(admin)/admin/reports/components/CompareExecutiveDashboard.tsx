@@ -58,8 +58,8 @@ interface CompareExecutiveDashboardProps {
 const POSITIVE = '#22C55E';
 const NEGATIVE = '#EF4444';
 const NEUTRAL = '#94A3B8';
-const MAIN = '#1E293B';
-const ACCENT = '#7C93B7';
+const MAIN = '#103E4D';
+const ACCENT = '#175063';
 
 function normalizeMetricName(name: string): string {
   return name.trim().toLowerCase();
@@ -905,7 +905,7 @@ function PeriodHeader({
   const narrative = buildExecutiveNarrative(metrics, campaignSummaries, showSpend);
 
   return (
-    <div className="rounded-[12px] border border-zinc-200 bg-gradient-to-br from-white via-slate-50 to-[#EEF4FF] p-6 shadow-[0_18px_42px_rgba(15,23,42,0.08)] dark:border-zinc-800 dark:bg-gradient-to-br dark:from-[#1E293B] dark:via-[#273449] dark:to-[#334155] dark:shadow-[0_24px_60px_rgba(2,6,23,0.35)]">
+    <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-primary-700 dark:text-primary-200">
@@ -943,7 +943,7 @@ function PeriodHeader({
         />
       </div>
 
-      <div className="mt-4 rounded-[16px] border border-white/50 bg-white/70 px-5 py-4 text-sm leading-6 text-zinc-700 shadow-sm dark:border-white/10 dark:bg-[#111C2C]/60 dark:text-zinc-200">
+      <div className="mt-4 rounded-lg border border-border bg-primary-muted/30 px-5 py-4 text-sm leading-6 text-foreground">
         {narrative}
       </div>
     </div>
@@ -1088,7 +1088,7 @@ export function CompareExecutiveDashboard({
         <div className="overflow-x-auto">
           <table className="w-full table-fixed border-separate border-spacing-0 font-sans text-sm">
             <thead>
-              <tr className="bg-zinc-50 text-xs uppercase tracking-[0.2em] text-zinc-500 dark:bg-zinc-900/80 dark:text-zinc-400">
+              <tr className="bg-muted/55 text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                 <th className="w-[34%] px-6 py-4 text-left font-semibold">Metric</th>
                 <th className="w-[14%] px-6 py-4 text-right font-semibold">Previous</th>
                 <th className="w-[14%] px-6 py-4 text-right font-semibold">Current</th>
@@ -1110,10 +1110,10 @@ export function CompareExecutiveDashboard({
                 tableRows.map((row) => {
                   if (row.type === 'group') {
                     return (
-                      <tr key={row.key} className="bg-[#F7FAFF] dark:bg-[#111C2C]/80">
+                      <tr key={row.key} className="bg-primary-muted/45">
                         <td
                           colSpan={5}
-                          className="px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-[#5D7399] dark:text-[#AFC2E5]"
+                          className="px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary"
                         >
                           {row.label}
                         </td>
@@ -1137,7 +1137,7 @@ export function CompareExecutiveDashboard({
                     >
                       <td
                         className={cn(
-                          'border-l-4 border-transparent px-6 py-4 font-semibold transition-colors group-hover:border-[#7C93B7]',
+                          'border-l-4 border-transparent px-6 py-4 font-semibold transition-colors group-hover:border-primary',
                           row.isNested ? 'pl-10' : ''
                         )}
                         style={{ color: MAIN }}

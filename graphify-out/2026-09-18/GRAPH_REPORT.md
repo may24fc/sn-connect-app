@@ -1,7 +1,7 @@
 # Graph Report - sn-connect-app  (2026-09-18)
 
 ## Corpus Check
-- 1693 files · ~3,796,967 words
+- 1693 files · ~3,797,146 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 81 file(s) not represented in the graph (top: .csv 26, .otf 20, .toml 17)
 

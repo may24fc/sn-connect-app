@@ -1,7 +1,15 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { Checkbox } from '@hr-portal/ui';
+import {
+  Checkbox,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@hr-portal/ui';
 import {
   type ColumnDef,
   type ColumnFiltersState,
@@ -22,7 +30,7 @@ import { DataTablePagination } from './DataTablePagination';
 /**
  * A professional-grade data table built on TanStack Table v8.
  * Supports sorting, filtering, row selection, and pagination.
- * Follows the Navy & Gold design system.
+ * Follows the Control Hub design system.
  */
 export function DataTable<TData>({
   columns,
@@ -149,9 +157,9 @@ export function DataTable<TData>({
 
   if (data.length === 0) {
     return (
-      <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-        <div className="bg-zinc-50 dark:bg-zinc-900 h-10 border-b border-zinc-200 dark:border-zinc-800" />
-        <div className="flex items-center justify-center h-32 text-sm text-zinc-500 dark:text-zinc-400">
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <div className="h-10 border-b border-border bg-muted/55" />
+        <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
           No data available
         </div>
       </div>
@@ -159,30 +167,28 @@ export function DataTable<TData>({
   }
 
   return (
-    <div className="rounded-lg border border-border overflow-hidden bg-card">
+    <div className="overflow-hidden rounded-lg border border-border bg-card">
       {enablePagination && <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />}
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+      <Table>
+          <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
+              <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <th
+                  <TableHead
                     key={header.id}
-                    className="h-10 px-4 text-left text-[0.75rem] font-medium leading-4 text-zinc-500 dark:text-zinc-400 lg:text-[0.8125rem]"
                     style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
                   >
                     {header.isPlaceholder
                       ? null
                       : flexRender(header.column.columnDef.header, header.getContext())}
-                  </th>
+                  </TableHead>
                 ))}
-              </tr>
+              </TableRow>
             ))}
-          </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          </TableHeader>
+          <TableBody>
             {table.getRowModel().rows.map((row) => (
-              <tr
+              <TableRow
                 key={row.id}
                 onClick={() => onRowClick?.(row.original)}
                 onKeyDown={(event) => {
@@ -194,22 +200,21 @@ export function DataTable<TData>({
                 role={onRowClick ? 'button' : undefined}
                 tabIndex={onRowClick ? 0 : undefined}
                 className={cn(
-                  'h-10 transition-colors focus-visible:outline-none',
+                  'h-10 focus-visible:outline-none',
                   onRowClick &&
                     'cursor-pointer hover:bg-primary-muted/45 focus-visible:bg-primary-muted/60 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/45',
-                  row.getIsSelected() && 'bg-zinc-50 dark:bg-zinc-950/30'
+                  row.getIsSelected() && 'bg-primary-muted/60'
                 )}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-4 text-sm text-zinc-900 dark:text-zinc-100">
+                  <TableCell key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
+                  </TableCell>
                 ))}
-              </tr>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+      </Table>
     </div>
   );
 }

@@ -31,10 +31,10 @@ export function DataTablePagination<TData>({
   const totalRows = table.getFilteredRowModel().rows.length;
 
   return (
-    <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+    <div className="flex items-center justify-between border-b border-border bg-muted/35 px-4 py-2">
       {/* Page size selector */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-zinc-500 dark:text-zinc-400">Rows per page:</span>
+        <span className="text-sm text-muted-foreground">Rows per page:</span>
         <Select value={String(pageSize)} onValueChange={(val) => table.setPageSize(Number(val))}>
           <SelectTrigger className="h-7 w-auto min-w-[60px]">
             <SelectValue />
@@ -51,7 +51,7 @@ export function DataTablePagination<TData>({
 
       <div className="flex items-center gap-3">
         {/* Row count info - Gmail style */}
-        <span className="text-sm text-zinc-500 dark:text-zinc-400">
+        <span className="text-sm text-muted-foreground">
           {pageIndex * pageSize + 1}-{Math.min((pageIndex + 1) * pageSize, totalRows)} of {totalRows}
         </span>
 
@@ -114,8 +114,7 @@ function PaginationButton({
         'h-8 w-8 flex items-center justify-center rounded-md',
         'border border-border',
         'bg-card',
-        'text-zinc-700 dark:text-zinc-300',
-        'hover:bg-zinc-50 dark:hover:bg-zinc-800',
+        'text-muted-foreground hover:border-primary/30 hover:bg-primary-muted/50 hover:text-primary',
         'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-card',
         'transition-colors'
       )}

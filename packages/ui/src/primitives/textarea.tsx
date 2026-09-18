@@ -65,7 +65,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           {...props}
         />
         {showCounter ? (
-          <p className="text-right text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="text-right text-xs text-muted-foreground">
             {displayLength}/{resolvedMaxLength}
           </p>
         ) : null}

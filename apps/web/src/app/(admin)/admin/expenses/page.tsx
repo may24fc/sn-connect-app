@@ -253,16 +253,16 @@ export default function AdminExpensesDashboard() {
       </div>
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'matching' | 'exceptions' | 'settled')} className="space-y-6">
-        <TabsList className="inline-flex w-fit overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 p-0">
-          <TabsTrigger value="matching" className="rounded-none border-0 px-4 py-2 text-sm font-semibold flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-zinc-950 dark:data-[state=active]:bg-zinc-950 dark:data-[state=active]:text-zinc-50">
+        <TabsList className="w-fit">
+          <TabsTrigger value="matching" className="gap-2">
             <Scale className="h-4 w-4" />
             Matching Queue
           </TabsTrigger>
-          <TabsTrigger value="exceptions" className="rounded-none border-0 px-4 py-2 text-sm font-semibold flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-zinc-950 dark:data-[state=active]:bg-zinc-950 dark:data-[state=active]:text-zinc-50">
+          <TabsTrigger value="exceptions" className="gap-2">
             <AlertCircle className="h-4 w-4" />
             Variance Review ({exceptions.length})
           </TabsTrigger>
-          <TabsTrigger value="settled" className="rounded-none border-0 px-4 py-2 text-sm font-semibold flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-zinc-950 dark:data-[state=active]:bg-zinc-950 dark:data-[state=active]:text-zinc-50">
+          <TabsTrigger value="settled" className="gap-2">
             <History className="h-4 w-4" />
             Settled Ledger & History ({settled.length})
           </TabsTrigger>

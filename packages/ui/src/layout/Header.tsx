@@ -158,26 +158,6 @@ export function Header({
 
       {/* Right Section */}
       <div className="flex items-center gap-2">
-        {/* Call with Steven: show when booking or embed env is provided. If an embed URL is configured, open the internal embed page; otherwise open the external booking link in a new tab. */}
-        {(bookingUrl || embedUrl) &&
-          (embedUrl ? (
-            <Button asChild variant="ghost" size="icon">
-              <a href="/booking/steven" aria-label="Call with Steven">
-                <Phone className="h-5 w-5" strokeWidth={1.5} />
-              </a>
-            </Button>
-          ) : (
-            <Button asChild variant="ghost" size="icon">
-              <a
-                href={bookingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Call with Steven"
-              >
-                <Phone className="h-5 w-5" strokeWidth={1.5} />
-              </a>
-            </Button>
-          ))}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -216,6 +196,27 @@ export function Header({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        {/* Call with Steven: show when booking or embed env is provided. If an embed URL is configured, open the internal embed page; otherwise open the external booking link in a new tab. */}
+        {(bookingUrl || embedUrl) &&
+          (embedUrl ? (
+            <Button asChild variant="ghost" size="icon">
+              <a href="/booking/steven" aria-label="Call with Steven">
+                <Phone className="h-5 w-5" strokeWidth={1.5} />
+              </a>
+            </Button>
+          ) : (
+            <Button asChild variant="ghost" size="icon">
+              <a
+                href={bookingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Call with Steven"
+              >
+                <Phone className="h-5 w-5" strokeWidth={1.5} />
+              </a>
+            </Button>
+        ))}
+
         {/* Help / Guided Tour */}
         {onHelpClick && (
           <Button

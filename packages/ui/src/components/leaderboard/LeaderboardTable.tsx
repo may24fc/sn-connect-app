@@ -50,9 +50,9 @@ export function LeaderboardTable({
   onRowClick,
 }: LeaderboardTableProps) {
   return (
-    <div className={cn('overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950', className)}>
+    <div className={cn('overflow-hidden rounded-lg border border-border bg-card', className)}>
       <table className="w-full text-sm">
-        <thead className="border-b border-zinc-200 bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
+        <thead className="border-b border-border bg-muted/55 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
           <tr>
             <th className="w-12 px-4 py-3">#</th>
             <th className="px-4 py-3">Member</th>
@@ -64,7 +64,7 @@ export function LeaderboardTable({
             <th className="px-4 py-3 text-right">Weekly</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+        <tbody className="divide-y divide-border/80">
           {rows.map((r) => {
             const isMe = highlightUserId && r.user_id === highlightUserId;
             const clickable = Boolean((onRowClick));
@@ -85,13 +85,13 @@ export function LeaderboardTable({
                     : undefined
                 }
                 className={cn(
-                  'transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900/50',
+                  'transition-colors hover:bg-primary-muted/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/45',
                   isMe &&
-                    'relative z-10 border-l-4 border-l-indigo-500 bg-indigo-50/70 shadow-[0_4px_16px_-4px_rgba(79,70,229,0.35)] hover:bg-indigo-50/90 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/40',
+                    'relative z-10 border-l-4 border-l-primary bg-primary-muted/55 hover:bg-primary-muted/75',
                   clickable && 'cursor-pointer'
                 )}
               >
-                <td className="px-4 py-3 font-mono text-xs text-zinc-500">{r.rank}</td>
+                <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.rank}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
@@ -99,12 +99,12 @@ export function LeaderboardTable({
                       <AvatarFallback className="text-xs">{initials(r.full_name)}</AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-zinc-900 dark:text-zinc-100">
+                      <p className="truncate font-medium text-foreground">
                         {r.full_name ?? 'Unknown'}
-                        {isMe ? <span className="ml-2 text-xs font-normal text-indigo-600 dark:text-indigo-400">(You)</span> : null}
+                        {isMe ? <span className="ml-2 text-xs font-normal text-primary">(You)</span> : null}
                       </p>
                       {r.department ? (
-                        <p className="truncate text-xs text-zinc-500">{r.department}</p>
+                        <p className="truncate text-xs text-muted-foreground">{r.department}</p>
                       ) : null}
                     </div>
                   </div>
@@ -125,11 +125,11 @@ export function LeaderboardTable({
                   )}
                 </td>
                 {showPeriodCol ? (
-                  <td className="px-4 py-3 text-right font-semibold text-zinc-900 dark:text-zinc-100">
+                  <td className="px-4 py-3 text-right font-semibold text-foreground">
                     {r.points_period}
                   </td>
                 ) : null}
-                <td className="px-4 py-3 text-right font-semibold text-zinc-900 dark:text-zinc-100">
+                <td className="px-4 py-3 text-right font-semibold text-foreground">
                   {r.points_total}
                 </td>
                 <td className="px-4 py-3 text-right">
@@ -149,7 +149,7 @@ export function LeaderboardTable({
           })}
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={showPeriodCol ? 8 : 7} className="px-4 py-12 text-center text-sm text-zinc-500">
+              <td colSpan={showPeriodCol ? 8 : 7} className="px-4 py-12 text-center text-sm text-muted-foreground">
                 No leaderboard entries yet. Approve a milestone to start the points clock.
               </td>
             </tr>

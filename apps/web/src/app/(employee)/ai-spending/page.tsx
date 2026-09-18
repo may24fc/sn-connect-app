@@ -556,7 +556,7 @@ export default function AiSpendingPage() {
       ) : null}
 
       <Tabs value={tab} onValueChange={(value) => setTab(value as 'dashboard' | 'manual')} className="space-y-6">
-        <TabsList className="w-full justify-start">
+        <TabsList className="w-fit max-w-full justify-start overflow-x-auto">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="manual">Manual Entries</TabsTrigger>
         </TabsList>

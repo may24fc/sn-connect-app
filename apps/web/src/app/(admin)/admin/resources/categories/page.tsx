@@ -573,28 +573,28 @@ export default function ResourceCategoriesPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800">
-                    <th className="px-4 py-3 text-left font-medium text-zinc-600 dark:text-zinc-300">
+                  <tr className="border-b border-border bg-muted/55 text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                    <th className="px-4 py-3 text-left">
                       Name
                     </th>
-                    <th className="px-4 py-3 text-left font-medium text-zinc-600 dark:text-zinc-300">
+                    <th className="px-4 py-3 text-left">
                       Slug
                     </th>
-                    <th className="px-4 py-3 text-left font-medium text-zinc-600 dark:text-zinc-300">
+                    <th className="px-4 py-3 text-left">
                       Description
                     </th>
-                    <th className="px-4 py-3 text-center font-medium text-zinc-600 dark:text-zinc-300">
+                    <th className="px-4 py-3 text-center">
                       Resources
                     </th>
-                    <th className="px-4 py-3 text-center font-medium text-zinc-600 dark:text-zinc-300">
+                    <th className="px-4 py-3 text-center">
                       Order
                     </th>
-                    <th className="px-4 py-3 text-right font-medium text-zinc-600 dark:text-zinc-300">
+                    <th className="px-4 py-3 text-right">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                <tbody className="divide-y divide-border/80">
                   {tree.length === 0 ? (
                     <tr>
                       <td

@@ -14,7 +14,15 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  Input,
+  Label,
+  PageHeader,
   Progress,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Table,
   TableBody,
   TableCell,
@@ -25,6 +33,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  Textarea,
 } from '@hr-portal/ui';
 import { BarChart3, CalendarRange, FileUp, TrendingUp, UserPlus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -668,44 +677,46 @@ export default function MarketingAdSpendPage() {
 
   return (
     <div className="flex h-full flex-col gap-6 p-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">Marketing</p>
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Ad Spend
-          </h1>
-        </div>
+      <PageHeader
+        eyebrow="Marketing"
+        title="Ad Spend"
+        description="Compare sales performance, review platform spend, and maintain invoice-backed entries."
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            {canManageMarketingAccess ? (
+              <Button type="button" variant="outline" onClick={() => setShowGrantAccess(true)}>
+                <UserPlus className="h-4 w-4" />
+                Grant Access
+              </Button>
+            ) : null}
 
-        <div className="flex items-center gap-2">
-          {canManageMarketingAccess ? (
-            <button
-              type="button"
-              onClick={() => setShowGrantAccess(true)}
-              className="inline-flex items-center gap-2 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition-colors hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/30 dark:text-indigo-300 dark:hover:bg-indigo-900/50"
-            >
-              <UserPlus className="h-4 w-4" />
-              Grant Access
-            </button>
-          ) : null}
-
-          <label className="flex items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
-            <CalendarRange className="h-4 w-4" />
-            <span>Period</span>
-            <select
-              value={selectedPeriod}
-              onChange={(event) => setSelectedPeriod(event.target.value)}
-              className="bg-transparent font-medium outline-none"
-              aria-label="Select ad spend period"
-            >
-              {periodOptions.map((period) => (
-                <option key={period.value} value={period.value}>
-                  {period.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      </div>
+            <div>
+              <Label htmlFor="ad-spend-period" className="sr-only">
+                Period
+              </Label>
+              <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+                <SelectTrigger
+                  id="ad-spend-period"
+                  className="w-[132px]"
+                  aria-label="Select ad spend period"
+                >
+                  <span className="!flex min-w-0 items-center gap-2">
+                    <CalendarRange className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <SelectValue placeholder="Period" />
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  {periodOptions.map((period) => (
+                    <SelectItem key={period.value} value={period.value}>
+                      {period.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        }
+      />
 
       {canManageMarketingAccess ? (
         <MarketingAdSpendAccessManagerDialog
@@ -722,7 +733,7 @@ export default function MarketingAdSpendPage() {
       ) : null}
 
       <Tabs value={tab} onValueChange={setTab} className="space-y-6">
-        <TabsList className="w-full justify-start">
+        <TabsList className="w-fit max-w-full justify-start overflow-x-auto">
           <TabsTrigger value="sales-comparison">Sales Comparison</TabsTrigger>
           <TabsTrigger value="overview">Spend Overview</TabsTrigger>
           <TabsTrigger value="manual-entry">Manual Entry Details</TabsTrigger>
@@ -731,25 +742,26 @@ export default function MarketingAdSpendPage() {
         <TabsContent value="overview" className="space-y-6">
           <div className="grid gap-4 xl:grid-cols-[1fr_2fr]">
             <Card>
-              <CardHeader className="border-b border-zinc-200 bg-zinc-900 px-3 py-3 text-zinc-50 dark:border-zinc-700 dark:bg-zinc-950">
+              <CardHeader className="border-b border-border bg-primary-muted/45 px-4 py-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <CardTitle className="text-base font-semibold">
                     Overall Spend per Platform
                   </CardTitle>
-                  <label className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-zinc-300">
-                    <select
-                      value={selectedMonthFilter}
-                      onChange={(event) => setSelectedMonthFilter(event.target.value)}
-                      className="rounded-md border border-zinc-600 bg-zinc-900 px-2 py-1 text-xs font-medium text-zinc-100 outline-none"
+                  <Select value={selectedMonthFilter} onValueChange={setSelectedMonthFilter}>
+                    <SelectTrigger
+                      className="h-8 w-[140px] bg-card"
                       aria-label="Filter overall spend by month"
                     >
+                      <SelectValue placeholder="Filter month" />
+                    </SelectTrigger>
+                    <SelectContent>
                       {monthOptions.map((month) => (
-                        <option key={month.value} value={month.value}>
+                        <SelectItem key={month.value} value={month.value}>
                           {month.label}
-                        </option>
+                        </SelectItem>
                       ))}
-                    </select>
-                  </label>
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
@@ -758,11 +770,11 @@ export default function MarketingAdSpendPage() {
                     {filteredOverviewRows.map((row) => (
                       <TableRow
                         key={row.platform}
-                        className={row.isTotal ? 'bg-zinc-200/80 dark:bg-zinc-800/80' : ''}
+                        className={row.isTotal ? 'bg-primary-muted/60' : ''}
                       >
                         <TableCell
                           className={
-                            row.isTotal ? 'font-semibold text-zinc-900 dark:text-zinc-50' : ''
+                            row.isTotal ? 'font-semibold text-foreground' : ''
                           }
                         >
                           {row.platform}
@@ -770,7 +782,7 @@ export default function MarketingAdSpendPage() {
                         <TableCell
                           className={
                             row.isTotal
-                              ? 'text-right font-semibold text-zinc-900 dark:text-zinc-50'
+                              ? 'text-right font-semibold text-foreground'
                               : 'text-right'
                           }
                         >
@@ -784,7 +796,7 @@ export default function MarketingAdSpendPage() {
             </Card>
 
             <Card>
-              <CardHeader className="border-b border-zinc-200 bg-zinc-900 px-3 py-3 text-zinc-50 dark:border-zinc-700 dark:bg-zinc-950">
+              <CardHeader className="border-b border-border bg-primary-muted/45 px-4 py-3">
                 <CardTitle className="text-base font-semibold">
                   Monthly Spend per Platform
                 </CardTitle>
@@ -819,7 +831,7 @@ export default function MarketingAdSpendPage() {
           </div>
 
           <Card>
-            <CardHeader className="border-b border-zinc-200 bg-zinc-900 px-3 py-3 text-zinc-50 dark:border-zinc-700 dark:bg-zinc-950">
+            <CardHeader className="border-b border-border bg-primary-muted/45 px-4 py-3">
               <CardTitle className="text-base font-semibold">Important Note</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 p-4 text-sm leading-6 text-zinc-700 dark:text-zinc-300">
@@ -873,7 +885,7 @@ export default function MarketingAdSpendPage() {
                   </CardHeader>
                 </Card>
                 <Card>
-                  <CardHeader className="pb-2">
+                  <CardHeader className="pb-6">
                     <CardDescription>Ad Spend Rate</CardDescription>
                     <CardTitle className="text-2xl text-emerald-500">
                       {comparisonSummary.spendSharePercent === null
@@ -993,7 +1005,7 @@ export default function MarketingAdSpendPage() {
             }}
             className="space-y-6"
           >
-            <TabsList className="w-full justify-start">
+            <TabsList className="w-fit max-w-full justify-start overflow-x-auto">
               {manualEntryTabs.map((platform) => (
                 <TabsTrigger key={platform.value} value={platform.value}>
                   {platform.label}
@@ -1004,7 +1016,7 @@ export default function MarketingAdSpendPage() {
             {manualEntryTabs.map((platform) => (
               <TabsContent key={platform.value} value={platform.value} className="space-y-6">
                 <Card>
-                  <CardHeader className="border-b border-zinc-200 bg-zinc-900 px-3 py-3 text-zinc-50 dark:border-zinc-700 dark:bg-zinc-950">
+                  <CardHeader className="border-b border-border bg-primary-muted/45 px-4 py-3">
                     <div className="flex w-full items-center justify-between gap-3">
                       <CardTitle className="text-base font-semibold">
                         {platform.label} entries
@@ -1013,7 +1025,7 @@ export default function MarketingAdSpendPage() {
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="ml-auto border-zinc-600 bg-zinc-800 text-zinc-100 hover:bg-zinc-700 hover:text-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                        className="ml-auto"
                         onClick={() => setFullEntriesPlatform(platform.value)}
                       >
                         View full
@@ -1024,28 +1036,16 @@ export default function MarketingAdSpendPage() {
                     <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
-                          <TableRow className="bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100">
-                            <TableHead className="min-w-[120px] text-zinc-900 dark:text-zinc-100">
+                          <TableRow>
+                            <TableHead className="min-w-[120px]">
                               Date
                             </TableHead>
-                            <TableHead className="text-zinc-900 dark:text-zinc-100">
-                              Category
-                            </TableHead>
-                            <TableHead className="text-zinc-900 dark:text-zinc-100">
-                              Transaction ID
-                            </TableHead>
-                            <TableHead className="text-zinc-900 dark:text-zinc-100">
-                              Payment Method
-                            </TableHead>
-                            <TableHead className="text-zinc-900 dark:text-zinc-100">
-                              Amount
-                            </TableHead>
-                            <TableHead className="text-zinc-900 dark:text-zinc-100">
-                              Invoice
-                            </TableHead>
-                            <TableHead className="text-zinc-900 dark:text-zinc-100">
-                              Actions
-                            </TableHead>
+                            <TableHead>Category</TableHead>
+                            <TableHead>Transaction ID</TableHead>
+                            <TableHead>Payment Method</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Invoice</TableHead>
+                            <TableHead>Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -1063,7 +1063,6 @@ export default function MarketingAdSpendPage() {
                             displayedEntries.map((row) => (
                               <TableRow
                                 key={row.id}
-                                className="border-b border-zinc-200 dark:border-zinc-800"
                               >
                                 <TableCell>
                                   {new Date(`${row.entryDate}T00:00:00Z`).toLocaleDateString(
@@ -1082,7 +1081,7 @@ export default function MarketingAdSpendPage() {
                                       href={row.invoiceReference}
                                       target="_blank"
                                       rel="noreferrer"
-                                      className="inline-flex items-center gap-1.5 rounded-md bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-600 ring-1 ring-red-200 hover:bg-red-100 dark:bg-red-950/30 dark:text-red-300 dark:ring-red-900"
+                                      className="inline-flex items-center gap-1.5 rounded-md bg-primary-muted/60 px-2 py-1 text-xs font-medium text-primary ring-1 ring-primary/15 hover:bg-primary-muted"
                                     >
                                       <FileUp className="h-2.5 w-2.5" />
                                       {resolveInvoiceLabel(
@@ -1100,20 +1099,23 @@ export default function MarketingAdSpendPage() {
                                 </TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-2">
-                                    <button
+                                    <Button
                                       type="button"
                                       onClick={() => handleEditEntry(row)}
-                                      className="rounded-md border border-zinc-300 px-2 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                                      variant="outline"
+                                      size="xs"
                                     >
                                       Edit
-                                    </button>
-                                    <button
+                                    </Button>
+                                    <Button
                                       type="button"
                                       onClick={() => void handleDeleteEntry(row.id)}
-                                      className="rounded-md border border-red-300 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/30"
+                                      variant="ghost"
+                                      size="xs"
+                                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                                     >
                                       Delete
-                                    </button>
+                                    </Button>
                                   </div>
                                 </TableCell>
                               </TableRow>
@@ -1184,7 +1186,7 @@ export default function MarketingAdSpendPage() {
                 </Card>
 
                 <Card>
-                  <CardHeader className="border-b border-zinc-200 bg-zinc-900 px-3 py-3 text-zinc-50 dark:border-zinc-700 dark:bg-zinc-950">
+                  <CardHeader className="border-b border-border bg-primary-muted/45 px-4 py-3">
                     <CardTitle className="text-base font-semibold">
                       {editingEntryId
                         ? `Edit ${platform.label} entry`
@@ -1200,7 +1202,7 @@ export default function MarketingAdSpendPage() {
                         >
                           Date
                         </label>
-                        <input
+                        <Input
                           id={`ad-spend-${platform.value}-date`}
                           type="date"
                           value={quickAdd.date}
@@ -1208,7 +1210,6 @@ export default function MarketingAdSpendPage() {
                             setQuickAdd((current) => ({ ...current, date: event.target.value }))
                           }
                           required
-                          className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-900"
                         />
                       </div>
                       <div className="space-y-2">
@@ -1218,7 +1219,7 @@ export default function MarketingAdSpendPage() {
                         >
                           Transaction ID
                         </label>
-                        <input
+                        <Input
                           id={`ad-spend-${platform.value}-transaction-id`}
                           type="text"
                           value={quickAdd.transactionId}
@@ -1230,7 +1231,6 @@ export default function MarketingAdSpendPage() {
                           }
                           placeholder="Q2PEQ1NA-0006"
                           required
-                          className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-900"
                         />
                       </div>
                       <div className="space-y-2">
@@ -1240,7 +1240,7 @@ export default function MarketingAdSpendPage() {
                         >
                           Payment method
                         </label>
-                        <input
+                        <Input
                           id={`ad-spend-${platform.value}-payment-method`}
                           type="text"
                           value={quickAdd.paymentMethod}
@@ -1252,7 +1252,6 @@ export default function MarketingAdSpendPage() {
                           }
                           placeholder="American Express 1005"
                           required
-                          className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-900"
                         />
                       </div>
                       <div className="space-y-2">
@@ -1262,7 +1261,7 @@ export default function MarketingAdSpendPage() {
                         >
                           Amount
                         </label>
-                        <input
+                        <Input
                           id={`ad-spend-${platform.value}-amount`}
                           type="number"
                           min="0.01"
@@ -1273,7 +1272,6 @@ export default function MarketingAdSpendPage() {
                           }
                           placeholder="0.00"
                           required
-                          className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-900"
                         />
                       </div>
                       <div className="space-y-2">
@@ -1283,7 +1281,7 @@ export default function MarketingAdSpendPage() {
                         >
                           Invoice link
                         </label>
-                        <input
+                        <Input
                           id={`ad-spend-${platform.value}-invoice-link`}
                           type="url"
                           value={quickAdd.invoiceReference}
@@ -1295,7 +1293,6 @@ export default function MarketingAdSpendPage() {
                           }
                           placeholder="https://.../invoice.pdf"
                           required
-                          className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-900"
                         />
                       </div>
                       <div className="space-y-2">
@@ -1305,7 +1302,7 @@ export default function MarketingAdSpendPage() {
                         >
                           Invoice file name
                         </label>
-                        <input
+                        <Input
                           id={`ad-spend-${platform.value}-invoice-file-name`}
                           type="text"
                           value={quickAdd.invoiceFileName}
@@ -1317,20 +1314,20 @@ export default function MarketingAdSpendPage() {
                           }
                           placeholder="invoice-aug-2026.pdf"
                           required
-                          className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-900"
                         />
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between gap-3">
-                      <textarea
+                      <Textarea
                         value={quickAdd.notes}
                         onChange={(event) =>
                           setQuickAdd((current) => ({ ...current, notes: event.target.value }))
                         }
                         rows={3}
                         placeholder="Optional notes"
-                        className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+                        className="min-h-24"
+                        showCounter={false}
                       />
                     </div>
 
@@ -1415,7 +1412,7 @@ export default function MarketingAdSpendPage() {
                             href={row.invoiceReference}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1.5 rounded-md bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-600 ring-1 ring-red-200 hover:bg-red-100 dark:bg-red-950/30 dark:text-red-300 dark:ring-red-900"
+                            className="inline-flex items-center gap-1.5 rounded-md bg-primary-muted/60 px-2 py-1 text-xs font-medium text-primary ring-1 ring-primary/15 hover:bg-primary-muted"
                           >
                             <FileUp className="h-2.5 w-2.5" />
                             {resolveInvoiceLabel(row.invoiceFileName, row.invoiceReference)}
@@ -1430,20 +1427,23 @@ export default function MarketingAdSpendPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <button
+                          <Button
                             type="button"
                             onClick={() => handleEditEntryFromModal(row)}
-                            className="rounded-md border border-zinc-300 px-2 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                            variant="outline"
+                            size="xs"
                           >
                             Edit
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             type="button"
                             onClick={() => void handleDeleteEntry(row.id)}
-                            className="rounded-md border border-red-300 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/30"
+                            variant="ghost"
+                            size="xs"
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                           >
                             Delete
-                          </button>
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
