@@ -114,6 +114,14 @@ export function ResourceCard({
   return (
     <div
       onClick={disabled ? undefined : onClick}
+      onKeyDown={(event) => {
+        if (!disabled && onClick && (event.key === 'Enter' || event.key === ' ')) {
+          event.preventDefault();
+          onClick();
+        }
+      }}
+      role={onClick && !disabled ? 'button' : undefined}
+      tabIndex={onClick && !disabled ? 0 : undefined}
       className={cn(
         'relative group bg-card border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden transition-colors',
         onClick && !disabled && 'cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700',
@@ -123,14 +131,14 @@ export function ResourceCard({
       {/* Bookmark — top-right, revealed on hover (only when no actions overlay is present) */}
           {(actions && (
             <div
-              className="absolute top-2 right-2 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+              className="absolute right-2 top-2 z-10 flex items-center gap-1 opacity-100 transition-opacity duration-150 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
               onClick={(e) => e.stopPropagation()}
             >
               {actions}
             </div>
           )) || (
             <div
-              className="absolute top-2 right-2 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+              className="absolute right-2 top-2 z-10 flex items-center gap-1 opacity-100 transition-opacity duration-150 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
               onClick={(e) => e.stopPropagation()}
             >
               {onBookmark && (
@@ -140,6 +148,7 @@ export function ResourceCard({
                     e.stopPropagation();
                     onBookmark();
                   }}
+                  aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark resource'}
                   className={cn(
                     'p-1.5 rounded-md transition-all duration-150 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm shadow-sm',
                     isBookmarked ? 'opacity-100' : 'opacity-80'

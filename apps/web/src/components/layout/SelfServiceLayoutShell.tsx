@@ -26,7 +26,15 @@ import {
   useUnreadCount,
 } from '@/hooks/useNotifications';
 import { useRevenueForecastAccess } from '@/hooks/useRevenueForecastAccess';
-import { Header, NotificationBell, Sidebar, ToastProvider } from '@hr-portal/ui';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Header,
+  NotificationBell,
+  Sidebar,
+  ToastProvider,
+} from '@hr-portal/ui';
 import type { ChatMessage, ConversationItem } from '@hr-portal/ui';
 import { useTheme } from 'next-themes';
 import dynamic from 'next/dynamic';
@@ -58,7 +66,7 @@ export function SelfServiceLayoutShell({
 
   if (!user) {
     return (
-      <div className="flex h-screen items-center justify-center bg-muted/30">
+      <div className="flex h-dvh items-center justify-center bg-muted/30">
         <div className="animate-pulse text-muted-foreground">Loading...</div>
       </div>
     );
@@ -164,7 +172,7 @@ function SelfServiceLayoutInner({
   const sidebarPath = pathname.startsWith('/my-performance') ? '/performance' : pathname;
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-dvh bg-background">
       <div className="hidden flex-shrink-0 lg:block">
         <Sidebar
           variant={sidebarVariant}
@@ -186,40 +194,27 @@ function SelfServiceLayoutInner({
         />
       </div>
 
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setMobileMenuOpen(false)}
-            onKeyDown={(event) => {
-              if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') {
-                setMobileMenuOpen(false);
-              }
-            }}
-            role="button"
-            tabIndex={0}
-            aria-label="Close menu overlay"
+      <Dialog open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <DialogContent className="left-0 top-0 h-dvh w-64 max-w-none translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none border-0 bg-transparent p-0 shadow-2xl [&>button]:bg-white/10 [&>button]:text-white [&>button]:hover:bg-white/20 lg:hidden sm:rounded-none">
+          <DialogTitle className="sr-only">Main navigation</DialogTitle>
+          <Sidebar
+            variant={sidebarVariant}
+            currentPath={sidebarPath}
+            onNavigate={onNavigate}
+            showMarketingReports={marketingReportsAccess.canAccess}
+            showAtsAccess={Boolean(atsAccess.data?.canAccess)}
+            showPaTaskAccess={Boolean(paTaskAccess.data?.canAccess)}
+            showCrmAccess={Boolean(crmAccess.data?.canAccess)}
+            showMarketingAdSpendAccess={Boolean(marketingAdSpendAccess.data?.canAccess)}
+            showRevenueForecastAccess={Boolean(revenueForecastAccess.data?.canAccess)}
+            showExpenseDeskAccess={
+              expensesAccess.capabilities.canViewDeskGlobal ||
+              expensesAccess.capabilities.canViewDeskDepartment
+            }
+            showAiSpendingAccess={Boolean(aiSpendingAccess.data?.canAccess)}
           />
-          <div className="relative z-10 flex-shrink-0">
-            <Sidebar
-              variant={sidebarVariant}
-              currentPath={sidebarPath}
-              onNavigate={onNavigate}
-              showMarketingReports={marketingReportsAccess.canAccess}
-              showAtsAccess={Boolean(atsAccess.data?.canAccess)}
-              showPaTaskAccess={Boolean(paTaskAccess.data?.canAccess)}
-              showCrmAccess={Boolean(crmAccess.data?.canAccess)}
-              showMarketingAdSpendAccess={Boolean(marketingAdSpendAccess.data?.canAccess)}
-              showRevenueForecastAccess={Boolean(revenueForecastAccess.data?.canAccess)}
-              showExpenseDeskAccess={
-                expensesAccess.capabilities.canViewDeskGlobal ||
-                expensesAccess.capabilities.canViewDeskDepartment
-              }
-              showAiSpendingAccess={Boolean(aiSpendingAccess.data?.canAccess)}
-            />
-          </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header

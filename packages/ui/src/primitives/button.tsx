@@ -6,19 +6,19 @@ import * as React from 'react';
 import { cn } from '../utils/cn';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-600/20 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-[0.98]',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-semibold transition-[background-color,border-color,color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:translate-y-px',
   {
     variants: {
       variant: {
-        default: 'bg-slate-900 text-white shadow hover:bg-slate-800 active:bg-slate-700',
+        default: 'bg-primary text-primary-foreground shadow-sm hover:bg-[rgb(var(--primary-hover))] active:bg-[rgb(var(--primary-active))]',
         destructive: 'bg-rose-600 text-white shadow-sm hover:bg-rose-700 active:bg-rose-800',
         outline:
-          'border border-input bg-white dark:bg-zinc-900 shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-accent-foreground active:bg-zinc-100 dark:active:bg-zinc-700',
+          'border border-input bg-card text-foreground shadow-sm hover:border-primary/35 hover:bg-primary-muted/55 hover:text-primary active:bg-primary-muted',
         secondary:
-          'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-sm border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 active:bg-zinc-100 dark:active:bg-zinc-600',
+          'border border-border bg-secondary text-secondary-foreground shadow-sm hover:bg-primary-muted active:bg-primary-muted/80',
         ghost:
-          'hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50 active:bg-zinc-200 dark:active:bg-zinc-700',
-        link: 'text-zinc-700 dark:text-zinc-400 underline-offset-4 hover:underline',
+          'text-muted-foreground hover:bg-primary-muted/70 hover:text-primary active:bg-primary-muted',
+        link: 'text-primary underline-offset-4 hover:underline',
         success: 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 active:bg-emerald-800',
         warning: 'bg-amber-500 text-white shadow-sm hover:bg-amber-600 active:bg-amber-700',
       },

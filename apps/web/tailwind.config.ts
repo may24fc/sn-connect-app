@@ -17,20 +17,20 @@ const config: Config = {
           border: '#E4E4E7', // Zinc 200
         },
 
-        // Primary — Navy (Trust & Authority brand identity)
+        // Primary — SN teal (shared with the public SN brand)
         primary: {
-          50: '#F8FAFC',
-          100: '#F1F5F9',
-          200: '#E2E8F0',
-          300: '#CBD5E1',
-          400: '#94A3B8',
-          500: '#64748B',
-          600: '#475569',
-          700: '#334155',
-          800: '#1E293B',
-          900: '#0F172A',
-          950: '#020617',
-          DEFAULT: '#0F172A',
+          50: '#F1F7F9',
+          100: '#E2EFF3',
+          200: '#C2DDE5',
+          300: '#99C0CE',
+          400: '#7AAAAE',
+          500: '#6099AC',
+          600: '#457E92',
+          700: '#2D6577',
+          800: '#175063',
+          900: '#103E4D',
+          950: '#0A2B36',
+          DEFAULT: '#175063',
           foreground: '#FFFFFF',
         },
 

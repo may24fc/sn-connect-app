@@ -9,8 +9,7 @@ const countBadgeVariants = cva(
   {
     variants: {
       variant: {
-        neutral:
-          'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300',
+        neutral: 'bg-primary-muted text-primary',
         contrast:
           'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900',
         accent:
@@ -22,8 +21,7 @@ const countBadgeVariants = cva(
         warning:
           'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',
         danger: 'bg-rose-600 text-white',
-        outline:
-          'border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300',
+        outline: 'border border-primary/25 bg-primary-muted/60 text-primary',
       },
       size: {
         sm: 'h-4 min-w-4 px-1.5 text-[10px] lg:text-[11px]',

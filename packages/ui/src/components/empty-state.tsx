@@ -27,9 +27,9 @@ export interface EmptyStateProps {
 
 const appearanceClasses = {
   default: {
-    icon: 'text-zinc-500 dark:text-zinc-400',
-    title: 'text-zinc-900 dark:text-zinc-100',
-    description: 'text-zinc-500 dark:text-zinc-400',
+    icon: 'text-primary',
+    title: 'text-foreground',
+    description: 'text-muted-foreground',
   },
   inverse: {
     icon: 'text-zinc-400',
@@ -41,21 +41,21 @@ const appearanceClasses = {
 const sizeClasses = {
   sm: {
     container: 'py-8',
-    icon: 'h-5 w-5',
+    icon: 'h-6 w-6',
     title: 'text-sm',
     description: 'text-xs',
     button: 'sm' as const,
   },
   md: {
     container: 'py-12',
-    icon: 'h-5 w-5',
+    icon: 'h-7 w-7',
     title: 'text-base',
     description: 'text-sm',
     button: 'default' as const,
   },
   lg: {
     container: 'py-16',
-    icon: 'h-5 w-5',
+    icon: 'h-8 w-8',
     title: 'text-lg',
     description: 'text-base',
     button: 'default' as const,
@@ -112,7 +112,13 @@ export function EmptyState({
         className
       )}
     >
-      <div className={cn('mb-4', colors.icon)}>
+      <div
+        className={cn(
+          'mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary-muted/75',
+          colors.icon,
+          appearance === 'inverse' && 'bg-white/10'
+        )}
+      >
         {Icon ? (
           createElement(Icon, { className: sizes.icon, strokeWidth: 1.5 })
         ) : customIcon ? (

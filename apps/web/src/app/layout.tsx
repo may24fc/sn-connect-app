@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { getApplicationVersionPayload } from '@/lib/application-version';
+import { aspekta } from './fonts';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
@@ -19,8 +20,8 @@ export default async function RootLayout({ children }: { children: ReactNode }):
   const applicationVersion = await getApplicationVersionPayload();
 
   return (
-    <html lang="en" className="font-sans" suppressHydrationWarning>
-      <body className="h-screen overflow-hidden font-sans antialiased">
+    <html lang="en" className={`${aspekta.variable} font-sans`} suppressHydrationWarning>
+      <body className="h-dvh overflow-hidden font-sans antialiased">
         <Providers initialVersion={applicationVersion.version}>
           <AuthProvider>{children}</AuthProvider>
         </Providers>

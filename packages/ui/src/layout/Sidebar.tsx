@@ -2,16 +2,17 @@
 
 import {
   Briefcase,
-  Calendar,
+  Building2,
   CheckSquare,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
+  Factory,
   FileCheck,
   FileText,
   FolderKanban,
   FolderOpen,
-  GraduationCap,
+  HeartPulse,
   Home,
   Library,
   LifeBuoy,
@@ -22,13 +23,19 @@ import {
   Store,
   Target,
   TrendingUp,
-  Trophy,
-  User,
   UserCog,
   Users,
 } from 'lucide-react';
 import type * as React from 'react';
 import { CountBadge } from '../primitives/count-badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../primitives/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../primitives/tooltip';
 import { cn } from '../utils/cn';
 
@@ -37,11 +44,22 @@ export interface NavItem {
   href: string;
   icon: LucideIcon;
   badge?: string | number;
+  activeFor?: Array<string>;
 }
 
 interface NavSection {
   title?: string;
   items: Array<NavItem>;
+}
+
+type WorkspaceId = 'internal' | 'pa' | 'sfo';
+
+interface WorkspaceOption {
+  id: WorkspaceId | 'uhp' | 'property';
+  label: string;
+  description: string;
+  icon: LucideIcon;
+  comingSoon?: boolean;
 }
 
 export type UserRole = 'employee' | 'associate' | 'admin' | 'super_admin';
@@ -64,27 +82,30 @@ export interface SidebarProps {
 }
 
 const employeeAtsNavItems: Array<NavItem> = [
-  { label: 'Recruitment', href: '/ats/recruitment', icon: Briefcase },
-  { label: 'Jobs', href: '/ats/jobs', icon: ClipboardList },
+  {
+    label: 'Recruitment',
+    href: '/ats/recruitment',
+    icon: Briefcase,
+    activeFor: ['/ats/jobs'],
+  },
 ];
 
 // Employee navigation
 const employeeNavItems: Array<NavItem> = [
-  { label: 'Profile', href: '/profile', icon: User },
   { label: 'Dashboard', href: '/dashboard', icon: Home },
   { label: 'Marketing Reports', href: '/reports', icon: FileText },
-  { label: 'OKRs & KPIs', href: '/performance', icon: Target },
-  { label: 'Projects', href: '/projects', icon: FolderKanban },
-  { label: 'Company Leaderboard', href: '/leaderboard', icon: Trophy },
-  { label: 'Evaluations', href: '/performance/self-evaluation', icon: FileText },
+  {
+    label: 'OKRs & KPIs',
+    href: '/performance',
+    icon: Target,
+    activeFor: ['/performance/self-evaluation', '/my-performance'],
+  },
   { label: 'Invoice', href: '/invoice', icon: Receipt },
   { label: 'Expenses', href: '/expenses', icon: Receipt },
   { label: 'AI Spending', href: '/ai-spending', icon: Sparkles },
   { label: 'Expenses Desk', href: '/expenses/desk', icon: Receipt },
   { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Tickets', href: '/tickets', icon: LifeBuoy },
-  { label: 'Calendar', href: '/calendar', icon: Calendar },
-  { label: 'Checklist', href: '/onboarding', icon: ClipboardList },
   { label: 'Documents', href: '/files', icon: FolderOpen },
   { label: 'Announcements', href: '/announcements', icon: Megaphone },
   { label: 'Resources', href: '/information-hub', icon: Library },
@@ -92,21 +113,21 @@ const employeeNavItems: Array<NavItem> = [
 
 // Associate navigation - same as employee except different dashboard and no payroll
 const internNavItems: Array<NavItem> = [
-  { label: 'Profile', href: '/associate/profile', icon: User },
   { label: 'Dashboard', href: '/associate/dashboard', icon: Home },
   { label: 'EOD Reports', href: '/associate/reports', icon: FileText },
   { label: 'Marketing Reports', href: '/reports', icon: FileText },
-  { label: 'OKRs & KPIs', href: '/performance', icon: Target },
+  {
+    label: 'OKRs & KPIs',
+    href: '/performance',
+    icon: Target,
+    activeFor: ['/performance/self-evaluation', '/my-performance'],
+  },
   { label: 'Projects', href: '/projects', icon: FolderKanban },
-  { label: 'Company Leaderboard', href: '/leaderboard', icon: Trophy },
-  { label: 'Evaluations', href: '/performance/self-evaluation', icon: FileText },
   { label: 'Expenses', href: '/expenses', icon: Receipt },
   { label: 'AI Spending', href: '/ai-spending', icon: Sparkles },
   { label: 'Expenses Desk', href: '/expenses/desk', icon: Receipt },
   { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Tickets', href: '/tickets', icon: LifeBuoy },
-  { label: 'Calendar', href: '/calendar', icon: Calendar },
-  { label: 'Checklist', href: '/onboarding', icon: ClipboardList },
   { label: 'Documents', href: '/files', icon: FolderOpen },
   { label: 'Announcements', href: '/announcements', icon: Megaphone },
   { label: 'Resources', href: '/information-hub', icon: Library },
@@ -116,28 +137,38 @@ const internNavItems: Array<NavItem> = [
 const adminNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: Home },
   { label: 'Directory', href: '/admin/directory', icon: Users },
-  { label: 'Employee Management', href: '/admin/employee-management', icon: UserCog },
-  { label: 'Associate Management', href: '/admin/interns', icon: GraduationCap },
+  {
+    label: 'Employee Management',
+    href: '/admin/employee-management',
+    icon: UserCog,
+    activeFor: ['/admin/checklists', '/admin/onboarding', '/admin/probation'],
+  },
+  { label: 'Associate Management', href: '/admin/interns', icon: Users },
   { label: 'Invoice', href: '/admin/invoice', icon: Receipt },
   { label: 'Projects Tracker', href: '/admin/war-room', icon: FolderKanban },
-  { label: 'Company Leaderboard', href: '/leaderboard', icon: Trophy },
-  { label: 'OKRs & KPIs', href: '/admin/performance', icon: Target },
+  {
+    label: 'OKRs & KPIs',
+    href: '/admin/performance',
+    icon: Target,
+    activeFor: ['/admin/performance/monthly-self-evaluations'],
+  },
   { label: 'Marketing Reports', href: '/admin/reports', icon: FileText },
   { label: 'Ad Spend', href: '/admin/marketing/ad-spend', icon: Megaphone },
   { label: 'CRM Tracker', href: '/admin/crm', icon: Store },
   { label: 'Expenses Desk', href: '/admin/expenses', icon: Receipt },
   {
-    label: 'Evaluation',
-    href: '/admin/performance/monthly-self-evaluations',
-    icon: FileText,
+    label: 'Recruitment',
+    href: '/admin/recruitment',
+    icon: Briefcase,
+    activeFor: ['/admin/jobs'],
   },
-  { label: 'Recruitment', href: '/admin/recruitment', icon: Briefcase },
-  { label: 'Jobs', href: '/admin/jobs', icon: Briefcase },
   { label: 'AI Spending', href: '/ai-spending', icon: Sparkles },
-  { label: 'AI Knowledge', href: '/admin/ai-knowledge', icon: Sparkles },
-  { label: 'Resources', href: '/admin/resources', icon: Library },
-  { label: 'Calendar', href: '/admin/calendar', icon: Calendar },
-  { label: 'Checklists', href: '/admin/checklists', icon: ClipboardList },
+  {
+    label: 'Resources',
+    href: '/admin/resources',
+    icon: Library,
+    activeFor: ['/admin/ai-knowledge'],
+  },
   { label: 'Announcements', href: '/admin/announcements', icon: Megaphone },
   { label: 'Tickets', href: '/admin/tickets', icon: LifeBuoy },
 ];
@@ -146,29 +177,35 @@ const adminNavItems: Array<NavItem> = [
 const superAdminNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/super-admin/dashboard', icon: Home },
   { label: 'Directory', href: '/admin/directory', icon: Users },
-  { label: 'Employee Management', href: '/admin/employee-management', icon: UserCog },
-  { label: 'Associate Management', href: '/admin/interns', icon: GraduationCap },
+  {
+    label: 'Employee Management',
+    href: '/admin/employee-management',
+    icon: UserCog,
+    activeFor: ['/admin/checklists', '/admin/onboarding', '/admin/probation'],
+  },
+  { label: 'Associate Management', href: '/admin/interns', icon: Users },
   { label: 'Invoice', href: '/admin/invoice', icon: Receipt },
   { label: 'Projects Tracker', href: '/admin/war-room', icon: FolderKanban },
-  { label: 'Company Leaderboard', href: '/leaderboard', icon: Trophy },
-  { label: 'OKRs & KPIs', href: '/admin/performance', icon: Target },
+  {
+    label: 'OKRs & KPIs',
+    href: '/admin/performance',
+    icon: Target,
+    activeFor: ['/admin/performance/monthly-self-evaluations'],
+  },
   { label: 'Marketing Reports', href: '/admin/reports', icon: FileText },
   { label: 'Ad Spend', href: '/admin/marketing/ad-spend', icon: Megaphone },
   { label: 'Revenue Forecast', href: '/super-admin/revenue-forecast', icon: TrendingUp },
   { label: 'CRM Tracker', href: '/admin/crm', icon: Store },
   { label: 'Expenses Desk', href: '/admin/expenses', icon: Receipt },
-  {
-    label: 'Evaluations',
-    href: '/admin/performance/monthly-self-evaluations',
-    icon: FileText,
-  },
   { label: 'Task Management', href: '/super-admin/tasks', icon: CheckSquare },
   { label: 'Payroll Approvals', href: '/super-admin/payroll-approvals', icon: FileCheck },
   { label: 'AI Spending', href: '/ai-spending', icon: Sparkles },
-  { label: 'AI Knowledge', href: '/super-admin/ai-knowledge', icon: Sparkles },
-  { label: 'Resources', href: '/super-admin/resources', icon: Library },
-  { label: 'Calendar', href: '/super-admin/calendar', icon: Calendar },
-  { label: 'Checklists', href: '/super-admin/checklists', icon: ClipboardList },
+  {
+    label: 'Resources',
+    href: '/super-admin/resources',
+    icon: Library,
+    activeFor: ['/super-admin/ai-knowledge', '/admin/ai-knowledge'],
+  },
   { label: 'Announcements', href: '/super-admin/announcements', icon: Megaphone },
 ];
 
@@ -203,114 +240,152 @@ function getNavMatchLength(currentPath: string, href: string): number {
   return normalizedCurrentPath.startsWith(`${normalizedHref}/`) ? normalizedHref.length : -1;
 }
 
-const adminSectionConfig: ReadonlyArray<{ title: string; hrefs: ReadonlyArray<string> }> = [
+const adminInternalSectionConfig: ReadonlyArray<{
+  title: string;
+  hrefs: ReadonlyArray<string>;
+}> = [
   {
-    title: 'Overview',
-    hrefs: ['/admin/dashboard', '/super-admin/dashboard'],
-  },
-  {
-    title: 'People Operations',
+    title: 'People',
     hrefs: [
       '/admin/directory',
       '/admin/employee-management',
       '/admin/interns',
       '/admin/recruitment',
-      '/admin/jobs',
-      '/admin/checklists',
-      '/admin/calendar',
-      '/super-admin/calendar',
     ],
   },
   {
-    title: 'Performance & Culture',
-    hrefs: [
-      '/admin/performance',
-      '/admin/performance/monthly-self-evaluations',
-      '/leaderboard',
-      '/admin/announcements',
-      '/super-admin/announcements',
-    ],
+    title: 'Work & Performance',
+    hrefs: ['/admin/performance', '/admin/war-room', '/super-admin/tasks'],
   },
   {
-    title: 'Commercial & Finance',
-    hrefs: [
-      '/admin/reports',
-      '/admin/marketing/ad-spend',
-      '/admin/crm',
-      '/super-admin/revenue-forecast',
-      '/admin/expenses',
-      '/ai-spending',
-      '/admin/invoice',
-      '/super-admin/payroll-approvals',
-    ],
-  },
-  {
-    title: 'Delivery & Work Management',
-    hrefs: ['/admin/war-room', '/super-admin/tasks', '/pa-tasks'],
+    title: 'Finance',
+    hrefs: ['/admin/expenses', '/ai-spending', '/admin/invoice', '/super-admin/payroll-approvals'],
   },
   {
     title: 'Knowledge & Support',
     hrefs: [
-      '/admin/ai-knowledge',
-      '/super-admin/ai-knowledge',
       '/admin/resources',
       '/super-admin/resources',
+      '/admin/announcements',
+      '/super-admin/announcements',
       '/admin/tickets',
     ],
   },
 ];
 
-const selfServiceSectionConfig: ReadonlyArray<{ title: string; hrefs: ReadonlyArray<string> }> = [
-  {
-    title: 'Overview',
-    hrefs: ['/profile', '/associate/profile', '/dashboard', '/associate/dashboard'],
-  },
+const selfServiceInternalSectionConfig: ReadonlyArray<{
+  title: string;
+  hrefs: ReadonlyArray<string>;
+}> = [
   {
     title: 'My Work',
+    hrefs: ['/tasks', '/projects', '/associate/reports', '/ats/recruitment', '/performance'],
+  },
+  {
+    title: 'Finance',
+    hrefs: ['/invoice', '/expenses', '/expenses/desk', '/ai-spending'],
+  },
+  {
+    title: 'Knowledge & Support',
+    hrefs: ['/files', '/announcements', '/information-hub', '/tickets'],
+  },
+];
+
+const sfoSectionConfig: ReadonlyArray<{ title: string; hrefs: ReadonlyArray<string> }> = [
+  {
+    title: 'SFO Operations',
     hrefs: [
-      '/tasks',
-      '/pa-tasks',
-      '/projects',
       '/reports',
-      '/associate/reports',
-      '/invoice',
-      '/expenses',
-      '/expenses/desk',
-    ],
-  },
-  {
-    title: 'Growth & Performance',
-    hrefs: [
-      '/performance',
-      '/performance/self-evaluation',
-      '/leaderboard',
-      '/onboarding',
-    ],
-  },
-  {
-    title: 'Company Tools',
-    hrefs: [
-      '/calendar',
-      '/announcements',
-      '/information-hub',
-      '/files',
-      '/tickets',
-      '/ai-spending',
-      '/ats/recruitment',
-      '/ats/jobs',
+      '/admin/reports',
       '/marketing/ad-spend',
-      '/crm',
+      '/admin/marketing/ad-spend',
       '/revenue-forecast',
+      '/super-admin/revenue-forecast',
+      '/crm',
+      '/admin/crm',
     ],
   },
 ];
 
-function createRoleBasedSections(variant: UserRole, navItems: Array<NavItem>): Array<NavSection> {
+const paSectionConfig: ReadonlyArray<{ title: string; hrefs: ReadonlyArray<string> }> = [
+  { title: 'PA Operations', hrefs: ['/pa-tasks'] },
+];
+
+const workspaceOptions: [WorkspaceOption, ...Array<WorkspaceOption>] = [
+  {
+    id: 'internal',
+    label: 'Internal Management',
+    description: 'People, finance, performance, and shared operations',
+    icon: Building2,
+  },
+  {
+    id: 'pa',
+    label: 'Personal Assistants',
+    description: 'PA task and executive support operations',
+    icon: ClipboardList,
+  },
+  {
+    id: 'sfo',
+    label: 'Seafood Factory Outlet',
+    description: 'Marketing and commercial operations',
+    icon: Factory,
+  },
+  {
+    id: 'uhp',
+    label: 'Ultimate Health Project',
+    description: 'Coming soon',
+    icon: HeartPulse,
+    comingSoon: true,
+  },
+  {
+    id: 'property',
+    label: 'Property Development',
+    description: 'Coming soon',
+    icon: Building2,
+    comingSoon: true,
+  },
+];
+
+function getWorkspaceForPath(path: string): WorkspaceId {
+  const normalizedPath = normalizePath(path);
+  if (normalizedPath === '/pa-tasks' || normalizedPath.startsWith('/pa-tasks/')) return 'pa';
+
+  const sfoPrefixes = [
+    '/reports',
+    '/admin/reports',
+    '/marketing/ad-spend',
+    '/admin/marketing/ad-spend',
+    '/crm',
+    '/admin/crm',
+    '/revenue-forecast',
+    '/super-admin/revenue-forecast',
+  ];
+  if (
+    sfoPrefixes.some(
+      (prefix) => normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`)
+    )
+  ) {
+    return 'sfo';
+  }
+
+  return 'internal';
+}
+
+function createWorkspaceSections(
+  variant: UserRole,
+  navItems: Array<NavItem>,
+  workspace: WorkspaceId
+): Array<NavSection> {
   const sectionConfig =
-    variant === 'admin' || variant === 'super_admin' ? adminSectionConfig : selfServiceSectionConfig;
+    workspace === 'sfo'
+      ? sfoSectionConfig
+      : workspace === 'pa'
+        ? paSectionConfig
+        : variant === 'admin' || variant === 'super_admin'
+          ? adminInternalSectionConfig
+          : selfServiceInternalSectionConfig;
 
   const itemByHref = new Map(navItems.map((item) => [item.href, item]));
-  const usedHrefs = new Set<string>();
   const sections: Array<NavSection> = [];
 
   for (const config of sectionConfig) {
@@ -320,15 +395,7 @@ function createRoleBasedSections(variant: UserRole, navItems: Array<NavItem>): A
 
     if (sectionItems.length > 0) {
       sections.push({ title: config.title, items: sectionItems });
-      for (const item of sectionItems) {
-        usedHrefs.add(item.href);
-      }
     }
-  }
-
-  const remainingItems = navItems.filter((item) => !usedHrefs.has(item.href));
-  if (remainingItems.length > 0) {
-    sections.push({ title: 'Other', items: remainingItems });
   }
 
   return sections;
@@ -390,9 +457,7 @@ export function Sidebar({
       : filteredNavItems;
 
   if (
-    isSelfServiceRole(variant)
-      ? showPaTaskAccess
-      : variant === 'admin' || variant === 'super_admin'
+    isSelfServiceRole(variant) ? showPaTaskAccess : variant === 'admin' || variant === 'super_admin'
   ) {
     const paTaskItem: NavItem = { label: 'PA Tracker', href: '/pa-tasks', icon: ClipboardList };
     const tasksIndex = navItems.findIndex(
@@ -464,7 +529,10 @@ export function Sidebar({
 
   const activeHref = navItems.reduce<{ href: string; matchLength: number } | null>(
     (bestMatch, item) => {
-      const matchLength = getNavMatchLength(currentPath, item.href);
+      const matchLength = [item.href, ...(item.activeFor ?? [])].reduce(
+        (best, href) => Math.max(best, getNavMatchLength(currentPath, href)),
+        -1
+      );
 
       if (matchLength === -1) {
         return bestMatch;
@@ -478,20 +546,47 @@ export function Sidebar({
     },
     null
   )?.href;
-  const navSections = createRoleBasedSections(variant, navItems);
+  const dashboardItem = navItems.find((item) => exactOnlyNavHrefs.has(item.href));
+  const workspaceItems = navItems.filter((item) => item !== dashboardItem);
+  const requestedWorkspace = getWorkspaceForPath(currentPath);
+  const availableWorkspaceOptions = workspaceOptions.filter((option) => {
+    if (option.id === 'uhp' || option.id === 'property' || option.id === 'internal') return true;
+    return createWorkspaceSections(variant, workspaceItems, option.id).length > 0;
+  });
+  const activeWorkspace = availableWorkspaceOptions.some(
+    (option) => option.id === requestedWorkspace && !option.comingSoon
+  )
+    ? requestedWorkspace
+    : 'internal';
+  const activeWorkspaceOption =
+    availableWorkspaceOptions.find((option) => option.id === activeWorkspace) ??
+    workspaceOptions[0];
+  const ActiveWorkspaceIcon = activeWorkspaceOption.icon;
+  const navSections = createWorkspaceSections(variant, workspaceItems, activeWorkspace);
+
+  const handleWorkspaceSelect = (workspace: WorkspaceOption): void => {
+    if (workspace.id === 'uhp' || workspace.id === 'property') return;
+    if (workspace.id === 'internal') {
+      if (dashboardItem) onNavigate(dashboardItem.href);
+      return;
+    }
+
+    const firstItem = createWorkspaceSections(variant, workspaceItems, workspace.id)[0]?.items[0];
+    if (firstItem) onNavigate(firstItem.href);
+  };
 
   return (
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          'relative flex h-screen flex-col flex-shrink-0 bg-card border-r border-border transition-all duration-300',
+          'relative flex h-dvh flex-shrink-0 flex-col border-r border-[rgb(var(--sidebar-border))] bg-[rgb(var(--sidebar-bg))] text-white shadow-[4px_0_18px_rgb(10_43_54/0.08)] transition-all duration-300',
           collapsed ? 'w-16' : 'w-64'
         )}
       >
         {/* Logo Section */}
         <div
           className={cn(
-            'flex h-16 items-center border-b border-zinc-200 dark:border-zinc-800 px-4',
+            'flex h-16 items-center border-b border-white/10 px-4',
             collapsed ? 'justify-center' : 'justify-start gap-3'
           )}
         >
@@ -500,22 +595,107 @@ export function Sidebar({
             alt="SN International logo"
             width={60}
             height={10}
-            className={cn('h-6 w-auto object-contain', collapsed && 'h-5')}
+            className={cn('h-7 w-auto rounded bg-white/95 px-1.5 py-1 object-contain', collapsed && 'h-7')}
           />
           {!collapsed && (
-            <span className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
+            <span className="font-heading text-lg font-semibold tracking-tight text-white">
               Control Hub
             </span>
           )}
         </div>
 
+        {/* Global dashboard */}
+        {dashboardItem ? (
+          <div className="px-3 pt-4">
+            <button
+              type="button"
+              onClick={() => onNavigate(dashboardItem.href)}
+              className={cn(
+                'group relative flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors',
+                activeHref === dashboardItem.href
+                  ? 'bg-white/12 text-white before:absolute before:left-0 before:top-1/2 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-r before:bg-[rgb(var(--metallic))]'
+                  : 'text-white/70 hover:bg-white/8 hover:text-white',
+                collapsed && 'justify-center px-2'
+              )}
+            >
+              <Home className="h-5 w-5 shrink-0" strokeWidth={1.5} />
+              {!collapsed ? <span>Dashboard</span> : null}
+            </button>
+          </div>
+        ) : null}
+
+        {/* Workspace switcher */}
+        <div className="px-3 pt-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label={`Current workspace: ${activeWorkspaceOption.label}`}
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-lg border border-white/15 bg-white/8 px-3 py-2.5 text-left transition-colors hover:border-white/25 hover:bg-white/12',
+                  collapsed && 'justify-center px-2'
+                )}
+              >
+                <ActiveWorkspaceIcon className="h-5 w-5 shrink-0 text-[#C2DDE5]" />
+                {!collapsed ? (
+                  <>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-xs text-white/55">
+                        Workspace
+                      </span>
+                      <span className="block truncate text-sm font-semibold text-white">
+                        {activeWorkspaceOption.label}
+                      </span>
+                    </span>
+                    <ChevronRight className="h-4 w-4 rotate-90 text-white/55" />
+                  </>
+                ) : null}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align={collapsed ? 'start' : 'center'}
+              side={collapsed ? 'right' : 'bottom'}
+              className="w-72"
+            >
+              <DropdownMenuLabel>Choose workspace</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {availableWorkspaceOptions.map((workspace) => {
+                const WorkspaceIcon = workspace.icon;
+                return (
+                  <DropdownMenuItem
+                    disabled={workspace.comingSoon === true}
+                    key={workspace.id}
+                    onSelect={() => handleWorkspaceSelect(workspace)}
+                    className="gap-3 py-2.5"
+                  >
+                    <WorkspaceIcon className="h-5 w-5 shrink-0 text-zinc-500" />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-2 font-medium">
+                        {workspace.label}
+                        {workspace.comingSoon ? (
+                          <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+                            Coming soon
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400">
+                        {workspace.description}
+                      </span>
+                    </span>
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <nav className="flex-1 overflow-y-auto px-3 py-3">
           <ul className="space-y-4">
             {navSections.map((section) => (
               <li key={section.title ?? 'default'}>
                 {!collapsed && section.title && (
-                  <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                  <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-white/45">
                     {section.title}
                   </p>
                 )}
@@ -531,8 +711,8 @@ export function Sidebar({
                         className={cn(
                           'group flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors relative',
                           isActive
-                            ? 'text-zinc-900 dark:text-zinc-100 before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-0.5 before:h-5 before:bg-zinc-900 dark:before:bg-zinc-100 before:rounded-r'
-                            : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50',
+                            ? 'bg-white/12 text-white before:absolute before:left-0 before:top-1/2 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-r before:bg-[rgb(var(--metallic))]'
+                            : 'text-white/70 hover:bg-white/8 hover:text-white',
                           collapsed && 'justify-center px-2'
                         )}
                       >
@@ -540,8 +720,8 @@ export function Sidebar({
                           className={cn(
                             'h-5 w-5 flex-shrink-0 transition-colors',
                             isActive
-                              ? 'text-zinc-900 dark:text-zinc-100'
-                              : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200'
+                              ? 'text-[#C2DDE5]'
+                              : 'text-white/55 group-hover:text-white'
                           )}
                           strokeWidth={1.5}
                         />
@@ -585,17 +765,17 @@ export function Sidebar({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="group absolute -right-3 top-20 z-20 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-card text-zinc-600 dark:text-zinc-400 shadow-sm transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="group absolute -right-3 top-20 z-20 flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-[rgb(var(--sidebar-bg))] text-white shadow-sm transition-colors hover:bg-primary"
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed ? (
               <ChevronRight
-                className="h-4 w-4 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
+                className="h-4 w-4 text-white/70 transition-colors group-hover:text-white"
                 strokeWidth={1.5}
               />
             ) : (
               <ChevronLeft
-                className="h-4 w-4 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
+                className="h-4 w-4 text-white/70 transition-colors group-hover:text-white"
                 strokeWidth={1.5}
               />
             )}
@@ -604,8 +784,8 @@ export function Sidebar({
 
         {/* Footer - hidden when collapsed to prevent overlay on toggle button */}
         {!collapsed && (
-          <div className="border-t border-zinc-200 dark:border-zinc-800 p-4">
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          <div className="border-t border-white/10 p-4">
+            <p className="text-xs text-white/50">
               Where Policy Meets Productivity
             </p>
           </div>

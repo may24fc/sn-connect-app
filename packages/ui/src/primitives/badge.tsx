@@ -5,28 +5,27 @@ import type * as React from 'react';
 import { cn } from '../utils/cn';
 
 const badgeVariants = cva(
-  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-[0.75rem] font-semibold leading-4 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-600/20 focus:ring-offset-2 lg:text-[0.8125rem]',
+  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-[0.75rem] font-semibold leading-4 transition-colors focus:outline-none focus:ring-2 focus:ring-ring/50 focus:ring-offset-2 lg:text-[0.8125rem]',
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-slate-900 text-white',
+        default: 'border-transparent bg-primary text-primary-foreground',
         secondary:
-          'border-transparent bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400',
+          'border-transparent bg-secondary text-secondary-foreground',
         destructive: 'border-transparent bg-rose-600 text-white',
         success:
           'border-transparent bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400',
         warning:
           'border-transparent bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400',
         error: 'border-transparent bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400',
-        outline: 'text-zinc-900 dark:text-zinc-100 border-zinc-200 dark:border-zinc-800',
+        outline: 'border-border bg-card text-foreground',
         pending:
           'border-transparent bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400',
         approved:
           'border-transparent bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400',
         rejected:
           'border-transparent bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400',
-        navy:
-          'border-transparent bg-zinc-50 dark:bg-zinc-950/50 text-zinc-700 dark:text-zinc-400',
+        navy: 'border-transparent bg-primary-muted text-primary',
       },
     },
     defaultVariants: {

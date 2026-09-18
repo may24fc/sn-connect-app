@@ -129,6 +129,7 @@ export {
 // Layout components
 export { Sidebar } from './layout/Sidebar';
 export { Header } from './layout/Header';
+export { PageHeader, type PageHeaderProps } from './layout/PageHeader';
 // Shared Components
 export { SectionTooltip } from './components/SectionTooltip';
 export { HelpLink } from './components/HelpLink';

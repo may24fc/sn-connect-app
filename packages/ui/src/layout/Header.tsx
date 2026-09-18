@@ -13,6 +13,7 @@ import {
   Search,
   Settings,
   Sun,
+  Trophy,
   User,
 } from 'lucide-react';
 import * as React from 'react';
@@ -111,26 +112,26 @@ export function Header({
     process.env.NEXT_PUBLIC_STEVEN_BOOKING_EMBED_URL;
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
+    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-card px-4 shadow-[0_1px_0_rgb(23_80_99/0.025)] lg:px-6">
       {/* Left Section */}
       <div className="flex items-center gap-4">
         {showMobileMenu && onMenuToggle && (
           <Button
             variant="ghost"
             size="icon"
-            className="group lg:hidden text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="group text-muted-foreground hover:bg-primary-muted hover:text-primary lg:hidden"
             onClick={onMenuToggle}
             aria-label="Toggle menu"
           >
             <Menu
-              className="h-5 w-5 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
+              className="h-5 w-5 transition-colors"
               strokeWidth={1.5}
             />
           </Button>
         )}
 
         {title && (
-          <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
+          <h1 className="font-heading text-lg font-semibold tracking-tight text-foreground">
             {title}
           </h1>
         )}
@@ -148,7 +149,7 @@ export function Header({
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-80 h-9 pl-9 pr-4 text-sm bg-zinc-100 dark:bg-zinc-800 border-0 rounded-md placeholder:text-zinc-500 focus:ring-2 focus:ring-slate-600/20 focus:bg-card"
+                className="h-9 w-80 rounded-md border-border bg-secondary/55 pl-9 pr-4 text-sm placeholder:text-muted-foreground focus:bg-card"
               />
             </div>
           </form>
@@ -160,64 +161,61 @@ export function Header({
         {/* Call with Steven: show when booking or embed env is provided. If an embed URL is configured, open the internal embed page; otherwise open the external booking link in a new tab. */}
         {(bookingUrl || embedUrl) &&
           (embedUrl ? (
-            <a href="/booking/steven" aria-label="Call with Steven (embed)">
-              <div className="flex items-center gap-1 group text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md px-2 py-1 pr-3">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="group text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                >
-                  <Phone
-                    className="h-5 w-5 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
-                    strokeWidth={1.5}
-                  />
-                </Button>
-                <p>Call with Steven</p>
-              </div>
-            </a>
+            <Button asChild variant="ghost" size="icon">
+              <a href="/booking/steven" aria-label="Call with Steven">
+                <Phone className="h-5 w-5" strokeWidth={1.5} />
+              </a>
+            </Button>
           ) : (
-            <a
-              href={bookingUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Call with Steven"
-            >
-              <Button
-                variant="ghost"
-                size="icon"
-                className="group text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            <Button asChild variant="ghost" size="icon">
+              <a
+                href={bookingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Call with Steven"
               >
-                <Phone
-                  className="h-5 w-5 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
-                  strokeWidth={1.5}
-                />
-              </Button>
-            </a>
+                <Phone className="h-5 w-5" strokeWidth={1.5} />
+              </a>
+            </Button>
           ))}
-        <a href="/bingo" aria-label="Open wellness bingo">
-          <div className="flex items-center gap-1 group text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md px-2 py-1 pr-3">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              size="icon"
-              className="group text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="group gap-2 px-2"
+              aria-label="Open company activities"
             >
-              <Grid2x2
-                className="h-5 w-5 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
+              <Trophy
+                className="h-5 w-5 transition-colors"
                 strokeWidth={1.5}
               />
+              <span className="hidden xl:inline">Activities</span>
+              <ChevronDown className="hidden h-3.5 w-3.5 xl:inline" strokeWidth={1.5} />
             </Button>
-            <p>Wellness Bingo</p>
-          </div>
-        </a>
-        <a href="/christmas-tree" aria-label="Open Christmas Wish Tree">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
-          >
-            <Gift className="h-5 w-5" strokeWidth={1.5} />
-          </Button>
-        </a>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>Company activities</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <a href="/leaderboard">
+                <Trophy className="mr-2 h-4 w-4" />
+                Company Leaderboard
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a href="/bingo">
+                <Grid2x2 className="mr-2 h-4 w-4" />
+                Wellness Bingo
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a href="/christmas-tree">
+                <Gift className="mr-2 h-4 w-4" />
+                Christmas Wish Tree
+              </a>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         {/* Help / Guided Tour */}
         {onHelpClick && (
           <Button
@@ -272,9 +270,9 @@ export function Header({
               data-tour="user-menu"
               aria-label="Open profile menu"
             >
-              <Avatar className="h-8 w-8 ring-1 ring-zinc-200 dark:ring-zinc-700">
+              <Avatar className="h-8 w-8 ring-1 ring-primary/20">
                 {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name} />}
-                <AvatarFallback className="bg-slate-900 text-white text-xs">
+                <AvatarFallback className="bg-primary text-xs text-primary-foreground">
                   {getInitials(user.name)}
                 </AvatarFallback>
               </Avatar>
