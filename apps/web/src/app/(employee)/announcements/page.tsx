@@ -112,15 +112,15 @@ export default function AnnouncementsPage() {
             Stay informed with the latest company announcements
           </p>
         </div>
-        <Link href="/announcements/starred">
-          <Button variant="outline" size="sm" className="flex items-center gap-2 shrink-0">
+        <Button asChild variant="outline" size="sm" className="flex items-center gap-2 shrink-0">
+          <Link href="/announcements/starred">
             <Star className="h-4 w-4" />
             My Starred
             {starredIds.size > 0 && (
               <CountBadge className="ml-1" variant="accent" size="md" count={starredIds.size} />
             )}
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
 
       <div className="space-y-4">

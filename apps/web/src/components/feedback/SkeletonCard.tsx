@@ -53,7 +53,7 @@ export function SkeletonCard({
               <div
                 key={i}
                 className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"
-                style={{ width: `${70 + Math.random() * 30}%` }}
+                style={{ width: `${[72, 88, 80][i % 3]}%` }}
               />
             ))}
         </div>

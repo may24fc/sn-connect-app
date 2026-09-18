@@ -71,9 +71,9 @@ export function EvaluationCadenceBanner({
             <CalendarClock className="h-3.5 w-3.5" strokeWidth={1.5} />
             <span>Visible until submitted</span>
           </div>
-          <Link href={banner.href}>
-            <Button>{banner.actionLabel}</Button>
-          </Link>
+          <Button asChild>
+            <Link href={banner.href}>{banner.actionLabel}</Link>
+          </Button>
         </div>
       </div>
     </div>

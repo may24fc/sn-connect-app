@@ -185,9 +185,18 @@ export function DataTable<TData>({
               <tr
                 key={row.id}
                 onClick={() => onRowClick?.(row.original)}
+                onKeyDown={(event) => {
+                  if (onRowClick && (event.key === 'Enter' || event.key === ' ')) {
+                    event.preventDefault();
+                    onRowClick(row.original);
+                  }
+                }}
+                role={onRowClick ? 'button' : undefined}
+                tabIndex={onRowClick ? 0 : undefined}
                 className={cn(
-                  'h-10 transition-colors',
-                  onRowClick && 'cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50',
+                  'h-10 transition-colors focus-visible:outline-none',
+                  onRowClick &&
+                    'cursor-pointer hover:bg-primary-muted/45 focus-visible:bg-primary-muted/60 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/45',
                   row.getIsSelected() && 'bg-zinc-50 dark:bg-zinc-950/30'
                 )}
               >
@@ -239,9 +248,10 @@ function DataTableSkeleton({
       <div className="bg-zinc-50 dark:bg-zinc-900 h-10 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-4 px-4">
         {Array.from({ length: columns }).map((_, i) => (
           <div
+            // biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton cells never reorder.
             key={i}
             className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"
-            style={{ width: `${Math.random() * 60 + 40}px` }}
+            style={{ width: `${[72, 96, 64, 88, 80][i % 5]}px` }}
           />
         ))}
       </div>
@@ -249,14 +259,16 @@ function DataTableSkeleton({
       {/* Row skeletons */}
       {Array.from({ length: rows }).map((_, rowIndex) => (
         <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton rows never reorder.
           key={rowIndex}
           className="h-10 border-b border-zinc-100 dark:border-zinc-800 last:border-0 flex items-center gap-4 px-4"
         >
           {Array.from({ length: columns }).map((_, colIndex) => (
             <div
+              // biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton cells never reorder.
               key={colIndex}
               className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"
-              style={{ width: `${Math.random() * 80 + 40}px` }}
+              style={{ width: `${[96, 72, 112, 84, 104][colIndex % 5]}px` }}
             />
           ))}
         </div>

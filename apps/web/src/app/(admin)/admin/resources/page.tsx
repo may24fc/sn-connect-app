@@ -1,6 +1,7 @@
 'use client';
 
 import { useArchiveResource, useResources, useToggleResourceFeatured } from '@/hooks/useResources';
+import { usePendingResources } from '@/hooks/useResources';
 import { formatDate } from '@/lib/format';
 import {
   Button,
@@ -19,8 +20,17 @@ import {
   Skeleton,
   useToast,
 } from '@hr-portal/ui';
-import { usePendingResources } from '@/hooks/useResources';
-import { Archive, FileImage, FolderOpen, MoreHorizontal, Plus, Star, StarOff, Upload } from 'lucide-react';
+import {
+  Archive,
+  FileImage,
+  FolderOpen,
+  MoreHorizontal,
+  Plus,
+  Sparkles,
+  Star,
+  StarOff,
+  Upload,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
@@ -105,6 +115,12 @@ export default function AdminResourcesPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem asChild>
+                  <Link href="/admin/ai-knowledge">
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    AI Knowledge
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link href="/admin/resources/collections">
                     <FolderOpen className="mr-2 h-4 w-4" />
                     Collections
@@ -131,7 +147,10 @@ export default function AdminResourcesPage() {
               asChild
               className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-md font-medium"
             >
-              <Link href="/admin/resources/new"><Plus className="mr-2 h-4 w-4" />Create New</Link>
+              <Link href="/admin/resources/new">
+                <Plus className="mr-2 h-4 w-4" />
+                Create New
+              </Link>
             </Button>
           </div>
         </div>
@@ -143,10 +162,7 @@ export default function AdminResourcesPage() {
             { label: 'Drafts', value: stats.drafts },
             { label: 'Views', value: stats.viewCount },
           ].map((stat) => (
-            <Card
-              key={stat.label}
-              className="bg-card border border-border rounded-lg p-4"
-            >
+            <Card key={stat.label} className="bg-card border border-border rounded-lg p-4">
               <CardContent className="p-0">
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">{stat.label}</p>
                 <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{stat.value}</p>
@@ -165,10 +181,7 @@ export default function AdminResourcesPage() {
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
           >
             {[...Array(8)].map((_, i) => (
-              <Card
-                key={i}
-                className="bg-card border border-border rounded-lg overflow-hidden"
-              >
+              <Card key={i} className="bg-card border border-border rounded-lg overflow-hidden">
                 <Skeleton className="h-48 w-full rounded-none" />
                 <CardContent className="p-4 space-y-3">
                   <Skeleton className="h-5 w-3/4" />
@@ -259,9 +272,13 @@ export default function AdminResourcesPage() {
                           }
                         >
                           {resource.is_featured ? (
-                            <><StarOff className="mr-1 h-3.5 w-3.5" /> Unfeature</>
+                            <>
+                              <StarOff className="mr-1 h-3.5 w-3.5" /> Unfeature
+                            </>
                           ) : (
-                            <><Star className="mr-1 h-3.5 w-3.5" /> Feature</>
+                            <>
+                              <Star className="mr-1 h-3.5 w-3.5" /> Feature
+                            </>
                           )}
                         </Button>
                         <Button

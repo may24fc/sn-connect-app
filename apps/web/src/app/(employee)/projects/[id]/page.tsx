@@ -822,16 +822,16 @@ export default function ProjectDetailPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           {item.access_url ? (
-                            <a href={item.access_url} target="_blank" rel="noreferrer">
-                              <Button variant="outline" size="sm">
+                            <Button asChild variant="outline" size="sm">
+                              <a href={item.access_url} target="_blank" rel="noreferrer">
                                 {item.documentation_type === 'file' ? (
                                   <FileText className="mr-2 h-4 w-4" />
                                 ) : (
                                   <ExternalLink className="mr-2 h-4 w-4" />
                                 )}
                                 Open
-                              </Button>
-                            </a>
+                              </a>
+                            </Button>
                           ) : null}
                           {canAddDocumentation ? (
                             <Button

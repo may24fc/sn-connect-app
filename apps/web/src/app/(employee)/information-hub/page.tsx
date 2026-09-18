@@ -178,22 +178,22 @@ export default function ResourcesPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/information-hub/resources/bookmarks">
-            <Button variant="outline" size="sm" className="flex items-center gap-2 shrink-0">
+          <Button asChild variant="outline" size="sm" className="flex items-center gap-2 shrink-0">
+            <Link href="/information-hub/resources/bookmarks">
               <Bookmark className="h-4 w-4" />
               My Bookmarks
               {bookmarks.length > 0 && (
                 <CountBadge className="ml-1" variant="accent" size="md" count={bookmarks.length} />
               )}
-            </Button>
-          </Link>
+            </Link>
+          </Button>
 
-          <Link href="/information-hub/resources/new">
-            <Button size="sm" className="flex items-center gap-2">
+          <Button asChild size="sm" className="flex items-center gap-2">
+            <Link href="/information-hub/resources/new">
               <Plus className="h-4 w-4" />
               Upload Resource
-            </Button>
-          </Link>
+            </Link>
+          </Button>
 
           <Dialog open={isFolderDialogOpen} onOpenChange={setIsFolderDialogOpen}>
             <DialogTrigger asChild>

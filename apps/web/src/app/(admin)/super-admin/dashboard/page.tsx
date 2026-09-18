@@ -210,12 +210,12 @@ export default function SuperAdminDashboardPage(): ReactNode {
             <BentoCardTitle icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}>
               Company Calendar
             </BentoCardTitle>
-            <Link href="/super-admin/calendar">
-              <Button variant="ghost" size="xs">
+            <Button asChild variant="ghost" size="xs">
+              <Link href="/super-admin/calendar">
                 View Calendar
                 <ChevronRight className="h-3.5 w-3.5" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </BentoCardHeader>
           <BentoCardContent>
             <CompanyPulseWidget />
@@ -228,12 +228,12 @@ export default function SuperAdminDashboardPage(): ReactNode {
             <BentoCardTitle icon={<CheckCircle className="h-4 w-4" strokeWidth={1.5} />}>
               Recent Super Admin Activity
             </BentoCardTitle>
-            <Link href="/super-admin/activity">
-              <Button variant="ghost" size="xs">
+            <Button asChild variant="ghost" size="xs">
+              <Link href="/super-admin/activity">
                 View All
                 <ChevronRight className="h-3.5 w-3.5" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </BentoCardHeader>
           <BentoCardContent>
             {activityLoading ? (

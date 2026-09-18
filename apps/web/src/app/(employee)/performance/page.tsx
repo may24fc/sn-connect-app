@@ -9,10 +9,10 @@ import {
 } from '@/hooks/usePerformance';
 import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
 import {
-  computeFinalEvaluationScore,
-  fromPercentageToFivePoint,
   MANAGER_ASSESSMENT_WEIGHT,
   OKR_KPI_WEIGHT,
+  computeFinalEvaluationScore,
+  fromPercentageToFivePoint,
 } from '@/lib/performance/evaluation-score';
 import { getDisplayOKRStatus } from '@/lib/performance/okr-status';
 import {
@@ -51,7 +51,7 @@ import {
 } from '@hr-portal/ui';
 import { Calendar, ChevronRight, Plus, Target } from 'lucide-react';
 import Link from 'next/link';
-import { type ReactNode, useState, useEffect, useMemo } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString('en-US', {
@@ -123,7 +123,9 @@ export default function PerformancePage(): ReactNode {
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [formState, setFormState] = useState<CreateObjectiveFormState>(emptyForm);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'not_started' | 'in_progress' | 'completed'>('all');
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | 'not_started' | 'in_progress' | 'completed'
+  >('all');
 
   // Calculate overall weighted progress across all objectives
   const totalWeight = okrs.reduce((sum, okr) => sum + (okr.weight || 1), 0);
@@ -133,10 +135,7 @@ export default function PerformancePage(): ReactNode {
         .filter((okr) => okr.cycleId === selectedCycleIdForWeight)
         .reduce((sum, okr) => sum + (okr.weight || 1), 0)
     : 0;
-  const remainingObjectiveWeight = Math.max(
-    0,
-    Math.round((100 - selectedCycleWeight) * 100) / 100
-  );
+  const remainingObjectiveWeight = Math.max(0, Math.round((100 - selectedCycleWeight) * 100) / 100);
   const enteredObjectiveWeight = Number(formState.weight);
   const objectiveWeightExceedsRemaining =
     formState.weight !== '' && enteredObjectiveWeight > remainingObjectiveWeight;
@@ -236,10 +235,15 @@ export default function PerformancePage(): ReactNode {
           <HelpLink href="/help/performance-reviews" label="OKRs & KPIs FAQ" LinkComponent={Link} />
         </div>
         <div className="flex flex-col items-start gap-1 sm:items-end">
-          <Button onClick={handleOpenCreate} disabled={!canCreateObjective}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Objective
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <Link href="/performance/self-evaluation">Self-evaluation</Link>
+            </Button>
+            <Button onClick={handleOpenCreate} disabled={!canCreateObjective}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Objective
+            </Button>
+          </div>
           {!canCreateObjective && (
             <p className="text-xs text-muted-foreground">
               Objective creation is unavailable until an active cycle is set.
@@ -263,7 +267,6 @@ export default function PerformancePage(): ReactNode {
                     ? `${formatDate(bannerCycle.startDate)} - ${formatDate(bannerCycle.endDate)}`
                     : 'No performance cycle has been created yet'}
                 </p>
-                
               </div>
             </div>
             <Badge variant={bannerCycle ? 'success' : 'secondary'}>
@@ -278,7 +281,10 @@ export default function PerformancePage(): ReactNode {
         {/* Overall Weighted Progress */}
         <Card className="lg:col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-1.5">Overall Score <SectionTooltip content="Your weighted score based on all objectives in the current cycle." /></CardTitle>
+            <CardTitle className="text-base flex items-center gap-1.5">
+              Overall Score{' '}
+              <SectionTooltip content="Your weighted score based on all objectives in the current cycle." />
+            </CardTitle>
             <CardDescription>Weighted average across all objectives</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center py-4">
@@ -293,7 +299,10 @@ export default function PerformancePage(): ReactNode {
         {/* Stats Grid */}
         <Card className="lg:col-span-2">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-1.5">Summary <SectionTooltip content="Quick stats: total objectives, completed, and in-progress counts." /></CardTitle>
+            <CardTitle className="text-base flex items-center gap-1.5">
+              Summary{' '}
+              <SectionTooltip content="Quick stats: total objectives, completed, and in-progress counts." />
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <StatCardGrid columns={3}>
@@ -364,7 +373,10 @@ export default function PerformancePage(): ReactNode {
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground">
-                Formula: {(OKR_KPI_WEIGHT * 100).toFixed(0)}% OKR/KPI ({finalEvaluation.okrKpiScore5.toFixed(1)}/5) + {(MANAGER_ASSESSMENT_WEIGHT * 100).toFixed(0)}% Manager Assessment ({finalEvaluation.managerAssessmentScore5.toFixed(1)}/5).
+                Formula: {(OKR_KPI_WEIGHT * 100).toFixed(0)}% OKR/KPI (
+                {finalEvaluation.okrKpiScore5.toFixed(1)}/5) +{' '}
+                {(MANAGER_ASSESSMENT_WEIGHT * 100).toFixed(0)}% Manager Assessment (
+                {finalEvaluation.managerAssessmentScore5.toFixed(1)}/5).
               </p>
             </>
           ) : (
@@ -446,121 +458,128 @@ export default function PerformancePage(): ReactNode {
               />
             </CardContent>
           </Card>
-        ) : (() => {
-          const filteredOkrs =
-            statusFilter === 'all'
-              ? okrs
-              : okrs.filter(
-                  (o) => getDisplayOKRStatus(o.status, o.progressPercentage) === statusFilter
-                );
-          return filteredOkrs.length === 0 ? (
-            <Card>
-              <CardContent>
-                <EmptyState
-                  icon={Target}
-                  title="No objectives match the selected filter"
-                  description="Adjust the status filter to widen the objective list."
-                  size="sm"
-                />
-              </CardContent>
-            </Card>
-          ) : (
-          <div className="space-y-3">
-            {filteredOkrs.map((okr) => {
-              const displayStatus = getDisplayOKRStatus(okr.status, okr.progressPercentage);
-              const objectiveRating = formatRatingLabel(okr.adminRating);
+        ) : (
+          (() => {
+            const filteredOkrs =
+              statusFilter === 'all'
+                ? okrs
+                : okrs.filter(
+                    (o) => getDisplayOKRStatus(o.status, o.progressPercentage) === statusFilter
+                  );
+            return filteredOkrs.length === 0 ? (
+              <Card>
+                <CardContent>
+                  <EmptyState
+                    icon={Target}
+                    title="No objectives match the selected filter"
+                    description="Adjust the status filter to widen the objective list."
+                    size="sm"
+                  />
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {filteredOkrs.map((okr) => {
+                  const displayStatus = getDisplayOKRStatus(okr.status, okr.progressPercentage);
+                  const objectiveRating = formatRatingLabel(okr.adminRating);
 
-              return (
-                <Link key={okr.id} href={`/performance/okrs/${okr.id}`} className="block">
-                  <Card className="hover:shadow-md hover:border-primary/30 transition-all cursor-pointer">
-                    <CardContent className="p-5">
-                      <div className="flex items-start justify-between gap-4">
-                        {/* Left: Progress circle + info */}
-                        <div className="flex items-start gap-4 flex-1 min-w-0">
-                          <div className="shrink-0">
-                            <div className="relative h-14 w-14">
-                              <svg aria-hidden="true" className="h-14 w-14 -rotate-90" viewBox="0 0 56 56">
-                                <circle
-                                  cx="28"
-                                  cy="28"
-                                  r="24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="4"
-                                  className="text-muted/30"
-                                />
-                                <circle
-                                  cx="28"
-                                  cy="28"
-                                  r="24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="4"
-                                  strokeDasharray={`${(okr.progressPercentage / 100) * 150.8} 150.8`}
-                                  strokeLinecap="round"
-                                  className={getProgressColor(okr.progressPercentage)}
-                                />
-                              </svg>
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-xs font-bold">{okr.progressPercentage}%</span>
+                  return (
+                    <Link key={okr.id} href={`/performance/okrs/${okr.id}`} className="block">
+                      <Card className="hover:shadow-md hover:border-primary/30 transition-all cursor-pointer">
+                        <CardContent className="p-5">
+                          <div className="flex items-start justify-between gap-4">
+                            {/* Left: Progress circle + info */}
+                            <div className="flex items-start gap-4 flex-1 min-w-0">
+                              <div className="shrink-0">
+                                <div className="relative h-14 w-14">
+                                  <svg
+                                    aria-hidden="true"
+                                    className="h-14 w-14 -rotate-90"
+                                    viewBox="0 0 56 56"
+                                  >
+                                    <circle
+                                      cx="28"
+                                      cy="28"
+                                      r="24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="4"
+                                      className="text-muted/30"
+                                    />
+                                    <circle
+                                      cx="28"
+                                      cy="28"
+                                      r="24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="4"
+                                      strokeDasharray={`${(okr.progressPercentage / 100) * 150.8} 150.8`}
+                                      strokeLinecap="round"
+                                      className={getProgressColor(okr.progressPercentage)}
+                                    />
+                                  </svg>
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <span className="text-xs font-bold">
+                                      {okr.progressPercentage}%
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="min-w-0 flex-1">
+                                <h3 className="font-semibold text-foreground truncate">
+                                  {okr.objective}
+                                </h3>
+                                {okr.description && (
+                                  <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">
+                                    {okr.description}
+                                  </p>
+                                )}
+                                <div className="flex items-center gap-3 mt-2">
+                                  <OKRStatusBadge status={displayStatus} className="text-xs" />
+                                  <span className="text-xs text-muted-foreground">
+                                    Weight: {okr.weight}%
+                                  </span>
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          <div className="min-w-0 flex-1">
-                            <h3 className="font-semibold text-foreground truncate">
-                              {okr.objective}
-                            </h3>
-                            {okr.description && (
-                              <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">
-                                {okr.description}
-                              </p>
-                            )}
-                            <div className="flex items-center gap-3 mt-2">
-                              <OKRStatusBadge
-                                status={displayStatus}
-                                className="text-xs"
-                              />
-                              <span className="text-xs text-muted-foreground">
-                                Weight: {okr.weight}%
-                              </span>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <ChevronRight className="h-5 w-5 text-muted-foreground" />
                             </div>
                           </div>
-                        </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
-                          <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                      </div>
+                          <div className="mt-3">
+                            <Progress
+                              value={okr.progressPercentage}
+                              className="h-2"
+                              indicatorClassName={getProgressBarColor(okr.progressPercentage)}
+                            />
+                          </div>
 
-                      <div className="mt-3">
-                        <Progress
-                          value={okr.progressPercentage}
-                          className="h-2"
-                          indicatorClassName={getProgressBarColor(okr.progressPercentage)}
-                        />
-                      </div>
-
-                      {(objectiveRating || okr.adminComments) && (
-                        <div className="mt-3 rounded-lg border border-primary/15 bg-primary/5 px-3 py-2">
-                          <p className="text-xs font-medium text-primary">
-                            {objectiveRating ? `Admin feedback: ${objectiveRating}` : 'Admin feedback'}
-                          </p>
-                          {okr.adminComments && (
-                            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                              {okr.adminComments}
-                            </p>
+                          {(objectiveRating || okr.adminComments) && (
+                            <div className="mt-3 rounded-lg border border-primary/15 bg-primary/5 px-3 py-2">
+                              <p className="text-xs font-medium text-primary">
+                                {objectiveRating
+                                  ? `Admin feedback: ${objectiveRating}`
+                                  : 'Admin feedback'}
+                              </p>
+                              {okr.adminComments && (
+                                <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                                  {okr.adminComments}
+                                </p>
+                              )}
+                            </div>
                           )}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </Link>
-              );
-            })}
-          </div>
-          );
-        })()}
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  );
+                })}
+              </div>
+            );
+          })()
+        )}
       </div>
 
       {/* Create Objective — Slide Panel */}
@@ -655,7 +674,9 @@ export default function PerformancePage(): ReactNode {
                     min="1"
                     max={remainingObjectiveWeight}
                     step="1"
-                    placeholder={remainingObjectiveWeight > 0 ? String(remainingObjectiveWeight) : '0'}
+                    placeholder={
+                      remainingObjectiveWeight > 0 ? String(remainingObjectiveWeight) : '0'
+                    }
                     value={formState.weight}
                     onChange={(e) => setFormState({ ...formState, weight: e.target.value })}
                     className="pr-8"
@@ -672,10 +693,10 @@ export default function PerformancePage(): ReactNode {
                   {isLoadingAllOkrs
                     ? 'Checking cycle allocation...'
                     : !canCreateObjective
-                    ? 'Ask HR or an admin to activate a review cycle before creating objectives.'
-                    : remainingObjectiveWeight <= 0
-                    ? '100% already allocated across objectives'
-                    : `${remainingObjectiveWeight}% available in this cycle. Higher = more impact.`}
+                      ? 'Ask HR or an admin to activate a review cycle before creating objectives.'
+                      : remainingObjectiveWeight <= 0
+                        ? '100% already allocated across objectives'
+                        : `${remainingObjectiveWeight}% available in this cycle. Higher = more impact.`}
                 </p>
               </div>
             </SlidePanelSection>

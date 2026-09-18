@@ -80,8 +80,8 @@ export default function LoginPage(): ReactNode {
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
               Where Policy Meets Productivity
             </p>
-            <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-3 px-2 py-1.5 bg-zinc-100 dark:bg-zinc-800/50 rounded-md">
-              For SN International Group employees and interns only
+            <p className="mt-3 rounded-md bg-primary-muted/65 px-2.5 py-1.5 text-xs font-medium text-primary">
+              For SN International Group employees and associates
             </p>
           </div>
 

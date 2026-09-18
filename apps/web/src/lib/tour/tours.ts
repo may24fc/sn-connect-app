@@ -19,7 +19,7 @@ export const dashboardTourSteps: ModalTourStep[] = [
   {
     title: 'Quick Navigation Sidebar',
     description:
-      'The sidebar on the left gives you access to all major sections: Dashboard, Profile, Tasks, Marketing Reports, Documents, and more. You can collapse it to give yourself more screen space by clicking the collapse button.',
+      'The sidebar keeps Dashboard pinned and groups the rest of the hub into company workspaces. Use the workspace switcher to move between Internal Management, Personal Assistants, and Seafood Factory Outlet, then collapse the sidebar when you need more space.',
     imageUrl: '/tour/dashboard-sidebar.png',
   },
   {

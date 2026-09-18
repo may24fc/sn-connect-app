@@ -94,11 +94,11 @@ export default function AdminActivityPage(): ReactNode {
     <div className="h-full space-y-6">
       {/* Page Header */}
       <div className="flex items-center gap-4">
-        <Link href="/admin/dashboard">
-          <Button variant="ghost" size="icon-sm">
+        <Button asChild variant="ghost" size="icon-sm">
+          <Link href="/admin/dashboard" aria-label="Back to dashboard">
             <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
+          </Link>
+        </Button>
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
             Admin Activity

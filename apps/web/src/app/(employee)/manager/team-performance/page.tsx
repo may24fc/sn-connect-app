@@ -129,12 +129,12 @@ export default function ManagerTeamPerformancePage(): ReactNode {
                     </TableCell>
                     <TableCell>{entry.reviewCount}</TableCell>
                     <TableCell className="text-right">
-                      <Link href={`/admin/performance/employee/${entry.employeeId}`}>
-                        <Button size="sm" variant="outline">
+                      <Button asChild size="sm" variant="outline">
+                        <Link href={`/admin/performance/employee/${entry.employeeId}`}>
                           View
                           <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      </Link>
+                        </Link>
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

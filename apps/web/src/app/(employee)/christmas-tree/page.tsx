@@ -185,45 +185,75 @@ function ChristmasTreeCanvas({
   return (
     <section
       className={cn(
-        'relative min-h-[580px] overflow-hidden rounded-lg border border-emerald-950/20 bg-[#f4f7ef] shadow-sm dark:bg-emerald-950/20',
+        'relative min-h-[500px] overflow-hidden rounded-xl border border-emerald-950/15 bg-[#f4f7ef] shadow-sm sm:min-h-[550px] dark:bg-emerald-950/20',
         fillHeight && 'flex-1'
       )}
     >
-      <div className="absolute inset-x-0 top-0 h-28 bg-[linear-gradient(135deg,rgba(253,230,138,.45),transparent_55%)]" />
-      <div className="absolute left-1/2 top-10 h-[450px] w-[min(92%,560px)] -translate-x-1/2">
-        <div className="absolute bottom-0 left-1/2 h-28 w-16 -translate-x-1/2 rounded-t-lg bg-amber-950/80" />
-        <div className="absolute inset-x-0 bottom-12 h-72 bg-emerald-800 [clip-path:polygon(50%_0,100%_100%,0_100%)] dark:bg-emerald-700" />
-        <div className="absolute inset-x-8 bottom-0 h-72 bg-emerald-900 [clip-path:polygon(50%_0,100%_100%,0_100%)] dark:bg-emerald-800" />
-        <div className="absolute inset-x-16 bottom-24 h-64 bg-emerald-700 [clip-path:polygon(50%_0,100%_100%,0_100%)] dark:bg-emerald-600" />
-        {decoration?.garland_unlocked ? (
-          <div className="absolute inset-x-8 top-[45%] h-14 rounded-b-full border-b-4 border-amber-300" />
-        ) : null}
-        {decoration?.lights_unlocked ? (
-          <div className="absolute inset-x-14 top-[58%] h-12 rounded-b-full border-b-4 border-yellow-200 shadow-[0_4px_14px_rgba(253,224,71,.9)]" />
-        ) : null}
-        {decoration?.star_unlocked ? (
-          <Sparkles className="absolute left-1/2 top-0 h-12 w-12 -translate-x-1/2 -translate-y-7 fill-amber-300 text-amber-300" />
-        ) : null}
-        {ornaments.map((ornament) => (
-          <button
-            aria-label={`Open ${ornament.ownerName}'s Christmas ball`}
-            title={ornament.ownerName}
-            className={cn(
-              'absolute z-10 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-white/90 shadow-md transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2',
-              ornamentColors[ornament.assetType as keyof typeof ornamentColors]
-            )}
-            key={ornament.id}
-            onClick={() => onSelect(ornament)}
-            style={{ left: `${ornament.positionX}%`, top: `${ornament.positionY}%` }}
-            type="button"
+      <div className="absolute inset-x-0 top-0 h-36 bg-[radial-gradient(circle_at_top_left,rgba(253,230,138,.42),transparent_62%)]" />
+      <div className="absolute inset-x-5 bottom-16 top-7 sm:inset-x-12 sm:bottom-20 sm:top-8">
+        <div className="relative mx-auto h-full w-full max-w-[640px]">
+          <svg
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full drop-shadow-[0_16px_18px_rgba(6,78,59,.14)]"
+            preserveAspectRatio="none"
+            viewBox="0 0 100 100"
           >
-            <span className="h-2 w-2 rounded-full bg-white/80" />
-          </button>
-        ))}
+            <ellipse cx="50" cy="94" fill="rgba(6,78,59,.10)" rx="39" ry="3" />
+            <path d="M46.5 81h7v13h-7z" fill="#78350f" />
+            <path d="M50 37 C41 48 24 68 7 84 Q50 79 93 84 C76 68 59 48 50 37Z" fill="#064e3b" />
+            <path d="M50 22 C43 31 29 49 13 68 Q50 63 87 68 C71 49 57 31 50 22Z" fill="#06694f" />
+            <path d="M50 7 C45 15 32 34 17 55 Q50 51 83 55 C68 34 55 15 50 7Z" fill="#078662" />
+          </svg>
+          {decoration?.garland_unlocked ? (
+            <div className="pointer-events-none absolute left-[17%] right-[17%] top-[44%] h-[13%] rotate-2 rounded-b-[50%] border-b-4 border-amber-300 drop-shadow-sm" />
+          ) : null}
+          {decoration?.lights_unlocked ? (
+            <div className="pointer-events-none absolute left-[10%] right-[10%] top-[59%] h-[12%] -rotate-2 rounded-b-[50%] border-b-4 border-yellow-200 shadow-[0_5px_14px_rgba(253,224,71,.9)]" />
+          ) : null}
+          {decoration?.star_unlocked ? (
+            <Sparkles className="absolute left-1/2 top-[2%] z-20 h-12 w-12 -translate-x-1/2 -translate-y-1/2 fill-amber-300 text-amber-400 drop-shadow" />
+          ) : null}
+          {ornaments.map((ornament) => (
+            <button
+              aria-label={`Open ${ornament.ownerName}'s Christmas ball`}
+              title={`${ornament.ownerName} · ${ornament.wishes.length} ${ornament.wishes.length === 1 ? 'wish' : 'wishes'}`}
+              className={cn(
+                'group absolute z-10 grid h-10 w-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-white/90 shadow-md transition before:absolute before:bottom-full before:left-1/2 before:h-3 before:w-px before:-translate-x-1/2 before:bg-amber-700 after:absolute after:-top-1.5 after:left-1/2 after:h-2 after:w-4 after:-translate-x-1/2 after:rounded-t-sm after:bg-amber-500 hover:z-30 hover:scale-110 focus-visible:z-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2',
+                ornamentColors[ornament.assetType as keyof typeof ornamentColors]
+              )}
+              key={ornament.id}
+              onClick={() => onSelect(ornament)}
+              style={{ left: `${ornament.positionX}%`, top: `${ornament.positionY}%` }}
+              type="button"
+            >
+              <span className="h-2 w-2 rounded-full bg-white/80" />
+              {ornament.wishes.length ? (
+                <span className="absolute -bottom-2 -right-2 grid h-5 min-w-5 place-items-center rounded-full border-2 border-white bg-emerald-950 px-1 text-[10px] font-semibold leading-none text-white shadow-sm">
+                  {ornament.wishes.length}
+                </span>
+              ) : null}
+              <span className="pointer-events-none absolute left-1/2 top-[calc(100%+0.75rem)] w-max max-w-40 -translate-x-1/2 rounded-md bg-emerald-950 px-2 py-1 text-center text-[11px] font-medium leading-tight text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                {ornament.ownerName}
+                <span className="mt-0.5 block font-normal text-emerald-100">
+                  {ornament.wishes.length
+                    ? `${ornament.wishes.length} ${ornament.wishes.length === 1 ? 'wish' : 'wishes'}`
+                    : 'No wishes yet'}
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="absolute inset-x-0 bottom-0 border-t border-emerald-950/10 bg-white/75 px-5 py-3 text-sm text-emerald-950 dark:bg-zinc-950/70 dark:text-emerald-50">
-        <span className="font-medium">{ornaments.length} team members</span> have placed a Christmas
-        ball.
+      <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-4 border-t border-emerald-950/10 bg-white/80 px-4 py-3 text-sm text-emerald-950 backdrop-blur-sm sm:px-5 dark:bg-zinc-950/70 dark:text-emerald-50">
+        <span>
+          <span className="font-medium">{ornaments.length} team members</span> have placed a
+          Christmas ball.
+        </span>
+        {ornaments.length ? (
+          <span className="hidden text-xs text-muted-foreground sm:inline">
+            Select a ball to read its wishes
+          </span>
+        ) : null}
       </div>
     </section>
   );
@@ -281,9 +311,12 @@ function WishPanel({
     );
   }, [data]);
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Your Christmas Wishes</CardTitle>
+    <Card className="overflow-hidden border-emerald-950/15 shadow-sm">
+      <CardHeader className="border-b border-emerald-950/10 bg-emerald-50/60 dark:bg-emerald-950/20">
+        <CardTitle className="flex items-center gap-2">
+          <span className="h-3 w-3 rounded-full bg-red-600 ring-2 ring-red-100" />
+          Your Christmas Wishes
+        </CardTitle>
         <CardDescription>
           Wishes become visible to the team as soon as you submit them.
         </CardDescription>
@@ -354,8 +387,23 @@ function OrnamentDialog({
     <Dialog onOpenChange={onOpenChange} open={Boolean(ornament)}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{ornament?.ownerName ?? 'Team member'}'s Christmas Wishes</DialogTitle>
-          <DialogDescription>Submitted wishes available this month.</DialogDescription>
+          <div className="flex items-center gap-3 pr-6">
+            {ornament ? (
+              <span
+                aria-hidden="true"
+                className={cn(
+                  'relative grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 border-white shadow ring-2 after:absolute after:-top-1.5 after:left-1/2 after:h-2 after:w-3 after:-translate-x-1/2 after:rounded-t-sm after:bg-amber-500',
+                  ornamentColors[ornament.assetType as keyof typeof ornamentColors]
+                )}
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-white/80" />
+              </span>
+            ) : null}
+            <div>
+              <DialogTitle>{ornament?.ownerName ?? 'Team member'}'s Christmas Wishes</DialogTitle>
+              <DialogDescription>Wishes attached to this Christmas ball.</DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
         {ornament ? (
           <div className="space-y-4">

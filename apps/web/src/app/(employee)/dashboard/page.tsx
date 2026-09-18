@@ -22,7 +22,7 @@ import { ROLE_TYPE_REGISTRY, useKPIEntries, useRoleMetadata } from '@/hooks/useR
 import { useTasks } from '@/hooks/useTasks';
 import { useTasksRealtime } from '@/hooks/useTasksRealtime';
 import KPIEntryWidget from './components/KPIEntryWidget';
-import { Badge, Button, DashboardAttentionCarousel, EmptyState, MilestoneBanner, RoleDashboardWidget, Skeleton } from '@hr-portal/ui';
+import { Badge, Button, DashboardAttentionCarousel, EmptyState, MilestoneBanner, PageHeader, RoleDashboardWidget, Skeleton } from '@hr-portal/ui';
 import type { KPICardData } from '@hr-portal/ui';
 import {
   Bell,
@@ -210,17 +210,11 @@ export default function DashboardPage(): ReactNode {
 
   return (
     <div className="h-full space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-            {greeting}, {firstName}
-          </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            Here is what is happening with your HR journey today.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="My workspace"
+        title={`${greeting}, ${firstName}`}
+        description="Here is what is happening with your HR journey today."
+      />
 
       <EvaluationCadenceBanner banner={evaluationCadence?.banner ?? null} />
 
@@ -309,12 +303,12 @@ export default function DashboardPage(): ReactNode {
             <BentoCardTitle icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}>
               Company Calendar
             </BentoCardTitle>
-            <Link href="/calendar">
-              <Button variant="ghost" size="xs">
+            <Button asChild variant="ghost" size="xs">
+              <Link href="/calendar">
                 View Calendar
                 <ChevronRight className="h-3.5 w-3.5" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </BentoCardHeader>
           <BentoCardContent>
             <CompanyPulseWidget />
@@ -327,12 +321,12 @@ export default function DashboardPage(): ReactNode {
             <BentoCardTitle icon={<Bell className="h-4 w-4" strokeWidth={1.5} />}>
               Latest Announcements
             </BentoCardTitle>
-            <Link href="/announcements">
-              <Button variant="ghost" size="xs">
+            <Button asChild variant="ghost" size="xs">
+              <Link href="/announcements">
                 View All
                 <ChevronRight className="h-3.5 w-3.5" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </BentoCardHeader>
           <BentoCardContent>
             {isAnnouncementsLoading ? (

@@ -15,23 +15,22 @@ export const employeeRoutes: Array<RouteConfig> = [
   { path: '/dashboard', name: 'Employee Dashboard', requiresAuth: true, authRole: 'employee' },
   { path: '/profile', name: 'Profile', requiresAuth: true, authRole: 'employee' },
   { path: '/announcements', name: 'Announcements', requiresAuth: true, authRole: 'employee' },
+  { path: '/calendar', name: 'Calendar', requiresAuth: true, authRole: 'employee' },
+  { path: '/expenses', name: 'Expenses', requiresAuth: true, authRole: 'employee' },
+  { path: '/expenses/desk', name: 'Expenses Desk', requiresAuth: true, authRole: 'employee' },
   { path: '/files', name: 'Files', requiresAuth: true, authRole: 'employee' },
+  { path: '/information-hub', name: 'Information Hub', requiresAuth: true, authRole: 'employee' },
+  { path: '/invoice', name: 'Invoice', requiresAuth: true, authRole: 'employee' },
+  { path: '/leaderboard', name: 'Leaderboard', requiresAuth: true, authRole: 'employee' },
   { path: '/onboarding', name: 'Onboarding', requiresAuth: true, authRole: 'employee' },
-  { path: '/payroll', name: 'Payroll', requiresAuth: true, authRole: 'employee' },
   { path: '/performance', name: 'Performance', requiresAuth: true, authRole: 'employee' },
-  { path: '/performance/kpis', name: 'Performance KPIs', requiresAuth: true, authRole: 'employee' },
   { path: '/performance/okrs', name: 'Performance OKRs', requiresAuth: true, authRole: 'employee' },
-  {
-    path: '/performance/review',
-    name: 'Performance Review',
-    requiresAuth: true,
-    authRole: 'employee',
-  },
+  { path: '/projects', name: 'Projects', requiresAuth: true, authRole: 'employee' },
   { path: '/reports', name: 'Reports', requiresAuth: true, authRole: 'employee' },
   { path: '/reports/new', name: 'New Report', requiresAuth: true, authRole: 'employee' },
   { path: '/tasks', name: 'Tasks', requiresAuth: true, authRole: 'employee' },
+  { path: '/tickets', name: 'Tickets', requiresAuth: true, authRole: 'employee' },
   // Manager routes (still employee role but with manager permissions)
-  { path: '/manager/reviews', name: 'Manager Reviews', requiresAuth: true, authRole: 'employee' },
   {
     path: '/manager/team-performance',
     name: 'Team Performance',
@@ -42,11 +41,20 @@ export const employeeRoutes: Array<RouteConfig> = [
 
 export const internRoutes: Array<RouteConfig> = [
   { path: '/associate/dashboard', name: 'Associate Dashboard', requiresAuth: true, authRole: 'associate' },
+  { path: '/associate/evaluations', name: 'Associate Evaluations', requiresAuth: true, authRole: 'associate' },
+  { path: '/associate/profile', name: 'Associate Profile', requiresAuth: true, authRole: 'associate' },
+  { path: '/associate/reports', name: 'Associate Reports', requiresAuth: true, authRole: 'associate' },
 ];
 
 export const adminRoutes: Array<RouteConfig> = [
   { path: '/admin/dashboard', name: 'Admin Dashboard', requiresAuth: true, authRole: 'admin' },
-  { path: '/admin/interns', name: 'Admin Interns', requiresAuth: true, authRole: 'admin' },
+  { path: '/admin/announcements', name: 'Admin Announcements', requiresAuth: true, authRole: 'admin' },
+  { path: '/admin/calendar', name: 'Admin Calendar', requiresAuth: true, authRole: 'admin' },
+  { path: '/admin/directory', name: 'Directory', requiresAuth: true, authRole: 'admin' },
+  { path: '/admin/employee-management', name: 'Employee Management', requiresAuth: true, authRole: 'admin' },
+  { path: '/admin/interns', name: 'Associate Management', requiresAuth: true, authRole: 'admin' },
+  { path: '/admin/invoice', name: 'Admin Invoice', requiresAuth: true, authRole: 'admin' },
+  { path: '/admin/marketing/ad-spend', name: 'Ad Spend', requiresAuth: true, authRole: 'admin' },
   { path: '/admin/performance', name: 'Admin Performance', requiresAuth: true, authRole: 'admin' },
   {
     path: '/admin/performance/cycles',
@@ -55,6 +63,7 @@ export const adminRoutes: Array<RouteConfig> = [
     authRole: 'admin',
   },
   { path: '/admin/probation', name: 'Probation', requiresAuth: true, authRole: 'admin' },
+  { path: '/admin/recruitment', name: 'Recruitment', requiresAuth: true, authRole: 'admin' },
   { path: '/admin/reports', name: 'Admin Reports', requiresAuth: true, authRole: 'admin' },
   {
     path: '/admin/reports/analytics',
@@ -74,6 +83,9 @@ export const adminRoutes: Array<RouteConfig> = [
     requiresAuth: true,
     authRole: 'admin',
   },
+  { path: '/admin/resources', name: 'Admin Resources', requiresAuth: true, authRole: 'admin' },
+  { path: '/admin/tickets', name: 'Admin Tickets', requiresAuth: true, authRole: 'admin' },
+  { path: '/admin/war-room', name: 'Projects Tracker', requiresAuth: true, authRole: 'admin' },
 ];
 
 export const superAdminRoutes: Array<RouteConfig> = [
@@ -121,7 +133,7 @@ export const defaultChecks: Array<UICheckType> = [
 ];
 
 export const defaultConfig: AgentConfig = {
-  baseUrl: 'http://localhost:3000',
+  baseUrl: 'http://localhost:3001',
   routes: allRoutes,
   screenshotsDir: './e2e/screenshots',
   reportsDir: './e2e/reports',

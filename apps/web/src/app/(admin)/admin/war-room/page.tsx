@@ -70,8 +70,8 @@ export default function AdminProjectsPage() {
         </div>
         <div className="flex items-center gap-2">
           {view === 'all' ? (
-            <Link href="/admin/projects/pool">
-              <Button variant="outline">
+            <Button asChild variant="outline">
+              <Link href="/admin/projects/pool">
                 <Inbox className="mr-2 h-4 w-4" />
                 Project Pool
                 {poolCount > 0 ? (
@@ -79,12 +79,12 @@ export default function AdminProjectsPage() {
                     {poolCount}
                   </Badge>
                 ) : null}
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           ) : (
             <>
-              <Link href="/projects/pool">
-                <Button variant="outline">
+              <Button asChild variant="outline">
+                <Link href="/projects/pool">
                   <Inbox className="mr-2 h-4 w-4" />
                   Project Pool
                   {poolCount > 0 ? (
@@ -92,14 +92,14 @@ export default function AdminProjectsPage() {
                       {poolCount}
                     </Badge>
                   ) : null}
-                </Button>
-              </Link>
-              <Link href="/projects/new">
-                <Button>
+                </Link>
+              </Button>
+              <Button asChild>
+                <Link href="/projects/new">
                   <FolderKanban className="mr-2 h-4 w-4" />
                   New Project
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </>
           )}
         </div>
@@ -253,12 +253,12 @@ export default function AdminProjectsPage() {
                     <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
                       Interns
                     </h2>
-                    <Link href="/leaderboard">
-                      <Button variant="outline" size="sm">
+                    <Button asChild variant="outline" size="sm">
+                      <Link href="/leaderboard">
                         <Trophy className="mr-2 h-4 w-4" />
                         Leaderboard
-                      </Button>
-                    </Link>
+                      </Link>
+                    </Button>
                   </div>
                   {isLoading ? (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

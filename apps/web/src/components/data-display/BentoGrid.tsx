@@ -73,11 +73,11 @@ export function BentoCard({
       onClick={onClick}
       data-tour={dataTour}
       className={cn(
-        'bg-card border border-border rounded-lg p-5',
+        'rounded-[10px] border border-border bg-card p-5 shadow-[0_1px_2px_rgb(10_43_54/0.035)]',
         colSpanClasses[colSpan],
         rowSpanClasses[rowSpan],
         interactive &&
-          'transition-all hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-card-hover cursor-pointer',
+          'cursor-pointer transition-[border-color,box-shadow,transform] hover:-translate-y-px hover:border-primary/30 hover:shadow-card-hover',
         onClick && 'text-left w-full',
         className
       )}
@@ -112,11 +112,15 @@ export function BentoCardTitle({
   return (
     <h3
       className={cn(
-        'flex items-center gap-2 text-sm font-medium text-zinc-900 dark:text-zinc-100',
+        'flex items-center gap-2 font-heading text-sm font-semibold text-foreground',
         className
       )}
     >
-      {icon && <span className="text-zinc-500 dark:text-zinc-400">{icon}</span>}
+      {icon && (
+        <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary-muted text-primary">
+          {icon}
+        </span>
+      )}
       {children}
     </h3>
   );

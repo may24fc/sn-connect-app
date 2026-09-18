@@ -50,7 +50,7 @@ export function StatCard({
   return (
     <div
       className={cn(
-        'relative bg-card border border-border rounded-lg',
+        'relative overflow-hidden rounded-[10px] border border-border bg-card before:absolute before:inset-x-0 before:top-0 before:h-0.5 before:bg-primary/70',
         compact ? 'p-4' : 'p-5',
         className
       )}
@@ -58,13 +58,15 @@ export function StatCard({
     >
       {/* Icon - positioned top-right, no background */}
       {icon && (
-        <div className="absolute top-4 right-4 text-zinc-500 dark:text-zinc-400">{icon}</div>
+        <div className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg bg-primary-muted text-primary">
+          {icon}
+        </div>
       )}
 
       <div className="space-y-1">
         {/* Label with inline icon option */}
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+          <span className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
             {label}
           </span>
           {tooltip}
@@ -73,7 +75,7 @@ export function StatCard({
         {/* Value */}
         <div
           className={cn(
-            'font-bold text-zinc-900 dark:text-zinc-50 tabular-nums',
+            'font-heading font-semibold text-foreground tabular-nums',
             compact ? 'text-xl' : 'text-2xl'
           )}
         >

@@ -10,9 +10,9 @@ import {
 } from '@/hooks/usePerformance';
 import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
 import {
-  computeFinalEvaluationScore,
   MANAGER_ASSESSMENT_WEIGHT,
   OKR_KPI_WEIGHT,
+  computeFinalEvaluationScore,
 } from '@/lib/performance/evaluation-score';
 import {
   Avatar,
@@ -280,15 +280,15 @@ export default function AdminPerformancePage(): ReactNode {
   const orderedCycles = useMemo(
     () =>
       [...cycles].sort(
-        (left, right) =>
-          new Date(left.startDate).getTime() - new Date(right.startDate).getTime()
+        (left, right) => new Date(left.startDate).getTime() - new Date(right.startDate).getTime()
       ),
     [cycles]
   );
   const activeCycle = cycles.find((cycle) => cycle.status === 'active') || null;
   const todayIso = new Date().toISOString().slice(0, 10);
   const nextUpcomingCycle = orderedCycles.find((cycle) => cycle.startDate >= todayIso) || null;
-  const latestKnownCycle = orderedCycles.length > 0 ? orderedCycles[orderedCycles.length - 1] : null;
+  const latestKnownCycle =
+    orderedCycles.length > 0 ? orderedCycles[orderedCycles.length - 1] : null;
   const fallbackCycle = activeCycle || nextUpcomingCycle || latestKnownCycle;
   const selectedCycle =
     cycles.find((cycle) => cycle.id === selectedCycleId) || fallbackCycle || null;
@@ -436,16 +436,16 @@ export default function AdminPerformancePage(): ReactNode {
             ? 'Pending HR Review'
             : evaluationState === 'pending_manager_assessment'
               ? 'Pending Manager Assessment'
-            : aggregateRating || 'Pending Calibration';
+              : aggregateRating || 'Pending Calibration';
 
       const outstandingCount =
         evaluationState === 'finalized'
           ? 0
           : evaluationState === 'pending_manager_assessment'
             ? 1
-          : evaluationState === 'pending_calibration'
-            ? stageCounts.pending_calibration
-            : stageCounts.pending_hr;
+            : evaluationState === 'pending_calibration'
+              ? stageCounts.pending_calibration
+              : stageCounts.pending_hr;
 
       const evaluationAudit =
         evaluationState === 'no_objectives'
@@ -456,9 +456,9 @@ export default function AdminPerformancePage(): ReactNode {
               : getFinalizedEvaluationAudit(empOkrs)
             : evaluationState === 'pending_manager_assessment'
               ? 'Objective calibration is complete. Submit manager assessment to compute the final percentage score.'
-            : evaluationState === 'pending_calibration'
-              ? `${outstandingCount} objective${outstandingCount === 1 ? '' : 's'} pending supervisor calibration.`
-              : `${outstandingCount} objective${outstandingCount === 1 ? '' : 's'} awaiting HR baseline.`;
+              : evaluationState === 'pending_calibration'
+                ? `${outstandingCount} objective${outstandingCount === 1 ? '' : 's'} pending supervisor calibration.`
+                : `${outstandingCount} objective${outstandingCount === 1 ? '' : 's'} awaiting HR baseline.`;
 
       map.set(empId, {
         employeeId: empId,
@@ -619,15 +619,21 @@ export default function AdminPerformancePage(): ReactNode {
           </p>
         </div>
         <div className="flex gap-2">
-          <Link href="/my-performance?create=1">
-            <Button>Create My Objective</Button>
-          </Link>
-          <Link href="/admin/performance/cycles">
-            <Button variant="outline">
+          <Button asChild variant="outline">
+            <Link href="/admin/performance/monthly-self-evaluations">
+              <ClipboardCheck className="mr-2 h-4 w-4" />
+              Evaluations
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/my-performance?create=1">Create My Objective</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/admin/performance/cycles">
               <Settings className="mr-2 h-4 w-4" />
               Manage Cycles
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </div>
 

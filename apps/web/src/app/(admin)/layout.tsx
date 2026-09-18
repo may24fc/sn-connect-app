@@ -19,7 +19,16 @@ import {
   useNotifications,
   useUnreadCount,
 } from '@/hooks/useNotifications';
-import { Header, NotificationBell, Sidebar, ToastProvider, useToast } from '@hr-portal/ui';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Header,
+  NotificationBell,
+  Sidebar,
+  ToastProvider,
+  useToast,
+} from '@hr-portal/ui';
 import type { ChatMessage, ConversationItem } from '@hr-portal/ui';
 import { useTheme } from 'next-themes';
 import dynamic from 'next/dynamic';
@@ -46,7 +55,7 @@ export default function AdminLayout({
   // Show loading state while user is being verified
   if (!user) {
     return (
-      <div className="flex h-screen items-center justify-center bg-muted/30">
+      <div className="flex h-dvh items-center justify-center bg-muted/30">
         <div className="animate-pulse text-muted-foreground">Loading...</div>
       </div>
     );
@@ -120,7 +129,7 @@ function AdminLayoutInner({
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-dvh bg-background">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block flex-shrink-0">
         <Sidebar
@@ -132,15 +141,12 @@ function AdminLayoutInner({
         />
       </div>
 
-      {/* Mobile Sidebar Overlay */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
-          <div className="relative z-10 flex-shrink-0">
-            <Sidebar variant={user.role} currentPath={pathname} onNavigate={onNavigate} />
-          </div>
-        </div>
-      )}
+      <Dialog open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <DialogContent className="left-0 top-0 h-dvh w-64 max-w-none translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none border-0 bg-transparent p-0 shadow-2xl [&>button]:bg-white/10 [&>button]:text-white [&>button]:hover:bg-white/20 lg:hidden sm:rounded-none">
+          <DialogTitle className="sr-only">Main navigation</DialogTitle>
+          <Sidebar variant={user.role} currentPath={pathname} onNavigate={onNavigate} />
+        </DialogContent>
+      </Dialog>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -163,7 +169,7 @@ function AdminLayoutInner({
         />
 
         {/* Scrollable Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto bg-background p-4 lg:p-6">{children}</main>
       </div>
     </div>
   );

@@ -27,9 +27,9 @@ export function SkeletonTable({
   className,
   showHeader = true,
 }: SkeletonTableProps): React.ReactNode {
-  // Generate random but consistent widths for columns
+  // Deterministic widths avoid hydration mismatches and visual jumps.
   const columnWidths = React.useMemo(
-    () => Array.from({ length: columns }, () => Math.random() * 60 + 40),
+    () => Array.from({ length: columns }, (_, index) => [64, 88, 104, 72, 96][index % 5]),
     [columns]
   );
 
@@ -83,7 +83,7 @@ export function SkeletonTable({
               key={colIndex}
               className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"
               style={{
-                width: `${width + (Math.random() * 20 - 10)}px`,
+                width: `${(width ?? 80) + ((rowIndex + colIndex) % 3) * 6}px`,
                 animationDelay: `${(rowIndex * columns + colIndex) * 50}ms`,
               }}
             />

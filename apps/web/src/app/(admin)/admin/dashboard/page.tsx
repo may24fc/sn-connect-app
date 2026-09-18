@@ -1,5 +1,6 @@
 'use client';
 
+import { CompanyPulseWidget } from '@/components/CompanyPulseWidget';
 import {
   BentoCard,
   BentoCardContent,
@@ -14,10 +15,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardAttentionItems } from '@/hooks/useDashboardAttentionItems';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useMilestones } from '@/hooks/useMilestones';
-import { CompanyPulseWidget } from '@/components/CompanyPulseWidget';
 import { useRecentActivity } from '@/hooks/useRecentActivity';
-import { Button, DashboardAttentionCarousel, MilestoneBanner } from '@hr-portal/ui';
+import { Button, DashboardAttentionCarousel, MilestoneBanner, PageHeader } from '@hr-portal/ui';
 import {
+  Activity,
   Calendar,
   CheckCircle,
   ChevronRight,
@@ -25,7 +26,6 @@ import {
   Edit,
   GraduationCap,
   Loader2,
-  Activity,
   Plus,
   Settings,
   Target,
@@ -57,8 +57,14 @@ function formatRelativeTime(iso: string): string {
 
 function getActionIcon(action: string) {
   const lower = action.toLowerCase();
-  if (lower.includes('deleted')) return <Trash2 className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" strokeWidth={1.5} />;
-  if (lower.includes('created') || lower.includes('added') || lower.includes('started') || lower.includes('submitted'))
+  if (lower.includes('deleted'))
+    return <Trash2 className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" strokeWidth={1.5} />;
+  if (
+    lower.includes('created') ||
+    lower.includes('added') ||
+    lower.includes('started') ||
+    lower.includes('submitted')
+  )
     return <Plus className="h-4 w-4 text-emerald-500 flex-shrink-0 mt-0.5" strokeWidth={1.5} />;
   if (lower.includes('updated') || lower.includes('edited'))
     return <Edit className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" strokeWidth={1.5} />;
@@ -77,8 +83,18 @@ export default function AdminDashboardPage(): ReactNode {
     isLoading: attentionLoading,
     totalCount: attentionCount,
   } = useDashboardAttentionItems('admin');
-  const { data: statsData, isLoading: statsLoading } = useDashboardStats();
-  const { data: activityData, isLoading: activityLoading } = useRecentActivity(8, {
+  const {
+    data: statsData,
+    isLoading: statsLoading,
+    isError: statsError,
+    refetch: refetchStats,
+  } = useDashboardStats();
+  const {
+    data: activityData,
+    isLoading: activityLoading,
+    isError: activityError,
+    refetch: refetchActivity,
+  } = useRecentActivity(8, {
     scope: 'admin',
   });
 
@@ -93,17 +109,11 @@ export default function AdminDashboardPage(): ReactNode {
 
   return (
     <div className="h-full space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-            {greeting}, {firstName}
-          </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 mt-1">
-            Here is your HR overview for today.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="People operations"
+        title={`${greeting}, ${firstName}`}
+        description="Here is your HR overview for today."
+      />
 
       {/* Pending Approvals */}
       <DashboardAttentionCarousel
@@ -114,21 +124,32 @@ export default function AdminDashboardPage(): ReactNode {
       />
 
       {/* Milestone Banner — upcoming birthdays & anniversaries */}
-      <MilestoneBanner
-        milestones={milestonesData?.data ?? []}
-        isLoading={milestonesLoading}
-      />
+      <MilestoneBanner milestones={milestonesData?.data ?? []} isLoading={milestonesLoading} />
+
+      {statsError ? (
+        <div
+          role="alert"
+          className="flex flex-col gap-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 sm:flex-row sm:items-center sm:justify-between dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-300"
+        >
+          <span>Dashboard metrics are temporarily unavailable.</span>
+          <Button variant="outline" size="sm" onClick={() => void refetchStats()}>
+            Try again
+          </Button>
+        </div>
+      ) : null}
 
       {/* Stats Row */}
       <div data-tour="stat-cards">
         <StatCardGrid columns={3}>
           <StatCard
             label="Total Employees"
-            value={statsLoading ? '—' : stats.totalEmployees}
+            value={statsLoading || statsError ? '—' : stats.totalEmployees}
             trend={{
               direction: stats.recentHires > 0 ? 'up' : 'stable',
               value: statsLoading
                 ? 'Loading...'
+                : statsError
+                  ? 'Unavailable'
                 : stats.recentHires > 0
                   ? `+${stats.recentHires} this month`
                   : 'No new hires this month',
@@ -136,25 +157,29 @@ export default function AdminDashboardPage(): ReactNode {
             icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
           />
           <StatCard
-            label="Active Interns"
-            value={statsLoading ? '—' : stats.activeInterns}
+            label="Active Associates"
+            value={statsLoading || statsError ? '—' : stats.activeInterns}
             trend={{
               direction: stats.activeInterns > 0 ? 'up' : 'stable',
               value: statsLoading
                 ? 'Loading...'
+                : statsError
+                  ? 'Unavailable'
                 : stats.activeInterns > 0
                   ? `${stats.activeInterns} currently active`
-                  : 'No active interns',
+                  : 'No active associates',
             }}
             icon={<GraduationCap className="h-4 w-4" strokeWidth={1.5} />}
           />
           <StatCard
             label="Reviews Due"
-            value={statsLoading ? '—' : stats.performanceReviews}
+            value={statsLoading || statsError ? '—' : stats.performanceReviews}
             trend={{
-              direction: stats.performanceReviews > 0 ? 'up' : 'stable',
+              direction: stats.performanceReviews > 0 ? 'down' : 'stable',
               value: statsLoading
                 ? 'Loading...'
+                : statsError
+                  ? 'Unavailable'
                 : stats.performanceReviews > 0
                   ? `${stats.performanceReviews} awaiting review`
                   : 'All reviews completed',
@@ -172,12 +197,19 @@ export default function AdminDashboardPage(): ReactNode {
             <BentoCardTitle icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}>
               Company Pulse
             </BentoCardTitle>
-            <Link href="/admin/company-pulse">
-              <Button variant="ghost" size="xs">
-                Manage
-                <ChevronRight className="h-3.5 w-3.5" />
+            <div className="flex items-center gap-1">
+              <Button asChild variant="ghost" size="xs">
+                <Link href="/admin/calendar">
+                  Calendar
+                </Link>
               </Button>
-            </Link>
+              <Button asChild variant="ghost" size="xs">
+                <Link href="/admin/company-pulse">
+                  Manage
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            </div>
           </BentoCardHeader>
           <BentoCardContent>
             <CompanyPulseWidget />
@@ -190,18 +222,26 @@ export default function AdminDashboardPage(): ReactNode {
             <BentoCardTitle icon={<CheckCircle className="h-4 w-4" strokeWidth={1.5} />}>
               Recent Admin Activity
             </BentoCardTitle>
-            <Link href="/admin/activity">
-              <Button variant="ghost" size="xs">
+            <Button asChild variant="ghost" size="xs">
+              <Link href="/admin/activity">
                 View All
                 <ChevronRight className="h-3.5 w-3.5" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </BentoCardHeader>
           <BentoCardContent>
             {activityLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
               </div>
+            ) : activityError ? (
+              <EmptyState
+                icon={ClipboardList}
+                title="Activity unavailable"
+                description="We could not load recent admin activity."
+                action={{ label: 'Try again', onClick: () => void refetchActivity() }}
+                size="sm"
+              />
             ) : recentActivities.length > 0 ? (
               <div className="space-y-3 max-h-64 overflow-y-auto">
                 {recentActivities.map((activity) => (

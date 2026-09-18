@@ -122,12 +122,12 @@ function AssociateEvaluationCard({
             <Badge variant="secondary">
               {ASSOCIATE_STAGE_LABELS[currentEvaluation?.stage ?? currentStage].name}
             </Badge>
-            <Link href="/associate/evaluations">
-              <Button variant="ghost" size="xs">
+            <Button asChild variant="ghost" size="xs">
+              <Link href="/associate/evaluations">
                 View History
                 <ChevronRight className="ml-1 h-4 w-4" strokeWidth={1.5} />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
       </BentoCardHeader>
       <BentoCardContent>
@@ -510,12 +510,12 @@ export default function InternDashboardPage(): ReactNode {
             <BentoCardTitle icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}>
               Company Calendar
             </BentoCardTitle>
-            <Link href="/calendar">
-              <Button variant="ghost" size="xs">
+            <Button asChild variant="ghost" size="xs">
+              <Link href="/calendar">
                 View Calendar
                 <ChevronRight className="ml-1 h-4 w-4" strokeWidth={1.5} />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </BentoCardHeader>
           <BentoCardContent>
             <CompanyPulseWidget />
@@ -559,12 +559,12 @@ export default function InternDashboardPage(): ReactNode {
           <BentoCardTitle icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}>
             Recent Reports
           </BentoCardTitle>
-          <Link href="/associate/reports">
-            <Button variant="ghost" size="xs">
+          <Button asChild variant="ghost" size="xs">
+            <Link href="/associate/reports">
               View All
               <ChevronRight className="ml-1 h-4 w-4" strokeWidth={1.5} />
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </BentoCardHeader>
         <BentoCardContent>
           <div className="space-y-2">
@@ -597,12 +597,12 @@ function InternshipAssignmentPendingState(): ReactNode {
           that assignment is in place.
         </p>
         <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-          <Link href="/associate/profile">
-            <Button>View Profile</Button>
-          </Link>
-          <Link href="/onboarding/awaiting-approval">
-            <Button variant="outline">View Onboarding Status</Button>
-          </Link>
+          <Button asChild>
+            <Link href="/associate/profile">View Profile</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/onboarding/awaiting-approval">View Onboarding Status</Link>
+          </Button>
         </div>
       </div>
     </div>

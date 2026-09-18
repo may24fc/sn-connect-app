@@ -192,9 +192,9 @@ export default function InternEvaluationsPage(): ReactNode {
             Once your internship assignment is active, submitted 30-60-90 evaluations will appear here.
           </p>
           <div className="mt-6 flex justify-center">
-            <Link href="/associate/dashboard">
-              <Button>Back to Dashboard</Button>
-            </Link>
+            <Button asChild>
+              <Link href="/associate/dashboard">Back to Dashboard</Link>
+            </Button>
           </div>
         </div>
       </div>
@@ -212,12 +212,12 @@ export default function InternEvaluationsPage(): ReactNode {
             Review the submitted assessments from your admin or super-admin across each internship stage.
           </p>
         </div>
-        <Link href="/associate/dashboard">
-          <Button variant="outline">
+        <Button asChild variant="outline">
+          <Link href="/associate/dashboard">
             Back to Dashboard
             <ChevronRight className="ml-2 h-4 w-4" strokeWidth={1.5} />
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
 
       <StatCardGrid columns={3}>
