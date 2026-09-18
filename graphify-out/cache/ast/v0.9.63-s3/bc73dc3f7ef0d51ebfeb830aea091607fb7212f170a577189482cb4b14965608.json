@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_supabase_seed_02_corporate_website_sql", "label": "02_corporate_website.sql", "file_type": "code", "source_file": "supabase/seed/02_corporate_website.sql", "source_location": null}], "edges": []}

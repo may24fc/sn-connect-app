@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_supabase_migrations_validate_schema_sql", "label": "validate_schema.sql", "file_type": "code", "source_file": "supabase/migrations/validate_schema.sql", "source_location": null}], "edges": []}

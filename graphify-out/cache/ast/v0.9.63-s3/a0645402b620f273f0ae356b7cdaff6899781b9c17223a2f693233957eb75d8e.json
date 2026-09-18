@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_supabase_migrations_20260227000013_add_internships_insert_policy_for_interns_sql", "label": "20260227000013_add_internships_insert_policy_for_interns.sql", "file_type": "code", "source_file": "supabase/migrations/20260227000013_add_internships_insert_policy_for_interns.sql", "source_location": null}], "edges": []}

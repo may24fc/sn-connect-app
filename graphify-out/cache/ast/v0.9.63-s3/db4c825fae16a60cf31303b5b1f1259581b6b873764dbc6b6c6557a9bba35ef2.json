@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_supabase_migrations_20260217000001_add_super_admin_to_users_rls_sql", "label": "20260217000001_add_super_admin_to_users_rls.sql", "file_type": "code", "source_file": "supabase/migrations/20260217000001_add_super_admin_to_users_rls.sql", "source_location": null}], "edges": []}

@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_supabase_migrations_20260217000006_fix_invoices_rls_super_admin_sql", "label": "20260217000006_fix_invoices_rls_super_admin.sql", "file_type": "code", "source_file": "supabase/migrations/20260217000006_fix_invoices_rls_super_admin.sql", "source_location": null}], "edges": []}

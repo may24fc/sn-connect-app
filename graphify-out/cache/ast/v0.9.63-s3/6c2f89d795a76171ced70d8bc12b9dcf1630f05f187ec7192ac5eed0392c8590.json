@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_supabase_migrations_20260910000001_rename_content_creation_reports_to_organic_creation_sql", "label": "20260910000001_rename_content_creation_reports_to_organic_creation.sql", "file_type": "code", "source_file": "supabase/migrations/20260910000001_rename_content_creation_reports_to_organic_creation.sql", "source_location": null}], "edges": []}
