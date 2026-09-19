@@ -1,5 +1,6 @@
 'use client';
 
+import { DirectoryResultsHint } from '@/components/admin/DirectoryResultsHint';
 import { useDirectory } from '@/hooks/useDirectory';
 import {
   Badge,
@@ -385,6 +386,13 @@ export function MarketingAdSpendAccessManagerDialog({
                 })}
               </div>
             )}
+
+            <DirectoryResultsHint
+              shownCount={candidates.length}
+              totalCount={directoryQuery.data?.pagination?.total}
+              loadedCount={directoryQuery.data?.data?.length ?? 0}
+              hasSearch={search.trim().length > 0}
+            />
           </section>
         </div>
       </DialogContent>

@@ -14,6 +14,7 @@ import { CompanyPulseWidget } from '@/components/CompanyPulseWidget';
 import { useDashboardAttentionItems } from '@/hooks/useDashboardAttentionItems';
 import { useRecentActivity } from '@/hooks/useRecentActivity';
 import { useSuperAdminStats } from '@/hooks/useSuperAdminStats';
+import { useSystemHealth } from '@/hooks/useSystemHealth';
 import { formatLabel } from '@/lib/format';
 import {
   Badge,
@@ -37,6 +38,7 @@ import {
   Loader2,
   Plus,
   Settings,
+  RefreshCw,
   Shield,
   Trash2,
   Users,
@@ -80,6 +82,14 @@ export default function SuperAdminDashboardPage(): ReactNode {
   const firstName = user?.name?.split(' ')[0] ?? 'Admin';
   const greeting = getGreeting();
   const { data: statsData, isLoading } = useSuperAdminStats();
+  const {
+    data: health,
+    isLoading: healthLoading,
+    isFetching: healthFetching,
+    error: healthError,
+    refetch: refetchHealth,
+  } = useSystemHealth();
+  const isApplicationHealthy = !healthError && health?.status === 'ok';
   const {
     items: attentionItems,
     isLoading: attentionLoading,
@@ -310,19 +320,61 @@ export default function SuperAdminDashboardPage(): ReactNode {
             <BentoCardTitle icon={<Database className="h-4 w-4" strokeWidth={1.5} />}>
               System Health
             </BentoCardTitle>
-            <Badge variant="secondary">Not connected</Badge>
+            {healthLoading ? (
+              <Badge variant="secondary">Checking</Badge>
+            ) : isApplicationHealthy ? (
+              <Badge variant="success">Operational</Badge>
+            ) : (
+              <Badge variant="destructive">Unreachable</Badge>
+            )}
           </BentoCardHeader>
           <BentoCardContent>
-            <EmptyState
-              icon={Database}
-              title="System monitoring is not connected"
-              description="Connect uptime and service-health signals before this dashboard can report platform status."
-              action={{
-                label: 'Configure monitoring',
-                onClick: () => openComingSoon('System Monitoring'),
-              }}
-              size="sm"
-            />
+            {healthLoading ? (
+              <EmptyState
+                icon={<Loader2 className="h-5 w-5 animate-spin" />}
+                title="Checking application health"
+                description="Contacting the application health endpoint."
+                size="sm"
+              />
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                      {isApplicationHealthy
+                        ? 'Application responding normally'
+                        : 'Application health check failed'}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {isApplicationHealthy
+                        ? `Version ${health?.version ?? 'unknown'} · Last checked ${
+                            health?.timestamp
+                              ? new Date(health.timestamp).toLocaleTimeString()
+                              : 'just now'
+                          }`
+                        : healthError instanceof Error
+                          ? healthError.message
+                          : 'The health endpoint did not respond.'}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void refetchHealth()}
+                    disabled={healthFetching}
+                  >
+                    <RefreshCw
+                      className={`mr-1.5 h-3.5 w-3.5 ${healthFetching ? 'animate-spin' : ''}`}
+                    />
+                    Recheck
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  This reflects current application reachability only. Historical uptime, database
+                  latency and security alerting still need a dedicated monitoring source.
+                </p>
+              </div>
+            )}
           </BentoCardContent>
         </BentoCard>
       </BentoGrid>

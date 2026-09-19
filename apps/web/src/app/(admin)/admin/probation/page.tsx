@@ -27,6 +27,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  ComingSoonDialog,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -311,6 +312,7 @@ export default function ProbationPage(): ReactNode {
 
   // Modal states for credentials-first flow
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [comingSoonFeature, setComingSoonFeature] = useState<string | null>(null);
   const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [assignmentData, setAssignmentData] = useState<any | null>(null);
@@ -676,7 +678,12 @@ export default function ProbationPage(): ReactNode {
                                       <Eye className="mr-2 h-4 w-4" />
                                       View Appraisal
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onSelect={(event) => {
+                                        event.preventDefault();
+                                        setComingSoonFeature('Probation notes');
+                                      }}
+                                    >
                                       <MessageSquare className="mr-2 h-4 w-4" />
                                       Add Note
                                     </DropdownMenuItem>
@@ -1374,6 +1381,14 @@ export default function ProbationPage(): ReactNode {
           setAssignmentData(null);
           setAssignmentModalOpen(false);
         }}
+      />
+
+      <ComingSoonDialog
+        open={comingSoonFeature !== null}
+        onOpenChange={(open) => {
+          if (!open) setComingSoonFeature(null);
+        }}
+        featureName={comingSoonFeature ?? undefined}
       />
 
       {/* Performance Appraisal Dialog (existing) */}

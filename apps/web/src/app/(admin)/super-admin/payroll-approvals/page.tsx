@@ -1,5 +1,6 @@
 'use client';
 
+import { ServerPagination } from '@/components/data-display/ServerPagination';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import type { InvoiceRecord } from '@/hooks/useInvoices';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
@@ -61,8 +62,33 @@ const formatCurrency = (value: number, currencyCode = 'PHP') =>
     maximumFractionDigits: currencyCode === 'JPY' ? 0 : 2,
   }).format(value || 0);
 
+const PAGE_SIZE = 25;
+
 export default function PayrollApprovalsPage() {
-  const { data, isLoading, error } = useInvoices({ page: 1, pageSize: 200 });
+  const [pendingPage, setPendingPage] = useState(1);
+  const [processedPage, setProcessedPage] = useState(1);
+
+  // Two scoped queries instead of one oversized page split in the browser:
+  // "pending" is the submitted queue, "processed" is everything already decided.
+  const {
+    data: pendingData,
+    isLoading: pendingLoading,
+    isFetching: pendingFetching,
+    error: pendingError,
+  } = useInvoices({ page: pendingPage, pageSize: PAGE_SIZE, statuses: ['submitted'] });
+  const {
+    data: processedData,
+    isLoading: processedLoading,
+    isFetching: processedFetching,
+    error: processedError,
+  } = useInvoices({
+    page: processedPage,
+    pageSize: PAGE_SIZE,
+    statuses: ['approved', 'rejected', 'paid', 'draft'],
+  });
+
+  const isLoading = pendingLoading || processedLoading;
+  const error = pendingError ?? processedError;
   const approveInvoice = useApproveInvoice();
   const [notesById, setNotesById] = useState<Record<string, string>>({});
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRecord | null>(null);
@@ -93,31 +119,26 @@ export default function PayrollApprovalsPage() {
     fetchBankingInfo();
   }, []);
 
-  const invoices = data?.data || [];
 
   const pendingSort = useTableSort({ initialColumn: 'employee' });
   const processedSort = useTableSort({ initialColumn: 'approved_at', initialDirection: 'desc' });
 
   const invoiceStatusOrder: Record<string, number> = { approved: 0, paid: 1, rejected: 2, draft: 3 };
 
-  const pending = useMemo(
-    () => invoices.filter((invoice) => invoice.status === 'submitted'),
-    [invoices]
-  );
+  const pending = pendingData?.data ?? [];
+  const processed = processedData?.data ?? [];
 
-  const processed = useMemo(
-    () => invoices.filter((invoice) => invoice.status !== 'submitted'),
-    [invoices]
+  // Counts and the pending payout total come from the API and cover every
+  // invoice, not just the rows on the current page.
+  const stats = useMemo(
+    () => ({
+      pending: pendingData?.stats?.submitted ?? 0,
+      approved: pendingData?.stats?.approved ?? 0,
+      rejected: pendingData?.stats?.rejected ?? 0,
+      pendingAmount: pendingData?.stats?.pendingAmount ?? 0,
+    }),
+    [pendingData?.stats]
   );
-
-  const stats = useMemo(() => {
-    return {
-      pending: pending.length,
-      approved: invoices.filter((invoice) => invoice.status === 'approved').length,
-      rejected: invoices.filter((invoice) => invoice.status === 'rejected').length,
-      pendingAmount: pending.reduce((sum, invoice) => sum + Number(invoice.net_amount || 0), 0),
-    };
-  }, [invoices, pending]);
 
   const sortedPending = pendingSort.sortItems(pending, {
     employee: (i) => i.employees ? `${i.employees.first_name} ${i.employees.last_name}`.toLowerCase() : '',
@@ -359,6 +380,14 @@ export default function PayrollApprovalsPage() {
                 </TableBody>
               </Table>
             </CardContent>
+
+            <ServerPagination
+              pagination={pendingData?.pagination}
+              onPageChange={setPendingPage}
+              isLoading={pendingFetching}
+              itemLabel="pending invoices"
+              className="border-t border-zinc-200 px-4 py-3 dark:border-zinc-800"
+            />
           </Card>
 
           <Dialog
@@ -564,6 +593,14 @@ export default function PayrollApprovalsPage() {
                 </TableBody>
               </Table>
             </CardContent>
+
+            <ServerPagination
+              pagination={processedData?.pagination}
+              onPageChange={setProcessedPage}
+              isLoading={processedFetching}
+              itemLabel="processed invoices"
+              className="border-t border-zinc-200 px-4 py-3 dark:border-zinc-800"
+            />
           </Card>
         </>
       )}

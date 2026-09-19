@@ -1,5 +1,6 @@
 'use client';
 
+import { DirectoryResultsHint } from '@/components/admin/DirectoryResultsHint';
 import { useDirectory } from '@/hooks/useDirectory';
 import {
   useAiSpendingAccessGrants,
@@ -242,6 +243,13 @@ export function AiSpendingAccessManagerPanel() {
             })}
           </div>
         )}
+
+        <DirectoryResultsHint
+          shownCount={candidates.length}
+          totalCount={directoryQuery.data?.pagination?.total}
+          loadedCount={directoryQuery.data?.data?.length ?? 0}
+          hasSearch={search.trim().length > 0}
+        />
       </section>
 
       <div className="rounded-lg border border-border bg-zinc-50 px-4 py-3 text-xs text-zinc-500 dark:bg-zinc-900/40 dark:text-zinc-400">
