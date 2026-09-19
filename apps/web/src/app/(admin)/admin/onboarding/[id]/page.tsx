@@ -2,6 +2,7 @@
 
 import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
 import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
+import { OnboardingDocumentsPanel } from '@/components/admin/OnboardingDocumentsPanel';
 import { RejectedOnboardingDeleteButton } from '@/components/admin/RejectedOnboardingDeleteButton';
 import { useOnboardingProfile } from '@/hooks/useOnboardingProfile';
 import { useBackNavigation } from '@/hooks/useBackNavigation';
@@ -247,7 +248,7 @@ export default function OnboardingDetailPage(): ReactNode {
 
       {/* Tabbed Details */}
       <Tabs defaultValue="personal" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="personal">
             <User className="mr-1.5 h-4 w-4" />
             Personal
@@ -259,6 +260,10 @@ export default function OnboardingDetailPage(): ReactNode {
           <TabsTrigger value="payment">
             <CreditCard className="mr-1.5 h-4 w-4" />
             Payment
+          </TabsTrigger>
+          <TabsTrigger value="documents">
+            <FileText className="mr-1.5 h-4 w-4" />
+            Documents
           </TabsTrigger>
         </TabsList>
 
@@ -402,6 +407,11 @@ export default function OnboardingDetailPage(): ReactNode {
               />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Documents Tab */}
+        <TabsContent value="documents" className="mt-4">
+          <OnboardingDocumentsPanel profileId={profile.id} />
         </TabsContent>
       </Tabs>
 
