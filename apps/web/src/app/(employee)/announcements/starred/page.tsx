@@ -1,5 +1,6 @@
 'use client';
 
+import { AnnouncementCommentsPanel } from '@/components/announcements/AnnouncementCommentsPanel';
 import type { AnnouncementRecord } from '@/hooks/useAnnouncements';
 import { useStarAnnouncement, useStarredAnnouncements, useUnstarAnnouncement } from '@/hooks/useAnnouncementStars';
 import { useMarkAnnouncementRead } from '@/hooks/useMarkAnnouncementRead';
@@ -127,6 +128,17 @@ export default function StarredAnnouncementsPage() {
         isStarred={selectedAnnouncement ? starred.some((s) => s.announcement_id === selectedAnnouncement.id) : false}
         {...(selectedAnnouncement
           ? { onStar: () => handleStarToggle(selectedAnnouncement.id) }
+          : {})}
+        {...(selectedAnnouncement
+          ? {
+              commentsSlot: (
+                <AnnouncementCommentsPanel
+                  announcementId={selectedAnnouncement.id}
+                  allowComments={selectedAnnouncement.allow_comments ?? false}
+                  enabled={isDialogOpen}
+                />
+              ),
+            }
           : {})}
       />
     </div>

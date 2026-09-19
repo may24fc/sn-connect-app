@@ -4,6 +4,7 @@ import { useAnnouncementFeed } from '@/hooks/useAnnouncementFeed';
 import type { AnnouncementRecord } from '@/hooks/useAnnouncements';
 import { useStarAnnouncement, useStarredAnnouncements, useUnstarAnnouncement } from '@/hooks/useAnnouncementStars';
 import { useMarkAnnouncementRead } from '@/hooks/useMarkAnnouncementRead';
+import { AnnouncementCommentsPanel } from '@/components/announcements/AnnouncementCommentsPanel';
 import { formatDate } from '@/lib/format';
 import {
   ActiveFilterBadges,
@@ -284,6 +285,17 @@ export default function AnnouncementsPage() {
         isStarred={selectedAnnouncement ? starredIds.has(selectedAnnouncement.id) : false}
         {...(selectedAnnouncement
           ? { onStar: () => handleStarToggle(selectedAnnouncement.id) }
+          : {})}
+        {...(selectedAnnouncement
+          ? {
+              commentsSlot: (
+                <AnnouncementCommentsPanel
+                  announcementId={selectedAnnouncement.id}
+                  allowComments={selectedAnnouncement.allow_comments ?? false}
+                  enabled={isAnnouncementDialogOpen}
+                />
+              ),
+            }
           : {})}
       />
     </div>

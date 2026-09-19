@@ -1,6 +1,7 @@
 'use client';
 
 import { Calendar, Clock } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { Badge } from '../../primitives/badge';
 import { Button } from '../../primitives/button';
 import {
@@ -17,6 +18,12 @@ export interface AnnouncementDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   isStarred?: boolean;
   onStar?: () => void;
+  /**
+   * Rendered under the announcement body, inside the scrollable region.
+   * The app layer uses this for the comments thread so this package stays
+   * free of data-fetching concerns.
+   */
+  commentsSlot?: ReactNode;
   announcement: {
     id: string;
     title: string;
@@ -28,6 +35,7 @@ export interface AnnouncementDetailDialogProps {
     published_at?: string | null;
     expires_at?: string | null;
     is_pinned?: boolean;
+    allow_comments?: boolean;
     author_id?: string;
     created_at?: string;
     updated_at?: string;
@@ -58,6 +66,7 @@ export function AnnouncementDetailDialog({
   isStarred,
   onStar,
   announcement,
+  commentsSlot,
 }: AnnouncementDetailDialogProps) {
   if (!announcement) return null;
 
@@ -160,6 +169,13 @@ export function AnnouncementDetailDialog({
                 {announcement.content}
               </div>
             </div>
+
+            {commentsSlot && (
+              <>
+                <Separator />
+                {commentsSlot}
+              </>
+            )}
           </div>
         </div>
 

@@ -1,3 +1,4 @@
+import { ensureOk } from '@/lib/api-error';
 import { type AnnouncementFilters, queryKeys } from '@/lib/query-keys';
 import { useQuery } from '@tanstack/react-query';
 
@@ -34,6 +35,14 @@ export interface AnnouncementRecord {
   is_starred?: boolean;
 }
 
+export interface AnnouncementListStats {
+  total: number;
+  draft: number;
+  scheduled: number;
+  published: number;
+  archived: number;
+}
+
 interface AnnouncementListResponse {
   data: Array<AnnouncementRecord>;
   pagination: {
@@ -42,6 +51,8 @@ interface AnnouncementListResponse {
     total: number;
     totalPages: number;
   };
+  /** Whole-dataset status counts; the page's rows cannot produce these. */
+  stats: AnnouncementListStats;
 }
 
 export function useAnnouncements(filters: AnnouncementFilters = {}) {
@@ -60,7 +71,7 @@ export function useAnnouncements(filters: AnnouncementFilters = {}) {
       if (filters.pageSize) params.append('pageSize', String(filters.pageSize));
 
       const response = await fetch(`/api/announcements?${params.toString()}`);
-      if (!response.ok) throw new Error('Failed to fetch announcements');
+      await ensureOk(response, 'Failed to fetch announcements');
       return response.json();
     },
   });

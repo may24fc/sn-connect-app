@@ -1,11 +1,15 @@
 'use client';
 
+import { BulkRecordActionDialog } from '@/components/admin/BulkRecordActionDialog';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import { ServerPagination } from '@/components/data-display/ServerPagination';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { useAnnouncements } from '@/hooks/useAnnouncements';
 import { useArchiveAnnouncement, useToggleAnnouncementPin } from '@/hooks/usePublishAnnouncement';
 import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate } from '@/lib/format';
+import { queryKeys } from '@/lib/query-keys';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   AnnouncementFilters,
   type AnnouncementFiltersValue,
@@ -77,7 +81,10 @@ function formatLabel(value: string): string {
     .join(' ');
 }
 
+const PAGE_SIZE = 25;
+
 export default function AdminAnnouncementsPage() {
+  const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<AnnouncementFiltersValue>({
     search: '',
     status: 'all',
@@ -106,16 +113,31 @@ export default function AdminAnnouncementsPage() {
     ...(filters.priority !== 'all'
       ? { priority: filters.priority as 'low' | 'normal' | 'high' | 'urgent' }
       : {}),
-    page: 1,
-    pageSize: 100,
+    page,
+    pageSize: PAGE_SIZE,
   };
 
-  const { data, isLoading, error } = useAnnouncements(queryFilters);
+  const { data, isLoading, isFetching, error } = useAnnouncements(queryFilters);
   const archiveAnnouncement = useArchiveAnnouncement();
   const togglePin = useToggleAnnouncementPin();
   const { addToast } = useToast();
+  const queryClient = useQueryClient();
+  const [bulkArchiveOpen, setBulkArchiveOpen] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+
+  const invalidateAnnouncements = (): void => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
+  };
 
   const announcements = data?.data || [];
+  const pagination = data?.pagination;
+
+  // Reset to the first page whenever the filter set changes, otherwise a page
+  // number from a wider result set can land the user on an empty page.
+  const handleFiltersChange = (next: AnnouncementFiltersValue): void => {
+    setPage(1);
+    setFilters(next);
+  };
 
   const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, low: 3 };
   const statusOrder: Record<string, number> = { draft: 0, scheduled: 1, published: 2, archived: 3, expired: 4 };
@@ -133,14 +155,16 @@ export default function AdminAnnouncementsPage() {
 
   const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
 
-  const stats = useMemo(() => {
-    const total = announcements.length;
-    const drafts = announcements.filter((item) => item.status === 'draft').length;
-    const scheduled = announcements.filter((item) => item.status === 'scheduled').length;
-    const published = announcements.filter((item) => item.status === 'published').length;
-    const readCount = announcements.reduce((acc, item) => acc + item.read_count, 0);
-    return { total, drafts, scheduled, published, readCount };
-  }, [announcements]);
+  // Whole-dataset counts come from the API; the current page cannot produce them.
+  const stats = useMemo(
+    () => ({
+      total: data?.stats?.total ?? 0,
+      drafts: data?.stats?.draft ?? 0,
+      scheduled: data?.stats?.scheduled ?? 0,
+      published: data?.stats?.published ?? 0,
+    }),
+    [data?.stats]
+  );
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
@@ -167,11 +191,22 @@ export default function AdminAnnouncementsPage() {
                     View Archive
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={(event) => {
+                    event.preventDefault();
+                    setBulkArchiveOpen(true);
+                  }}
+                >
                   <Archive className="mr-2 h-4 w-4" />
                   Bulk Archive
                 </DropdownMenuItem>
-                <DropdownMenuItem className="text-red-600 dark:text-red-400">
+                <DropdownMenuItem
+                  className="text-red-600 dark:text-red-400"
+                  onSelect={(event) => {
+                    event.preventDefault();
+                    setBulkDeleteOpen(true);
+                  }}
+                >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Bulk Delete
                 </DropdownMenuItem>
@@ -193,7 +228,7 @@ export default function AdminAnnouncementsPage() {
           <StatCard label="Published" value={stats.published} icon={<FileText className="h-4 w-4" strokeWidth={1.5} />} />
         </StatCardGrid>
 
-        <AnnouncementFilters value={filters} onChange={setFilters} showViewToggle={false} />
+        <AnnouncementFilters value={filters} onChange={handleFiltersChange} showViewToggle={false} />
       </div>
 
       <div className="flex-1 overflow-y-auto p-3">
@@ -326,7 +361,72 @@ export default function AdminAnnouncementsPage() {
             </Table>
           </Card>
         )}
+
+        <ServerPagination
+          pagination={pagination}
+          onPageChange={setPage}
+          isLoading={isFetching}
+          itemLabel="announcements"
+          className="mt-4"
+        />
       </div>
+
+      <BulkRecordActionDialog
+        open={bulkArchiveOpen}
+        onOpenChange={setBulkArchiveOpen}
+        title="Bulk Archive Announcements"
+        description="Archived announcements leave the active list and can be restored from the archive page. Only announcements loaded in the current list are shown."
+        emptyTitle="Nothing to archive"
+        emptyDescription="Every announcement in the current list is already archived."
+        actionLabel="Archive"
+        actionIcon={<Archive className="mr-1.5 h-4 w-4" />}
+        items={announcements
+          .filter((announcement) => announcement.status !== 'archived')
+          .map((announcement) => ({
+            id: announcement.id,
+            label: announcement.title,
+            hint: announcement.status,
+          }))}
+        perform={async (item) => {
+          const response = await fetch(`/api/announcements/${item.id}/archive`, {
+            method: 'POST',
+          });
+          if (!response.ok) {
+            const error = await response
+              .json()
+              .catch(() => ({ error: 'Failed to archive announcement' }));
+            throw new Error(error.error || 'Failed to archive announcement');
+          }
+        }}
+        onCompleted={invalidateAnnouncements}
+      />
+
+      <BulkRecordActionDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        title="Bulk Delete Announcements"
+        description="Deleting removes announcements from every list. This is a soft delete, so records stay recoverable in the database, but employees lose access immediately."
+        emptyTitle="Nothing to delete"
+        emptyDescription="There are no announcements in the current list."
+        actionLabel="Delete"
+        actionIcon={<Trash2 className="mr-1.5 h-4 w-4" />}
+        destructive
+        items={announcements.map((announcement) => ({
+          id: announcement.id,
+          label: announcement.title,
+          hint: announcement.status,
+        }))}
+        perform={async (item) => {
+          const response = await fetch(`/api/announcements/${item.id}`, { method: 'DELETE' });
+          if (!response.ok) {
+            const error = await response
+              .json()
+              .catch(() => ({ error: 'Failed to delete announcement' }));
+            throw new Error(error.error || 'Failed to delete announcement');
+          }
+        }}
+        onCompleted={invalidateAnnouncements}
+      />
     </div>
   );
 }

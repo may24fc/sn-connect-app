@@ -71,6 +71,44 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch announcements' }, { status: 500 });
     }
 
+    /**
+     * Status breakdown for the dashboard cards.
+     *
+     * These counts cover the whole filtered set, not the current page, and
+     * deliberately ignore the `status` filter so the breakdown stays stable
+     * while the user switches between statuses. `head: true` makes each one a
+     * count-only round trip.
+     */
+    const countMatching = async (status?: string): Promise<number> => {
+      let countQuery = supabase
+        .from('announcements')
+        .select('id', { count: 'exact', head: true })
+        .is('deleted_at', null);
+
+      if (filters.search) {
+        countQuery = countQuery.or(
+          `title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`
+        );
+      }
+      if (filters.category) countQuery = countQuery.eq('category', filters.category);
+      if (filters.priority) countQuery = countQuery.eq('priority', filters.priority);
+      if (filters.authorId) countQuery = countQuery.eq('author_id', filters.authorId);
+      if (filters.startDate) countQuery = countQuery.gte('created_at', filters.startDate);
+      if (filters.endDate) countQuery = countQuery.lte('created_at', filters.endDate);
+      if (status) countQuery = countQuery.eq('status', status);
+
+      const { count: matched } = await countQuery;
+      return matched ?? 0;
+    };
+
+    const [statsTotal, draft, scheduled, published, archived] = await Promise.all([
+      countMatching(),
+      countMatching('draft'),
+      countMatching('scheduled'),
+      countMatching('published'),
+      countMatching('archived'),
+    ]);
+
     return NextResponse.json({
       data,
       pagination: {
@@ -79,6 +117,7 @@ export async function GET(request: NextRequest) {
         total: count || 0,
         totalPages: Math.ceil((count || 0) / filters.pageSize),
       },
+      stats: { total: statsTotal, draft, scheduled, published, archived },
     });
   } catch (error) {
     console.error('Unexpected error in GET /api/announcements:', error);
