@@ -2,9 +2,9 @@ import {
   createNotification,
   getUserDisplayName,
 } from '@/lib/notifications/create-notification';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { canAccessTask, getTaskAuthedContext } from '../../_lib';
 
 interface TaskCommentRow {
   id: string;
@@ -31,16 +31,19 @@ const taskCommentSchema = z.object({
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const supabase = await createSupabaseServerClient();
+    const auth = await getTaskAuthedContext();
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+
+    const access = await canAccessTask(auth.context, id);
+
+    if (!access.ok) {
+      return NextResponse.json({ error: access.error }, { status: access.status });
+    }
+
+    const { supabase } = auth.context;
 
     const { data: comments, error } = await supabase
       .from('task_comments')
@@ -91,16 +94,20 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const supabase = await createSupabaseServerClient();
+    const auth = await getTaskAuthedContext();
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+
+    const access = await canAccessTask(auth.context, id);
+
+    if (!access.ok) {
+      return NextResponse.json({ error: access.error }, { status: access.status });
+    }
+
+    const { supabase, user } = auth.context;
+    const task = access.task;
 
     const body = await request.json();
     const parsed = taskCommentSchema.safeParse(body);
@@ -128,41 +135,36 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     // Notify task assignee and assigner about the new comment
-    const { data: task } = await supabase
-      .from('tasks')
-      .select('title, assigned_to, assigned_by')
-      .eq('id', id)
-      .single();
+    const commenterName = await getUserDisplayName(user.id);
 
-    if (task) {
-      const commenterName = await getUserDisplayName(user.id);
-
-      // Notify the assignee (employee/associate) with employee task link
-      if (task.assigned_to && task.assigned_to !== user.id) {
-        createNotification({
-          userId: task.assigned_to,
-          type: 'system',
-          title: 'New Comment on Task',
-          message: `${commenterName} commented on "${task.title}"`,
-          link: `/tasks/${id}`,
-          metadata: { taskId: id, commentId: data.id },
-        });
-      }
-
-      // Notify the assigner (super_admin) with super-admin task link
-      if (task.assigned_by && task.assigned_by !== user.id) {
-        createNotification({
-          userId: task.assigned_by,
-          type: 'system',
-          title: 'New Comment on Task',
-          message: `${commenterName} commented on "${task.title}"`,
-          link: `/super-admin/tasks/${id}`,
-          metadata: { taskId: id, commentId: data.id },
-        });
-      }
+    // Notify the assignee (employee/associate) with employee task link
+    if (task.assigned_to && task.assigned_to !== user.id) {
+      createNotification({
+        userId: task.assigned_to,
+        type: 'system',
+        title: 'New Comment on Task',
+        message: `${commenterName} commented on "${task.title}"`,
+        link: `/tasks/${id}`,
+        metadata: { taskId: id, commentId: data.id },
+      });
     }
 
-    return NextResponse.json({ data }, { status: 201 });
+    // Notify the assigner (super_admin) with super-admin task link
+    if (task.assigned_by && task.assigned_by !== user.id) {
+      createNotification({
+        userId: task.assigned_by,
+        type: 'system',
+        title: 'New Comment on Task',
+        message: `${commenterName} commented on "${task.title}"`,
+        link: `/super-admin/tasks/${id}`,
+        metadata: { taskId: id, commentId: data.id },
+      });
+    }
+
+    return NextResponse.json(
+      { data: { ...data, commenter_name: commenterName } },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Unexpected error in POST /api/tasks/[id]/comments:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

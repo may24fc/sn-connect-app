@@ -1,6 +1,7 @@
 'use client';
 
 import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
+import { TaskCommentsPanel } from '@/components/tasks';
 import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { useTaskProofs } from '@/hooks/useTaskProofs';
 import { formatDate } from '@/lib/format';
@@ -322,6 +323,8 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
           )}
         </CardContent>
       </Card>
+
+      <TaskCommentsPanel taskId={id} />
     </div>
   );
 }

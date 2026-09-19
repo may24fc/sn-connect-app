@@ -103,3 +103,55 @@ export function getTaskWriteErrorMessage(
 
   return error.message || 'Task operation failed';
 }
+
+/** Roles that may read and comment on any task, mirroring the task_comments RLS policies. */
+export const TASK_OVERSIGHT_ROLES = ['admin', 'hr', 'cos', 'ceo', TASK_ASSIGNER_ROLE] as const;
+
+/**
+ * Resolve whether the caller may view (and therefore comment on) a task.
+ * Mirrors the task_comments RLS policy so the API can return an explicit
+ * 404/403 instead of surfacing an empty list or an opaque write failure.
+ */
+export async function canAccessTask(
+  context: TaskAuthedContext,
+  taskId: string
+): Promise<
+  | { ok: true; task: { id: string; title: string; assigned_to: string | null; assigned_by: string } }
+  | { ok: false; status: number; error: string }
+> {
+  const { supabaseAdmin, user, role } = context;
+
+  const { data: task, error } = await supabaseAdmin
+    .from('tasks')
+    .select('id, title, assigned_to, assigned_by')
+    .eq('id', taskId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (error) {
+    return { ok: false, status: 500, error: 'Failed to load task' };
+  }
+
+  if (!task) {
+    return { ok: false, status: 404, error: 'Task not found' };
+  }
+
+  const isParticipant = task.assigned_to === user.id || task.assigned_by === user.id;
+  const hasOversight = role
+    ? (TASK_OVERSIGHT_ROLES as readonly string[]).includes(role)
+    : false;
+
+  if (!isParticipant && !hasOversight) {
+    return { ok: false, status: 403, error: 'You do not have access to this task' };
+  }
+
+  return {
+    ok: true,
+    task: task as {
+      id: string;
+      title: string;
+      assigned_to: string | null;
+      assigned_by: string;
+    },
+  };
+}

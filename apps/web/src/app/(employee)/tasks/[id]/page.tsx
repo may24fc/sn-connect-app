@@ -1,5 +1,6 @@
 'use client';
 
+import { TaskCommentsPanel } from '@/components/tasks';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTask } from '@/hooks/useTask';
 import { useTaskProofs, useCreateTaskProof, useDeleteTaskProof } from '@/hooks/useTaskProofs';
@@ -371,6 +372,8 @@ export default function TaskDetailPage({
           )}
         </CardContent>
       </Card>
+
+      <TaskCommentsPanel taskId={id} />
     </div>
   );
 }
