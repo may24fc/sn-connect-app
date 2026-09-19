@@ -82,12 +82,14 @@ import {
   Plus,
   Upload,
   Trash2,
+  Users,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from 'react';
 import { WeeklyFocusCard } from '@/components/weekly-focus/WeeklyFocusCard';
 import { MondayCommitmentModal } from '@/components/modals/MondayCommitmentModal';
+import { ManageContributorsDialog } from '@/components/projects/ManageContributorsDialog';
 import { useMyWeeklyCommitment } from '@/hooks/useWeeklyCommitments';
 
 function isIsoAfter(left: string, right: string): boolean {
@@ -323,6 +325,11 @@ export default function ProjectDetailPage() {
       project.supervisor_id === user?.id ||
       project.contributors.some((contributor) => contributor.user_id === user?.id));
   const projectListPath = isAdmin ? '/admin/projects' : '/projects';
+  // The contributors API allows the project lead, the supervisor, and admins.
+  // Admins land on this page in read-only mode, so they manage from the admin view.
+  const canManageContributors =
+    !!project && !isReadOnlyAdminView && (isLead || project.supervisor_id === user?.id);
+  const [manageContributorsOpen, setManageContributorsOpen] = useState(false);
 
   const [docLink, setDocLink] = useState('');
   const [docLabel, setDocLabel] = useState('');
@@ -623,6 +630,16 @@ export default function ProjectDetailPage() {
                 <ContributorAvatarStack
                   contributors={project.contributors.map((c) => ({ userId: c.user_id }))}
                 />
+              ) : null}
+              {canManageContributors ? (
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  onClick={() => setManageContributorsOpen(true)}
+                >
+                  <Users className="mr-1.5 h-3.5 w-3.5" />
+                  Manage contributors
+                </Button>
               ) : null}
             </div>
           </div>
@@ -994,6 +1011,16 @@ export default function ProjectDetailPage() {
             setCommitModalOpen(open);
           }}
           availableMilestones={availableMilestones}
+        />
+      ) : null}
+
+      {canManageContributors && project ? (
+        <ManageContributorsDialog
+          open={manageContributorsOpen}
+          onOpenChange={setManageContributorsOpen}
+          projectId={project.id}
+          contributors={project.contributors}
+          leadUserId={project.lead_user_id}
         />
       ) : null}
     </div>

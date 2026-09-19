@@ -498,3 +498,49 @@ export function useDeleteChecklistItem() {
     },
   });
 }
+
+// ----------------- Contributors -----------------
+
+export interface AddProjectContributorInput {
+  projectId: string;
+  userId: string;
+  role?: 'lead' | 'contributor';
+}
+
+export interface RemoveProjectContributorInput {
+  projectId: string;
+  userId: string;
+}
+
+/** Adds (or re-roles) a contributor on a project. Requires lead, supervisor, or admin. */
+export function useAddProjectContributor() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, userId, role = 'contributor' }: AddProjectContributorInput) =>
+      jsonFetch<{ ok: true }>(`/api/projects/${projectId}/contributors`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, role }),
+      }),
+    onSuccess: (_data, vars) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
+    },
+  });
+}
+
+/** Removes a contributor from a project. Requires lead, supervisor, or admin. */
+export function useRemoveProjectContributor() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, userId }: RemoveProjectContributorInput) =>
+      jsonFetch<{ ok: true }>(
+        `/api/projects/${projectId}/contributors?userId=${encodeURIComponent(userId)}`,
+        { method: 'DELETE' }
+      ),
+    onSuccess: (_data, vars) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
+    },
+  });
+}
