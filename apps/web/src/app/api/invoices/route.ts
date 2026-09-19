@@ -48,6 +48,12 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get('status') || '';
+    // Comma-separated status list, for screens that show one bucket per tab
+    // (e.g. payroll approvals splits "submitted" from everything processed).
+    const statuses = (searchParams.get('statuses') || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
     const employeeId = searchParams.get('employeeId') || '';
     const page = Number.parseInt(searchParams.get('page') || '1', 10);
     const pageSize = Number.parseInt(searchParams.get('pageSize') || '10', 10);
@@ -72,6 +78,10 @@ export async function GET(request: NextRequest) {
       query = query.eq('status', status);
     }
 
+    if (statuses.length > 0) {
+      query = query.in('status', statuses);
+    }
+
     if (employeeId) {
       query = query.eq('employee_id', employeeId);
     }
@@ -82,6 +92,10 @@ export async function GET(request: NextRequest) {
     const isAdmin = adminRoles.includes(role ?? '');
 
     const selfOnly = searchParams.get('selfOnly') === 'true';
+
+    // The employee this request is restricted to, if any. Reused by the
+    // aggregate queries below so counts respect the same scope as the list.
+    let scopedEmployeeId: string | null = employeeId || null;
 
     if (!isAdmin || selfOnly) {
       // Non-admin users always scope to their own invoices.
@@ -96,6 +110,7 @@ export async function GET(request: NextRequest) {
 
       if (empData?.id) {
         query = query.eq('employee_id', empData.id);
+        scopedEmployeeId = empData.id;
       }
     }
 
@@ -110,6 +125,47 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch invoices' }, { status: 500 });
     }
 
+    /**
+     * Status counts and the pending payout total across every invoice in the
+     * caller's scope. Dashboard cards used to derive these from one page, which
+     * undercounted as soon as the list exceeded the page size. The caller's
+     * status filter is excluded so the breakdown stays stable.
+     */
+    const scopeCount = async (statusFilter: string): Promise<number> => {
+      let countQuery = supabaseAdmin
+        .from('invoices')
+        .select('id', { count: 'exact', head: true })
+        .is('deleted_at', null)
+        .eq('status', statusFilter);
+
+      if (scopedEmployeeId) countQuery = countQuery.eq('employee_id', scopedEmployeeId);
+
+      const { count: matched } = await countQuery;
+      return matched ?? 0;
+    };
+
+    let pendingAmountQuery = supabaseAdmin
+      .from('invoices')
+      .select('net_amount')
+      .is('deleted_at', null)
+      .eq('status', 'submitted');
+
+    if (scopedEmployeeId) {
+      pendingAmountQuery = pendingAmountQuery.eq('employee_id', scopedEmployeeId);
+    }
+
+    const [submittedCount, approvedCount, rejectedCount, paidCount, pendingAmountRows] =
+      await Promise.all([
+        scopeCount('submitted'),
+        scopeCount('approved'),
+        scopeCount('rejected'),
+        scopeCount('paid'),
+        pendingAmountQuery,
+      ]);
+
+    const pendingAmount = ((pendingAmountRows.data ?? []) as Array<{ net_amount: number | null }>)
+      .reduce((sum, row) => sum + Number(row.net_amount ?? 0), 0);
+
     return NextResponse.json({
       data,
       pagination: {
@@ -117,6 +173,13 @@ export async function GET(request: NextRequest) {
         pageSize,
         total: count || 0,
         totalPages: Math.ceil((count || 0) / pageSize),
+      },
+      stats: {
+        submitted: submittedCount,
+        approved: approvedCount,
+        rejected: rejectedCount,
+        paid: paidCount,
+        pendingAmount,
       },
     });
   } catch (error) {

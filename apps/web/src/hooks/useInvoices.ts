@@ -61,6 +61,15 @@ export interface InvoiceRecord {
   }>;
 }
 
+export interface InvoiceListStats {
+  submitted: number;
+  approved: number;
+  rejected: number;
+  paid: number;
+  /** Total net amount of every submitted (awaiting-approval) invoice in scope. */
+  pendingAmount: number;
+}
+
 interface InvoiceListResponse {
   data: Array<InvoiceRecord>;
   pagination: {
@@ -69,6 +78,8 @@ interface InvoiceListResponse {
     total: number;
     totalPages: number;
   };
+  /** Whole-scope counts; a single page cannot produce these. */
+  stats: InvoiceListStats;
 }
 
 interface ApproveInvoiceResponse {
@@ -89,6 +100,7 @@ export function useInvoices(filters: InvoiceFilters = {}, options: UseInvoicesOp
       const params = new URLSearchParams();
 
       if (filters.status) params.append('status', filters.status);
+      if (filters.statuses?.length) params.append('statuses', filters.statuses.join(','));
       if (filters.employeeId) params.append('employeeId', filters.employeeId);
       if (filters.selfOnly) params.append('selfOnly', 'true');
       if (filters.page) params.append('page', String(filters.page));

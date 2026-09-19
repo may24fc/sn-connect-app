@@ -49,6 +49,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, CheckCircle2, Download, ExternalLink, Eye, EyeOff, FileText, Loader2, Plus, X } from 'lucide-react';
 import Link from 'next/link';
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import { ServerPagination } from '@/components/data-display/ServerPagination';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 
 const MASKED_AMOUNT = '••••••';
@@ -425,6 +426,8 @@ function SubmitConfirmDialog({
 /* ------------------------------------------------------------------ */
 /*  Main Page                                                          */
 /* ------------------------------------------------------------------ */
+const PAGE_SIZE = 25;
+
 export default function InvoicePage() {
   const { addToast } = useToast();
   const { user } = useAuth();
@@ -447,7 +450,12 @@ export default function InvoicePage() {
   const [confirmInvoice, setConfirmInvoice] = useState<InvoiceRecord | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const { data, isLoading, error } = useInvoices({ page: 1, pageSize: 100, selfOnly: true });
+  const [page, setPage] = useState(1);
+  const { data, isLoading, isFetching, error } = useInvoices({
+    page,
+    pageSize: PAGE_SIZE,
+    selfOnly: true,
+  });
   const createInvoice = useCreateInvoice();
   const uploadDocument = useUploadDocument();
   const submitInvoice = useSubmitInvoice();
@@ -832,6 +840,13 @@ export default function InvoicePage() {
           </CardContent>
         </Card>
       )}
+
+      <ServerPagination
+        pagination={data?.pagination}
+        onPageChange={setPage}
+        isLoading={isFetching}
+        itemLabel="invoices"
+      />
 
       {/* ---- Create Invoice Dialog ---- */}
       <Dialog
