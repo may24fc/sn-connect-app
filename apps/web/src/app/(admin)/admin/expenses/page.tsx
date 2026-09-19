@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import ExpenseMatchingQueuePage from '@/app/(employee)/expenses/verify/page';
+import { ImportExpensesDialog } from '@/components/admin/ImportExpensesDialog';
+import { downloadMonthlyExpenseReport } from '@/hooks/useExpenseImport';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useDeleteExpense, useExpenses, useLeadershipDecision } from '@/hooks/useExpenses';
 import { useAuth } from '@/contexts/AuthContext';
@@ -47,7 +49,9 @@ import {
   Scale,
   Search,
   Sparkles,
+  FileSpreadsheet,
   Trash2,
+  Upload,
   X,
 } from 'lucide-react';
 
@@ -65,6 +69,7 @@ export default function AdminExpensesDashboard() {
   const [departmentIdFilter, setDepartmentIdFilter] = useState('all');
   const [processingStatusFilter, setProcessingStatusFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [dateTo, setDateTo] = useState('');
 
   const { data: departmentsData } = useDepartments({ page: 1, pageSize: 200 });
@@ -351,6 +356,22 @@ export default function AdminExpensesDashboard() {
                     <Download className="h-4 w-4" />
                     Export XLSX
                   </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => downloadMonthlyExpenseReport('pdf')}
+                    className="gap-2"
+                  >
+                    <FileSpreadsheet className="h-4 w-4" />
+                    Monthly Report
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setImportDialogOpen(true)}
+                    className="gap-2"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Import
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -587,6 +608,8 @@ export default function AdminExpensesDashboard() {
           )}
         </TabsContent>
       </Tabs>
+
+      <ImportExpensesDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} />
     </div>
   );
 }
