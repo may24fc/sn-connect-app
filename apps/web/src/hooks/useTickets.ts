@@ -36,6 +36,17 @@ export interface TicketRecord {
   assigned_by_name?: string | null;
 }
 
+export interface TicketListStats {
+  total: number;
+  new: number;
+  triaged: number;
+  assigned: number;
+  in_progress: number;
+  waiting_on_user: number;
+  resolved: number;
+  closed: number;
+}
+
 interface TicketListResponse {
   data: Array<TicketRecord>;
   pagination: {
@@ -44,6 +55,8 @@ interface TicketListResponse {
     total: number;
     totalPages: number;
   };
+  /** Whole-queue status counts, scoped the same way as the list itself. */
+  stats: TicketListStats;
 }
 
 export interface TicketAttachmentRecord {

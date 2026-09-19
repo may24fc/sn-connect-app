@@ -1,5 +1,6 @@
 'use client';
 
+import { ServerPagination } from '@/components/data-display/ServerPagination';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { TicketDetailDialog } from '@/components/tickets/TicketDetailDialog';
 import { TicketListTable } from '@/components/tickets/TicketListTable';
@@ -62,11 +63,15 @@ function normalizeOptionalText(value: string): string | undefined {
   return normalizedValue.length > 0 ? normalizedValue : undefined;
 }
 
+const PAGE_SIZE = 25;
+
 export default function TicketsPage(): ReactNode {
   const { user } = useAuth();
   const { addToast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'submitted' | 'assigned'>('submitted');
+  const [submittedPage, setSubmittedPage] = useState(1);
+  const [assignedPage, setAssignedPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedSubmittedTicket, setSelectedSubmittedTicket] = useState<TicketRecord | null>(null);
   const [selectedAssignedTicket, setSelectedAssignedTicket] = useState<TicketRecord | null>(null);
@@ -81,18 +86,28 @@ export default function TicketsPage(): ReactNode {
   const [selectedFiles, setSelectedFiles] = useState<Array<File>>([]);
   const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
 
-  const { data: submittedData, isLoading: submittedLoading, error: submittedError } = useTickets({
+  const {
+    data: submittedData,
+    isLoading: submittedLoading,
+    isFetching: submittedFetching,
+    error: submittedError,
+  } = useTickets({
     scope: 'submitter',
-    page: 1,
-    pageSize: 100,
+    page: submittedPage,
+    pageSize: PAGE_SIZE,
   });
   const { data: handlerStatusData } = useTicketHandlerStatus(user?.role === 'employee');
   const isItHandler = handlerStatusData?.data.isItHandler ?? false;
-  const { data: assignedData, isLoading: assignedLoading, error: assignedError } = useTickets(
+  const {
+    data: assignedData,
+    isLoading: assignedLoading,
+    isFetching: assignedFetching,
+    error: assignedError,
+  } = useTickets(
     {
       scope: 'assigned',
-      page: 1,
-      pageSize: 100,
+      page: assignedPage,
+      pageSize: PAGE_SIZE,
     },
     { enabled: isItHandler }
   );
@@ -102,14 +117,19 @@ export default function TicketsPage(): ReactNode {
   const submittedTickets = submittedData?.data ?? [];
   const assignedTickets = assignedData?.data ?? [];
 
+  // Counts come from the API so they reflect every ticket, not just this page.
+  const submittedStats = submittedData?.stats;
+  const assignedStats = assignedData?.stats;
   const stats = useMemo(
     () => ({
-      submitted: submittedTickets.length,
-      open: submittedTickets.filter((ticket) => !['resolved', 'closed'].includes(ticket.status)).length,
-      assigned: assignedTickets.length,
-      resolved: submittedTickets.filter((ticket) => ['resolved', 'closed'].includes(ticket.status)).length,
+      submitted: submittedStats?.total ?? 0,
+      open:
+        (submittedStats?.total ?? 0) -
+        ((submittedStats?.resolved ?? 0) + (submittedStats?.closed ?? 0)),
+      assigned: assignedStats?.total ?? 0,
+      resolved: (submittedStats?.resolved ?? 0) + (submittedStats?.closed ?? 0),
     }),
-    [assignedTickets.length, submittedTickets]
+    [assignedStats, submittedStats]
   );
 
   const categoryOptions = TICKET_CATEGORY_OPTIONS_BY_TEAM[team];
@@ -277,6 +297,14 @@ export default function TicketsPage(): ReactNode {
               onAction={setSelectedSubmittedTicket}
             />
           )}
+
+          <ServerPagination
+            pagination={submittedData?.pagination}
+            onPageChange={setSubmittedPage}
+            isLoading={submittedFetching}
+            itemLabel="tickets"
+            className="mt-4"
+          />
         </TabsContent>
         {isItHandler ? (
           <TabsContent value="assigned">
@@ -312,6 +340,14 @@ export default function TicketsPage(): ReactNode {
                 onAction={setSelectedAssignedTicket}
               />
             )}
+
+            <ServerPagination
+              pagination={assignedData?.pagination}
+              onPageChange={setAssignedPage}
+              isLoading={assignedFetching}
+              itemLabel="tickets"
+              className="mt-4"
+            />
           </TabsContent>
         ) : null}
       </Tabs>

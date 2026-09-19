@@ -107,6 +107,60 @@ export async function GET(request: NextRequest) {
 
     const { data, error, count } = await query;
 
+    /**
+     * Status counts across the whole scoped queue. The dashboard cards used to
+     * count the current page, which undercounted as soon as the queue grew past
+     * one page. The `status` filter is deliberately excluded so the breakdown
+     * stays stable while the user filters by status.
+     */
+    const countScoped = async (statusFilter?: string): Promise<number> => {
+      let countQuery = supabaseAdmin
+        .from('tickets')
+        .select('id', { count: 'exact', head: true })
+        .is('deleted_at', null);
+
+      if (search) {
+        countQuery = countQuery.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
+      }
+      if (team) countQuery = countQuery.eq('team', team);
+      if (priority) countQuery = countQuery.eq('priority', priority);
+      if (statusFilter) countQuery = countQuery.eq('status', statusFilter);
+
+      if (scope === 'assigned') {
+        countQuery = countQuery.eq('assigned_to', user.id);
+        if (isAdminRole(role)) {
+          countQuery = countQuery.eq('team', 'hr');
+        } else if (isItHandler) {
+          countQuery = countQuery.eq('team', 'it');
+        }
+      } else if (scope !== 'triage') {
+        countQuery = countQuery.eq('submitted_by', user.id);
+      }
+
+      const { count: matched } = await countQuery;
+      return matched ?? 0;
+    };
+
+    const [
+      statsTotal,
+      newCount,
+      triagedCount,
+      assignedCount,
+      inProgressCount,
+      waitingCount,
+      resolvedCount,
+      closedCount,
+    ] = await Promise.all([
+      countScoped(),
+      countScoped('new'),
+      countScoped('triaged'),
+      countScoped('assigned'),
+      countScoped('in_progress'),
+      countScoped('waiting_on_user'),
+      countScoped('resolved'),
+      countScoped('closed'),
+    ]);
+
     if (error) {
       console.error('Error fetching tickets:', error);
       return NextResponse.json({ error: 'Failed to fetch tickets' }, { status: 500 });
@@ -141,6 +195,16 @@ export async function GET(request: NextRequest) {
         pageSize,
         total: count || 0,
         totalPages: Math.ceil((count || 0) / pageSize),
+      },
+      stats: {
+        total: statsTotal,
+        new: newCount,
+        triaged: triagedCount,
+        assigned: assignedCount,
+        in_progress: inProgressCount,
+        waiting_on_user: waitingCount,
+        resolved: resolvedCount,
+        closed: closedCount,
       },
     });
   } catch (error) {

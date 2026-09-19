@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   EmptyState,
+  Input,
   Label,
   Select,
   SelectContent,
@@ -25,18 +26,33 @@ interface ManageTicketHandlersDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const EMPLOYEE_PAGE_SIZE = 25;
+
 export function ManageTicketHandlersDialog({
   open,
   onOpenChange,
 }: ManageTicketHandlersDialogProps): ReactNode {
   const [selectedUserId, setSelectedUserId] = useState('');
+  const [search, setSearch] = useState('');
   const { data: handlersData } = useTicketHandlers(open);
-  const { data: employeesData } = useEmployees({ page: 1, pageSize: 200 });
+  // Server-side search: the picker used to preload one fixed page, which hid
+  // everyone beyond it.
+  const { data: employeesData, isFetching: employeesFetching } = useEmployees(
+    {
+      ...(search.trim() ? { search: search.trim() } : {}),
+      status: 'active',
+      page: 1,
+      pageSize: EMPLOYEE_PAGE_SIZE,
+    },
+    { enabled: open }
+  );
   const addTicketHandler = useAddTicketHandler();
   const removeTicketHandler = useRemoveTicketHandler();
 
   const activeHandlers = handlersData?.data ?? [];
   const employees = employeesData?.data ?? [];
+  const employeeTotal = employeesData?.pagination?.total ?? 0;
+  const hasMoreThanShown = employeeTotal > employees.length;
 
   const activeHandlerIds = useMemo(
     () => new Set(activeHandlers.map((handler) => handler.user_id)),
@@ -65,24 +81,49 @@ export function ManageTicketHandlersDialog({
         </DialogHeader>
         <div className="space-y-6">
           <div className="space-y-2 rounded-lg border border-border p-4">
-            <Label>Add IT Handler</Label>
+            <Label htmlFor="ticket-handler-search">Add IT Handler</Label>
+            <Input
+              id="ticket-handler-search"
+              value={search}
+              onChange={(event) => {
+                setSelectedUserId('');
+                setSearch(event.target.value);
+              }}
+              placeholder="Search employees by name..."
+            />
             <div className="flex gap-3">
               <Select value={selectedUserId} onValueChange={setSelectedUserId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select an employee" />
+                  <SelectValue
+                    placeholder={
+                      employeesFetching ? 'Searching...' : 'Select an employee'
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableEmployees.map((employee) => (
-                    <SelectItem key={employee.user_id} value={employee.user_id}>
-                      {employee.first_name} {employee.last_name}
-                    </SelectItem>
-                  ))}
+                  {availableEmployees.length === 0 ? (
+                    <div className="px-2 py-3 text-sm text-muted-foreground">
+                      {employeesFetching ? 'Searching...' : 'No matching employees'}
+                    </div>
+                  ) : (
+                    availableEmployees.map((employee) => (
+                      <SelectItem key={employee.user_id} value={employee.user_id}>
+                        {employee.first_name} {employee.last_name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               <Button onClick={() => void handleAdd()} disabled={addTicketHandler.isPending || !selectedUserId}>
                 {addTicketHandler.isPending ? 'Adding...' : 'Add Handler'}
               </Button>
             </div>
+            {hasMoreThanShown && (
+              <p className="text-xs text-muted-foreground">
+                Showing {availableEmployees.length} of {employeeTotal} employees. Search by name to
+                reach someone not listed.
+              </p>
+            )}
           </div>
 
           {activeHandlers.length === 0 ? (

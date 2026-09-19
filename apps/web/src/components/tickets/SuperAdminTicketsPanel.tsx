@@ -1,5 +1,6 @@
 'use client';
 
+import { ServerPagination } from '@/components/data-display/ServerPagination';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { useTicketAssignees } from '@/hooks/useTicketAssignees';
 import { useTickets, useUpdateTicket, type TicketRecord } from '@/hooks/useTickets';
@@ -13,7 +14,10 @@ import { TICKET_STATUS_OPTIONS, TICKET_TEAM_OPTIONS } from './ticket-badges';
 
 type TicketStatusFilter = 'all' | 'new' | 'triaged' | 'assigned' | 'in_progress' | 'waiting_on_user' | 'resolved' | 'closed';
 
+const PAGE_SIZE = 25;
+
 export function SuperAdminTicketsPanel(): ReactNode {
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [team, setTeam] = useState<'all' | 'hr' | 'it'>('all');
   const [status, setStatus] = useState<TicketStatusFilter>('all');
@@ -24,24 +28,30 @@ export function SuperAdminTicketsPanel(): ReactNode {
     ...(search ? { search } : {}),
     ...(team !== 'all' ? { team } : {}),
     ...(status !== 'all' ? { status } : {}),
-    page: 1,
-    pageSize: 100,
+    page,
+    pageSize: PAGE_SIZE,
   };
 
-  const { data, isLoading, error } = useTickets(filters);
+  const { data, isLoading, isFetching, error } = useTickets(filters);
   const { data: assigneesData } = useTicketAssignees();
   const updateTicket = useUpdateTicket();
   const tickets = data?.data ?? [];
+  const pagination = data?.pagination;
 
+  // Counts cover the whole intake queue, not just the loaded page.
   const stats = useMemo(
     () => ({
-      total: tickets.length,
-      newCount: tickets.filter((ticket) => ticket.status === 'new').length,
-      assigned: tickets.filter((ticket) => ticket.status === 'assigned' || ticket.status === 'in_progress').length,
-      resolved: tickets.filter((ticket) => ticket.status === 'resolved' || ticket.status === 'closed').length,
+      total: data?.stats?.total ?? 0,
+      newCount: data?.stats?.new ?? 0,
+      assigned: (data?.stats?.assigned ?? 0) + (data?.stats?.in_progress ?? 0),
+      resolved: (data?.stats?.resolved ?? 0) + (data?.stats?.closed ?? 0),
     }),
-    [tickets]
+    [data?.stats]
   );
+
+  // A filter change narrows the result set; keeping the old page could land on
+  // a page that no longer exists.
+  const resetToFirstPage = (): void => setPage(1);
 
   return (
     <div className="space-y-6">
@@ -67,10 +77,24 @@ export function SuperAdminTicketsPanel(): ReactNode {
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search tickets..." className="pl-10" />
+          <Input
+            value={search}
+            onChange={(event) => {
+              resetToFirstPage();
+              setSearch(event.target.value);
+            }}
+            placeholder="Search tickets..."
+            className="pl-10"
+          />
         </div>
         <div className="flex flex-wrap gap-3">
-          <Select value={team} onValueChange={(value) => setTeam(value as typeof team)}>
+          <Select
+            value={team}
+            onValueChange={(value) => {
+              resetToFirstPage();
+              setTeam(value as typeof team);
+            }}
+          >
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Team" />
             </SelectTrigger>
@@ -83,7 +107,13 @@ export function SuperAdminTicketsPanel(): ReactNode {
               ))}
             </SelectContent>
           </Select>
-          <Select value={status} onValueChange={(value) => setStatus(value as TicketStatusFilter)}>
+          <Select
+            value={status}
+            onValueChange={(value) => {
+              resetToFirstPage();
+              setStatus(value as TicketStatusFilter);
+            }}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -132,6 +162,13 @@ export function SuperAdminTicketsPanel(): ReactNode {
           onAction={setSelectedTicket}
         />
       )}
+
+      <ServerPagination
+        pagination={pagination}
+        onPageChange={setPage}
+        isLoading={isFetching}
+        itemLabel="tickets"
+      />
 
       <TicketAssignmentDialog
         open={Boolean(selectedTicket)}
