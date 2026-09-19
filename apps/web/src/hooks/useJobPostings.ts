@@ -38,6 +38,8 @@ interface JobPostingListResponse {
     total: number;
     totalPages: number;
   };
+  /** Whole-dataset counts; a single page cannot produce these. */
+  stats: { total: number; active: number; archived: number };
 }
 
 export function useJobPostings(filters: JobFilters = {}) {

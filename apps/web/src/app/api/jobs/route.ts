@@ -67,6 +67,37 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch job postings' }, { status: 500 });
     }
 
+    /**
+     * Whole-dataset counts for the dashboard cards. The active/archived split
+     * ignores the caller's `isActive` filter so the breakdown stays stable
+     * while the filter changes.
+     */
+    const countMatching = async (isActive?: boolean): Promise<number> => {
+      let countQuery = supabase
+        .from('job_postings')
+        .select('id', { count: 'exact', head: true })
+        .is('deleted_at', null);
+
+      if (filters.search) {
+        countQuery = countQuery.or(
+          `title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`
+        );
+      }
+      if (filters.employmentType) {
+        countQuery = countQuery.eq('employment_type', filters.employmentType);
+      }
+      if (isActive !== undefined) countQuery = countQuery.eq('is_active', isActive);
+
+      const { count: matched } = await countQuery;
+      return matched ?? 0;
+    };
+
+    const [statsTotal, activeCount, archivedCount] = await Promise.all([
+      countMatching(),
+      countMatching(true),
+      countMatching(false),
+    ]);
+
     return NextResponse.json({
       data: (data ?? []).map((row: Record<string, unknown>) => normalizeJobPosting(row)),
       pagination: {
@@ -75,6 +106,7 @@ export async function GET(request: NextRequest) {
         total: count || 0,
         totalPages: Math.ceil((count || 0) / filters.pageSize),
       },
+      stats: { total: statsTotal, active: activeCount, archived: archivedCount },
     });
   } catch (error) {
     console.error('Unexpected error in GET /api/jobs:', error);

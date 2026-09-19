@@ -95,6 +95,42 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch applications' }, { status: 500 });
     }
 
+    /**
+     * Pipeline counts across the whole filtered set. These cards used to count
+     * the current page, which undercounted once the pipeline exceeded one page.
+     * The `status` filter is excluded so the breakdown stays stable while the
+     * user filters by status.
+     */
+    const countMatching = async (status?: string): Promise<number> => {
+      let countQuery = supabase
+        .from('job_applications')
+        .select('id', { count: 'exact', head: true })
+        .is('deleted_at', null);
+
+      if (filters.search) {
+        countQuery = countQuery.or(
+          `full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`
+        );
+      }
+      if (filters.jobPostingId) countQuery = countQuery.eq('job_posting_id', filters.jobPostingId);
+      if (filters.minScore != null) countQuery = countQuery.gte('ai_match_score', filters.minScore);
+      if (filters.maxScore != null) countQuery = countQuery.lte('ai_match_score', filters.maxScore);
+      if (status) countQuery = countQuery.eq('status', status);
+
+      const { count: matched } = await countQuery;
+      return matched ?? 0;
+    };
+
+    const [statsTotal, pending, shortlisted, interview, hired] = await Promise.all([
+      countMatching(),
+      countMatching('pending'),
+      countMatching('shortlisted'),
+      countMatching('interview'),
+      countMatching('hired'),
+    ]);
+
+    const stats = { total: statsTotal, pending, shortlisted, interview, hired };
+
     const reviewerIdentities = await resolveReviewerIdentities(
       (data ?? [])
         .map((row: ApplicationRow) => (typeof row.reviewed_by === 'string' ? row.reviewed_by : null))
@@ -117,6 +153,7 @@ export async function GET(request: NextRequest) {
         total: count || 0,
         totalPages: Math.ceil((count || 0) / filters.pageSize),
       },
+      stats,
     });
   } catch (error) {
     console.error('Unexpected error in GET /api/applications:', error);

@@ -59,6 +59,14 @@ interface ApplicationListResponse {
     total: number;
     totalPages: number;
   };
+  /** Whole-pipeline status counts; a single page cannot produce these. */
+  stats: {
+    total: number;
+    pending: number;
+    shortlisted: number;
+    interview: number;
+    hired: number;
+  };
 }
 
 export function useApplications(

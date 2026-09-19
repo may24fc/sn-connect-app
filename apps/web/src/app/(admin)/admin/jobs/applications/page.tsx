@@ -12,6 +12,7 @@ import {
 import { useRealtimeApplications } from '@/hooks/useRealtimeApplications';
 import { useTableSort } from '@/hooks/useTableSort';
 import { useBackNavigation } from '@/hooks/useBackNavigation';
+import { ServerPagination } from '@/components/data-display/ServerPagination';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { formatDate, formatDateTime, formatPersonName } from '@/lib/format';
@@ -163,6 +164,8 @@ function renderAiEvaluationBadge(application: ApplicationRecord) {
   return <span className="text-xs text-zinc-400">—</span>;
 }
 
+const PAGE_SIZE = 50;
+
 export default function ApplicationsPage(): ReactNode {
   const pathname = usePathname();
   const basePath = pathname.startsWith('/ats') ? '/ats' : '/admin';
@@ -173,6 +176,22 @@ export default function ApplicationsPage(): ReactNode {
   const [statusFilter, setStatusFilter] = useState('all');
   const [jobFilter, setJobFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
+  const [page, setPage] = useState(1);
+
+  // Filters narrow the result set; a stale page number could land on an empty
+  // page, so every filter change restarts at page 1.
+  const handleSearchChange = (value: string): void => {
+    setPage(1);
+    setSearch(value);
+  };
+  const handleStatusFilterChange = (value: string): void => {
+    setPage(1);
+    setStatusFilter(value);
+  };
+  const handleJobFilterChange = (value: string): void => {
+    setPage(1);
+    setJobFilter(value);
+  };
 
   // Candidate detail drawer
   const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
@@ -191,11 +210,11 @@ export default function ApplicationsPage(): ReactNode {
     ...(search ? { search } : {}),
     ...(statusFilter !== 'all' ? { status: statusFilter as ApplicationStatus } : {}),
     ...(jobFilter !== 'all' ? { jobPostingId: jobFilter } : {}),
-    page: 1,
-    pageSize: 200,
+    page,
+    pageSize: PAGE_SIZE,
   };
 
-  const { data, isLoading, error } = useApplications(queryFilters, {
+  const { data, isLoading, isFetching, error } = useApplications(queryFilters, {
     refetchInterval: applicationsRefetchInterval,
   });
   const { data: selectedApplicationData } = useApplication(selectedApplicationId, {
@@ -311,14 +330,17 @@ export default function ApplicationsPage(): ReactNode {
 
   const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
 
-  const stats = useMemo(() => {
-    const total = applications.length;
-    const pending = applications.filter((a) => a.status === 'pending').length;
-    const shortlisted = applications.filter((a) => a.status === 'shortlisted').length;
-    const interview = applications.filter((a) => a.status === 'interview').length;
-    const hired = applications.filter((a) => a.status === 'hired').length;
-    return { total, pending, shortlisted, interview, hired };
-  }, [applications]);
+  // Pipeline counts come from the API and cover every matching application.
+  const stats = useMemo(
+    () => ({
+      total: data?.stats?.total ?? 0,
+      pending: data?.stats?.pending ?? 0,
+      shortlisted: data?.stats?.shortlisted ?? 0,
+      interview: data?.stats?.interview ?? 0,
+      hired: data?.stats?.hired ?? 0,
+    }),
+    [data?.stats]
+  );
 
   // Kanban board groups
   const kanbanGroups = useMemo(() => {
@@ -520,12 +542,12 @@ export default function ApplicationsPage(): ReactNode {
             <Input
               placeholder="Search by name or email..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
             />
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
               <SelectTrigger className="w-[160px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -538,7 +560,7 @@ export default function ApplicationsPage(): ReactNode {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={jobFilter} onValueChange={setJobFilter}>
+            <Select value={jobFilter} onValueChange={handleJobFilterChange}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Job Posting" />
               </SelectTrigger>
@@ -772,6 +794,14 @@ export default function ApplicationsPage(): ReactNode {
             })}
           </div>
         )}
+
+        <ServerPagination
+          pagination={data?.pagination}
+          onPageChange={setPage}
+          isLoading={isFetching}
+          itemLabel="applications"
+          className="mt-4"
+        />
       </div>
 
       {/* ─── CANDIDATE DETAIL DRAWER ─── */}

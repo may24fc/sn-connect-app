@@ -9,6 +9,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useTableSort } from '@/hooks/useTableSort';
+import { ServerPagination } from '@/components/data-display/ServerPagination';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { AtsAccessManagerButton } from '@/components/admin/AtsAccessManagerDialog';
 import { formatDate } from '@/lib/format';
@@ -83,6 +84,8 @@ const EMPTY_FORM: JobFormData = {
   closes_at: '',
 };
 
+const PAGE_SIZE = 25;
+
 export default function AdminJobsPage(): ReactNode {
   const pathname = usePathname();
   const basePath = pathname.startsWith('/ats') ? '/ats' : '/admin';
@@ -107,17 +110,34 @@ export default function AdminJobsPage(): ReactNode {
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
+  const [page, setPage] = useState(1);
+
+  // Filters narrow the result set, so a stale page number could land on an
+  // empty page. Every filter change restarts at page 1.
+  const handleSearchChange = (value: string): void => {
+    setPage(1);
+    setSearch(value);
+  };
+  const handleTypeFilterChange = (value: string): void => {
+    setPage(1);
+    setTypeFilter(value);
+  };
+  const handleStatusFilterChange = (value: string): void => {
+    setPage(1);
+    setStatusFilter(value);
+  };
+
   const queryFilters = {
     ...(search ? { search } : {}),
     ...(typeFilter !== 'all'
       ? { employmentType: typeFilter as 'full-time' | 'part-time' | 'internship' | 'contract' }
       : {}),
     ...(statusFilter !== 'all' ? { isActive: statusFilter === 'active' } : {}),
-    page: 1,
-    pageSize: 100,
+    page,
+    pageSize: PAGE_SIZE,
   };
 
-  const { data, isLoading, error } = useJobPostings(queryFilters);
+  const { data, isLoading, isFetching, error } = useJobPostings(queryFilters);
   const createJob = useCreateJobPosting();
   const updateJob = useUpdateJobPosting();
   const archiveJob = useArchiveJobPosting();
@@ -139,17 +159,21 @@ export default function AdminJobsPage(): ReactNode {
 
   const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
 
+  // Posting counts come from the API and cover every matching posting. Open
+  // seats are summed from the loaded page, since no headcount aggregate exists.
   const stats = useMemo(() => {
-    const total = jobs.length;
-    const active = jobs.filter((j) => j.is_active).length;
-    const archived = jobs.filter((j) => !j.is_active).length;
     const openings = jobs.reduce((sum, job) => {
       const requisition = job.job_requisition;
       if (!requisition) return sum;
       return sum + Math.max(requisition.total_headcount - requisition.filled_headcount, 0);
     }, 0);
-    return { total, active, archived, openings };
-  }, [jobs]);
+    return {
+      total: data?.stats?.total ?? 0,
+      active: data?.stats?.active ?? 0,
+      archived: data?.stats?.archived ?? 0,
+      openings,
+    };
+  }, [data?.stats, jobs]);
 
   // Form state
   const [formOpen, setFormOpen] = useState(false);
@@ -282,7 +306,7 @@ export default function AdminJobsPage(): ReactNode {
             { label: 'Total Postings', value: stats.total },
             { label: 'Active', value: stats.active },
             { label: 'Archived', value: stats.archived },
-            { label: 'Open Seats', value: stats.openings },
+            { label: 'Open Seats (this page)', value: stats.openings },
           ].map((stat) => (
             <Card key={stat.label} className="bg-card border border-border rounded-lg p-4">
               <CardContent className="p-0">
@@ -300,11 +324,11 @@ export default function AdminJobsPage(): ReactNode {
             <Input
               placeholder="Search job postings..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
             />
           </div>
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <Select value={typeFilter} onValueChange={handleTypeFilterChange}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Type" />
             </SelectTrigger>
@@ -316,7 +340,7 @@ export default function AdminJobsPage(): ReactNode {
               <SelectItem value="contract">Contract</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -462,6 +486,14 @@ export default function AdminJobsPage(): ReactNode {
             </Table>
           </Card>
         )}
+
+        <ServerPagination
+          pagination={data?.pagination}
+          onPageChange={setPage}
+          isLoading={isFetching}
+          itemLabel="postings"
+          className="mt-4"
+        />
       </div>
 
       {/* Create/Edit Slide Panel */}
