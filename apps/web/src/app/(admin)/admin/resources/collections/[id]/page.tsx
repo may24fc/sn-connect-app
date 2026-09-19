@@ -1,5 +1,6 @@
 'use client';
 
+import { renderQueryState } from '@/components/feedback';
 import {
   useAddResourceToCollection,
   useCollectionResources,
@@ -34,7 +35,7 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
     params.then((value) => setCollectionId(value.id));
   }, [params]);
 
-  const { data, isLoading } = useResourceCollection(collectionId);
+  const { data, isLoading, error, refetch } = useResourceCollection(collectionId);
   const { data: collectionResourcesData, isLoading: isCollectionResourcesLoading } =
     useCollectionResources(collectionId);
   const { data: resourcesData } = useResources({ page: 1, pageSize: 100, status: 'published' });
@@ -89,14 +90,28 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
     }
   };
 
-  if (isLoading || !collection) {
-    return (
-      <EmptyState
-        icon={<Loader2 className="h-5 w-5 animate-spin" />}
-        title="Loading collection"
-        description="Fetching the collection details and its linked resources."
-      />
-    );
+  const queryState = renderQueryState({
+    isLoading,
+    error,
+    isMissing: !collection,
+    loadingTitle: 'Loading collection',
+    loadingDescription: 'Fetching the collection details and its linked resources.',
+    missingTitle: 'Collection not found',
+    missingDescription: 'This collection does not exist or has been deleted.',
+    forbiddenDescription: 'You do not have permission to manage this collection.',
+    errorTitle: 'Failed to load collection',
+    onRetry: () => void refetch(),
+    onBack: () => router.push('/admin/resources/collections'),
+    backLabel: 'Back to Collections',
+    className: '',
+  });
+
+  if (queryState) {
+    return queryState;
+  }
+
+  if (!collection) {
+    return null;
   }
 
   return (

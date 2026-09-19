@@ -1,3 +1,4 @@
+import { ensureOk } from '@/lib/api-error';
 import { type CollectionFilters, queryKeys } from '@/lib/query-keys';
 import type { CreateCollectionInput, UpdateCollectionInput } from '@/lib/schemas/resource.schema';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -53,7 +54,7 @@ export function useResourceCollection(id: string) {
     queryKey: queryKeys.collections.detail(id),
     queryFn: async (): Promise<{ data: CollectionRecord }> => {
       const response = await fetch(`/api/collections/${id}`);
-      if (!response.ok) throw new Error('Failed to fetch collection');
+      await ensureOk(response, 'Failed to fetch collection');
       return response.json();
     },
     enabled: !!id,
@@ -65,7 +66,7 @@ export function useCollectionResources(collectionId: string) {
     queryKey: queryKeys.collections.resources(collectionId),
     queryFn: async (): Promise<{ data: Array<ResourceRecord> }> => {
       const response = await fetch(`/api/collections/${collectionId}/resources`);
-      if (!response.ok) throw new Error('Failed to fetch collection resources');
+      await ensureOk(response, 'Failed to fetch collection resources');
       return response.json();
     },
     enabled: !!collectionId,

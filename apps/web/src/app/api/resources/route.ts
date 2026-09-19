@@ -177,6 +177,59 @@ export async function GET(request: NextRequest) {
       // For total we approximate by merged visible records in the response window.
       count = combined.length || 0;
     }
+    /**
+     * Whole-dataset counts for the admin library cards. A single page cannot
+     * produce these, and the status breakdown deliberately ignores the caller's
+     * `status` filter so it stays stable while the filter changes.
+     *
+     * Non-admins get a merged, in-memory result set whose total is already an
+     * approximation, so the aggregates are only computed for admins.
+     */
+    let stats: {
+      total: number;
+      published: number;
+      draft: number;
+      archived: number;
+    } | null = null;
+
+    if (isAdmin) {
+      const countMatching = async (status?: string): Promise<number> => {
+        let countQuery = supabase
+          .from('resources')
+          .select('id', { count: 'exact', head: true })
+          .is('deleted_at', null);
+
+        if (filters.search) {
+          countQuery = countQuery.or(
+            `title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`
+          );
+        }
+        if (filters.authorId) countQuery = countQuery.eq('author_id', filters.authorId);
+        if (filters.isFeatured !== undefined) {
+          countQuery = countQuery.eq('is_featured', filters.isFeatured);
+        }
+        if (filters.isPinned !== undefined) {
+          countQuery = countQuery.eq('is_pinned', filters.isPinned);
+        }
+        if (filters.startDate) countQuery = countQuery.gte('created_at', filters.startDate);
+        if (filters.endDate) countQuery = countQuery.lte('created_at', filters.endDate);
+        if (filters.folderId) countQuery = countQuery.eq('folder_id', filters.folderId);
+        if (status) countQuery = countQuery.eq('status', status);
+
+        const { count: matched } = await countQuery;
+        return matched ?? 0;
+      };
+
+      const [statsTotal, published, draft, archived] = await Promise.all([
+        countMatching(),
+        countMatching('published'),
+        countMatching('draft'),
+        countMatching('archived'),
+      ]);
+
+      stats = { total: statsTotal, published, draft, archived };
+    }
+
     return NextResponse.json({
       data,
       pagination: {
@@ -185,6 +238,7 @@ export async function GET(request: NextRequest) {
         total: count || 0,
         totalPages: Math.ceil((count || 0) / filters.pageSize),
       },
+      ...(stats ? { stats } : {}),
     });
   } catch (error) {
     console.error('Unexpected error in GET /api/resources:', error);

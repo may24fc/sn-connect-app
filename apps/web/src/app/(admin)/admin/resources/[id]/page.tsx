@@ -1,5 +1,6 @@
 'use client';
 
+import { renderQueryState } from '@/components/feedback';
 import {
   useResource,
 } from '@/hooks/useResources';
@@ -27,7 +28,7 @@ export default function AdminResourceDetailPage({ params }: { params: Promise<{ 
     params.then((value) => setResourceId(value.id));
   }, [params]);
 
-  const { data, isLoading } = useResource(resourceId);
+  const { data, isLoading, error, refetch } = useResource(resourceId);
   const { addToast } = useToast();
 
   const resource = data?.data;
@@ -115,17 +116,27 @@ export default function AdminResourceDetailPage({ params }: { params: Promise<{ 
     return () => clearInterval(refreshInterval);
   }, [resource]);
 
-  if (isLoading || !resource) {
-    return (
-      <div className="p-6">
-        <EmptyState
-          icon={<Loader2 className="h-5 w-5 animate-spin" />}
-          title="Loading resource"
-          description="Resource details are still loading."
-          size="sm"
-        />
-      </div>
-    );
+  const queryState = renderQueryState({
+    isLoading: isLoading || !resourceId,
+    error,
+    isMissing: !resource,
+    loadingTitle: 'Loading resource',
+    loadingDescription: 'Resource details are still loading.',
+    missingTitle: 'Resource not found',
+    missingDescription: 'This resource does not exist or has been removed from the library.',
+    forbiddenDescription: 'You do not have permission to view this resource.',
+    errorTitle: 'Failed to load resource',
+    onRetry: () => void refetch(),
+    onBack: () => router.push('/admin/resources'),
+    backLabel: 'Back to Resources',
+  });
+
+  if (queryState) {
+    return queryState;
+  }
+
+  if (!resource) {
+    return null;
   }
 
   const isVideo = resource.resource_type === 'video';

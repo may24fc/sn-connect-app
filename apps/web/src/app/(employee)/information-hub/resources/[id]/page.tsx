@@ -1,5 +1,6 @@
 'use client';
 
+import { renderQueryState } from '@/components/feedback';
 import {
   useBookmarkResource,
   useRemoveBookmark,
@@ -36,7 +37,7 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
     params.then((value) => setResourceId(value.id));
   }, [params]);
 
-  const { data, isLoading } = useResource(resourceId);
+  const { data, isLoading, error, refetch } = useResource(resourceId);
   const { data: bookmarksData } = useResourceBookmarks();
   const { data: relatedData } = useResourcesByCategory(data?.data.category || '');
   const bookmarkResource = useBookmarkResource();
@@ -151,17 +152,29 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
 
   const isViewOnly = streamAccessLevel === 'view_only';
 
-  if (isLoading || !resource) {
-    return (
-      <div className="p-6">
-        <EmptyState
-          icon={<Loader2 className="h-5 w-5 animate-spin" />}
-          title="Loading resource"
-          description="Resource details are still loading."
-          size="sm"
-        />
-      </div>
-    );
+  const queryState = renderQueryState({
+    isLoading: isLoading || !resourceId,
+    error,
+    isMissing: !resource,
+    loadingTitle: 'Loading resource',
+    loadingDescription: 'Resource details are still loading.',
+    missingTitle: 'Resource not found',
+    missingDescription: 'This resource does not exist or is no longer published.',
+    forbiddenDescription: 'This resource is not shared with your role.',
+    errorTitle: 'Failed to load resource',
+    onRetry: () => void refetch(),
+    onBack: () => {
+      window.location.assign('/information-hub');
+    },
+    backLabel: 'Back to Information Hub',
+  });
+
+  if (queryState) {
+    return queryState;
+  }
+
+  if (!resource) {
+    return null;
   }
 
   const isBookmarked = bookmarkIds.has(resource.id);

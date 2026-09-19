@@ -1,6 +1,11 @@
 'use client';
 
+import { BulkRecordActionDialog } from '@/components/admin/BulkRecordActionDialog';
+import { ServerPagination } from '@/components/data-display/ServerPagination';
+import { BulkUploadResourcesDialog } from '@/components/resources/BulkUploadResourcesDialog';
 import { useArchiveResource, useResources, useToggleResourceFeatured } from '@/hooks/useResources';
+import { queryKeys } from '@/lib/query-keys';
+import { useQueryClient } from '@tanstack/react-query';
 import { usePendingResources } from '@/hooks/useResources';
 import { formatDate } from '@/lib/format';
 import {
@@ -34,8 +39,12 @@ import {
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
+const PAGE_SIZE = 24;
+
 export default function AdminResourcesPage() {
   const { addToast } = useToast();
+  const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<ResourceFiltersValue>({
     search: '',
     status: 'all',
@@ -60,16 +69,27 @@ export default function AdminResourcesPage() {
             | 'interactive',
         }
       : {}),
-    page: 1,
-    pageSize: 100,
+    page,
+    pageSize: PAGE_SIZE,
   };
 
-  const { data, isLoading, error } = useResources(queryFilters);
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
+  const [bulkArchiveOpen, setBulkArchiveOpen] = useState(false);
+
+  const { data, isLoading, isFetching, error } = useResources(queryFilters);
   const { data: pendingData } = usePendingResources();
   const archiveResource = useArchiveResource();
   const toggleFeatured = useToggleResourceFeatured();
 
   const resources = data?.data || [];
+  const pagination = data?.pagination;
+
+  // Filters narrow the whole dataset, so a page number from a wider result set
+  // could land on an empty page — start over at page 1 on every filter change.
+  const handleFiltersChange = (next: ResourceFiltersValue): void => {
+    setPage(1);
+    setFilters(next);
+  };
 
   const pendingCount = (() => {
     try {
@@ -81,14 +101,18 @@ export default function AdminResourcesPage() {
     }
   })();
 
+  // Status counts come from the API and cover every matching resource. The view
+  // total is labelled as page-scoped, since this endpoint exposes no
+  // whole-dataset engagement aggregate.
   const stats = useMemo(() => {
-    const total = resources.length;
-    const published = resources.filter((item) => item.status === 'published').length;
-    const drafts = resources.filter((item) => item.status === 'draft').length;
     const viewCount = resources.reduce((acc, item) => acc + item.view_count, 0);
-    const downloadCount = resources.reduce((acc, item) => acc + item.download_count, 0);
-    return { total, published, drafts, viewCount, downloadCount };
-  }, [resources]);
+    return {
+      total: data?.stats?.total ?? pagination?.total ?? 0,
+      published: data?.stats?.published ?? 0,
+      drafts: data?.stats?.draft ?? 0,
+      viewCount,
+    };
+  }, [data?.stats, pagination?.total, resources]);
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
@@ -127,7 +151,12 @@ export default function AdminResourcesPage() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={(event) => {
+                    event.preventDefault();
+                    setBulkUploadOpen(true);
+                  }}
+                >
                   <Upload className="mr-2 h-4 w-4" />
                   Bulk Upload
                 </DropdownMenuItem>
@@ -137,7 +166,12 @@ export default function AdminResourcesPage() {
                     View Archive
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={(event) => {
+                    event.preventDefault();
+                    setBulkArchiveOpen(true);
+                  }}
+                >
                   <Archive className="mr-2 h-4 w-4" />
                   Bulk Archive
                 </DropdownMenuItem>
@@ -160,7 +194,7 @@ export default function AdminResourcesPage() {
             { label: 'Total', value: stats.total },
             { label: 'Published', value: stats.published },
             { label: 'Drafts', value: stats.drafts },
-            { label: 'Views', value: stats.viewCount },
+            { label: 'Views (this page)', value: stats.viewCount },
           ].map((stat) => (
             <Card key={stat.label} className="bg-card border border-border rounded-lg p-4">
               <CardContent className="p-0">
@@ -171,7 +205,7 @@ export default function AdminResourcesPage() {
           ))}
         </div>
 
-        <ResourceFilters value={filters} onChange={setFilters} showStatus />
+        <ResourceFilters value={filters} onChange={handleFiltersChange} showStatus />
       </div>
 
       <div className="flex-1 overflow-y-auto p-3">
@@ -314,7 +348,47 @@ export default function AdminResourcesPage() {
             )}
           </>
         )}
+
+        <ServerPagination
+          pagination={pagination}
+          onPageChange={setPage}
+          isLoading={isFetching}
+          itemLabel="resources"
+          className="mt-4"
+        />
       </div>
+
+      <BulkUploadResourcesDialog open={bulkUploadOpen} onOpenChange={setBulkUploadOpen} />
+      <BulkRecordActionDialog
+        open={bulkArchiveOpen}
+        onOpenChange={setBulkArchiveOpen}
+        title="Bulk Archive Resources"
+        description="Archived resources move out of the active library and can be restored from the archive page. Only resources loaded in the current list are shown."
+        emptyTitle="Nothing to archive"
+        emptyDescription="Every resource in the current list is already archived."
+        actionLabel="Archive"
+        actionIcon={<Archive className="mr-1.5 h-4 w-4" />}
+        destructive
+        items={resources
+          .filter((resource) => resource.status !== 'archived')
+          .map((resource) => ({
+            id: resource.id,
+            label: resource.title,
+            hint: resource.status,
+          }))}
+        perform={async (item) => {
+          const response = await fetch(`/api/resources/${item.id}/archive`, { method: 'POST' });
+          if (!response.ok) {
+            const error = await response
+              .json()
+              .catch(() => ({ error: 'Failed to archive resource' }));
+            throw new Error(error.error || 'Failed to archive resource');
+          }
+        }}
+        onCompleted={() => {
+          queryClient.invalidateQueries({ queryKey: queryKeys.resources.all });
+        }}
+      />
     </div>
   );
 }

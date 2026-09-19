@@ -1,3 +1,4 @@
+import { ensureOk } from '@/lib/api-error';
 import { type ResourceFilters, queryKeys } from '@/lib/query-keys';
 import type { CreateResourceInput, UpdateResourceInput } from '@/lib/schemas/resource.schema';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -62,6 +63,15 @@ interface ResourceListResponse {
     total: number;
     totalPages: number;
   };
+  /** Whole-dataset status counts. Admin responses only. */
+  stats?: ResourceListStats;
+}
+
+export interface ResourceListStats {
+  total: number;
+  published: number;
+  draft: number;
+  archived: number;
 }
 
 // ============================================
@@ -90,7 +100,7 @@ export function useResources(filters: ResourceFilters = {}) {
       if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
 
       const response = await fetch(`/api/resources?${params.toString()}`);
-      if (!response.ok) throw new Error('Failed to fetch resources');
+      await ensureOk(response, 'Failed to fetch resources');
       return response.json();
     },
   });
@@ -101,7 +111,7 @@ export function useResource(id: string) {
     queryKey: queryKeys.resources.detail(id),
     queryFn: async (): Promise<{ data: ResourceRecord }> => {
       const response = await fetch(`/api/resources/${id}`);
-      if (!response.ok) throw new Error('Failed to fetch resource');
+      await ensureOk(response, 'Failed to fetch resource');
       return response.json();
     },
     enabled: !!id,
@@ -469,6 +479,61 @@ export function useDeleteResourceFolder() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resource_folders'] });
+    },
+  });
+}
+
+export interface BulkUploadResult {
+  fileName: string;
+  success: boolean;
+  error?: string;
+  resourceId?: string;
+}
+
+export interface BulkUploadResponse {
+  data: {
+    results: Array<BulkUploadResult>;
+    summary: { total: number; success: number; failed: number };
+  };
+}
+
+/** Uploads multiple files to /api/resources/bulk-upload, creating one draft resource per file. */
+export function useBulkUploadResources() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      files: Array<File>;
+      isPublic: boolean;
+      targetRoles: Array<string>;
+    }): Promise<BulkUploadResponse> => {
+      if (payload.files.length === 0) {
+        throw new Error('Select at least one file to upload');
+      }
+
+      const formData = new FormData();
+      for (const file of payload.files) {
+        formData.append('files', file);
+      }
+      formData.append(
+        'metadata',
+        JSON.stringify({ isPublic: payload.isPublic, targetRoles: payload.targetRoles })
+      );
+
+      const response = await fetch('/api/resources/bulk-upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Bulk upload failed' }));
+        throw new Error(error.error || 'Bulk upload failed');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.resources.all });
     },
   });
 }
