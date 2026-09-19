@@ -21,6 +21,9 @@ export {
   BentoCardContent,
 } from './BentoGrid';
 
+// Server pagination
+export { ServerPagination, type ServerPaginationMeta } from './ServerPagination';
+
 // StatCard exports
 export { StatCard, StatCardGrid } from './StatCard';
 

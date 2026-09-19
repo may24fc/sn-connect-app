@@ -96,8 +96,12 @@ export interface ReportFilters {
   pageSize?: number;
 }
 
+export type InvoiceStatus = 'draft' | 'submitted' | 'approved' | 'paid' | 'rejected';
+
 export interface InvoiceFilters {
-  status?: 'draft' | 'submitted' | 'approved' | 'paid' | 'rejected';
+  status?: InvoiceStatus;
+  /** Matches any of these statuses. Used by screens with one bucket per tab. */
+  statuses?: Array<InvoiceStatus>;
   employeeId?: string;
   /** When true, the API scopes the result to the requesting user's own employee record, regardless of role. Used on self-service pages so admin/super-admin users don't see all employees' invoices. */
   selfOnly?: boolean;
@@ -340,6 +344,7 @@ export const queryKeys = {
     list: (filters: TaskFilters) => [...queryKeys.tasks.lists(), filters] as const,
     detail: (id: string) => [...queryKeys.tasks.all, 'detail', id] as const,
     proofs: (taskId: string) => [...queryKeys.tasks.all, 'proofs', taskId] as const,
+    comments: (taskId: string) => [...queryKeys.tasks.all, 'comments', taskId] as const,
   },
 
   // Reports
@@ -707,6 +712,11 @@ export const queryKeys = {
     badges: (userId: string) => [...queryKeys.gamification.all, 'badges', userId] as const,
     featuredMastery: (userId: string) =>
       [...queryKeys.gamification.all, 'featured-mastery', userId] as const,
+  },
+
+  system: {
+    all: ['system'] as const,
+    health: () => [...queryKeys.system.all, 'health'] as const,
   },
 } as const;
 
