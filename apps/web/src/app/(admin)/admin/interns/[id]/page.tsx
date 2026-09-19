@@ -1,5 +1,6 @@
 'use client';
 
+import { EditInternshipDialog } from '@/components/admin/EditInternshipDialog';
 import { useExtendInternship } from '@/hooks/useIndividualPerformance';
 import {
   useEndInternship,
@@ -20,6 +21,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  ComingSoonDialog,
   EmptyState,
   type DailyReport,
   type DailyReportId,
@@ -93,6 +95,8 @@ export default function InternDetailPage({
   const [extendDialogOpen, setExtendDialogOpen] = useState(false);
   const [newEndDate, setNewEndDate] = useState('');
   const [extendReason, setExtendReason] = useState('');
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [comingSoonFeature, setComingSoonFeature] = useState<string | null>(null);
 
   const internshipQuery = useInternship(id);
   const updateLogMutation = useUpdateInternDailyLog();
@@ -283,7 +287,12 @@ export default function InternDetailPage({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={(event) => {
+                  event.preventDefault();
+                  setEditProfileOpen(true);
+                }}
+              >
                 <Edit2 className="mr-2 h-4 w-4" />
                 Edit Profile
               </DropdownMenuItem>
@@ -291,7 +300,12 @@ export default function InternDetailPage({
                 <Download className="mr-2 h-4 w-4" />
                 Export Report
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={(event) => {
+                  event.preventDefault();
+                  setComingSoonFeature('Certificate generation');
+                }}
+              >
                 <Award className="mr-2 h-4 w-4" />
                 Generate Certificate
               </DropdownMenuItem>
@@ -465,7 +479,11 @@ export default function InternDetailPage({
               />
             </CardContent>
             <CardFooter>
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setComingSoonFeature('HR notes')}
+              >
                 <Edit2 className="mr-2 h-4 w-4" />
                 Edit Notes
               </Button>
@@ -723,6 +741,21 @@ export default function InternDetailPage({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <EditInternshipDialog
+        open={editProfileOpen}
+        onOpenChange={setEditProfileOpen}
+        internshipId={id}
+        associate={associate}
+      />
+
+      <ComingSoonDialog
+        open={comingSoonFeature !== null}
+        onOpenChange={(open) => {
+          if (!open) setComingSoonFeature(null);
+        }}
+        featureName={comingSoonFeature ?? undefined}
+      />
     </div>
   );
 }
