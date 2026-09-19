@@ -1,126 +1,224 @@
 # Environment Variables
 
-This document describes all environment variables required by the HR Portal application.
+Environment variables used by the SN Connect monorepo — the Control Hub portal (`apps/web`), the public site (`apps/www`), Supabase Edge Functions, and the ops scripts under `scripts/`.
+
+**Source of truth for the required set:** [`packages/config/src/env.ts`](../packages/config/src/env.ts). Anything listed there is validated with Zod at startup and the app refuses to boot without it. Everything else is read directly via `process.env` / `Deno.env` and degrades gracefully when absent.
 
 ## Quick Setup
 
-1. Copy `.env.example` to `.env.local` in the project root:
+1. Create `.env.local` in the repo root. There is **no `.env.example`** checked in — use the "Required" table below as the minimum set.
+2. Fill in the required values.
+3. Switch between environment targets with the helper scripts:
    ```bash
-   cp .env.example .env.local
+   pnpm env:use-local      # .env.local.localdev
+   pnpm env:use-staging    # .env.local.stagingdev
+   pnpm env:use-prodops    # .env.local.prodops
    ```
-2. Fill in all required values (see variable descriptions below)
-3. The application validates environment variables at startup using Zod
 
-**For local development:** Set `NEXT_PUBLIC_ENABLE_MOCK_AUTH=true` to use mock authentication without needing a real Supabase project. Test accounts: employee@test.com, associate@test.com, admin@test.com, superadmin@test.com (all with password: `password`)
+**For local development:** set `NEXT_PUBLIC_ENABLE_MOCK_AUTH=true` to bypass Supabase Auth entirely. Test accounts: `employee@test.com`, `associate@test.com`, `admin@test.com`, `superadmin@test.com` (all with password `password`).
 
-**For production:** Set `NEXT_PUBLIC_ENABLE_MOCK_AUTH=false` and provide real Supabase credentials.
+**For production:** set `NEXT_PUBLIC_ENABLE_MOCK_AUTH=false` and provide real Supabase credentials.
 
-## Variables
+---
 
-### Supabase
+## Required (validated at startup)
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `NEXT_PUBLIC_SUPABASE_URL` | The URL of your Supabase project (e.g., `https://your-project.supabase.co`). This is publicly exposed to the browser. | Yes |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | The anonymous/public API key for your Supabase project. This key has limited permissions defined by Row Level Security policies. Publicly exposed to the browser. | Yes |
-| `SUPABASE_SERVICE_ROLE_KEY` | The service role key for your Supabase project. This key bypasses Row Level Security and should only be used server-side. **Never expose this key to the client.** | Yes |
+These are the variables in the Zod schema. A missing or malformed value throws `Invalid environment variables` before the app serves a request.
 
-### Anthropic (Claude AI)
+| Variable | Description | Validation |
+|----------|-------------|------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL (e.g. `https://xxx.supabase.co`). Exposed to the browser. | Valid URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anonymous/public API key. Permissions are bounded by RLS. Exposed to the browser. | Non-empty |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key. **Bypasses RLS — server-side only, never expose to the client.** | Non-empty |
+| `OPENAI_API_KEY` | OpenAI API key. Powers all AI features: RAG chat, embeddings, resume parsing/evaluation, receipt OCR, project intake extraction. | Starts with `sk-` |
+| `RESEND_API_KEY` | Resend transactional email key. Sender policy: one verified From address (`no-reply@sngroup.com.au`), vary only the display name per context. | Starts with `re_` |
+| `CRON_SECRET` | Authenticates Vercel Cron requests to `/api/cron/*`. Set in Vercel project settings. | Min 16 chars |
+| `JWT_SECRET` | **Legacy.** Still validated by the schema, but no application code reads it — auth is Supabase Auth via `@supabase/ssr` cookies. Set any 32+ char random string until it is removed from the schema. | Min 32 chars |
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `ANTHROPIC_API_KEY` | API key for Anthropic's Claude AI. Must start with `sk-ant-`. Used for AI-powered features in the application. Obtain from [Anthropic Console](https://console.anthropic.com/). | Yes |
+Optional entries that are also declared in the schema: `ADMIN_SECRET_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_CHAT_ID`.
 
-### JWT
+---
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `JWT_SECRET` | Secret key used to sign and verify JSON Web Tokens. Must be at least 32 characters long. Generate a secure random string (e.g., `openssl rand -base64 32`). | Yes |
+## AI
 
-### Edge Functions & Cron
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `RESEND_API_KEY` | API key for Resend transactional email service. Must start with `re_`. Used by Edge Functions to send emails. Obtain from [Resend Dashboard](https://resend.com/api-keys). Sender policy: keep a single verified From address (`no-reply@sngroup.com.au`) and vary only display names per email context. | Yes |
-| `INQUIRY_ABUSE_SECRET` | Server-only random secret used by `apps/www` to HMAC inquiry IP, email, and duplicate identifiers. Generate at least 32 random bytes; never prefix with `NEXT_PUBLIC_`. Use a distinct stable value per environment. | Yes |
-| `CRON_SECRET` | Secret used by Vercel to authenticate cron job requests. Must be at least 16 characters. Set in Vercel project settings. | Yes |
-| `ADMIN_SECRET_KEY` | Secret key for manual Edge Function invocation via `X-Admin-Key` header. Must be at least 32 characters. Generate with `openssl rand -base64 32`. | No |
-| `APP_URL` | Canonical internal app base URL for Edge Functions and other server-side jobs that generate absolute links outside the Next.js runtime. Set to `https://app.sngroup.com.au` in production. | No |
-
-### n8n Workflows
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `SUPABASE_URL` | Base Supabase project URL used by n8n REST calls. For the associate EOD Telegram digest workflow, this should match `NEXT_PUBLIC_SUPABASE_URL` without any path suffix. | For n8n workflows |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service role key used by n8n to call `get_intern_eod_digest_source` and upsert into `intern_eod_digest_runs`. This is the same secret documented in the Supabase section and must only be stored in server-side tooling such as n8n. | For n8n workflows |
-| `ANTHROPIC_API_KEY` | Anthropic API key used by the `associate-eod-telegram-department-digest` workflow to summarize prior-day logs by department before delivery. | For AI-backed n8n workflows |
-| `TELEGRAM_BOT_TOKEN` | Telegram bot token used by n8n to deliver the department digest message. Obtain this from BotFather. | For Telegram workflows |
-| `TELEGRAM_CHAT_ID` | Target Telegram chat or group ID that should receive the department digest. Use the numeric chat ID for the destination boss or group channel. | For Telegram workflows |
-
-The workflow file `n8n/workflows/associate-eod-telegram-department-digest.json` expects all five variables above to be configured in the n8n runtime before import or activation.
-
-### Wise (TransferWise) Payment Gateway
+The application's AI runs on **OpenAI**. `packages/ai` wraps the `openai` SDK — chat defaults to `gpt-5.4-mini`, embeddings to `text-embedding-3-small`.
 
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
-| `WISE_API_KEY` | API token for Wise Business. Obtain from the Wise Business dashboard → Settings → API tokens. Use a **Read & Write** token. | For payroll | — |
-| `WISE_PROFILE_ID` | Your Wise Business profile ID (numeric). Find it via `GET /v1/profiles` or in the Wise dashboard URL. | For payroll | — |
-| `WISE_ENVIRONMENT` | `sandbox` for testing, `production` for live payments. Controls the API base URL. | No | `sandbox` |
-| `WISE_WEBHOOK_PUBLIC_KEY` | RSA public key (PEM format) used to verify Wise webhook signatures. Fetch from `GET /v1/webhook/public-keys`. Must include `-----BEGIN PUBLIC KEY-----` header/footer. | For webhooks | — |
+| `OPENAI_API_KEY` | See Required above. Also read by the `generate-embeddings` Edge Function. | Yes | — |
+| `OPENAI_MODEL` | Model override used by `scripts/backfill/backfill-invoice-php-amounts.mjs`. | No | script default |
+| `EMBEDDING_API_URL` | Alternative embeddings endpoint for the `generate-embeddings` Edge Function. | No | OpenAI |
+| `EMBEDDING_API_KEY` | Key for that endpoint. Falls back to `OPENAI_API_KEY`. | No | `OPENAI_API_KEY` |
+| `EMBEDDING_MODEL` | Embedding model override. | No | `text-embedding-3-small` |
+| `LANGWATCH_API_KEY` | Enables LangWatch OTel tracing via `apps/web/src/instrumentation.ts`. Tracing is skipped entirely when unset. | No | — |
+| `ANTHROPIC_API_KEY` | **Optional, single use.** Read only by the `transcribe-recording` Edge Function to summarize stand-up transcripts. When absent the function logs a warning and returns `[Summary unavailable]` — transcription itself still works. No other part of the codebase uses Anthropic. | No | — |
 
-### Application
+---
+
+## Auth & Application URLs
 
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
-| `NEXT_PUBLIC_ENABLE_MOCK_AUTH` | Enable mock authentication for local development. Set to `true` to bypass Supabase Auth and use test accounts. Set to `false` for production. | No | `false` |
-| `NEXT_PUBLIC_SITE_URL` | The canonical base URL of the internal app (e.g., `https://app.sngroup.com.au`). Takes priority over preview URLs for auth redirects, password reset emails, invite emails, and onboarding approval emails. **Required in production.** | No | `http://localhost:3001` |
-| `NEXT_PUBLIC_APP_URL` | Canonical internal app URL used by the public website for login and access CTAs. Set to `https://app.sngroup.com.au` in production. | No | `http://localhost:3001` |
-| `NEXT_PUBLIC_WWW_URL` | Canonical public website URL for cross-app links that should stay on the marketing site. Set to `https://www.sngroup.com.au` in production. | No | `http://localhost:3000` |
-| `NEXT_PUBLIC_ROLE_MAPPING_MODE` | Role mapping strategy for UI roles. Options: `option-a`, `option-b`, or `option-c`. See [ADR-001-role-mapping.md](adr/ADR-001-role-mapping.md) for details. | No | `option-a` |
-| `TELEGRAM_BOT_TOKEN` | Bot token used by the app-level Telegram notification sender and Telegram webhook handler. Create this in BotFather. | No | — |
-| `TELEGRAM_BOT_USERNAME` | Public bot username used to generate the one-time `https://t.me/<bot>?start=<token>` account-link URL from Settings. | No | — |
-| `TELEGRAM_WEBHOOK_SECRET` | Secret token expected in the `X-Telegram-Bot-Api-Secret-Token` header when Telegram calls the app webhook. Recommended for production. | No | — |
+| `NEXT_PUBLIC_ENABLE_MOCK_AUTH` | Bypass Supabase Auth for local dev. Middleware skips server-side session checks and `AuthContext` uses the mock path. | No | `false` |
+| `NEXT_PUBLIC_SITE_URL` | Canonical portal base URL. Takes priority over preview URLs for auth redirects, password reset, invite, and onboarding approval emails. **Required in production.** | No | `http://localhost:3001` |
+| `NEXT_PUBLIC_APP_URL` | Canonical portal URL used by the public site for login and access CTAs. | No | `http://localhost:3001` |
+| `NEXT_PUBLIC_WWW_URL` | Canonical public site URL for cross-app links. | No | `http://localhost:3000` |
+| `APP_URL` | Portal base URL for Edge Functions and server-side jobs generating absolute links outside the Next.js runtime. Set to `https://app.sngroup.com.au` in production. | No | — |
+| `WEBHOOK_BASE_URL` | Public base URL for registering Google Drive watch callbacks. Falls back to `NEXT_PUBLIC_SITE_URL`, then `APP_URL`. | For Drive watch | — |
+| `ADMIN_SECRET_KEY` | Manual Edge Function invocation via the `X-Admin-Key` header. Generate with `openssl rand -base64 32`. | No | — |
 
-## Local Development with Mock Auth
+---
 
-For local development without a Supabase project:
+## Google Workspace (Drive & Calendar)
 
-1. Set `NEXT_PUBLIC_ENABLE_MOCK_AUTH=true` in your `.env.local`
-2. You can skip setting Supabase keys (they won't be used)
-3. Use these test accounts:
-   - `employee@test.com` / `password` (Employee role)
-   - `associate@test.com` / `password` (Associate role)
-   - `admin@test.com` / `password` (Admin role - maps to hr/cos/ceo)
-   - `superadmin@test.com` / `password` (Super Admin role)
+Shared service-account credentials drive both the knowledge-base Drive sync and the company calendar.
 
-## Local Development with Supabase
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `GOOGLE_SERVICE_ACCOUNT_EMAIL` | Service account email. | For Drive/Calendar |
+| `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` | Service account private key (PEM; escape newlines as `\n`). | For Drive/Calendar |
+| `GOOGLE_CALENDAR_ID` | Calendar the company-pulse and calendar views read from. | For Calendar |
+| `GOOGLE_DRIVE_WATCH_FILE_IDS` | Comma-separated Drive file IDs synced into the knowledge base by `/api/cron/drive-doc-sync`. | For Drive sync |
+| `GOOGLE_DRIVE_WEBHOOK_TOKEN` | Shared token echoed by Drive push notifications; verified by `/api/webhooks/drive`. | For Drive sync |
+| `GOOGLE_DRIVE_WATCH_RENEW_SECRET` | Authenticates `/api/internal/renew-drive-watches`. Falls back to `CRON_SECRET`. | No |
 
-For local development with a real Supabase project:
+---
 
-1. Create a Supabase project at [supabase.com](https://supabase.com)
-2. Run migrations: `pnpm db:migrate`
-3. Set `NEXT_PUBLIC_ENABLE_MOCK_AUTH=false`
-4. Configure all Supabase environment variables with your project values
-5. Create test users in Supabase Auth dashboard
+## Wise (TransferWise) Payouts
 
-**Note:** Local Supabase development using Docker is supported but requires additional configuration. See `supabase/SETUP.md` for details.
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `WISE_API_KEY` | Wise Business API token (**Read & Write**), from Settings → API tokens. | For payroll | — |
+| `WISE_PROFILE_ID` | Wise Business profile ID (numeric). Find via `GET /v1/profiles`. | For payroll | — |
+| `WISE_ENVIRONMENT` | `sandbox` or `production`. Controls the API base URL. | No | `sandbox` |
+| `WISE_WEBHOOK_PUBLIC_KEY` | RSA public key (PEM, including header/footer) verifying Wise webhook signatures. Fetch from `GET /v1/webhook/public-keys`. | For webhooks | — |
+| `WISE_SANDBOX_FALLBACK_RECIPIENT_ID` | Recipient ID substituted in sandbox when an employee has no Wise recipient. | No | — |
+
+---
+
+## Background Jobs & Webhooks
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `INNGEST_EVENT_KEY` | Inngest event key used by `apps/www` to emit `ats/resume.upload` on application submit. | For ATS pipeline |
+| `INNGEST_BASE_URL` | Inngest ingest endpoint override. Defaults to `https://inn.gs`. | No |
+| `INTAKE_WEBHOOK_SECRET` | Shared secret verifying inbound requests to `/api/projects/intake`. | For project intake |
+| `MUX_TOKEN_ID` / `MUX_TOKEN_SECRET` | Mux API credentials for video resource upload and playback. | For video resources |
+| `MUX_WEBHOOK_TOKEN` | Verifies Mux webhook calls to `/api/resources/mux/webhook`. | For video resources |
+| `OPEN_EXCHANGE_RATES_API_KEY` | Read by the `update-fx-rates` Edge Function. The function returns an error without it. | For FX rates |
+| `EXPENSE_OCR_INLINE_FALLBACK` | Set `true` to run expense OCR inline instead of via Inngest. Already implied outside production. | No |
+| `ALLOWED_ORIGINS` | CORS allow-list for Edge Functions. | No |
+
+---
+
+## Telegram
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `TELEGRAM_BOT_TOKEN` | Bot token for the app-level notification sender and webhook handler. Create via BotFather. | For Telegram |
+| `TELEGRAM_BOT_USERNAME` | Bot username used to build the one-time `https://t.me/<bot>?start=<token>` account-link URL in Settings. | For Telegram |
+| `TELEGRAM_WEBHOOK_SECRET` | Expected in the `X-Telegram-Bot-Api-Secret-Token` header when Telegram calls the app webhook. Recommended in production. | No |
+| `TELEGRAM_CHAT_ID` | Destination chat/group ID for n8n digest delivery. | For n8n digests |
+
+---
+
+## n8n Workflows
+
+The 13 workflows in `n8n/workflows/` run in an external n8n runtime and read their own credentials there. **None of them use Anthropic** — they call Supabase RPCs and deliver via Telegram or email.
+
+| Variable | Description |
+|----------|-------------|
+| `SUPABASE_URL` | Base Supabase project URL for n8n REST calls. Matches `NEXT_PUBLIC_SUPABASE_URL` with no path suffix. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Used by n8n to call `get_intern_eod_digest_source` and upsert into `intern_eod_digest_runs`. Same secret as the Supabase section — server-side tooling only. |
+| `TELEGRAM_BOT_TOKEN` | Delivers the department digest message. |
+| `TELEGRAM_CHAT_ID` | Target chat or group ID for the digest. |
+
+`n8n/workflows/intern-eod-telegram-department-digest.json` expects all four above to be configured before import or activation.
+
+The portal also calls out to n8n webhooks:
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `N8N_MARKETING_REPORT_WEBHOOK_URL` | Notifies n8n on marketing report submission. Skipped with a warning when unset. | No |
+| `N8N_FIVE_PERCENT_REFLECTION_WEBHOOK_URL` | Notifies n8n on five-percent reflection submission. Skipped with a warning when unset. | No |
+
+---
+
+## Public Site (`apps/www`)
+
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `INQUIRY_ABUSE_SECRET` | Server-only secret used to HMAC inquiry IP, email, and dedupe identifiers into `inquiry_rate_limit_buckets` / `inquiry_deduplication_keys`. Use 32+ random bytes, distinct and stable per environment. Never prefix with `NEXT_PUBLIC_`. | Yes | — |
+| `INQUIRY_NOTIFICATION_EMAIL` | Destination address for new public inquiry notifications. | No | — |
+| `NEXT_PUBLIC_WWW_HIDE_EXPANSION_SECTIONS` | Hides in-progress expansion sections on the marketing site. | No | `false` |
+| `NEXT_PUBLIC_STEVEN_BOOKING_URL` / `NEXT_PUBLIC_STEVEN_BOOKING_EMBED_URL` | Google Appointments links behind `/booking/steven`. | No | — |
+| `NEXT_PUBLIC_GOOGLE_APPOINTMENT_SCHEDULE_URL` / `NEXT_PUBLIC_GOOGLE_APPOINTMENT_EMBED_URL` | Generic booking link fallbacks. | No | — |
+
+---
+
+## Development & Testing
+
+| Variable | Description |
+|----------|-------------|
+| `E2E_BASE_URL` | Target base URL for Playwright runs. |
+| `E2E_AUTH_EMAIL` / `E2E_AUTH_PASSWORD` | Credentials for authenticated Playwright specs. |
+| `PLAYWRIGHT_WEB_PORT` | Port used by `scripts/playwright/start-playwright-web.js`. |
+| `APP_UPDATE_SUMMARY` / `APP_UPDATE_SUMMARY_TITLE` | Override the generated changelog banner (`scripts/reports/generate-application-update-summary.mjs`, runs on `predev`/`prebuild`). |
+| `ALLOW_LOCAL_SUMMARY_BYPASS` | Skip the update-summary check locally. |
+| `PGHOST` / `PGPORT` / `PGUSER` / `PGPASSWORD` / `PGDATABASE` | Direct Postgres connection used by some `scripts/` utilities. |
+
+---
 
 ## Usage
-
-Import the validated environment variables in your code:
 
 ```typescript
 import { env } from "@hr-portal/config";
 
-// All variables are type-safe and validated
+// Validated and type-safe
 console.log(env.NEXT_PUBLIC_SUPABASE_URL);
+```
+
+Variables outside the schema are read directly:
+
+```typescript
+const key = process.env.LANGWATCH_API_KEY;
+if (!key) return; // every optional integration must degrade gracefully
 ```
 
 ## Validation
 
-Environment variables are validated at application startup using Zod. If any required variable is missing or invalid, the application will fail to start with a descriptive error message.
+`packages/config/src/env.ts` parses `process.env` at import time. On failure it logs each offending variable and throws `Invalid environment variables`.
 
-Validation rules:
-- URLs must be valid URL format
-- `ANTHROPIC_API_KEY` must start with `sk-ant-`
+Rules currently enforced:
+- `NEXT_PUBLIC_SUPABASE_URL` must be a valid URL
+- `OPENAI_API_KEY` must start with `sk-`
+- `RESEND_API_KEY` must start with `re_`
 - `JWT_SECRET` must be at least 32 characters
+- `CRON_SECRET` must be at least 16 characters
+- `ADMIN_SECRET_KEY`, when set, must be at least 32 characters
+
+## Local Development with Mock Auth
+
+1. Set `NEXT_PUBLIC_ENABLE_MOCK_AUTH=true` in `.env.local`
+2. Supabase keys can be omitted — they are not used on this path
+3. Sign in with:
+   - `employee@test.com` / `password` — Employee
+   - `associate@test.com` / `password` — Associate
+   - `admin@test.com` / `password` — Admin (also covers legacy `hr`/`cos`/`ceo`)
+   - `superadmin@test.com` / `password` — Super Admin
+
+## Local Development with Supabase
+
+1. Start the local stack: `pnpm supabase:start` (check with `pnpm supabase:status`)
+2. Apply migrations: `pnpm db:migrate`
+3. Regenerate types after schema changes: `pnpm db:generate`
+4. Set `NEXT_PUBLIC_ENABLE_MOCK_AUTH=false` and fill in the local Supabase URL and keys
+5. Create test users in the Supabase Auth dashboard
+
+See `supabase/SETUP.md` for details.
+
+---
+
+## Notes on Removed Variables
+
+- `NEXT_PUBLIC_ROLE_MAPPING_MODE` — removed. Role mapping is now fixed in `AuthContext.resolveUiRole` and `lib/auth/role.ts`; the `option-a`/`b`/`c` switch described in ADR-001 no longer exists in code.

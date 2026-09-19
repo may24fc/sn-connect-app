@@ -1,8 +1,12 @@
-# Control Hub HR Portal — Schema Summary
+# SN Connect — Schema Summary
 
 > Audience: Developers, DevOps
 
-Complete database schema for Control Hub HR Portal. 62 migration files across 8 phases, 30+ tables, 3 views, 70+ RLS policies, 20+ functions.
+Database schema shared by the Control Hub portal (`apps/web`) and the public SN Group site (`apps/www`).
+
+**194 timestamped migrations** (`20260123` → `20260916`) · **~123 tables** · **51 enums** · **5 views** · **~748 RLS policies** · **~76 functions** · **~470 indexes**
+
+Counts are derived from the migration files. Regenerate TypeScript types with `pnpm db:generate` after any schema change.
 
 ---
 
@@ -14,25 +18,30 @@ Complete database schema for Control Hub HR Portal. 62 migration files across 8 
 - [Views](#views)
 - [Enums](#enums)
 - [Helper Functions](#helper-functions)
-- [Access Control Matrix](#access-control-matrix)
-- [RLS Policy Summary](#rls-policy-summary)
-- [Index Summary](#index-summary)
+- [Access Control](#access-control)
+- [Storage Buckets](#storage-buckets)
 - [Conventions](#conventions)
+- [Known Limitations](#known-limitations)
 
 ---
 
 ## Migration Phases
 
-| Phase | Date Range | Files | Description |
-|-------|-----------|-------|-------------|
-| 1 — Core | `20260123` | 8 | Enums, users, employees, departments, documents, audit_logs, triggers, helper functions |
-| 2 — Roles | `20260210` | 1 | `super_admin` role addition |
-| 3 — Features | `20260210-20260211` | 9 | Reports, tasks, invoices, announcements, onboarding, offboarding, performance, internships, resources |
-| 4 — Repairs | `20260216-20260217` | 11 | Schema repairs, RLS fixes, role consolidation |
-| 5 — Storage | `20260218` | 4 | Storage buckets and storage RLS policies |
-| 6 — AI & Standups | `20260221-20260222` | 2 | Knowledge tables (pgvector), standup recordings |
-| 7 — Edge Functions | `20260227` | 6 | Notifications, phone codes, FX rates, bank registry, report hierarchy, knowledge versioning, resource categories, associate self-init |
-| 8 — Views & Metadata | `20260228` | 6 | Directory view, performance view, OKR/KPI automation, user role metadata, task tags, resource access levels |
+| Period | Files | Theme |
+|--------|-------|-------|
+| `202601` | 10 | Core: enums, users, employees, departments, documents, audit_logs, triggers, helper functions |
+| `202602` | 60 | Feature build-out and repairs: reports, tasks, invoices, announcements, onboarding, offboarding, performance, internships, resources; role consolidation; storage buckets; knowledge/pgvector; standups; notifications; FX and bank registry; directory and performance views; OKR/KPI automation |
+| `202603` | 29 | Corporate website tables, AI conversations, query cache, company events, task proofs, Wise payments, ticketing, checklist templates, job requisitions, KPI evidence |
+| `202604` | 12 | Calendar notification sync, ticket submission hardening, divisions and org placement, OKR target evidence, ATS access grants |
+| `202605` | 23 | Projects (contributors, milestones, checklists, backlog), gamification, intern EOD digest, monthly self-evaluations, quarterly temperature checks, evaluation drafts |
+| `202606` | 19 | CRM pipeline, project documentations, monthly call feedback, evaluation summaries, resource folders, weekly commitments, expense entries, expense RBAC hardening |
+| `202607` | 18 | Badge system, domain mastery, revenue forecast, wellness bingo, public inquiry abuse controls, expense payment matching |
+| `202608` | 14 | Marketing spend tracking, PA task tracker, AI spending controls, associate evaluations |
+| `202609` | 9 | Virtual Christmas wish tree, marketing schema preservation, policy hardening |
+
+Supporting files in the folder that are **not** migrations: `README.md`, `validate_schema.sql`, `verify_associate_rename.sql`, `verify_resources_schema.sql`, and one `.backup`.
+
+Migrations are **append-only** — never edit a migration that has shipped.
 
 ---
 
@@ -47,6 +56,7 @@ Extends `auth.users` with HR-specific fields.
 | `id` | uuid PK | References `auth.users(id)` |
 | `role` | user_role | employee, associate, admin, super_admin, hr, cos, ceo |
 | `department_id` | FK departments | |
+| `division_id` | FK divisions | Added `20260411000003` |
 | `manager_id` | FK users (self) | Direct manager |
 | `status` | user_status | active, on_leave, terminated |
 | `avatar_url` | text | Profile image |
@@ -67,14 +77,16 @@ Extends `auth.users` with HR-specific fields.
 | **Hierarchy** | `immediate_head` (FK users) |
 | **Standard** | `created_at`, `updated_at`, `created_by`, `deleted_at` |
 
-### departments
+### departments / divisions
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | uuid PK | |
 | `name` | text UNIQUE | |
 | `description` | text | |
-| `head_id` | FK users | Department head |
+| `head_id` | FK users | Department/division head |
+
+`divisions` sits above `departments` for org placement (`20260411000003`).
 
 ### documents
 
@@ -111,10 +123,10 @@ In-app notification system with deep-link support.
 |--------|------|-------------|
 | `id` | uuid PK | |
 | `user_id` | FK users | Target user |
-| `type` | notification_type | 11-value enum |
+| `type` | notification_type | 24-value enum |
 | `title` | text | Notification title |
 | `message` | text | Optional body |
-| `link` | text | Deep link path (e.g., `/tasks/abc`) |
+| `link` | text | Deep link path (e.g. `/tasks/abc`) |
 | `is_read` | boolean | DEFAULT false |
 | `read_at` | timestamptz | When read |
 | `metadata` | jsonb | Additional context |
@@ -125,100 +137,158 @@ In-app notification system with deep-link support.
 
 ## Feature Tables
 
-### Onboarding
-
+### Onboarding / Offboarding
 | Table | Description |
 |-------|-------------|
-| `onboarding_profiles` | User onboarding state (step data, completion). Includes `contact_country_code`, `emergency_contact_country_code`, `payment_phone_country_code` |
-| `onboarding_documents` | Uploaded documents during onboarding |
-| `onboarding_checklists` | Admin-created task checklists |
-| `onboarding_tasks` | Individual checklist items |
+| `onboarding_profiles` | Per-user onboarding state and step data, incl. country-code fields |
+| `onboarding_documents` | Documents uploaded during onboarding |
+| `onboarding_checklists` / `onboarding_tasks` | Admin-created checklists and their items (with submission fields) |
+| `checklist_templates` | Reusable checklist definitions, scoped by flow and audience |
+| `offboarding` / `offboarding_tasks` | Exit process state and task list |
 
 ### Tasks
-
 | Table | Description |
 |-------|-------------|
-| `tasks` | Task records with priority, status, due date, `category` (text), `tags` (text[] with GIN index) |
-| `task_comments` | Comments on tasks |
+| `tasks` | Core task records with `category` and `tags` |
+| `task_comments` | Threaded comments |
+| `task_proofs` | Proof-of-completion attachments |
+| `pa_tasks` | Personal-assistant task tracker |
+| `pa_task_attachments` | PA task file attachments |
+| `pa_task_statuses` / `pa_task_priorities` / `pa_task_categories` | PA lookup tables |
+| `pa_task_access_grants` | Per-user access to the PA module |
+
+### Projects
+| Table | Description |
+|-------|-------------|
+| `projects` | Project records with status and health |
+| `project_contributors` | Membership with contributor roles |
+| `project_milestones` | Milestones with period type and complexity tier |
+| `project_checklist_items` | Milestone checklist items |
+| `project_backlog` | Claimable backlog pool |
+| `project_documentations` | Attached project documentation |
 
 ### Reports
-
 | Table | Description |
 |-------|-------------|
-| `reports` | Weekly report submissions. Supports hierarchy via `parent_report_id` (self FK), `report_group`, `hierarchy_path` (text[]) |
-| `report_metrics` | Individual metrics per report |
+| `reports` | Hierarchical reports (`parent_report_id`, `report_group`, `hierarchy_path`) |
+| `report_metrics` | Metric rows attached to a report |
 
-### Invoices
-
+### Invoices & Payouts
 | Table | Description |
 |-------|-------------|
-| `invoices` | Invoice submissions with multi-currency support |
-| `invoice_line_items` | Line items per invoice |
+| `invoices` / `invoice_line_items` | Invoice submission and approval |
+| `wise_payments` | Wise transfer records and status |
+| `employee_banking_info` | Payout details and Wise recipient IDs |
+| `fx_rates` | Daily exchange rates (`update-fx-rates` Edge Function) |
+| `bank_registry` | Supported banks per country |
+
+### Expenses & Spend
+| Table | Description |
+|-------|-------------|
+| `expense_entries` | General expense ledger (partitioned RBAC, `expense_type`) |
+| `marketing_platforms` / `marketing_campaigns` / `marketing_entries` | Marketing ad-spend tracking |
+| `marketing_entry_receipts` | Receipt uploads for marketing entries |
+| `marketing_access_grants` | Per-user access to marketing spend |
+| `ai_expense_providers` / `ai_expenses` | AI tooling spend by provider |
+| `ai_spending_access_grants` | Per-user access to AI spend |
 
 ### Announcements
-
 | Table | Description |
 |-------|-------------|
-| `announcements` | Admin announcements (publish, pin, archive) |
-| `announcement_reads` | Read tracking per user |
-| `announcement_comments` | User comments |
-| `announcement_attachments` | File attachments |
+| `announcements` | Announcement records with status, priority, targeting |
+| `announcement_reads` / `announcement_stars` | Per-user read and star state |
+| `announcement_comments` / `announcement_attachments` | Discussion and files |
 
-### Resources
-
+### Resources (Information Hub)
 | Table | Description |
 |-------|-------------|
-| `resources` | Resource library entries. Has `category_id` (FK resource_categories), `access_level` (resource_access_level enum) |
-| `resource_categories` | Dynamic category management replacing static enum. Hierarchical via `parent_id`, slugged, orderable, admin-managed |
-| `resource_views` | View tracking |
-| `resource_bookmarks` | User bookmarks |
-| `resource_collections` | Curated collections |
-| `collection_resources` | Junction table |
+| `resources` | Library items with `category_id` and `access_level` |
+| `resource_categories` / `resource_folders` | Hierarchical organisation |
+| `resource_views` / `resource_bookmarks` | Engagement tracking |
+| `resource_collections` / `collection_resources` | Curated collections |
 
 ### Performance
-
 | Table | Description |
 |-------|-------------|
-| `review_cycles` | Performance review periods |
-| `performance_reviews` | Individual reviews (self + manager) |
-| `okrs` | Objectives and Key Results. Auto-calculates `progress` via trigger on `key_results` update |
-| `kpis` | Key Performance Indicators. Generated `progress_pct` column |
+| `review_cycles` / `performance_reviews` | Review cycle management |
+| `okrs` / `okr_targets` / `okr_target_evidence` | OKRs with auto-progress and evidence |
+| `kpis` / `kpi_evidence` | KPIs with generated `progress_pct`, scale and evidence |
+| `monthly_self_evaluations` | Monthly self-assessment |
+| `quarterly_temperature_checks` | Quarterly pulse |
+| `five_percent_reflections` | Five-percent reflection submissions |
+| `monthly_call_feedback` | Call feedback records |
+| `performance_evaluation_drafts` / `performance_evaluation_summaries` | Draft and finalised evaluations |
+| `associate_evaluations` | Associate-specific evaluations |
+| `weekly_commitments` / `weekly_commitment_items` | Weekly commitment tracking |
+| `user_role_metadata` / `role_kpi_entries` | Role-specific metadata and KPI definitions |
 
 ### Internships
-
 | Table | Description |
 |-------|-------------|
-| `internships` | Internship records with hours tracking. Interns can INSERT/UPDATE their own records |
-| `internship_daily_logs` | Daily log entries (associate EOD reports) |
+| `internships` | Internship records and status |
+| `intern_daily_logs` | Daily EOD logs |
+| `intern_eod_digest_runs` | Digest delivery bookkeeping (n8n) |
 
-### Standups
-
+### Tickets
 | Table | Description |
 |-------|-------------|
-| `standup_recordings` | Standup meeting audio/video recordings (500MB bucket limit) |
-| `standup_topics` | Discussion topics |
+| `tickets` | Support tickets with team, category, feature area, priority, status |
+| `ticket_comments` / `ticket_attachments` | Discussion and files |
+| `ticket_handlers` | Who handles which team's tickets |
 
-### AI Knowledge
-
+### ATS & Recruiting
 | Table | Description |
 |-------|-------------|
-| `knowledge_sources` | Source documents for RAG chat. Has `current_version` integer for versioning |
-| `knowledge_embeddings` | Vector chunks (pgvector, 1536-dim, IVFFlat cosine index) |
-| `knowledge_source_versions` | Auto-snapshotted version history. Triggered BEFORE UPDATE on `knowledge_sources` |
+| `job_postings` | Public job listings (surfaced on `apps/www`) |
+| `job_requisitions` | Internal hiring requests |
+| `job_applications` | Applications with parsed/evaluated resume data |
+| `ats_access_grants` | Per-user access to the ATS |
 
-### Multi-Currency
-
+### CRM & Revenue
 | Table | Description |
 |-------|-------------|
-| `fx_rates` | Daily foreign exchange rates (synced by Edge Function) |
-| `bank_registry` | Bank information for international payments |
+| `crm_sfo_leads` / `crm_tech_inquiries` | Pipeline records |
+| `crm_access_grants` | Per-user CRM access |
+| `sfo_revenue_entries` / `sfo_revenue_goals` | Revenue forecasting |
+| `revenue_forecast_access_grants` | Per-user forecast access |
 
-### Role Metadata
-
+### Public Website
 | Table | Description |
 |-------|-------------|
-| `user_role_metadata` | Role-specific configuration per user (JSONB). Unique on `(user_id, role_type)` |
-| `role_kpi_entries` | Role-specific KPI tracking entries. Unique on `(user_id, role_type, entry_date, kpi_name)` |
+| `business_units` | SN Group business units |
+| `website_content` | Editable marketing content |
+| `public_inquiries` | Contact-form submissions |
+| `inquiry_rate_limit_buckets` / `inquiry_deduplication_keys` | Abuse controls (HMAC via `INQUIRY_ABUSE_SECRET`) |
+
+### Calendar & Standups
+| Table | Description |
+|-------|-------------|
+| `company_events` | Company calendar events by `event_category` |
+| `company_calendar_event_sync` / `company_calendar_sync_state` | Google Calendar sync bookkeeping |
+| `standup_recordings` / `standup_topics` | Recordings (Mux) and agenda topics |
+
+### AI
+| Table | Description |
+|-------|-------------|
+| `knowledge_sources` | Versioned knowledge documents |
+| `knowledge_embeddings` | pgvector embeddings for RAG |
+| `knowledge_source_versions` | Auto-snapshot version history |
+| `ai_conversations` / `ai_messages` | Saved chat sessions |
+| `query_cache` | Cached query results |
+
+### Gamification & Culture
+| Table | Description |
+|-------|-------------|
+| `points_events` / `user_gamification` / `leaderboard_snapshots` | Points and leaderboards |
+| `badge_definitions` / `user_badges` | Badge system |
+| `user_domain_mastery` | Domain mastery progression |
+| `wellness_bingo_cycles` / `_boards` / `_partnerships` / `_weekly_recordings` | Wellness bingo |
+| `christmas_tree_events` / `christmas_ornaments` / `christmas_wishes` | Virtual Christmas wish tree |
+
+### Misc
+| Table | Description |
+|-------|-------------|
+| `profile_change_requests` | Employee-initiated profile edits pending approval |
 
 ---
 
@@ -228,14 +298,17 @@ In-app notification system with deep-link support.
 |------|-------------|
 | `employee_directory` | Joins users + employees + active internships. Columns: user_id, employee_id, avatar_url, full_name, role, department, position, status, employment_type, start_date, email, contact_number, birthday, internship fields |
 | `individual_performance_summary` | Aggregates per-employee KPIs (count, avg progress, completed), OKRs (count, avg progress, completed), and reviews (latest rating, date, total count) |
-| `root_reports` | Top-level reports (`parent_report_id IS NULL`), with computed `child_count` |
+| `root_reports` | Top-level reports (`parent_report_id IS NULL`) with computed `child_count` |
+| `marketing_platform_totals` | Spend totals per marketing platform |
+| `marketing_monthly_platform_totals` | Spend totals per platform per month |
 
 ---
 
 ## Enums
 
-### Core Enums
+51 enum types. The most frequently referenced:
 
+### Core
 | Enum | Values |
 |------|--------|
 | `user_role` | `admin`, `hr`, `cos`, `ceo`, `employee`, `associate`, `super_admin` |
@@ -244,8 +317,7 @@ In-app notification system with deep-link support.
 | `work_arrangement` | `part_time`, `full_time` |
 | `document_type` | `contract`, `id`, `certificate`, `performance_review`, `tax`, `medical`, `training`, `disciplinary`, `leave`, `other` |
 
-### Feature Enums
-
+### Feature
 | Enum | Values |
 |------|--------|
 | `task_status` | `todo`, `in_progress`, `completed`, `on_hold`, `cancelled` |
@@ -253,21 +325,26 @@ In-app notification system with deep-link support.
 | `invoice_status` | `draft`, `submitted`, `approved`, `rejected` |
 | `announcement_status` | `draft`, `published`, `archived` |
 | `announcement_priority` | `normal`, `important`, `urgent` |
-| `announcement_target_type` | `all`, `role`, `department` |
 | `resource_type` | `document`, `link`, `video`, `image`, `other` |
 | `resource_access_level` | `full`, `view_only` |
 | `onboarding_status` | `not_started`, `in_progress`, `completed`, `approved`, `rejected` |
 | `internship_status` | `active`, `completed`, `withdrawn`, `extended` |
 | `review_status` | `draft`, `submitted`, `acknowledged` |
-| `notification_type` | `task_assigned`, `task_due`, `report_submitted`, `report_approved`, `report_rejected`, `announcement_new`, `resource_new`, `reminder`, `onboarding_step`, `probation_update`, `system` |
 | `knowledge_source_type` | `pdf`, `docx`, `url`, `manual` |
+| `notification_type` | 24 values — task/report/invoice/intern-log/onboarding/announcement/resource lifecycle, plus `project_assigned`, `project_claimable`, `reminder`, `probation_update`, `system` |
+
+### Others by domain
+`offboarding_status`, `exit_type`, `checklist_template_flow`, `checklist_template_scope`, `ticket_team`, `ticket_priority`, `ticket_status`, `ticket_category`, `ticket_feature_area`, `project_status`, `project_health`, `project_contributor_role`, `milestone_period_type`, `milestone_status`, `milestone_complexity_tier`, `checklist_item_status`, `target_metric_type`, `payment_method`, `payment_status`, `expense_type`, `expense_source_type`, `expense_match_status`, `ai_spend_type`, `profile_change_status`, `event_category`, `christmas_ornament_asset`, `christmas_wish_category`, `review_cycle_status`, `onboarding_step`, `onboarding_document_type`, `resource_category`, `resource_status`, `announcement_category`.
+
+> `user_role` retains `hr`, `cos`, and `ceo` as legacy values; the UI maps all three to `admin`. See `docs/adr/ADR-001-role-mapping.md`.
 
 ---
 
 ## Helper Functions
 
-### Core Functions
+~76 functions. Key ones:
 
+### Core
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `user_has_role` | `(user_id uuid, role text) → boolean` | Check single role |
@@ -278,48 +355,40 @@ In-app notification system with deep-link support.
 | `is_on_probation` | `(employee_id uuid) → boolean` | Probation check |
 | `calculate_tenure_days` | `(employee_id uuid) → integer` | Tenure calculation |
 | `soft_delete` | `(table_name text, record_id uuid) → void` | Generic soft delete |
-| `get_employee_by_user_id` | `(user_id uuid) → record` | Get employee from user ID |
-| `get_employees_by_department` | `(dept text) → setof record` | Get by department |
+| `get_employee_by_user_id` | `(user_id uuid) → record` | Employee from user ID |
 | `handle_updated_at` | `() → trigger` | Auto-update `updated_at` |
 | `handle_audit_log` | `() → trigger` | Auto-create audit_log entry |
 
-### AI & Knowledge Functions
+### AI & Knowledge
+| Function | Description |
+|----------|-------------|
+| `match_knowledge_embeddings` | Cosine similarity search over `knowledge_embeddings` |
+| `snapshot_knowledge_source_version` | Trigger — snapshot before update |
+| `get_knowledge_source_versions` | Version history with editor names |
+| `restore_knowledge_source_version` | Restore a previous version |
 
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `match_knowledge_embeddings` | `(query_embedding vector, match_threshold float, match_count int) → setof record` | Cosine similarity search |
-| `snapshot_knowledge_source_version` | `() → trigger` | Auto-snapshot before update |
-| `get_knowledge_source_versions` | `(p_source_id uuid) → table` | Version history with editor names |
-| `restore_knowledge_source_version` | `(p_source_id uuid, p_version_number int) → knowledge_sources` | Restore to previous version |
+### Reports & Resources
+| Function | Description |
+|----------|-------------|
+| `get_report_children` | Direct child reports |
+| `get_report_tree` | Recursive tree traversal with depth |
+| `get_resource_category_tree` | Hierarchical categories with resource counts |
 
-### Report Functions
-
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `get_report_children` | `(parent_id uuid) → setof reports` | Direct child reports |
-| `get_report_tree` | `(root_id uuid) → table` | Recursive tree traversal with depth |
-
-### Resource Functions
-
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `get_resource_category_tree` | `() → table` | Hierarchical categories with resource counts |
-
-### Performance Functions
-
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `calculate_okr_progress` | `(p_okr_id uuid) → numeric` | Average progress from key_results JSONB |
-| `trigger_update_okr_progress` | `() → trigger` | Auto-recalculate on `key_results` update |
-
-**Total**: 20+ functions (12 core + 4 AI + 2 report + 1 resource + 2 performance)
+### Performance & Digests
+| Function | Description |
+|----------|-------------|
+| `calculate_okr_progress` | Average progress across an OKR's targets |
+| `trigger_update_okr_progress` | Trigger — recalculate on change |
+| `get_intern_eod_digest_source` | Prior-day intern logs grouped by department (consumed by n8n) |
 
 ---
 
-## Access Control Matrix
+## Access Control
+
+RLS is the security boundary — application checks and middleware are secondary.
 
 | Role | Own Data | Team Data | All Data | Edit Employees | Edit Users | Confidential Docs | Audit Logs | Admin Features |
-|------|----------|-----------|----------|----------------|------------|--------------------|------------|----------------|
+|------|----------|-----------|----------|----------------|------------|-------------------|------------|----------------|
 | employee | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | associate | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | Manager | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
@@ -329,45 +398,35 @@ In-app notification system with deep-link support.
 | admin | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | super_admin | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 
----
+### Grant tables
 
-## RLS Policy Summary
+Several modules are gated by explicit per-user grants rather than role alone. A user needs a matching row to see the module at all:
 
-| Table / Area | Policy Count |
-|-------------|-------------|
-| users | 5 |
-| employees | 7 |
-| departments | 4 |
-| documents | 8 |
-| audit_logs | 2 |
-| notifications | 5 |
-| announcements (4 tables) | ~12 |
-| resources (+ categories) | ~10 |
-| reports | ~4 |
-| tasks | ~4 |
-| invoices | ~4 |
-| onboarding (4 tables) | ~8 |
-| internships | ~6 |
-| performance (4 tables) | ~8 |
-| knowledge (2 tables + versions) | ~12 |
-| standups (2 tables + storage) | ~11 |
-| user_role_metadata | 6 |
-| role_kpi_entries | 5 |
+`ats_access_grants` · `crm_access_grants` · `marketing_access_grants` · `pa_task_access_grants` · `ai_spending_access_grants` · `revenue_forecast_access_grants`
 
-**Total**: 70+ RLS policies
+**~748 `CREATE POLICY` statements** across the migration set. Later migrations frequently drop and recreate earlier policies, so the number of *live* policies is lower than the statement count.
 
 ---
 
-## Index Summary
+## Storage Buckets
 
-| Area | Count | Notable |
-|------|-------|---------|
-| Core tables | 26 | FKs, status, role, department |
-| Feature tables | 30+ | Composite indexes, partial indexes |
-| GIN indexes | 5+ | `reports.hierarchy_path`, `tasks.tags`, `user_role_metadata.metadata`, `knowledge_embeddings` (IVFFlat) |
-| Partial indexes | 5+ | `deleted_at IS NULL`, `is_active = true`, `is_read = false` |
+| Bucket | Contents |
+|--------|----------|
+| `employee-documents` | 201 file documents |
+| `onboarding-documents` | Onboarding uploads |
+| `avatars` | Profile images |
+| `resources-library` | Information Hub files |
+| `resource-thumbnails` | Resource preview images |
+| `announcement-attachments` | Announcement files (legacy `announcements-attachments` also referenced) |
+| `standup-recordings` | Audio/video, 500 MB limit |
+| `applications` | ATS resumes and CVs |
+| `ai-knowledge` | Knowledge base source files |
+| `kpi-evidence` / `okr-target-evidence` | Performance evidence uploads |
+| `marketing-ad-receipts` | Marketing spend receipts |
+| `pa-task-attachments` | PA task files |
+| `project-documentations` | Project docs |
 
-**Total**: 60+ indexes (not counting primary keys)
+All buckets are private with RLS policies on `storage.objects`.
 
 ---
 
@@ -375,7 +434,6 @@ In-app notification system with deep-link support.
 
 ### Standard Columns
 
-Every table includes:
 ```sql
 id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
 created_at timestamptz DEFAULT now() NOT NULL,
@@ -390,40 +448,42 @@ deleted_at timestamptz  -- soft delete
 - Columns: `snake_case`
 - Indexes: `idx_tablename_columnname`
 - Policies: `tablename_operation_context_policy`
-- Enums: `snake_case`
-- Functions: `snake_case` with verb prefix
+- Enums and functions: `snake_case`, functions with a verb prefix
+- Migrations: `YYYYMMDDHHMMSS_description.sql`
+
+### RLS
+
+```sql
+ALTER TABLE table_name ENABLE ROW LEVEL SECURITY;
+ALTER TABLE table_name FORCE ROW LEVEL SECURITY;
+```
 
 ### Triggers
 
-All tables with `updated_at` have a `BEFORE UPDATE` trigger calling `handle_updated_at()`. Core tables additionally have `handle_audit_log()` triggers.
+Tables with `updated_at` have a `BEFORE UPDATE` trigger calling `handle_updated_at()`. Core tables additionally have `handle_audit_log()` triggers.
 
----
+### Indexes
 
-## Storage Buckets
-
-| Bucket | Max Size | MIME Types |
-|--------|----------|------------|
-| `documents` | — | Documents (PDF, images, etc.) |
-| `onboarding-documents` | — | Onboarding uploads |
-| `standup-recordings` | 500MB | Audio/video |
+~470 `CREATE INDEX` statements. Notable patterns: GIN on `reports.hierarchy_path`, `tasks.tags`, and `user_role_metadata.metadata`; IVFFlat on `knowledge_embeddings`; partial indexes on `deleted_at IS NULL`, `is_active = true`, and `is_read = false`.
 
 ---
 
 ## Known Limitations
 
-1. **Recursive hierarchies**: Manager-employee supports one level. Reports support full recursion via `get_report_tree()`.
-2. **Payroll encryption**: Payroll fields are NOT encrypted at rest. Consider `pgcrypto` for field-level encryption.
-3. **Document storage**: Large files may require CDN integration.
-4. **Audit log retention**: No automatic cleanup. Implement retention policy for production.
-5. **Database types lag**: New tables may not appear in `database.types.ts` until `pnpm db:generate` is run against the live schema.
+1. **Recursive hierarchies** — manager/employee supports one level. Reports support full recursion via `get_report_tree()`.
+2. **Payroll encryption** — payroll and banking fields are NOT encrypted at rest. Consider `pgcrypto` for field-level encryption.
+3. **Audit log retention** — no automatic cleanup beyond `cleanup-old-notifications`. A retention policy is still needed for `audit_logs`.
+4. **Repair migrations** — several `*_repair_*` and `ensure_*` migrations recreate earlier objects with `IF NOT EXISTS`, so table and policy counts derived by grepping overstate the live schema.
+5. **Types lag the schema** — new tables do not appear in `database.types.ts` until `pnpm db:generate` runs against the live database.
 
 ---
 
-**Schema Version**: Phase 8 (Unreleased)
-**Last Updated**: 2026-02-27
-**Migration Files**: 62
-**Total Tables**: 30+
-**Total Views**: 3
-**Total RLS Policies**: 70+
-**Total Functions**: 20+
-**Total Indexes**: 60+
+**Last Updated**: 2026-09-19
+**Migration Range**: `20260123000001` → `20260916000001`
+**Migration Files**: 194
+**Tables**: ~123
+**Views**: 5
+**Enums**: 51
+**Policy Statements**: ~748
+**Functions**: ~76
+**Index Statements**: ~470
