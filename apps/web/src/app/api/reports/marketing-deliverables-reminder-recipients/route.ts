@@ -11,9 +11,21 @@ interface MarketingReminderRecipient {
   included: boolean;
 }
 
-async function requireSuperAdmin(): Promise<
-  { ok: true; userId: string } | { ok: false; response: NextResponse<{ error: string }> }
-> {
+type SuperAdminAuthResult =
+  | { ok: true; userId: string | null; isMock: boolean }
+  | { ok: false; response: NextResponse<{ error: string }> };
+
+function isMockAuthEnabled(): boolean {
+  return (
+    process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_ENABLE_MOCK_AUTH === 'true'
+  );
+}
+
+async function requireSuperAdmin(): Promise<SuperAdminAuthResult> {
+  if (isMockAuthEnabled()) {
+    return { ok: true, userId: null, isMock: true };
+  }
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -48,7 +60,7 @@ async function requireSuperAdmin(): Promise<
     return { ok: false, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
   }
 
-  return { ok: true, userId: user.id };
+  return { ok: true, userId: user.id, isMock: false };
 }
 
 function formatFullName(employee: {
@@ -215,13 +227,15 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update reminder recipient' }, { status: 500 });
     }
 
-    logActivity(admin, {
-      userId: auth.userId,
-      action: 'update_marketing_deliverables_reminder_recipient',
-      tableName: 'marketing_deliverables_reminder_recipients',
-      recordId: employee.id,
-      metadata: { employeeId: employee.id, included: parsed.data.included },
-    });
+    if (!auth.isMock && auth.userId) {
+      logActivity(admin, {
+        userId: auth.userId,
+        action: 'update_marketing_deliverables_reminder_recipient',
+        tableName: 'marketing_deliverables_reminder_recipients',
+        recordId: employee.id,
+        metadata: { employeeId: employee.id, included: parsed.data.included },
+      });
+    }
 
     return NextResponse.json({ data: { employeeId: employee.id, included: parsed.data.included } });
   } catch (error) {
