@@ -355,6 +355,8 @@ export const queryKeys = {
     details: () => [...queryKeys.reports.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.reports.details(), id] as const,
     weekly: (weekId: string) => [...queryKeys.reports.all, 'weekly', weekId] as const,
+    marketingDeliverablesReminderRecipients: () =>
+      [...queryKeys.reports.all, 'marketing-deliverables-reminder-recipients'] as const,
     analytics: (params: AnalyticsParams) =>
       [...queryKeys.reports.all, 'analytics', params] as const,
   },

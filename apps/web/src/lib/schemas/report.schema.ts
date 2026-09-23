@@ -8,6 +8,11 @@ const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 
 export const reportStatusSchema = z.enum(['draft', 'submitted', 'approved', 'rejected']);
 
+export const marketingDeliverablesReminderRecipientSchema = z.object({
+  employeeId: z.string().uuid(),
+  included: z.boolean(),
+});
+
 export const reportTypeSchema = z.enum(['weekly', 'monthly', 'marketing']);
 
 export const marketingCampaignTypeSchema = z.enum([
@@ -72,9 +77,7 @@ export const marketingReportTypeSchema = z.enum(marketingReportTypeValues, {
 
 const storedMarketingReportTypeSchema = z
   .union([marketingReportTypeSchema, z.literal('Content Creation')])
-  .transform((reportType) =>
-    reportType === 'Content Creation' ? 'Organic Creation' : reportType
-  );
+  .transform((reportType) => (reportType === 'Content Creation' ? 'Organic Creation' : reportType));
 
 export const marketingPrimaryChannelValues = ['Google Ads', 'Meta Ads'] as const;
 
@@ -134,107 +137,107 @@ export const reportSchema = z.object({
   marketingContext: marketingContextSchema.optional().nullable(),
 });
 
-export const reportCreateSchema = reportSchema.extend({
-  metrics: z.array(reportMetricSchema).default([]),
-}).superRefine((payload, ctx) => {
-  if (payload.reportType !== 'marketing') {
-    return;
-  }
-
-  if (!payload.marketingContext) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['marketingContext'],
-      message: 'Marketing context is required for marketing reports',
-    });
-    return;
-  }
-
-  const submissionKind = payload.marketingContext.submissionKind ?? 'weekly_summary';
-
-  if (submissionKind === 'weekly_plan') {
-    if ((payload.marketingContext.weeklyPlan?.items ?? []).length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['marketingContext', 'weeklyPlan', 'items'],
-        message: 'Add at least one weekly plan item',
-      });
+export const reportCreateSchema = reportSchema
+  .extend({
+    metrics: z.array(reportMetricSchema).default([]),
+  })
+  .superRefine((payload, ctx) => {
+    if (payload.reportType !== 'marketing') {
+      return;
     }
 
-    return;
-  }
+    if (!payload.marketingContext) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['marketingContext'],
+        message: 'Marketing context is required for marketing reports',
+      });
+      return;
+    }
 
-  if (!payload.marketingContext.marketingReportType) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['marketingContext', 'marketingReportType'],
-      message: 'Marketing report type is required',
-    });
+    const submissionKind = payload.marketingContext.submissionKind ?? 'weekly_summary';
 
-    return;
-  }
-
-  if (
-    requiresMarketingCampaignType(payload.marketingContext.marketingReportType)
-    && !payload.marketingContext.campaignType
-  ) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['marketingContext', 'campaignType'],
-      message: 'Campaign type is required for this report type',
-    });
-  }
-
-  if (
-    requiresMarketingObjective(payload.marketingContext.marketingReportType)
-  ) {
-    if (payload.marketingContext.marketingReportType === 'Google Ads') {
-      const selectedObjectives = payload.marketingContext.objectives ?? [];
-
-      if (selectedObjectives.length === 0 && !payload.marketingContext.objective) {
+    if (submissionKind === 'weekly_plan') {
+      if ((payload.marketingContext.weeklyPlan?.items ?? []).length === 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          path: ['marketingContext', 'objectives'],
-          message: 'At least one objective is required for Google Ads reports',
+          path: ['marketingContext', 'weeklyPlan', 'items'],
+          message: 'Add at least one weekly plan item',
         });
       }
-    } else if (!payload.marketingContext.objective) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['marketingContext', 'objective'],
-        message: 'Objective is required for this report type',
-      });
-    }
-  }
 
-  if (payload.marketingContext.marketingReportType === 'Organic Creation') {
-    const contentCreation = payload.marketingContext.contentCreation;
-
-    if (!contentCreation || contentCreation.entries.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['marketingContext', 'contentCreation', 'entries'],
-        message: 'At least one content publishing entry is required',
-      });
+      return;
     }
 
-    if (!contentCreation?.results?.trim()) {
+    if (!payload.marketingContext.marketingReportType) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ['marketingContext', 'contentCreation', 'results'],
-        message: 'Results are required for organic creation reports',
+        path: ['marketingContext', 'marketingReportType'],
+        message: 'Marketing report type is required',
+      });
+
+      return;
+    }
+
+    if (
+      requiresMarketingCampaignType(payload.marketingContext.marketingReportType) &&
+      !payload.marketingContext.campaignType
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['marketingContext', 'campaignType'],
+        message: 'Campaign type is required for this report type',
       });
     }
 
-    if (!contentCreation?.observations?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['marketingContext', 'contentCreation', 'observations'],
-        message: 'Observations are required for organic creation reports',
-      });
+    if (requiresMarketingObjective(payload.marketingContext.marketingReportType)) {
+      if (payload.marketingContext.marketingReportType === 'Google Ads') {
+        const selectedObjectives = payload.marketingContext.objectives ?? [];
+
+        if (selectedObjectives.length === 0 && !payload.marketingContext.objective) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['marketingContext', 'objectives'],
+            message: 'At least one objective is required for Google Ads reports',
+          });
+        }
+      } else if (!payload.marketingContext.objective) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['marketingContext', 'objective'],
+          message: 'Objective is required for this report type',
+        });
+      }
     }
-  }
-});
+
+    if (payload.marketingContext.marketingReportType === 'Organic Creation') {
+      const contentCreation = payload.marketingContext.contentCreation;
+
+      if (!contentCreation || contentCreation.entries.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['marketingContext', 'contentCreation', 'entries'],
+          message: 'At least one content publishing entry is required',
+        });
+      }
+
+      if (!contentCreation?.results?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['marketingContext', 'contentCreation', 'results'],
+          message: 'Results are required for organic creation reports',
+        });
+      }
+
+      if (!contentCreation?.observations?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['marketingContext', 'contentCreation', 'observations'],
+          message: 'Observations are required for organic creation reports',
+        });
+      }
+    }
+  });
 
 export type ReportInput = z.infer<typeof reportSchema>;
 export type ReportMetricInput = z.infer<typeof reportMetricSchema>;

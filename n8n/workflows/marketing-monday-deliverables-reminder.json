@@ -66,7 +66,7 @@
                                    ],
                       "parameters":  {
                                          "method":  "GET",
-                                         "url":  "https://tccdupkjmwwxcvpqnpeb.supabase.co/rest/v1/employees?select=id,first_name,last_name,department,employment_type,users!inner(status)\u0026department=eq.Marketing\u0026deleted_at=is.null\u0026users.status=not.in.(terminated,inactive)\u0026users.status=not.in.(terminated,inactive)\u0026users.status=not.in.(terminated,inactive)\u0026users.status=not.in.(terminated,inactive)\u0026users.status=not.in.(terminated,inactive)\u0026users.status=not.in.(terminated,inactive)\u0026order=last_name.asc",
+                                         "url":  "https://tccdupkjmwwxcvpqnpeb.supabase.co/rest/v1/marketing_deliverables_reminder_recipients?select=employee_id,employees!inner(id,first_name,last_name,department,employment_type,deleted_at,users!inner(status,role,deleted_at))\u0026included=eq.true\u0026order=employee_id.asc",
                                          "authentication":  "genericCredentialType",
                                          "genericAuthType":  "httpHeaderAuth",
                                          "sendHeaders":  true,
@@ -108,7 +108,7 @@
                                        304
                                    ],
                       "parameters":  {
-                                         "jsCode":  "const body = $json.body;\nconst all = Array.isArray(body) ? body : (typeof body === \u0027string\u0027 ? JSON.parse(body) : []);\nconst ctx = $(\u0027Set Week Context\u0027).first().json;\n\nconst employees = all.filter(e =\u003e e.employment_type !== \u0027intern\u0027).sort((a, b) =\u003e a.last_name.localeCompare(b.last_name));\nconst interns = all.filter(e =\u003e e.employment_type === \u0027intern\u0027).sort((a, b) =\u003e a.last_name.localeCompare(b.last_name));\nconst combined = [...employees, ...interns];\n\nreturn [{ json: { employees, interns, combined, employeeCount: combined.length, weekStart: ctx.weekStart, weekLabel: ctx.weekLabel } }];"
+                                         "jsCode":  "const body = $json.body;\nconst all = Array.isArray(body) ? body : (typeof body === \u0027string\u0027 ? JSON.parse(body) : []);\nconst ctx = $(\u0027Set Week Context\u0027).first().json;\n\nconst recipients = all\n  .map((row) =\u003e row.employees)\n  .filter((employee) =\u003e employee && employee.deleted_at === null && employee.users && employee.users.deleted_at === null && [\u0027employee\u0027, \u0027associate\u0027].includes(employee.users.role) && ![\u0027terminated\u0027, \u0027inactive\u0027].includes(employee.users.status));\nconst employees = recipients.filter((employee) =\u003e employee.employment_type !== \u0027intern\u0027).sort((a, b) =\u003e a.last_name.localeCompare(b.last_name));\nconst interns = recipients.filter((employee) =\u003e employee.employment_type === \u0027intern\u0027).sort((a, b) =\u003e a.last_name.localeCompare(b.last_name));\nconst combined = [...employees, ...interns];\n\nreturn [{ json: { employees, interns, combined, employeeCount: combined.length, weekStart: ctx.weekStart, weekLabel: ctx.weekLabel } }];"
                                      }
                   },
                   {
