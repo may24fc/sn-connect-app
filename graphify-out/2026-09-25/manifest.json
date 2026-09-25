@@ -4416,8 +4416,8 @@
     "semantic_hash": "7a0dc3198c754c2a24e5a4a5466f950f"
   },
   "apps/web/src/lib/generated/application-update-summary.generated.ts": {
-    "mtime": 1790301005.9022796,
-    "seen": 1790301287.9379687,
+    "mtime": 1790243513.1068687,
+    "seen": 1790244498.2215202,
     "ast_hash": "7322821048c7b2c5f9f9ddca7c61261a",
     "semantic_hash": "7322821048c7b2c5f9f9ddca7c61261a"
   },
@@ -4608,9 +4608,9 @@
     "semantic_hash": "d6b19e45368e4c16ec94af3a7788b13e"
   },
   "apps/web/src/lib/query-keys.ts": {
-    "mtime": 1790300721.8468957,
-    "seen": 1790301287.9380004,
-    "ast_hash": "7840e4acb96fd92f089a1056dc780e96",
+    "mtime": 1790155449.7653947,
+    "seen": 1790155775.4508264,
+    "ast_hash": "d799d821c5fa7304b25c4bf72fe33b54",
     "semantic_hash": ""
   },
   "apps/web/src/lib/report-utils.ts": {
@@ -11244,9 +11244,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/uhp/_lib.ts": {
-    "mtime": 1790300920.4834583,
-    "seen": 1790301287.937659,
-    "ast_hash": "d03ca147b0c3f5c0a5a3a06c24935154",
+    "mtime": 1790156017.710773,
+    "seen": 1790156807.5185242,
+    "ast_hash": "10297197b061d912620f92c3c51e4b45",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/uhp/access-grants/route.ts": {
@@ -11334,9 +11334,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/hooks/useUhpAccess.ts": {
-    "mtime": 1790300050.3407242,
-    "seen": 1790301287.937936,
-    "ast_hash": "36520051158d8fe6f2909fd8e7d2b653",
+    "mtime": 1790156487.51064,
+    "seen": 1790156807.5190532,
+    "ast_hash": "2a0bd76d32dc603835371a6e1d74caa4",
     "semantic_hash": ""
   },
   "apps/web/src/lib/schemas/uhp.schema.ts": {
@@ -11364,9 +11364,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/uhp/clients/page.tsx": {
-    "mtime": 1790300066.0759723,
-    "seen": 1790301287.93772,
-    "ast_hash": "b032eb46fc561cbb2c567261541574ea",
+    "mtime": 1790156487.4933493,
+    "seen": 1790156807.5186386,
+    "ast_hash": "c37a42bbca297c149a4da23060a83ede",
     "semantic_hash": ""
   },
   "apps/web/src/app/uhp/page.tsx": {
@@ -11376,33 +11376,33 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/uhp/reminders/page.tsx": {
-    "mtime": 1790300066.6933799,
-    "seen": 1790301287.9377227,
-    "ast_hash": "5d85dbf20c22eeee37ffca3b6691be92",
+    "mtime": 1790156487.4948604,
+    "seen": 1790156807.5186427,
+    "ast_hash": "7c28893b8361383b839b747690b03413",
     "semantic_hash": ""
   },
   "apps/web/src/app/uhp/volume-points/page.tsx": {
-    "mtime": 1790300067.291118,
-    "seen": 1790301287.937724,
-    "ast_hash": "4b90dd6405ca29dab3208f884fd6a08c",
+    "mtime": 1790156487.4948604,
+    "seen": 1790156807.5186443,
+    "ast_hash": "e9324efa49e05a5438d6e3b0166eaf0f",
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpClientTrackerPage.tsx": {
-    "mtime": 1790300619.653201,
-    "seen": 1790301287.937825,
-    "ast_hash": "d15cb3d6691efdd62b2ea2ac53b15e2e",
+    "mtime": 1790246054.0223835,
+    "seen": 1790246103.380009,
+    "ast_hash": "cd6e14c706a9c3c6db5d19406db238cf",
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpRemindersPage.tsx": {
-    "mtime": 1790300550.100601,
-    "seen": 1790301287.9378262,
-    "ast_hash": "eae18245fd887b08b2a28dc5a09b7f66",
+    "mtime": 1790157032.690289,
+    "seen": 1790157154.7526526,
+    "ast_hash": "83ff155591ec843b05a6d96ffab59bff",
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpVolumePointsPage.tsx": {
-    "mtime": 1790300800.518523,
-    "seen": 1790301287.9378273,
-    "ast_hash": "f5bfa08bcd1985fe59ec24e8fbdee26b",
+    "mtime": 1790246052.5138404,
+    "seen": 1790246103.3800125,
+    "ast_hash": "4bc0fca547d2e94cb060a60758f48b4f",
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpWorkspaceHeader.tsx": {
@@ -11418,57 +11418,33 @@
     "semantic_hash": ""
   },
   "n8n/workflows/uhp-herbalife-portal-reminders.json": {
-    "mtime": 1790300496.9114976,
-    "seen": 1790301287.9382155,
-    "ast_hash": "ccd3c7d9a054d7938a6847ea3a05898d",
+    "mtime": 1790157033.0297365,
+    "seen": 1790157154.753008,
+    "ast_hash": "c5be7f6b01ae2985f8584f248fcb87ec",
     "semantic_hash": ""
   },
   "n8n/workflows/uhp-volume-points-daily-digest.json": {
-    "mtime": 1790300535.9975603,
-    "seen": 1790301287.9382162,
-    "ast_hash": "f13e7605102b253579d8c8ce484d762c",
+    "mtime": 1790157033.4133632,
+    "seen": 1790157154.753009,
+    "ast_hash": "00e3b86d64f656ec935d4256f0b56222",
     "semantic_hash": ""
   },
   "scripts/backfill/import-uhp-workspace.mjs": {
-    "mtime": 1790300550.1197398,
-    "seen": 1790301287.9384325,
-    "ast_hash": "ad0ab3a45b152bcb6d8cdf7f6dbe6e8e",
+    "mtime": 1790156516.7026534,
+    "seen": 1790156807.5205865,
+    "ast_hash": "5d0239d607e0463a26ef18e13244498e",
     "semantic_hash": ""
   },
   "docs/guides/uhp-control-hub.md": {
-    "mtime": 1790300643.664732,
-    "seen": 1790301287.938897,
-    "ast_hash": "a4aed4460d06b797ff8f57c99a5723a4",
+    "mtime": 1790156475.235836,
+    "seen": 1790156807.521677,
+    "ast_hash": "9cb2b540e2924260bc0c2790e4405d43",
     "semantic_hash": ""
   },
   "docs/apps/web/architecture/optimistic-ui.md": {
-    "mtime": 1790300644.2774198,
-    "seen": 1790301287.9388485,
-    "ast_hash": "bf2e76d4f2b4c997928ef3d3b73bbd13",
-    "semantic_hash": ""
-  },
-  "apps/web/src/components/uhp/UhpAccessManagerDialog.tsx": {
-    "mtime": 1790300550.100601,
-    "seen": 1790301287.9378228,
-    "ast_hash": "070c845c83a95e5b79e2085e174e7297",
-    "semantic_hash": ""
-  },
-  "apps/web/src/components/uhp/UhpClientDetailDialog.tsx": {
-    "mtime": 1790300619.2399487,
-    "seen": 1790301287.937824,
-    "ast_hash": "91a761fccf392fa64d07f133d3393519",
-    "semantic_hash": ""
-  },
-  "n8n/workflows/uhp-workflows.test.ts": {
-    "mtime": 1790300920.4990008,
-    "seen": 1790301287.9382172,
-    "ast_hash": "11cd345d1401fd8644d4bde72852ecfd",
-    "semantic_hash": ""
-  },
-  "scripts/backfill/import-uhp-workspace.test.ts": {
-    "mtime": 1790300462.000101,
-    "seen": 1790301287.9384336,
-    "ast_hash": "846eb75d13acf0b87e2492599c4f913a",
+    "mtime": 1790246711.186671,
+    "seen": 1790246823.983874,
+    "ast_hash": "d0bc1f165f46980e5c924efde23750b3",
     "semantic_hash": ""
   }
 }

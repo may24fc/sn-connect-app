@@ -10,3 +10,17 @@ Rules:
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+
+## Supabase Environments
+
+For now, treat **local** and **production** as the only active Supabase targets.
+
+- Use the local Supabase stack for development, migration validation, and manual testing.
+- Apply production migrations only when the user explicitly requests a production deployment.
+- Do not target, switch to, deploy to, or validate against staging unless the user explicitly asks to resume staging work.
+- Before any database-changing command, state the target environment and use an explicit local or production command/path rather than relying on an implicit linked project.
+
+## Cross-Cutting Frontend Rollouts
+
+- Before adding or changing client mutation/cache behavior, read `docs/apps/web/architecture/optimistic-ui.md`.
+- Classify every user-initiated mutation as optimistic or server-confirmed using that document. Keep its implementation-status table current whenever a rollout area changes.
