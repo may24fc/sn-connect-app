@@ -6,7 +6,7 @@ import { queryKeys } from '@/lib/query-keys';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
-interface OnboardingTaskRecord {
+export interface OnboardingTaskRecord {
   id: string;
   title: string;
   description: string | null;
@@ -21,7 +21,7 @@ interface OnboardingTaskRecord {
   reference_url?: string | null;
 }
 
-interface OnboardingChecklistRecord {
+export interface OnboardingChecklistRecord {
   id: string;
   status: 'not_started' | 'in_progress' | 'completed';
   onboarding_tasks: Array<OnboardingTaskRecord>;

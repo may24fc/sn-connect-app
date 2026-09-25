@@ -76,7 +76,42 @@ export function useUpdateBingoBoard() {
 
       return (await response.json()) as { data: WellnessBingoSnapshot };
     },
-    onSuccess: () => {
+    onMutate: async (payload) => {
+      const queryKey = queryKeys.bingo.current();
+      await queryClient.cancelQueries({ queryKey });
+      const previousSnapshot = queryClient.getQueryData<{ data: WellnessBingoSnapshot }>(queryKey);
+      queryClient.setQueryData<{ data: WellnessBingoSnapshot }>(queryKey, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            board: {
+              ...old.data.board,
+              ...(payload.customHabitText !== undefined
+                ? { customHabitText: payload.customHabitText }
+                : {}),
+              ...(payload.tileId && payload.checked !== undefined
+                ? {
+                    tileState: {
+                      ...old.data.board.tileState,
+                      [payload.tileId]: payload.checked,
+                    },
+                  }
+                : {}),
+            },
+          },
+        };
+      });
+      return { previousSnapshot };
+    },
+    onError: (_error, _payload, context) => {
+      queryClient.setQueryData(queryKeys.bingo.current(), context?.previousSnapshot);
+    },
+    onSuccess: (response) => {
+      queryClient.setQueryData(queryKeys.bingo.current(), response);
+    },
+    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.bingo.current() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.bingo.all });
     },
@@ -101,7 +136,26 @@ export function useUpdateBingoPartner() {
 
       return (await response.json()) as { data: WellnessBingoSnapshot };
     },
-    onSuccess: () => {
+    onMutate: async (partnerUserId) => {
+      const queryKey = queryKeys.bingo.current();
+      await queryClient.cancelQueries({ queryKey });
+      const previousSnapshot = queryClient.getQueryData<{ data: WellnessBingoSnapshot }>(queryKey);
+      const partners = queryClient.getQueryData<{ data: Array<BingoPartnerOption> }>(
+        queryKeys.bingo.partners()
+      );
+      const partner = partners?.data.find((candidate) => candidate.id === partnerUserId) ?? null;
+      queryClient.setQueryData<{ data: WellnessBingoSnapshot }>(queryKey, (old) =>
+        old ? { ...old, data: { ...old.data, partner } } : old
+      );
+      return { previousSnapshot };
+    },
+    onError: (_error, _partnerUserId, context) => {
+      queryClient.setQueryData(queryKeys.bingo.current(), context?.previousSnapshot);
+    },
+    onSuccess: (response) => {
+      queryClient.setQueryData(queryKeys.bingo.current(), response);
+    },
+    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.bingo.current() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.bingo.partners() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.bingo.all });
@@ -127,7 +181,33 @@ export function useUpdateBingoWeeklyRecording() {
 
       return (await response.json()) as { data: WellnessBingoSnapshot };
     },
-    onSuccess: () => {
+    onMutate: async (recordingUrl) => {
+      const queryKey = queryKeys.bingo.current();
+      await queryClient.cancelQueries({ queryKey });
+      const previousSnapshot = queryClient.getQueryData<{ data: WellnessBingoSnapshot }>(queryKey);
+      queryClient.setQueryData<{ data: WellnessBingoSnapshot }>(queryKey, (old) =>
+        old
+          ? {
+              ...old,
+              data: {
+                ...old.data,
+                currentWeekRecording:
+                  recordingUrl && old.data.currentWeekRecording
+                    ? { ...old.data.currentWeekRecording, recordingUrl }
+                    : null,
+              },
+            }
+          : old
+      );
+      return { previousSnapshot };
+    },
+    onError: (_error, _recordingUrl, context) => {
+      queryClient.setQueryData(queryKeys.bingo.current(), context?.previousSnapshot);
+    },
+    onSuccess: (response) => {
+      queryClient.setQueryData(queryKeys.bingo.current(), response);
+    },
+    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.bingo.current() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.bingo.all });
     },

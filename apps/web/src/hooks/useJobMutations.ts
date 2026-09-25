@@ -119,7 +119,55 @@ export function useUpdateApplicationStatus() {
       }
       return res.json();
     },
-    onSuccess: () => {
+    onMutate: async ({ id, status, notes }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.applications.all });
+      const previousApplications = queryClient.getQueriesData<unknown>({
+        queryKey: queryKeys.applications.all,
+      });
+
+      queryClient.setQueriesData<{
+        data: Array<{ id: string; status: string; notes?: string | null; updated_at?: string }>;
+      }>(
+        { queryKey: queryKeys.applications.lists() },
+        (old) =>
+          old
+            ? {
+                ...old,
+                data: old.data.map((application) =>
+                  application.id === id
+                    ? {
+                        ...application,
+                        status,
+                        ...(notes !== undefined ? { notes } : {}),
+                        updated_at: new Date().toISOString(),
+                      }
+                    : application
+                ),
+              }
+            : old
+      );
+      queryClient.setQueryData<{
+        data: { id: string; status: string; notes?: string | null; updated_at?: string };
+      }>(queryKeys.applications.detail(id), (old) =>
+        old
+          ? {
+              ...old,
+              data: {
+                ...old.data,
+                status,
+                ...(notes !== undefined ? { notes } : {}),
+                updated_at: new Date().toISOString(),
+              },
+            }
+          : old
+      );
+
+      return { previousApplications };
+    },
+    onError: (_error, _variables, context) => {
+      context?.previousApplications.forEach(([key, data]) => queryClient.setQueryData(key, data));
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.all });
     },
   });
@@ -138,7 +186,30 @@ export function useRemoveApplication() {
       }
       return res.json() as Promise<{ data: { id: string } }>;
     },
-    onSuccess: (_data, id) => {
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.applications.all });
+      const previousApplications = queryClient.getQueriesData<unknown>({
+        queryKey: queryKeys.applications.all,
+      });
+      queryClient.setQueriesData<{ data: Array<{ id: string }>; pagination?: { total: number } }>(
+        { queryKey: queryKeys.applications.lists() },
+        (old) =>
+          old
+            ? {
+                ...old,
+                data: old.data.filter((application) => application.id !== id),
+                ...(old.pagination
+                  ? { pagination: { ...old.pagination, total: Math.max(0, old.pagination.total - 1) } }
+                  : {}),
+              }
+            : old
+      );
+      return { previousApplications };
+    },
+    onError: (_error, _id, context) => {
+      context?.previousApplications.forEach(([key, data]) => queryClient.setQueryData(key, data));
+    },
+    onSettled: (_data, _error, id) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.all });
       queryClient.removeQueries({ queryKey: queryKeys.applications.detail(id) });
     },

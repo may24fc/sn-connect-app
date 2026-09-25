@@ -28,7 +28,9 @@ export function useUpdateTask(taskId: string) {
       await queryClient.cancelQueries({ queryKey: queryKeys.tasks.detail(taskId) });
 
       // Snapshot previous values
-      const previousTasks = queryClient.getQueryData(queryKeys.tasks.all);
+      const previousTaskLists = queryClient.getQueriesData({
+        queryKey: queryKeys.tasks.lists(),
+      });
       const previousTask = queryClient.getQueryData(queryKeys.tasks.detail(taskId));
 
       // Optimistically update detail view
@@ -53,13 +55,11 @@ export function useUpdateTask(taskId: string) {
         };
       });
 
-      return { previousTasks, previousTask };
+      return { previousTaskLists, previousTask };
     },
     onError: (_err, _payload, context) => {
       // Rollback on error
-      if (context?.previousTasks) {
-        queryClient.setQueryData(queryKeys.tasks.all, context.previousTasks);
-      }
+      context?.previousTaskLists.forEach(([key, data]) => queryClient.setQueryData(key, data));
       if (context?.previousTask) {
         queryClient.setQueryData(queryKeys.tasks.detail(taskId), context.previousTask);
       }

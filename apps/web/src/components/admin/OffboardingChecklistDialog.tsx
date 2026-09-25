@@ -1,6 +1,6 @@
 'use client';
 
-import type { OffboardingRecord } from '@/hooks/useOffboarding';
+import type { OffboardingRecord, OffboardingResponse, OffboardingTaskRecord } from '@/hooks/useOffboarding';
 import { queryKeys } from '@/lib/query-keys';
 import {
   Badge,
@@ -223,6 +223,24 @@ export function OffboardingChecklistManager({
     await queryClient.invalidateQueries({ queryKey: queryKeys.offboarding.template() });
   };
 
+  const updateOffboardingTasks = (
+    recordId: string,
+    update: (tasks: OffboardingTaskRecord[]) => OffboardingTaskRecord[]
+  ) => {
+    queryClient.setQueriesData<OffboardingResponse>({ queryKey: queryKeys.offboarding.all }, (current) =>
+      current
+        ? {
+            ...current,
+            data: current.data.map((record) =>
+              record.id === recordId
+                ? { ...record, offboarding_tasks: update(record.offboarding_tasks) }
+                : record
+            ),
+          }
+        : current
+    );
+  };
+
   const normalizeDraft = (): {
     title: string;
     description: string | null;
@@ -281,17 +299,41 @@ export function OffboardingChecklistManager({
 
       return response.json();
     },
+    onMutate: async () => {
+      if (!currentRecord) return {};
+      const payload = normalizeDraft();
+      await queryClient.cancelQueries({ queryKey: queryKeys.offboarding.all });
+      const previousRecords = queryClient.getQueriesData<OffboardingResponse>({ queryKey: queryKeys.offboarding.all });
+      const now = new Date().toISOString();
+      updateOffboardingTasks(currentRecord.id, (tasks) => [
+        ...tasks,
+        {
+          id: `optimistic-offboarding-task-${crypto.randomUUID()}`,
+          offboarding_id: currentRecord.id,
+          title: payload.title,
+          description: payload.description,
+          category: payload.category,
+          is_completed: false,
+          completed_at: null,
+          completed_by: null,
+          due_date: payload.dueDate,
+          assigned_to: null,
+          created_at: now,
+          updated_at: now,
+          owner_type: payload.ownerType,
+          owner_label: payload.ownerType === 'employee' ? 'Employee action' : 'Internal action',
+          can_complete: false,
+        },
+      ]);
+      return { previousRecords };
+    },
+    onError: (_error, _variables, context) => {
+      context?.previousRecords?.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
+    },
     onSuccess: async () => {
       setTaskDraft(DEFAULT_TASK_DRAFT);
       await invalidateOffboarding();
       addToast({ title: 'Offboarding task added', variant: 'success' });
-    },
-    onError: (error) => {
-      addToast({
-        title: 'Unable to add offboarding task',
-        description: error instanceof Error ? error.message : 'Please try again.',
-        variant: 'error',
-      });
     },
   });
 
@@ -317,18 +359,34 @@ export function OffboardingChecklistManager({
 
       return response.json();
     },
+    onMutate: async (taskId) => {
+      if (!currentRecord) return {};
+      const payload = normalizeDraft();
+      await queryClient.cancelQueries({ queryKey: queryKeys.offboarding.all });
+      const previousRecords = queryClient.getQueriesData<OffboardingResponse>({ queryKey: queryKeys.offboarding.all });
+      updateOffboardingTasks(currentRecord.id, (tasks) => tasks.map((task) =>
+        task.id === taskId
+          ? {
+              ...task,
+              title: payload.title,
+              description: payload.description,
+              category: payload.category,
+              due_date: payload.dueDate,
+              owner_type: payload.ownerType,
+              owner_label: payload.ownerType === 'employee' ? 'Employee action' : 'Internal action',
+            }
+          : task
+      ));
+      return { previousRecords };
+    },
+    onError: (_error, _taskId, context) => {
+      context?.previousRecords?.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
+    },
     onSuccess: async () => {
       setTaskDraft(DEFAULT_TASK_DRAFT);
       setEditingTaskId(null);
       await invalidateOffboarding();
       addToast({ title: 'Offboarding task updated', variant: 'success' });
-    },
-    onError: (error) => {
-      addToast({
-        title: 'Unable to update offboarding task',
-        description: error instanceof Error ? error.message : 'Please try again.',
-        variant: 'error',
-      });
     },
   });
 
@@ -353,18 +411,21 @@ export function OffboardingChecklistManager({
 
       return response.json();
     },
+    onMutate: async (taskId) => {
+      if (!currentRecord) return {};
+      await queryClient.cancelQueries({ queryKey: queryKeys.offboarding.all });
+      const previousRecords = queryClient.getQueriesData<OffboardingResponse>({ queryKey: queryKeys.offboarding.all });
+      updateOffboardingTasks(currentRecord.id, (tasks) => tasks.filter((task) => task.id !== taskId));
+      return { previousRecords };
+    },
+    onError: (_error, _taskId, context) => {
+      context?.previousRecords?.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
+    },
     onSuccess: async () => {
       setTaskDraft(DEFAULT_TASK_DRAFT);
       setEditingTaskId(null);
       await invalidateOffboarding();
       addToast({ title: 'Offboarding task removed', variant: 'success' });
-    },
-    onError: (error) => {
-      addToast({
-        title: 'Unable to remove offboarding task',
-        description: error instanceof Error ? error.message : 'Please try again.',
-        variant: 'error',
-      });
     },
   });
 
@@ -389,18 +450,21 @@ export function OffboardingChecklistManager({
         }
       }
     },
+    onMutate: async () => {
+      if (!currentRecord) return {};
+      await queryClient.cancelQueries({ queryKey: queryKeys.offboarding.all });
+      const previousRecords = queryClient.getQueriesData<OffboardingResponse>({ queryKey: queryKeys.offboarding.all });
+      updateOffboardingTasks(currentRecord.id, () => []);
+      return { previousRecords };
+    },
+    onError: (_error, _variables, context) => {
+      context?.previousRecords?.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
+    },
     onSuccess: async () => {
       setTaskDraft(DEFAULT_TASK_DRAFT);
       setEditingTaskId(null);
       await invalidateOffboarding();
       addToast({ title: 'Offboarding checklist cleared', variant: 'success' });
-    },
-    onError: (error) => {
-      addToast({
-        title: 'Unable to clear offboarding checklist',
-        description: error instanceof Error ? error.message : 'Please try again.',
-        variant: 'error',
-      });
     },
   });
 
@@ -421,17 +485,27 @@ export function OffboardingChecklistManager({
 
       return response.json();
     },
-    onSuccess: async () => {
-      setTaskDraft(DEFAULT_TASK_DRAFT);
-      setEditingTaskId(null);
-      await invalidateTemplate();
+    onMutate: async ({ tasks }) => {
+      const queryKey = queryKeys.offboarding.template();
+      await queryClient.cancelQueries({ queryKey });
+      const previousTemplate = queryClient.getQueryData<OffboardingTemplateResponse>(queryKey);
+      queryClient.setQueryData<OffboardingTemplateResponse>(queryKey, (current) =>
+        current ? { ...current, data: { ...current.data, tasks } } : current
+      );
+      return { previousTemplate, queryKey };
     },
-    onError: (error) => {
+    onError: (error, _variables, context) => {
+      if (context?.queryKey) queryClient.setQueryData(context.queryKey, context.previousTemplate);
       addToast({
         title: 'Unable to save default offboarding checklist',
         description: error instanceof Error ? error.message : 'Please try again.',
         variant: 'error',
       });
+    },
+    onSuccess: async () => {
+      setTaskDraft(DEFAULT_TASK_DRAFT);
+      setEditingTaskId(null);
+      await invalidateTemplate();
     },
   });
 
@@ -483,19 +557,55 @@ export function OffboardingChecklistManager({
 
       return tasksToInsert.length;
     },
+    onMutate: async () => {
+      if (!currentRecord) return {};
+      const existingKeys = new Set(
+        currentRecord.offboarding_tasks.map(
+          (task) => `${task.category.toLowerCase()}::${task.title.trim().toLowerCase()}`
+        )
+      );
+      const tasksToInsert = templateTasks.filter(
+        (task) => !existingKeys.has(`${task.category.toLowerCase()}::${task.title.trim().toLowerCase()}`)
+      );
+      await queryClient.cancelQueries({ queryKey: queryKeys.offboarding.all });
+      const previousRecords = queryClient.getQueriesData<OffboardingResponse>({ queryKey: queryKeys.offboarding.all });
+      const now = new Date().toISOString();
+      updateOffboardingTasks(currentRecord.id, (tasks) => [
+        ...tasks,
+        ...tasksToInsert.map((task) => ({
+          id: `optimistic-offboarding-template-task-${crypto.randomUUID()}`,
+          offboarding_id: currentRecord.id,
+          title: task.title,
+          description: task.description,
+          category: task.category,
+          is_completed: false,
+          completed_at: null,
+          completed_by: null,
+          due_date: task.dueDate,
+          assigned_to: null,
+          created_at: now,
+          updated_at: now,
+          owner_type: task.ownerType,
+          owner_label: task.ownerType === 'employee' ? 'Employee action' : 'Internal action',
+          can_complete: false,
+        })),
+      ]);
+      return { previousRecords };
+    },
+    onError: (error, _variables, context) => {
+      context?.previousRecords?.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
+      addToast({
+        title: 'Unable to apply default checklist',
+        description: error instanceof Error ? error.message : 'Please try again.',
+        variant: 'error',
+      });
+    },
     onSuccess: async (count) => {
       await invalidateOffboarding();
       addToast({
         title: 'Default checklist applied',
         description: `${count} offboarding task${count === 1 ? '' : 's'} added.`,
         variant: 'success',
-      });
-    },
-    onError: (error) => {
-      addToast({
-        title: 'Unable to apply default checklist',
-        description: error instanceof Error ? error.message : 'Please try again.',
-        variant: 'error',
       });
     },
   });

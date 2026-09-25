@@ -150,6 +150,12 @@ All non-public responses include:
 | [ADR-002](../../../adr/ADR-002-resources-information-hub.md) | Resources Hub | Information hub architecture |
 | [ADR-004](../../../adr/ADR-004-edge-function-cron-pattern.md) | Edge Function Cron | Scheduled task pattern |
 
+## Frontend Interaction Architecture
+
+| Document | Description |
+|----------|-------------|
+| [optimistic-ui.md](optimistic-ui.md) | Optimistic mutation decision, cache/rollback standard, rollout status |
+
 ---
 
 *Last updated: 2026-07-20*

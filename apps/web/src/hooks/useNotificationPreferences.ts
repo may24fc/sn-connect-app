@@ -60,12 +60,32 @@ export function useUpdateNotificationPreferences(userId: string | undefined) {
       const json = await response.json();
       return normalizeNotificationPreferences(json.data);
     },
+    onMutate: async (payload) => {
+      if (!userId) return undefined;
+
+      const queryKey = notificationPreferenceKeys.user(userId);
+      await queryClient.cancelQueries({ queryKey });
+      const previousPreferences = queryClient.getQueryData<NotificationPreferences>(queryKey);
+      queryClient.setQueryData(queryKey, payload);
+
+      return { queryKey, previousPreferences };
+    },
+    onError: (_error, _payload, context) => {
+      if (context) {
+        queryClient.setQueryData(context.queryKey, context.previousPreferences);
+      }
+    },
     onSuccess: (data) => {
       if (!userId) {
         return;
       }
 
       queryClient.setQueryData(notificationPreferenceKeys.user(userId), data);
+    },
+    onSettled: () => {
+      if (userId) {
+        queryClient.invalidateQueries({ queryKey: notificationPreferenceKeys.user(userId) });
+      }
     },
   });
 }

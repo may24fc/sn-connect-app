@@ -651,6 +651,22 @@ export const queryKeys = {
     goals: (year?: number) => [...queryKeys.revenueForecast.all, 'goals', year ?? 'all'] as const,
   },
 
+  uhp: {
+    all: ['uhp'] as const,
+    access: () => [...queryKeys.uhp.all, 'access'] as const,
+    accessGrants: (module?: 'client_tracker' | 'portal_reminders' | 'volume_points') =>
+      [...queryKeys.uhp.all, 'access-grants', module ?? 'all'] as const,
+    clients: (filters?: Record<string, string>) =>
+      [...queryKeys.uhp.all, 'clients', filters ?? {}] as const,
+    client: (id: string) => [...queryKeys.uhp.all, 'client', id] as const,
+    clientMetrics: (from?: string, to?: string) =>
+      [...queryKeys.uhp.all, 'client-metrics', from ?? '', to ?? ''] as const,
+    reminders: () => [...queryKeys.uhp.all, 'reminders'] as const,
+    vpEntries: (month: string) => [...queryKeys.uhp.all, 'vp-entries', month] as const,
+    vpSummary: (month: string) => [...queryKeys.uhp.all, 'vp-summary', month] as const,
+    vpTargets: (month: string) => [...queryKeys.uhp.all, 'vp-targets', month] as const,
+  },
+
   // Ticket Handlers
   ticketHandlers: {
     all: ['ticket-handlers'] as const,

@@ -57,7 +57,50 @@ export function useCreateTaskComment(taskId?: string | null) {
 
       return response.json();
     },
-    onSuccess: () => {
+    onMutate: async ({ content }) => {
+      if (!taskId) return undefined;
+      const queryKey = queryKeys.tasks.comments(taskId);
+      await queryClient.cancelQueries({ queryKey });
+      const previousComments = queryClient.getQueryData<{ data: Array<TaskComment> }>(queryKey);
+      const optimisticId = `optimistic-comment-${crypto.randomUUID()}`;
+      queryClient.setQueryData<{ data: Array<TaskComment> }>(queryKey, (old) =>
+        old
+          ? {
+              ...old,
+              data: [
+                ...old.data,
+                {
+                  id: optimisticId,
+                  task_id: taskId,
+                  user_id: '',
+                  content,
+                  created_at: new Date().toISOString(),
+                  commenter_name: 'You',
+                },
+              ],
+            }
+          : old
+      );
+      return { queryKey, previousComments, optimisticId };
+    },
+    onSuccess: (response, _payload, context) => {
+      if (context) {
+        queryClient.setQueryData<{ data: Array<TaskComment> }>(context.queryKey, (old) =>
+          old
+            ? {
+                ...old,
+                data: old.data.map((comment) =>
+                  comment.id === context.optimisticId ? response.data : comment
+                ),
+              }
+            : old
+        );
+      }
+    },
+    onError: (_error, _payload, context) => {
+      if (context) queryClient.setQueryData(context.queryKey, context.previousComments);
+    },
+    onSettled: () => {
       if (taskId) {
         queryClient.invalidateQueries({ queryKey: queryKeys.tasks.comments(taskId) });
       }

@@ -57,6 +57,7 @@ Start here: **[Admin Guides](admin/README.md)**
 | [architecture/README.md](architecture/README.md) | System architecture, layers, request flows |
 | [architecture/auth.md](architecture/auth.md) | Auth provider (PKCE), middleware, role system, RLS |
 | [architecture/data-flow.md](architecture/data-flow.md) | TanStack Query patterns, cache, realtime, file uploads |
+| [architecture/optimistic-ui.md](architecture/optimistic-ui.md) | Optimistic mutation standard and rollout status |
 | [architecture/database.md](architecture/database.md) | Database schema reference |
 
 ---

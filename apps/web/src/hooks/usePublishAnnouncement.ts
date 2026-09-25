@@ -84,7 +84,36 @@ export function useToggleAnnouncementPin() {
 
       return response.json();
     },
-    onSuccess: (_, variables) => {
+    onMutate: async ({ id, pinned }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.announcements.all });
+      const previousAnnouncements = queryClient.getQueriesData<unknown>({
+        queryKey: queryKeys.announcements.all,
+      });
+
+      queryClient.setQueriesData<{ data: AnnouncementRecord | Array<AnnouncementRecord> }>(
+        { queryKey: queryKeys.announcements.all },
+        (old) => {
+          if (!old) return old;
+          if (Array.isArray(old.data)) {
+            return {
+              ...old,
+              data: old.data.map((announcement) =>
+                announcement.id === id ? { ...announcement, is_pinned: pinned } : announcement
+              ),
+            };
+          }
+          return old.data.id === id
+            ? { ...old, data: { ...old.data, is_pinned: pinned } }
+            : old;
+        }
+      );
+
+      return { previousAnnouncements };
+    },
+    onError: (_error, _variables, context) => {
+      context?.previousAnnouncements.forEach(([key, data]) => queryClient.setQueryData(key, data));
+    },
+    onSettled: (_data, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
       queryClient.invalidateQueries({
         queryKey: queryKeys.announcements.detail(variables.id),

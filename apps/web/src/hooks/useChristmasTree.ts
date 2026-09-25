@@ -2,15 +2,25 @@ import type { buildChristmasTreeSnapshot } from '@/app/api/christmas-tree/_lib';
 import { STALE_TIMES } from '@/lib/query-client';
 import { queryKeys } from '@/lib/query-keys';
 import type {
+  ChristmasOrnamentMoveInput,
   ChristmasOrnamentPlacementInput,
+  ChristmasWishDeleteInput,
   ChristmasWishUpsertInput,
 } from '@/lib/schemas/christmas-tree.schema';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import type { REALTIME_SUBSCRIBE_STATES } from '@supabase/supabase-js';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 
 export type ChristmasTreeSnapshot = Awaited<ReturnType<typeof buildChristmasTreeSnapshot>>;
+
+const RECENT_LOCAL_MUTATION_WINDOW_MS = 2_000;
+const localSnapshotUpdatedAt = new WeakMap<QueryClient, number>();
+
+function cacheLocalMutationSnapshot(queryClient: QueryClient, data: ChristmasTreeSnapshot) {
+  queryClient.setQueryData(queryKeys.christmasTree.current(), data);
+  localSnapshotUpdatedAt.set(queryClient, Date.now());
+}
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init);
@@ -36,7 +46,102 @@ export function usePlaceChristmasOrnament() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       }),
-    onSuccess: (data) => queryClient.setQueryData(queryKeys.christmasTree.current(), data),
+    onMutate: async (payload) => {
+      const queryKey = queryKeys.christmasTree.current();
+      await queryClient.cancelQueries({ queryKey });
+      const previousSnapshot = queryClient.getQueryData<ChristmasTreeSnapshot>(queryKey);
+      queryClient.setQueryData<ChristmasTreeSnapshot>(queryKey, (old) => {
+        if (!old || old.myOrnament) return old;
+        const id = `optimistic-ornament-${crypto.randomUUID()}`;
+        return {
+          ...old,
+          myOrnament: {
+            id,
+            user_id: 'optimistic-current-user',
+            asset_type: payload.assetType,
+            position_x: payload.positionX,
+            position_y: payload.positionY,
+          },
+          ornaments: [
+            ...old.ornaments,
+            {
+              id,
+              ownerName: 'You',
+              assetType: payload.assetType,
+              positionX: payload.positionX,
+              positionY: payload.positionY,
+              wishes: [],
+            },
+          ],
+        };
+      });
+      return { previousSnapshot };
+    },
+    onError: (_error, _variables, context) => {
+      queryClient.setQueryData(queryKeys.christmasTree.current(), context?.previousSnapshot);
+    },
+    onSuccess: (data) => cacheLocalMutationSnapshot(queryClient, data),
+  });
+}
+
+export function useDeleteChristmasOrnament() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      fetchJson<ChristmasTreeSnapshot>('/api/christmas-tree/ornament', { method: 'DELETE' }),
+    onMutate: async () => {
+      const queryKey = queryKeys.christmasTree.current();
+      await queryClient.cancelQueries({ queryKey });
+      const previousSnapshot = queryClient.getQueryData<ChristmasTreeSnapshot>(queryKey);
+      queryClient.setQueryData<ChristmasTreeSnapshot>(queryKey, (old) =>
+        old?.myOrnament
+          ? {
+              ...old,
+              myOrnament: null,
+              ornaments: old.ornaments.filter((ornament) => ornament.id !== old.myOrnament?.id),
+            }
+          : old
+      );
+      return { previousSnapshot };
+    },
+    onError: (_error, _variables, context) => {
+      queryClient.setQueryData(queryKeys.christmasTree.current(), context?.previousSnapshot);
+    },
+    onSuccess: (data) => cacheLocalMutationSnapshot(queryClient, data),
+  });
+}
+
+export function useMoveChristmasOrnament() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: ChristmasOrnamentMoveInput) =>
+      fetchJson<ChristmasTreeSnapshot>('/api/christmas-tree/ornament', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }),
+    onMutate: async (payload) => {
+      const queryKey = queryKeys.christmasTree.current();
+      await queryClient.cancelQueries({ queryKey });
+      const previousSnapshot = queryClient.getQueryData<ChristmasTreeSnapshot>(queryKey);
+      queryClient.setQueryData<ChristmasTreeSnapshot>(queryKey, (old) =>
+        old?.myOrnament
+          ? {
+              ...old,
+              ornaments: old.ornaments.map((ornament) =>
+                ornament.id === old.myOrnament?.id
+                  ? { ...ornament, positionX: payload.positionX, positionY: payload.positionY }
+                  : ornament
+              ),
+            }
+          : old
+      );
+      return { previousSnapshot };
+    },
+    onError: (_error, _variables, context) => {
+      queryClient.setQueryData(queryKeys.christmasTree.current(), context?.previousSnapshot);
+    },
+    onSuccess: (data) => cacheLocalMutationSnapshot(queryClient, data),
   });
 }
 
@@ -49,7 +154,84 @@ export function useUpsertChristmasWish() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       }),
-    onSuccess: (data) => queryClient.setQueryData(queryKeys.christmasTree.current(), data),
+    onMutate: async (payload) => {
+      const queryKey = queryKeys.christmasTree.current();
+      await queryClient.cancelQueries({ queryKey });
+      const previousSnapshot = queryClient.getQueryData<ChristmasTreeSnapshot>(queryKey);
+      queryClient.setQueryData<ChristmasTreeSnapshot>(queryKey, (old) => {
+        if (!old?.myOrnament) return old;
+        return {
+          ...old,
+          ornaments: old.ornaments.map((ornament) =>
+            ornament.id !== old.myOrnament?.id
+              ? ornament
+              : {
+                  ...ornament,
+                  wishes: [
+                    ...ornament.wishes.filter(
+                      (wish) =>
+                        wish.category !== payload.category ||
+                        wish.item_number !== payload.itemNumber
+                    ),
+                    {
+                      ornament_id: old.myOrnament.id,
+                      category: payload.category,
+                      item_number: payload.itemNumber,
+                      content: payload.content,
+                      submitted_at: new Date().toISOString(),
+                    },
+                  ],
+                }
+          ),
+        };
+      });
+      return { previousSnapshot };
+    },
+    onError: (_error, _variables, context) => {
+      queryClient.setQueryData(queryKeys.christmasTree.current(), context?.previousSnapshot);
+    },
+    onSuccess: (data) => cacheLocalMutationSnapshot(queryClient, data),
+  });
+}
+
+export function useDeleteChristmasWish() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: ChristmasWishDeleteInput) =>
+      fetchJson<ChristmasTreeSnapshot>('/api/christmas-tree/wishes', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }),
+    onMutate: async (payload) => {
+      const queryKey = queryKeys.christmasTree.current();
+      await queryClient.cancelQueries({ queryKey });
+      const previousSnapshot = queryClient.getQueryData<ChristmasTreeSnapshot>(queryKey);
+      queryClient.setQueryData<ChristmasTreeSnapshot>(queryKey, (old) =>
+        old?.myOrnament
+          ? {
+              ...old,
+              ornaments: old.ornaments.map((ornament) =>
+                ornament.id === old.myOrnament?.id
+                  ? {
+                      ...ornament,
+                      wishes: ornament.wishes.filter(
+                        (wish) =>
+                          wish.category !== payload.category ||
+                          wish.item_number !== payload.itemNumber
+                      ),
+                    }
+                  : ornament
+              ),
+            }
+          : old
+      );
+      return { previousSnapshot };
+    },
+    onError: (_error, _variables, context) => {
+      queryClient.setQueryData(queryKeys.christmasTree.current(), context?.previousSnapshot);
+    },
+    onSuccess: (data) => cacheLocalMutationSnapshot(queryClient, data),
   });
 }
 
@@ -62,6 +244,7 @@ export function useChristmasTreeRealtime(
   );
   const invalidationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fallbackTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const refreshWhenVisibleRef = useRef(false);
 
   useEffect(() => {
     if (!enabled) return;
@@ -71,10 +254,26 @@ export function useChristmasTreeRealtime(
       return;
     }
 
+    const refresh = (ignoreRecentLocalMutation = false) => {
+      if (document.visibilityState === 'hidden') {
+        refreshWhenVisibleRef.current = true;
+        return;
+      }
+      const recentlyUpdatedLocally =
+        Date.now() - (localSnapshotUpdatedAt.get(queryClient) ?? 0) <
+        RECENT_LOCAL_MUTATION_WINDOW_MS;
+      if (!ignoreRecentLocalMutation && recentlyUpdatedLocally) return;
+
+      refreshWhenVisibleRef.current = false;
+      void queryClient.invalidateQueries(
+        { queryKey: queryKeys.christmasTree.current(), refetchType: 'active' },
+        { cancelRefetch: false }
+      );
+    };
     const invalidate = () => {
       if (invalidationTimerRef.current) clearTimeout(invalidationTimerRef.current);
       invalidationTimerRef.current = setTimeout(() => {
-        void queryClient.invalidateQueries({ queryKey: queryKeys.christmasTree.all });
+        refresh();
       }, 300);
     };
     const startFallbackPolling = () => {
@@ -86,6 +285,10 @@ export function useChristmasTreeRealtime(
       clearInterval(fallbackTimerRef.current);
       fallbackTimerRef.current = null;
     };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && refreshWhenVisibleRef.current) refresh(true);
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     const channel = supabase
       .channel('christmas-tree:realtime')
       .on(
@@ -119,6 +322,7 @@ export function useChristmasTreeRealtime(
     return () => {
       if (invalidationTimerRef.current) clearTimeout(invalidationTimerRef.current);
       stopFallbackPolling();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       void supabase.removeChannel(channel);
     };
   }, [enabled, queryClient]);

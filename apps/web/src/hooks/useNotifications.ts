@@ -20,7 +20,7 @@ export interface NotificationRecord {
   expires_at: string | null;
 }
 
-interface NotificationListResponse {
+export interface NotificationListResponse {
   data: Array<NotificationRecord>;
   unreadCount: number;
   pagination: {
@@ -80,7 +80,39 @@ export function useMarkNotificationRead() {
       if (!response.ok) throw new Error('Failed to mark notification as read');
       return response.json();
     },
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.notifications.all });
+      const previousLists = queryClient.getQueriesData<NotificationListResponse>({
+        queryKey: queryKeys.notifications.lists(),
+      });
+      const previousUnreadCount = queryClient.getQueryData<number>(queryKeys.notifications.unreadCount());
+      const readAt = new Date().toISOString();
+
+      queryClient.setQueriesData<NotificationListResponse>(
+        { queryKey: queryKeys.notifications.lists() },
+        (old) => {
+          if (!old) return old;
+          const wasUnread = old.data.some((notification) => notification.id === id && !notification.is_read);
+          return {
+            ...old,
+            data: old.data.map((notification) =>
+              notification.id === id ? { ...notification, is_read: true, read_at: readAt } : notification
+            ),
+            unreadCount: wasUnread ? Math.max(0, old.unreadCount - 1) : old.unreadCount,
+          };
+        }
+      );
+      queryClient.setQueryData<number>(queryKeys.notifications.unreadCount(), (count) =>
+        count === undefined ? count : Math.max(0, count - 1)
+      );
+
+      return { previousLists, previousUnreadCount };
+    },
+    onError: (_error, _id, context) => {
+      context?.previousLists.forEach(([key, data]) => queryClient.setQueryData(key, data));
+      queryClient.setQueryData(queryKeys.notifications.unreadCount(), context?.previousUnreadCount);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
     },
   });
@@ -97,7 +129,34 @@ export function useMarkAllRead() {
       if (!response.ok) throw new Error('Failed to mark all as read');
       return response.json();
     },
-    onSuccess: () => {
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.notifications.all });
+      const previousLists = queryClient.getQueriesData<NotificationListResponse>({
+        queryKey: queryKeys.notifications.lists(),
+      });
+      const previousUnreadCount = queryClient.getQueryData<number>(queryKeys.notifications.unreadCount());
+      const readAt = new Date().toISOString();
+
+      queryClient.setQueriesData<NotificationListResponse>(
+        { queryKey: queryKeys.notifications.lists() },
+        (old) =>
+          old
+            ? {
+                ...old,
+                data: old.data.map((notification) => ({ ...notification, is_read: true, read_at: readAt })),
+                unreadCount: 0,
+              }
+            : old
+      );
+      queryClient.setQueryData(queryKeys.notifications.unreadCount(), 0);
+
+      return { previousLists, previousUnreadCount };
+    },
+    onError: (_error, _variables, context) => {
+      context?.previousLists.forEach(([key, data]) => queryClient.setQueryData(key, data));
+      queryClient.setQueryData(queryKeys.notifications.unreadCount(), context?.previousUnreadCount);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
     },
   });
@@ -114,7 +173,44 @@ export function useDeleteNotification() {
       if (!response.ok) throw new Error('Failed to delete notification');
       return response.json();
     },
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.notifications.all });
+      const previousLists = queryClient.getQueriesData<NotificationListResponse>({
+        queryKey: queryKeys.notifications.lists(),
+      });
+      const previousUnreadCount = queryClient.getQueryData<number>(queryKeys.notifications.unreadCount());
+      let removedUnread = false;
+
+      queryClient.setQueriesData<NotificationListResponse>(
+        { queryKey: queryKeys.notifications.lists() },
+        (old) => {
+          if (!old) return old;
+          const removed = old.data.find((notification) => notification.id === id);
+          removedUnread ||= Boolean(removed && !removed.is_read);
+          return {
+            ...old,
+            data: old.data.filter((notification) => notification.id !== id),
+            unreadCount: removed && !removed.is_read ? Math.max(0, old.unreadCount - 1) : old.unreadCount,
+            pagination: {
+              ...old.pagination,
+              total: Math.max(0, old.pagination.total - (removed ? 1 : 0)),
+            },
+          };
+        }
+      );
+      if (removedUnread) {
+        queryClient.setQueryData<number>(queryKeys.notifications.unreadCount(), (count) =>
+          count === undefined ? count : Math.max(0, count - 1)
+        );
+      }
+
+      return { previousLists, previousUnreadCount };
+    },
+    onError: (_error, _id, context) => {
+      context?.previousLists.forEach(([key, data]) => queryClient.setQueryData(key, data));
+      queryClient.setQueryData(queryKeys.notifications.unreadCount(), context?.previousUnreadCount);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
     },
   });

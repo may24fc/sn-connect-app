@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCreateDepartment, useDepartments } from '@/hooks/useDepartments';
 import { useCreateDivision, useDivisions } from '@/hooks/useDivisions';
 import { useDirectory, useDirectoryExport } from '@/hooks/useDirectory';
-import type { DirectoryEntry, DirectoryFilters } from '@/hooks/useDirectory';
+import type { DirectoryEntry, DirectoryFilters, DirectoryResponse } from '@/hooks/useDirectory';
 import {
   Avatar,
   AvatarFallback,
@@ -183,6 +183,14 @@ export default function AdminDirectoryPage(): ReactNode {
   const createDepartmentMutation = useCreateDepartment();
   const createDivisionMutation = useCreateDivision();
 
+  const updateDirectoryEntries = (
+    update: (entry: DirectoryEntry) => DirectoryEntry
+  ) => {
+    queryClient.setQueriesData<DirectoryResponse>({ queryKey: ['directory'] }, (current) =>
+      current ? { ...current, data: current.data.map(update) } : current
+    );
+  };
+
   const terminateEmployeeMutation = useMutation({
     mutationFn: async (entry: DirectoryEntry) => {
       const response = await fetch(`/api/users/${entry.user_id}`, {
@@ -219,6 +227,14 @@ export default function AdminDirectoryPage(): ReactNode {
       }
       return response.json();
     },
+    onMutate: async (entry) => {
+      await queryClient.cancelQueries({ queryKey: ['directory'] });
+      const previousDirectory = queryClient.getQueriesData<DirectoryResponse>({ queryKey: ['directory'] });
+      updateDirectoryEntries((current) =>
+        current.user_id === entry.user_id ? { ...current, status: 'active' } : current
+      );
+      return { previousDirectory };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['directory'] });
       queryClient.invalidateQueries({ queryKey: ['employees'] });
@@ -226,7 +242,8 @@ export default function AdminDirectoryPage(): ReactNode {
       setEmployeeToRestore(null);
       addToast({ title: 'Employee restored to active', variant: 'success' });
     },
-    onError: () => {
+    onError: (_error, _entry, context) => {
+      context?.previousDirectory.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
       addToast({ title: 'Failed to restore account', variant: 'error' });
     },
   });
@@ -246,6 +263,14 @@ export default function AdminDirectoryPage(): ReactNode {
 
       return response.json();
     },
+    onMutate: async (entry) => {
+      await queryClient.cancelQueries({ queryKey: ['directory'] });
+      const previousDirectory = queryClient.getQueriesData<DirectoryResponse>({ queryKey: ['directory'] });
+      updateDirectoryEntries((current) =>
+        current.user_id === entry.user_id ? { ...current, status: 'inactive' } : current
+      );
+      return { previousDirectory };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['directory'] });
       queryClient.invalidateQueries({ queryKey: ['employees'] });
@@ -253,7 +278,8 @@ export default function AdminDirectoryPage(): ReactNode {
       setEmployeeToDeactivate(null);
       addToast({ title: 'Account deactivated', variant: 'success' });
     },
-    onError: () => {
+    onError: (_error, _entry, context) => {
+      context?.previousDirectory.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
       addToast({ title: 'Failed to deactivate account', variant: 'error' });
     },
   });
@@ -284,6 +310,22 @@ export default function AdminDirectoryPage(): ReactNode {
       }
       return response.json();
     },
+    onMutate: async ({ employeeId, data }) => {
+      await queryClient.cancelQueries({ queryKey: ['directory'] });
+      const previousDirectory = queryClient.getQueriesData<DirectoryResponse>({ queryKey: ['directory'] });
+      updateDirectoryEntries((current) =>
+        current.employee_id !== employeeId
+          ? current
+          : {
+              ...current,
+              ...(data.first_name !== undefined ? { first_name: data.first_name } : {}),
+              ...(data.last_name !== undefined ? { last_name: data.last_name } : {}),
+              ...(data.position !== undefined ? { position: data.position } : {}),
+              ...(data.date_hired !== undefined ? { start_date: data.date_hired } : {}),
+            }
+      );
+      return { previousDirectory };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['directory'] });
       queryClient.invalidateQueries({ queryKey: ['employees'] });
@@ -291,7 +333,8 @@ export default function AdminDirectoryPage(): ReactNode {
       setEmployeeToEdit(null);
       addToast({ title: 'Employee updated', variant: 'success' });
     },
-    onError: () => {
+    onError: (_error, _variables, context) => {
+      context?.previousDirectory.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
       addToast({ title: 'Failed to update employee', variant: 'error' });
     },
   });

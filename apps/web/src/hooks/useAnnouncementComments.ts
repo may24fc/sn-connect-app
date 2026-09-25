@@ -55,7 +55,50 @@ export function useCreateAnnouncementComment(announcementId?: string | null) {
       await ensureOk(response, 'Failed to post announcement comment');
       return response.json();
     },
-    onSuccess: () => {
+    onMutate: async ({ content }) => {
+      if (!announcementId) return undefined;
+      const queryKey = queryKeys.announcements.comments(announcementId);
+      await queryClient.cancelQueries({ queryKey });
+      const previousComments = queryClient.getQueryData<AnnouncementCommentsResponse>(queryKey);
+      const optimisticId = `optimistic-comment-${crypto.randomUUID()}`;
+      queryClient.setQueryData<AnnouncementCommentsResponse>(queryKey, (old) =>
+        old
+          ? {
+              ...old,
+              data: [
+                ...old.data,
+                {
+                  id: optimisticId,
+                  announcement_id: announcementId,
+                  user_id: '',
+                  content,
+                  created_at: new Date().toISOString(),
+                  commenter_name: 'You',
+                },
+              ],
+            }
+          : old
+      );
+      return { queryKey, previousComments, optimisticId };
+    },
+    onSuccess: (response, _payload, context) => {
+      if (context) {
+        queryClient.setQueryData<AnnouncementCommentsResponse>(context.queryKey, (old) =>
+          old
+            ? {
+                ...old,
+                data: old.data.map((comment) =>
+                  comment.id === context.optimisticId ? response.data : comment
+                ),
+              }
+            : old
+        );
+      }
+    },
+    onError: (_error, _payload, context) => {
+      if (context) queryClient.setQueryData(context.queryKey, context.previousComments);
+    },
+    onSettled: () => {
       if (announcementId) {
         queryClient.invalidateQueries({
           queryKey: queryKeys.announcements.comments(announcementId),

@@ -337,6 +337,19 @@ export function OnboardingChecklistManager({
     await queryClient.invalidateQueries({ queryKey: queryKeys.onboarding.template(roleLabel) });
   };
 
+  const updateChecklistTasks = (
+    employeeId: string,
+    update: (tasks: OnboardingTaskRecord[]) => OnboardingTaskRecord[]
+  ) => {
+    queryClient.setQueryData<{ data: OnboardingChecklistRecord[] }>(
+      queryKeys.onboarding.checklist(employeeId),
+      (current) =>
+        current?.data?.[0]
+          ? { ...current, data: [{ ...current.data[0], onboarding_tasks: update(current.data[0].onboarding_tasks) }] }
+          : current
+    );
+  };
+
   const ensureChecklist = async (): Promise<string> => {
     if (!selectedProfile?.employee_id) {
       throw new Error('This onboarding profile is not linked to an employee record yet.');
@@ -464,17 +477,43 @@ export function OnboardingChecklistManager({
 
       return response.json();
     },
-    onSuccess: async () => {
-      setTaskDraft(DEFAULT_TASK_DRAFT);
-      await invalidateSelectedChecklist();
-      addToast({ title: 'Checklist task added', variant: 'success' });
+    onMutate: async () => {
+      if (!selectedProfile?.employee_id || !checklist?.id) return {};
+      const payload = normalizeDraft();
+      const queryKey = queryKeys.onboarding.checklist(selectedProfile.employee_id);
+      await queryClient.cancelQueries({ queryKey });
+      const previousChecklist = queryClient.getQueryData<{ data: OnboardingChecklistRecord[] }>(queryKey);
+      updateChecklistTasks(selectedProfile.employee_id, (tasks) => [
+        ...tasks,
+        {
+          id: `optimistic-onboarding-task-${crypto.randomUUID()}`,
+          title: payload.title,
+          description: payload.description,
+          category: payload.category,
+          is_completed: false,
+          is_required: payload.isRequired,
+          due_days_from_start: payload.dueDaysFromStart,
+          requires_submission: payload.requiresSubmission,
+          submission_type: payload.submissionType,
+          submission_label: payload.submissionLabel,
+          submission_description: payload.submissionDescription,
+          reference_url: payload.referenceUrl,
+        },
+      ]);
+      return { previousChecklist, queryKey };
     },
-    onError: (error) => {
+    onError: (error, _variables, context) => {
+      if (context?.queryKey) queryClient.setQueryData(context.queryKey, context.previousChecklist);
       addToast({
         title: 'Unable to add checklist task',
         description: error instanceof Error ? error.message : 'Please try again.',
         variant: 'error',
       });
+    },
+    onSuccess: async () => {
+      setTaskDraft(DEFAULT_TASK_DRAFT);
+      await invalidateSelectedChecklist();
+      addToast({ title: 'Checklist task added', variant: 'success' });
     },
   });
 
@@ -500,18 +539,40 @@ export function OnboardingChecklistManager({
 
       return response.json();
     },
+    onMutate: async (taskId) => {
+      if (!selectedProfile?.employee_id) return {};
+      const payload = normalizeDraft();
+      const queryKey = queryKeys.onboarding.checklist(selectedProfile.employee_id);
+      await queryClient.cancelQueries({ queryKey });
+      const previousChecklist = queryClient.getQueryData<{ data: OnboardingChecklistRecord[] }>(queryKey);
+      updateChecklistTasks(selectedProfile.employee_id, (tasks) => tasks.map((task) =>
+        task.id === taskId
+          ? {
+              ...task,
+              title: payload.title,
+              description: payload.description,
+              category: payload.category,
+              is_required: payload.isRequired,
+              due_days_from_start: payload.dueDaysFromStart,
+              requires_submission: payload.requiresSubmission,
+              submission_type: payload.submissionType,
+              submission_label: payload.submissionLabel,
+              submission_description: payload.submissionDescription,
+              reference_url: payload.referenceUrl,
+            }
+          : task
+      ));
+      return { previousChecklist, queryKey };
+    },
+    onError: (error, _taskId, context) => {
+      if (context?.queryKey) queryClient.setQueryData(context.queryKey, context.previousChecklist);
+      addToast({ title: 'Unable to update checklist task', description: error instanceof Error ? error.message : 'Please try again.', variant: 'error' });
+    },
     onSuccess: async () => {
       setTaskDraft(DEFAULT_TASK_DRAFT);
       setEditingTaskId(null);
       await invalidateSelectedChecklist();
       addToast({ title: 'Checklist task updated', variant: 'success' });
-    },
-    onError: (error) => {
-      addToast({
-        title: 'Unable to update checklist task',
-        description: error instanceof Error ? error.message : 'Please try again.',
-        variant: 'error',
-      });
     },
   });
 
@@ -536,18 +597,23 @@ export function OnboardingChecklistManager({
 
       return response.json();
     },
+    onMutate: async (taskId) => {
+      if (!selectedProfile?.employee_id) return {};
+      const queryKey = queryKeys.onboarding.checklist(selectedProfile.employee_id);
+      await queryClient.cancelQueries({ queryKey });
+      const previousChecklist = queryClient.getQueryData<{ data: OnboardingChecklistRecord[] }>(queryKey);
+      updateChecklistTasks(selectedProfile.employee_id, (tasks) => tasks.filter((task) => task.id !== taskId));
+      return { previousChecklist, queryKey };
+    },
+    onError: (error, _taskId, context) => {
+      if (context?.queryKey) queryClient.setQueryData(context.queryKey, context.previousChecklist);
+      addToast({ title: 'Unable to remove checklist task', description: error instanceof Error ? error.message : 'Please try again.', variant: 'error' });
+    },
     onSuccess: async () => {
       setEditingTaskId(null);
       setTaskDraft(DEFAULT_TASK_DRAFT);
       await invalidateSelectedChecklist();
       addToast({ title: 'Checklist task removed', variant: 'success' });
-    },
-    onError: (error) => {
-      addToast({
-        title: 'Unable to remove checklist task',
-        description: error instanceof Error ? error.message : 'Please try again.',
-        variant: 'error',
-      });
     },
   });
 
@@ -572,18 +638,23 @@ export function OnboardingChecklistManager({
         }
       }
     },
+    onMutate: async () => {
+      if (!selectedProfile?.employee_id) return {};
+      const queryKey = queryKeys.onboarding.checklist(selectedProfile.employee_id);
+      await queryClient.cancelQueries({ queryKey });
+      const previousChecklist = queryClient.getQueryData<{ data: OnboardingChecklistRecord[] }>(queryKey);
+      updateChecklistTasks(selectedProfile.employee_id, () => []);
+      return { previousChecklist, queryKey };
+    },
+    onError: (error, _variables, context) => {
+      if (context?.queryKey) queryClient.setQueryData(context.queryKey, context.previousChecklist);
+      addToast({ title: 'Unable to clear checklist', description: error instanceof Error ? error.message : 'Please try again.', variant: 'error' });
+    },
     onSuccess: async () => {
       setEditingTaskId(null);
       setTaskDraft(DEFAULT_TASK_DRAFT);
       await invalidateSelectedChecklist();
       addToast({ title: 'Checklist cleared', variant: 'success' });
-    },
-    onError: (error) => {
-      addToast({
-        title: 'Unable to clear checklist',
-        description: error instanceof Error ? error.message : 'Please try again.',
-        variant: 'error',
-      });
     },
   });
 
@@ -607,17 +678,23 @@ export function OnboardingChecklistManager({
 
       return response.json();
     },
+    onMutate: async ({ tasks }) => {
+      const queryKey = queryKeys.onboarding.template(roleLabel);
+      await queryClient.cancelQueries({ queryKey });
+      const previousTemplate = queryClient.getQueryData<OnboardingTemplateResponse>(queryKey);
+      queryClient.setQueryData<OnboardingTemplateResponse>(queryKey, (current) =>
+        current ? { ...current, data: { ...current.data, tasks } } : current
+      );
+      return { previousTemplate, queryKey };
+    },
+    onError: (error, _variables, context) => {
+      if (context?.queryKey) queryClient.setQueryData(context.queryKey, context.previousTemplate);
+      addToast({ title: 'Unable to save default checklist', description: error instanceof Error ? error.message : 'Please try again.', variant: 'error' });
+    },
     onSuccess: async () => {
       setEditingTaskId(null);
       setTaskDraft(DEFAULT_TASK_DRAFT);
       await invalidateTemplate();
-    },
-    onError: (error) => {
-      addToast({
-        title: 'Unable to save default checklist',
-        description: error instanceof Error ? error.message : 'Please try again.',
-        variant: 'error',
-      });
     },
   });
 

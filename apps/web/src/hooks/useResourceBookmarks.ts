@@ -47,7 +47,37 @@ export function useBookmarkResource() {
 
       return response.json();
     },
-    onSuccess: (_, { resourceId }) => {
+    onMutate: async ({ resourceId, notes }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.resources.bookmarks() });
+      const previousBookmarks = queryClient.getQueryData<BookmarksResponse>(queryKeys.resources.bookmarks());
+      const resource = queryClient.getQueryData<{ data: ResourceRecord }>(
+        queryKeys.resources.detail(resourceId)
+      )?.data;
+
+      queryClient.setQueryData<BookmarksResponse>(queryKeys.resources.bookmarks(), (old) => {
+        if (!old || old.data.some((bookmark) => bookmark.resource_id === resourceId)) return old;
+        return {
+          ...old,
+          data: [
+            {
+              id: `optimistic-bookmark-${resourceId}`,
+              resource_id: resourceId,
+              user_id: '',
+              notes: notes ?? null,
+              created_at: new Date().toISOString(),
+              ...(resource ? { resource } : {}),
+            },
+            ...old.data,
+          ],
+        };
+      });
+
+      return { previousBookmarks };
+    },
+    onError: (_error, _variables, context) => {
+      queryClient.setQueryData(queryKeys.resources.bookmarks(), context?.previousBookmarks);
+    },
+    onSettled: (_data, _error, { resourceId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.resources.bookmarks() });
       queryClient.invalidateQueries({ queryKey: queryKeys.resources.detail(resourceId) });
     },
@@ -70,7 +100,21 @@ export function useRemoveBookmark() {
 
       return response.json();
     },
-    onSuccess: (_, resourceId) => {
+    onMutate: async (resourceId) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.resources.bookmarks() });
+      const previousBookmarks = queryClient.getQueryData<BookmarksResponse>(queryKeys.resources.bookmarks());
+      queryClient.setQueryData<BookmarksResponse>(queryKeys.resources.bookmarks(), (old) =>
+        old
+          ? { ...old, data: old.data.filter((bookmark) => bookmark.resource_id !== resourceId) }
+          : old
+      );
+
+      return { previousBookmarks };
+    },
+    onError: (_error, _resourceId, context) => {
+      queryClient.setQueryData(queryKeys.resources.bookmarks(), context?.previousBookmarks);
+    },
+    onSettled: (_data, _error, resourceId) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.resources.bookmarks() });
       queryClient.invalidateQueries({ queryKey: queryKeys.resources.detail(resourceId) });
     },

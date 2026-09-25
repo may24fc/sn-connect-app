@@ -76,6 +76,18 @@ export function useDeleteKPIEvidence(kpiId: string) {
         throw new Error(error.error || 'Failed to delete evidence');
       }
     },
+    onMutate: async (evidenceId) => {
+      const queryKey = queryKeys.performance.kpiEvidence(kpiId);
+      await queryClient.cancelQueries({ queryKey });
+      const previousEvidence = queryClient.getQueryData<{ data: KPIEvidenceRow[] }>(queryKey);
+      queryClient.setQueryData<{ data: KPIEvidenceRow[] }>(queryKey, (current) =>
+        current ? { ...current, data: current.data.filter((evidence) => evidence.id !== evidenceId) } : current
+      );
+      return { previousEvidence };
+    },
+    onError: (_error, _evidenceId, context) => {
+      queryClient.setQueryData(queryKeys.performance.kpiEvidence(kpiId), context?.previousEvidence);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.performance.kpiEvidence(kpiId),

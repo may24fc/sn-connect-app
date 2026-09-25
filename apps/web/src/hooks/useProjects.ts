@@ -470,7 +470,37 @@ export function useUpdateChecklistItem() {
           description: input.description,
         }),
       }),
-    onSuccess: (_data, vars) => {
+    onMutate: async (vars) => {
+      const checklistKey = queryKeys.projects.checklist(vars.milestoneId);
+      await queryClient.cancelQueries({ queryKey: checklistKey });
+      const previousChecklist = queryClient.getQueryData<{ data: ChecklistItemRecord[] }>(checklistKey);
+      queryClient.setQueryData<{ data: ChecklistItemRecord[] }>(checklistKey, (old) =>
+        old
+          ? {
+              ...old,
+              data: old.data.map((item) =>
+                item.id === vars.itemId
+                  ? {
+                      ...item,
+                      ...(vars.status !== undefined ? { status: vars.status } : {}),
+                      ...(vars.title !== undefined ? { title: vars.title } : {}),
+                      ...(vars.description !== undefined ? { description: vars.description } : {}),
+                      updated_at: new Date().toISOString(),
+                    }
+                  : item
+              ),
+            }
+          : old
+      );
+      return { previousChecklist };
+    },
+    onError: (_error, vars, context) => {
+      queryClient.setQueryData(
+        queryKeys.projects.checklist(vars.milestoneId),
+        context?.previousChecklist
+      );
+    },
+    onSettled: (_data, _error, vars) => {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.projects.checklist(vars.milestoneId),
       });
@@ -488,7 +518,22 @@ export function useDeleteChecklistItem() {
   return useMutation({
     mutationFn: (input: { itemId: string; milestoneId: string; projectId: string }) =>
       jsonFetch<{ ok: true }>(`/api/projects/checklist/${input.itemId}`, { method: 'DELETE' }),
-    onSuccess: (_data, vars) => {
+    onMutate: async (vars) => {
+      const checklistKey = queryKeys.projects.checklist(vars.milestoneId);
+      await queryClient.cancelQueries({ queryKey: checklistKey });
+      const previousChecklist = queryClient.getQueryData<{ data: ChecklistItemRecord[] }>(checklistKey);
+      queryClient.setQueryData<{ data: ChecklistItemRecord[] }>(checklistKey, (old) =>
+        old ? { ...old, data: old.data.filter((item) => item.id !== vars.itemId) } : old
+      );
+      return { previousChecklist };
+    },
+    onError: (_error, vars, context) => {
+      queryClient.setQueryData(
+        queryKeys.projects.checklist(vars.milestoneId),
+        context?.previousChecklist
+      );
+    },
+    onSettled: (_data, _error, vars) => {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.projects.checklist(vars.milestoneId),
       });

@@ -7,6 +7,7 @@ import { useRestoreReport } from '@/hooks/useRestoreReport';
 import { type ReportRecord, useReports } from '@/hooks/useReports';
 import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatLabel } from '@/lib/format';
+import { queryKeys } from '@/lib/query-keys';
 import {
   getMarketingCampaignTypeLabel,
   getMarketingObjectiveSummaryLabel,
@@ -57,10 +58,16 @@ import { useToast } from '@hr-portal/ui';
 import { AlertCircle, ArchiveRestore, CheckCircle2, ChevronLeft, ChevronRight, Eye, Loader2, MoreHorizontal, Search, Trash2, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 
 type ReportReviewFilter = 'all' | 'submitted' | 'approved' | 'rejected' | 'archived';
 type SubmissionView = 'table' | 'latest';
+
+type ReportListResponse = {
+  data: ReportRecord[];
+  pagination: { page: number; pageSize: number; total: number; totalPages: number };
+};
 
 const statusVariant: Record<
   'draft' | 'submitted' | 'approved' | 'rejected',
@@ -98,6 +105,7 @@ export function ReportsSubmissionsTab({
   const archivedView = status === 'archived';
   const { addToast } = useToast();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const deleteReport = useDeleteReport();
   const restoreReport = useRestoreReport();
 
@@ -177,6 +185,21 @@ export function ReportsSubmissionsTab({
 
   const handleAction = async (id: string, action: 'approved' | 'rejected') => {
     setWorkingId(id);
+    const queryKey = queryKeys.reports.lists();
+    await queryClient.cancelQueries({ queryKey });
+    const previousReports = queryClient.getQueriesData<ReportListResponse>({ queryKey });
+    queryClient.setQueriesData<ReportListResponse>({ queryKey }, (previous) =>
+      previous
+        ? {
+            ...previous,
+            data: previous.data.map((report) =>
+              report.id === id
+                ? { ...report, status: action, reviewed_at: new Date().toISOString() }
+                : report
+            ),
+          }
+        : previous
+    );
     try {
       const res = await fetch(`/api/reports/${id}/approve`, {
         method: 'POST',
@@ -190,6 +213,9 @@ export function ReportsSubmissionsTab({
       addToast({ title: `Report ${action}`, variant: 'success' });
       await refetch();
     } catch (error) {
+      previousReports.forEach(([cachedQueryKey, previousData]) => {
+        queryClient.setQueryData(cachedQueryKey, previousData);
+      });
       addToast({
         title:
           error instanceof Error

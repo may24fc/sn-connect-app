@@ -223,7 +223,50 @@ export function useCreateTicketComment(ticketId?: string) {
 
       return response.json();
     },
-    onSuccess: () => {
+    onMutate: async ({ content }) => {
+      if (!ticketId) return undefined;
+      const queryKey = queryKeys.tickets.comments(ticketId);
+      await queryClient.cancelQueries({ queryKey });
+      const previousComments = queryClient.getQueryData<{ data: Array<TicketCommentRecord> }>(queryKey);
+      const optimisticId = `optimistic-comment-${crypto.randomUUID()}`;
+      queryClient.setQueryData<{ data: Array<TicketCommentRecord> }>(queryKey, (old) =>
+        old
+          ? {
+              ...old,
+              data: [
+                ...old.data,
+                {
+                  id: optimisticId,
+                  ticket_id: ticketId,
+                  user_id: '',
+                  content,
+                  created_at: new Date().toISOString(),
+                  user_name: 'You',
+                },
+              ],
+            }
+          : old
+      );
+      return { queryKey, previousComments, optimisticId };
+    },
+    onSuccess: (response, _payload, context) => {
+      if (context) {
+        queryClient.setQueryData<{ data: Array<TicketCommentRecord> }>(context.queryKey, (old) =>
+          old
+            ? {
+                ...old,
+                data: old.data.map((comment) =>
+                  comment.id === context.optimisticId ? response.data : comment
+                ),
+              }
+            : old
+        );
+      }
+    },
+    onError: (_error, _payload, context) => {
+      if (context) queryClient.setQueryData(context.queryKey, context.previousComments);
+    },
+    onSettled: () => {
       if (ticketId) {
         queryClient.invalidateQueries({ queryKey: queryKeys.tickets.comments(ticketId) });
       }

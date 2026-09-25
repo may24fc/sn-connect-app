@@ -46,7 +46,48 @@ export function useCreateTaskProof(taskId: string) {
       }
       return response.json();
     },
-    onSuccess: () => {
+    onMutate: async (payload) => {
+      const queryKey = queryKeys.tasks.proofs(taskId);
+      await queryClient.cancelQueries({ queryKey });
+      const previousProofs = queryClient.getQueryData<{ data: Array<TaskProof> }>(queryKey);
+      const optimisticId = `optimistic-proof-${crypto.randomUUID()}`;
+      queryClient.setQueryData<{ data: Array<TaskProof> }>(queryKey, (old) =>
+        old
+          ? {
+              ...old,
+              data: [
+                ...old.data,
+                {
+                  id: optimisticId,
+                  task_id: taskId,
+                  submitted_by: '',
+                  proof_type: payload.proofType,
+                  content: payload.content,
+                  label: payload.label ?? null,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                  submitted_by_name: 'You',
+                },
+              ],
+            }
+          : old
+      );
+      return { previousProofs, optimisticId };
+    },
+    onSuccess: (response, _payload, context) => {
+      queryClient.setQueryData<{ data: Array<TaskProof> }>(queryKeys.tasks.proofs(taskId), (old) =>
+        old && context
+          ? {
+              ...old,
+              data: old.data.map((proof) => (proof.id === context.optimisticId ? response.data : proof)),
+            }
+          : old
+      );
+    },
+    onError: (_error, _payload, context) => {
+      queryClient.setQueryData(queryKeys.tasks.proofs(taskId), context?.previousProofs);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks.proofs(taskId) });
     },
   });
@@ -65,7 +106,19 @@ export function useDeleteTaskProof(taskId: string) {
         throw new Error(error.error || 'Failed to delete proof');
       }
     },
-    onSuccess: () => {
+    onMutate: async (proofId) => {
+      const queryKey = queryKeys.tasks.proofs(taskId);
+      await queryClient.cancelQueries({ queryKey });
+      const previousProofs = queryClient.getQueryData<{ data: Array<TaskProof> }>(queryKey);
+      queryClient.setQueryData<{ data: Array<TaskProof> }>(queryKey, (old) =>
+        old ? { ...old, data: old.data.filter((proof) => proof.id !== proofId) } : old
+      );
+      return { previousProofs };
+    },
+    onError: (_error, _proofId, context) => {
+      queryClient.setQueryData(queryKeys.tasks.proofs(taskId), context?.previousProofs);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks.proofs(taskId) });
     },
   });

@@ -2,7 +2,12 @@
 
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { useOffboardingSummary } from '@/hooks/useOffboardingSummary';
-import { useOnboardingProgressSummary } from '@/hooks/useOnboardingProgressSummary';
+import {
+  type OnboardingChecklistRecord,
+  useOnboardingProgressSummary,
+} from '@/hooks/useOnboardingProgressSummary';
+import type { OffboardingResponse } from '@/hooks/useOffboarding';
+import { queryKeys } from '@/lib/query-keys';
 import {
   Badge,
   Button,
@@ -30,6 +35,7 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type KeyboardEvent, type ReactNode, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 function formatCategoryLabel(category: string): string {
   return category
@@ -44,6 +50,7 @@ function isActivationKey(event: KeyboardEvent<HTMLDivElement>): boolean {
 
 export default function OnboardingPage(): ReactNode {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { addToast } = useToast();
   const [togglingTaskId, setTogglingTaskId] = useState<string | null>(null);
   const [togglingOffboardingTaskId, setTogglingOffboardingTaskId] = useState<string | null>(null);
@@ -142,6 +149,28 @@ export default function OnboardingPage(): ReactNode {
   const toggleTask = async (task: (typeof checklistTasks)[number]): Promise<void> => {
     if (!checklist?.id) return;
     setTogglingTaskId(task.id);
+    const queryKey = queryKeys.onboarding.tasks();
+    await queryClient.cancelQueries({ queryKey });
+    const previousChecklist = queryClient.getQueryData<{ data: Array<OnboardingChecklistRecord> }>(queryKey);
+    queryClient.setQueryData<{ data: Array<OnboardingChecklistRecord> }>(queryKey, (old) =>
+      old
+        ? {
+            ...old,
+            data: old.data.map((record) =>
+              record.id === checklist.id
+                ? {
+                    ...record,
+                    onboarding_tasks: record.onboarding_tasks.map((candidate) =>
+                      candidate.id === task.id
+                        ? { ...candidate, is_completed: !task.is_completed }
+                        : candidate
+                    ),
+                  }
+                : record
+            ),
+          }
+        : old
+    );
     try {
       const response = await fetch(`/api/onboarding/${checklist.id}/tasks`, {
         method: 'PATCH',
@@ -149,12 +178,14 @@ export default function OnboardingPage(): ReactNode {
         body: JSON.stringify({ taskId: task.id, isCompleted: !task.is_completed }),
       });
       if (!response.ok) throw new Error('Failed to update task');
+      await queryClient.invalidateQueries({ queryKey });
       await refetchChecklist();
       addToast({
         title: task.is_completed ? 'Task marked as incomplete' : 'Task completed',
         variant: 'success',
       });
     } catch {
+      queryClient.setQueryData(queryKey, previousChecklist);
       addToast({ title: 'Failed to update task', variant: 'error' });
     } finally {
       setTogglingTaskId(null);
@@ -170,6 +201,28 @@ export default function OnboardingPage(): ReactNode {
     }
 
     setTogglingOffboardingTaskId(task.id);
+    const queryKey = queryKeys.offboarding.me();
+    await queryClient.cancelQueries({ queryKey });
+    const previousOffboarding = queryClient.getQueryData<OffboardingResponse>(queryKey);
+    queryClient.setQueryData<OffboardingResponse>(queryKey, (old) =>
+      old
+        ? {
+            ...old,
+            data: old.data.map((record) =>
+              record.id === offboarding.id
+                ? {
+                    ...record,
+                    offboarding_tasks: record.offboarding_tasks.map((candidate) =>
+                      candidate.id === task.id
+                        ? { ...candidate, is_completed: !task.is_completed }
+                        : candidate
+                    ),
+                  }
+                : record
+            ),
+          }
+        : old
+    );
     try {
       const response = await fetch(`/api/offboarding/${offboarding.id}/tasks`, {
         method: 'PATCH',
@@ -181,12 +234,14 @@ export default function OnboardingPage(): ReactNode {
         throw new Error('Failed to update offboarding task');
       }
 
+      await queryClient.invalidateQueries({ queryKey });
       await refetchOffboarding();
       addToast({
         title: task.is_completed ? 'Offboarding task marked as incomplete' : 'Offboarding task completed',
         variant: 'success',
       });
     } catch {
+      queryClient.setQueryData(queryKey, previousOffboarding);
       addToast({ title: 'Failed to update offboarding task', variant: 'error' });
     } finally {
       setTogglingOffboardingTaskId(null);

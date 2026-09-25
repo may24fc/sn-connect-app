@@ -1,12 +1,15 @@
 'use client';
 
 import {
+  Activity,
+  BellRing,
   Briefcase,
   Building2,
   CheckSquare,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
+  ContactRound,
   Factory,
   FileCheck,
   FileText,
@@ -52,10 +55,10 @@ interface NavSection {
   items: Array<NavItem>;
 }
 
-type WorkspaceId = 'internal' | 'pa' | 'sfo';
+type WorkspaceId = 'internal' | 'pa' | 'sfo' | 'uhp';
 
 interface WorkspaceOption {
-  id: WorkspaceId | 'uhp' | 'property';
+  id: WorkspaceId | 'property';
   label: string;
   description: string;
   icon: LucideIcon;
@@ -79,6 +82,9 @@ export interface SidebarProps {
   showRevenueForecastAccess?: boolean;
   showExpenseDeskAccess?: boolean;
   showAiSpendingAccess?: boolean;
+  showUhpClientTracker?: boolean;
+  showUhpPortalReminders?: boolean;
+  showUhpVolumePoints?: boolean;
 }
 
 const employeeAtsNavItems: Array<NavItem> = [
@@ -311,6 +317,13 @@ const paSectionConfig: ReadonlyArray<{ title: string; hrefs: ReadonlyArray<strin
   { title: 'PA Operations', hrefs: ['/pa-tasks'] },
 ];
 
+const uhpSectionConfig: ReadonlyArray<{ title: string; hrefs: ReadonlyArray<string> }> = [
+  {
+    title: 'UHP Operations',
+    hrefs: ['/uhp/clients', '/uhp/reminders', '/uhp/volume-points'],
+  },
+];
+
 const workspaceOptions: [WorkspaceOption, ...Array<WorkspaceOption>] = [
   {
     id: 'internal',
@@ -333,9 +346,8 @@ const workspaceOptions: [WorkspaceOption, ...Array<WorkspaceOption>] = [
   {
     id: 'uhp',
     label: 'Ultimate Health Project',
-    description: 'Coming soon',
+    description: 'Clients, Herbalife reminders, and volume points',
     icon: HeartPulse,
-    comingSoon: true,
   },
   {
     id: 'property',
@@ -349,6 +361,7 @@ const workspaceOptions: [WorkspaceOption, ...Array<WorkspaceOption>] = [
 function getWorkspaceForPath(path: string): WorkspaceId {
   const normalizedPath = normalizePath(path);
   if (normalizedPath === '/pa-tasks' || normalizedPath.startsWith('/pa-tasks/')) return 'pa';
+  if (normalizedPath === '/uhp' || normalizedPath.startsWith('/uhp/')) return 'uhp';
 
   const sfoPrefixes = [
     '/reports',
@@ -381,9 +394,11 @@ function createWorkspaceSections(
       ? sfoSectionConfig
       : workspace === 'pa'
         ? paSectionConfig
-        : variant === 'admin' || variant === 'super_admin'
-          ? adminInternalSectionConfig
-          : selfServiceInternalSectionConfig;
+        : workspace === 'uhp'
+          ? uhpSectionConfig
+          : variant === 'admin' || variant === 'super_admin'
+            ? adminInternalSectionConfig
+            : selfServiceInternalSectionConfig;
 
   const itemByHref = new Map(navItems.map((item) => [item.href, item]));
   const sections: Array<NavSection> = [];
@@ -421,6 +436,9 @@ export function Sidebar({
   showRevenueForecastAccess = false,
   showExpenseDeskAccess = true,
   showAiSpendingAccess = true,
+  showUhpClientTracker = false,
+  showUhpPortalReminders = false,
+  showUhpVolumePoints = false,
 }: SidebarProps): React.ReactNode {
   const baseNavItems =
     variant === 'employee'
@@ -527,6 +545,15 @@ export function Sidebar({
     }
   }
 
+  const uhpItems: Array<NavItem> = [];
+  if (showUhpClientTracker)
+    uhpItems.push({ label: 'Client Tracker', href: '/uhp/clients', icon: ContactRound });
+  if (showUhpPortalReminders)
+    uhpItems.push({ label: 'Portal Reminders', href: '/uhp/reminders', icon: BellRing });
+  if (showUhpVolumePoints)
+    uhpItems.push({ label: 'Volume Points', href: '/uhp/volume-points', icon: Activity });
+  navItems = [...navItems, ...uhpItems];
+
   const activeHref = navItems.reduce<{ href: string; matchLength: number } | null>(
     (bestMatch, item) => {
       const matchLength = [item.href, ...(item.activeFor ?? [])].reduce(
@@ -550,7 +577,7 @@ export function Sidebar({
   const workspaceItems = navItems.filter((item) => item !== dashboardItem);
   const requestedWorkspace = getWorkspaceForPath(currentPath);
   const availableWorkspaceOptions = workspaceOptions.filter((option) => {
-    if (option.id === 'uhp' || option.id === 'property' || option.id === 'internal') return true;
+    if (option.id === 'property' || option.id === 'internal') return true;
     return createWorkspaceSections(variant, workspaceItems, option.id).length > 0;
   });
   const activeWorkspace = availableWorkspaceOptions.some(
@@ -565,7 +592,7 @@ export function Sidebar({
   const navSections = createWorkspaceSections(variant, workspaceItems, activeWorkspace);
 
   const handleWorkspaceSelect = (workspace: WorkspaceOption): void => {
-    if (workspace.id === 'uhp' || workspace.id === 'property') return;
+    if (workspace.id === 'property') return;
     if (workspace.id === 'internal') {
       if (dashboardItem) onNavigate(dashboardItem.href);
       return;
@@ -595,7 +622,10 @@ export function Sidebar({
             alt="SN International logo"
             width={60}
             height={10}
-            className={cn('h-7 w-auto rounded bg-white/95 px-1.5 py-1 object-contain', collapsed && 'h-7')}
+            className={cn(
+              'h-7 w-auto rounded bg-white/95 px-1.5 py-1 object-contain',
+              collapsed && 'h-7'
+            )}
           />
           {!collapsed && (
             <span className="font-heading text-lg font-semibold tracking-tight text-white">
@@ -640,9 +670,7 @@ export function Sidebar({
                 {!collapsed ? (
                   <>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-xs text-white/55">
-                        Workspace
-                      </span>
+                      <span className="block truncate text-xs text-white/55">Workspace</span>
                       <span className="block truncate text-sm font-semibold text-white">
                         {activeWorkspaceOption.label}
                       </span>
@@ -719,9 +747,7 @@ export function Sidebar({
                         <Icon
                           className={cn(
                             'h-5 w-5 flex-shrink-0 transition-colors',
-                            isActive
-                              ? 'text-[#C2DDE5]'
-                              : 'text-white/55 group-hover:text-white'
+                            isActive ? 'text-[#C2DDE5]' : 'text-white/55 group-hover:text-white'
                           )}
                           strokeWidth={1.5}
                         />
@@ -785,9 +811,7 @@ export function Sidebar({
         {/* Footer - hidden when collapsed to prevent overlay on toggle button */}
         {!collapsed && (
           <div className="border-t border-white/10 p-4">
-            <p className="text-xs text-white/50">
-              Where Policy Meets Productivity
-            </p>
+            <p className="text-xs text-white/50">Where Policy Meets Productivity</p>
           </div>
         )}
       </aside>

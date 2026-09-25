@@ -337,7 +337,34 @@ export function useVerifyExpense() {
 
       return res.json();
     },
-    onSuccess: (_, variables) => {
+    onMutate: async ({ id, verification }) => {
+      await queryClient.cancelQueries({ queryKey: expenseKeys.all });
+      const previousExpenses = queryClient.getQueriesData<{ data: ExpenseEntry[] }>({ queryKey: expenseKeys.lists() });
+      const previousExpense = queryClient.getQueryData<{ data: ExpenseEntry }>(expenseKeys.detail(id));
+      const applyVerification = (expense: ExpenseEntry): ExpenseEntry => ({
+        ...expense,
+        verified_debit_account: verification.verifiedDebitAccount,
+        verified_credit_account: verification.verifiedCreditAccount,
+        ...(verification.reviewerNotes !== undefined ? { reviewer_notes: verification.reviewerNotes } : {}),
+        ...(verification.taxAmount !== undefined && verification.taxAmount !== null ? { tax_amount: verification.taxAmount } : {}),
+        ...(verification.totalAmount !== undefined && verification.totalAmount !== null ? { total_amount: verification.totalAmount } : {}),
+        ...(verification.exchangeRateToAud !== undefined && verification.exchangeRateToAud !== null
+          ? { exchange_rate_to_aud: verification.exchangeRateToAud }
+          : {}),
+      });
+      queryClient.setQueriesData<{ data: ExpenseEntry[] }>({ queryKey: expenseKeys.lists() }, (old) =>
+        old ? { ...old, data: old.data.map((expense) => (expense.id === id ? applyVerification(expense) : expense)) } : old
+      );
+      queryClient.setQueryData<{ data: ExpenseEntry }>(expenseKeys.detail(id), (old) =>
+        old ? { ...old, data: applyVerification(old.data) } : old
+      );
+      return { previousExpenses, previousExpense };
+    },
+    onError: (_error, { id }, context) => {
+      context?.previousExpenses.forEach(([key, data]) => queryClient.setQueryData(key, data));
+      queryClient.setQueryData(expenseKeys.detail(id), context?.previousExpense);
+    },
+    onSettled: (_, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: expenseKeys.all });
       queryClient.invalidateQueries({ queryKey: expenseKeys.detail(variables.id) });
     },
@@ -395,7 +422,28 @@ export function useMatchExpense() {
 
       return res.json();
     },
-    onSuccess: (_, variables) => {
+    onMutate: async ({ id, match }) => {
+      await queryClient.cancelQueries({ queryKey: expenseKeys.all });
+      const previousExpenses = queryClient.getQueriesData<{ data: ExpenseEntry[] }>({ queryKey: expenseKeys.lists() });
+      const updateMatch = (expense: ExpenseEntry): ExpenseEntry =>
+        expense.id === id || expense.id === match.counterpartEntryId
+          ? {
+              ...expense,
+              match_status: match.matchStatus,
+              matched_entry_id: expense.id === id ? match.counterpartEntryId : id,
+              ...(match.matchedNotes !== undefined ? { matched_notes: match.matchedNotes } : {}),
+              matched_at: new Date().toISOString(),
+            }
+          : expense;
+      queryClient.setQueriesData<{ data: ExpenseEntry[] }>({ queryKey: expenseKeys.lists() }, (old) =>
+        old ? { ...old, data: old.data.map(updateMatch) } : old
+      );
+      return { previousExpenses };
+    },
+    onError: (_error, _variables, context) => {
+      context?.previousExpenses.forEach(([key, data]) => queryClient.setQueryData(key, data));
+    },
+    onSettled: (_, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: expenseKeys.all });
       queryClient.invalidateQueries({ queryKey: expenseKeys.detail(variables.id) });
     },
@@ -425,7 +473,28 @@ export function useLeadershipDecision() {
 
       return res.json();
     },
-    onSuccess: (_, variables) => {
+    onMutate: async ({ id, action, notes }) => {
+      await queryClient.cancelQueries({ queryKey: expenseKeys.all });
+      const previousExpenses = queryClient.getQueriesData<{ data: ExpenseEntry[] }>({ queryKey: expenseKeys.lists() });
+      const nextStatus: ExpenseEntry['processing_status'] = action === 'approve' ? 'approved' : 'rejected';
+      queryClient.setQueriesData<{ data: ExpenseEntry[] }>({ queryKey: expenseKeys.lists() }, (old) =>
+        old
+          ? {
+              ...old,
+              data: old.data.map((expense) =>
+                expense.id === id
+                  ? { ...expense, processing_status: nextStatus, ...(notes !== undefined ? { reviewer_notes: notes } : {}) }
+                  : expense
+              ),
+            }
+          : old
+      );
+      return { previousExpenses };
+    },
+    onError: (_error, _variables, context) => {
+      context?.previousExpenses.forEach(([key, data]) => queryClient.setQueryData(key, data));
+    },
+    onSettled: (_, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: expenseKeys.all });
       queryClient.invalidateQueries({ queryKey: expenseKeys.detail(variables.id) });
     },
@@ -452,7 +521,18 @@ export function useDeleteExpense() {
 
       return res.json() as Promise<{ success: boolean }>;
     },
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: expenseKeys.all });
+      const previousExpenses = queryClient.getQueriesData<{ data: ExpenseEntry[] }>({ queryKey: expenseKeys.lists() });
+      queryClient.setQueriesData<{ data: ExpenseEntry[] }>({ queryKey: expenseKeys.lists() }, (old) =>
+        old ? { ...old, data: old.data.filter((expense) => expense.id !== id) } : old
+      );
+      return { previousExpenses };
+    },
+    onError: (_error, _id, context) => {
+      context?.previousExpenses.forEach(([key, data]) => queryClient.setQueryData(key, data));
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: expenseKeys.all });
     },
   });

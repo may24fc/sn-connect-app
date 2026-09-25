@@ -282,7 +282,9 @@ export function useToggleResourceFeatured() {
       await queryClient.cancelQueries({ queryKey: queryKeys.resources.detail(id) });
 
       // Snapshot previous values
-      const previousResources = queryClient.getQueryData(queryKeys.resources.all);
+      const previousResourceLists = queryClient.getQueriesData({
+        queryKey: queryKeys.resources.all,
+      });
       const previousResource = queryClient.getQueryData(queryKeys.resources.detail(id));
 
       // Optimistically update detail view
@@ -305,13 +307,11 @@ export function useToggleResourceFeatured() {
         };
       });
 
-      return { previousResources, previousResource };
+      return { previousResourceLists, previousResource };
     },
     onError: (_err, { id }, context) => {
       // Rollback on error
-      if (context?.previousResources) {
-        queryClient.setQueryData(queryKeys.resources.all, context.previousResources);
-      }
+      context?.previousResourceLists.forEach(([key, data]) => queryClient.setQueryData(key, data));
       if (context?.previousResource) {
         queryClient.setQueryData(queryKeys.resources.detail(id), context.previousResource);
       }

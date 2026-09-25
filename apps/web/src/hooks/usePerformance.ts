@@ -534,6 +534,29 @@ export function useUpdateOKR() {
       }
       return response.json();
     },
+    onMutate: async (payload) => {
+      const queryKey = queryKeys.performance.okrs();
+      await queryClient.cancelQueries({ queryKey });
+      const previousOkrs = queryClient.getQueryData<OKR[]>(queryKey);
+      queryClient.setQueryData<OKR[]>(queryKey, (current) => current?.map((okr) =>
+        okr.id !== payload.id ? okr : {
+          ...okr,
+          ...(payload.objective !== undefined ? { objective: payload.objective } : {}),
+          ...(payload.description !== undefined ? { description: payload.description } : {}),
+          ...(payload.progress !== undefined ? { progressPercentage: payload.progress } : {}),
+          ...(payload.status !== undefined ? { status: payload.status as OKR['status'] } : {}),
+          ...(payload.weight !== undefined ? { weight: payload.weight } : {}),
+          ...(payload.adminRating !== undefined ? { adminRating: payload.adminRating } : {}),
+          ...(payload.adminComments !== undefined ? { adminComments: payload.adminComments } : {}),
+          ...(payload.evaluatedBy !== undefined ? { evaluatedBy: payload.evaluatedBy } : {}),
+          ...(payload.evaluatedAt !== undefined ? { evaluatedAt: payload.evaluatedAt } : {}),
+        } as OKR
+      ));
+      return { previousOkrs };
+    },
+    onError: (_error, _payload, context) => {
+      queryClient.setQueryData(queryKeys.performance.okrs(), context?.previousOkrs);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.performance.okrs() });
       queryClient.invalidateQueries({ queryKey: queryKeys.performance.all });
@@ -556,6 +579,16 @@ export function useDeleteOKR() {
       }
 
       return response.json();
+    },
+    onMutate: async ({ id }) => {
+      const queryKey = queryKeys.performance.okrs();
+      await queryClient.cancelQueries({ queryKey });
+      const previousOkrs = queryClient.getQueryData<OKR[]>(queryKey);
+      queryClient.setQueryData<OKR[]>(queryKey, (current) => current?.filter((okr) => okr.id !== id));
+      return { previousOkrs };
+    },
+    onError: (_error, _payload, context) => {
+      queryClient.setQueryData(queryKeys.performance.okrs(), context?.previousOkrs);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.performance.okrs() });
@@ -594,6 +627,33 @@ export function useUpdateKPI() {
         throw new Error(error.error || 'Failed to update KPI');
       }
       return response.json();
+    },
+    onMutate: async (payload) => {
+      const queryKey = queryKeys.performance.kpis();
+      await queryClient.cancelQueries({ queryKey });
+      const previousKpis = queryClient.getQueryData<KPI[]>(queryKey);
+      queryClient.setQueryData<KPI[]>(queryKey, (current) => current?.map((kpi) =>
+        kpi.id !== payload.id ? kpi : {
+          ...kpi,
+          ...(payload.name !== undefined ? { name: payload.name } : {}),
+          ...(payload.targetValue !== undefined ? { target: payload.targetValue } : {}),
+          ...(payload.currentValue !== undefined ? { actual: payload.currentValue } : {}),
+          ...(payload.unit !== undefined ? { unit: payload.unit } : {}),
+          ...(payload.selfRating !== undefined ? { selfRating: payload.selfRating } : {}),
+          ...(payload.rubric1 !== undefined ? { rubric1: payload.rubric1 } : {}),
+          ...(payload.rubric2 !== undefined ? { rubric2: payload.rubric2 } : {}),
+          ...(payload.rubric3 !== undefined ? { rubric3: payload.rubric3 } : {}),
+          ...(payload.rubric4 !== undefined ? { rubric4: payload.rubric4 } : {}),
+          ...(payload.adminRating !== undefined ? { adminRating: payload.adminRating } : {}),
+          ...(payload.adminComments !== undefined ? { adminComments: payload.adminComments } : {}),
+          ...(payload.evaluatedBy !== undefined ? { evaluatedBy: payload.evaluatedBy } : {}),
+          ...(payload.evaluatedAt !== undefined ? { evaluatedAt: payload.evaluatedAt } : {}),
+        } as KPI
+      ));
+      return { previousKpis };
+    },
+    onError: (_error, _payload, context) => {
+      queryClient.setQueryData(queryKeys.performance.kpis(), context?.previousKpis);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.performance.kpis() });
@@ -777,6 +837,36 @@ export function useUpdateOKRTarget() {
 
       return response.json();
     },
+    onMutate: async (payload) => {
+      const queryKey = queryKeys.performance.okrTargets(payload.okrId);
+      await queryClient.cancelQueries({ queryKey });
+      const previousTargets = queryClient.getQueryData<OKRTarget[]>(queryKey);
+      queryClient.setQueryData<OKRTarget[]>(queryKey, (current) => current?.map((target) =>
+        target.id !== payload.id ? target : {
+          ...target,
+          ...(payload.name !== undefined ? { name: payload.name } : {}),
+          ...(payload.description !== undefined ? { description: payload.description } : {}),
+          ...(payload.metricType !== undefined ? { metricType: payload.metricType } : {}),
+          ...(payload.startValue !== undefined ? { startValue: payload.startValue } : {}),
+          ...(payload.targetValue !== undefined ? { targetValue: payload.targetValue } : {}),
+          ...(payload.currentValue !== undefined ? { currentValue: payload.currentValue } : {}),
+          ...(payload.unit !== undefined ? { unit: payload.unit } : {}),
+          ...(payload.weight !== undefined ? { weight: payload.weight } : {}),
+          ...(payload.sortOrder !== undefined ? { sortOrder: payload.sortOrder } : {}),
+          ...(payload.adminRating !== undefined ? { adminRating: payload.adminRating } : {}),
+          ...(payload.adminComments !== undefined ? { adminComments: payload.adminComments } : {}),
+          ...(payload.rubric1 !== undefined ? { rubric1: payload.rubric1 } : {}),
+          ...(payload.rubric2 !== undefined ? { rubric2: payload.rubric2 } : {}),
+          ...(payload.rubric3 !== undefined ? { rubric3: payload.rubric3 } : {}),
+          ...(payload.rubric4 !== undefined ? { rubric4: payload.rubric4 } : {}),
+          ...(payload.selfRating !== undefined ? { selfRating: payload.selfRating } : {}),
+        } as OKRTarget
+      ));
+      return { previousTargets };
+    },
+    onError: (_error, payload, context) => {
+      queryClient.setQueryData(queryKeys.performance.okrTargets(payload.okrId), context?.previousTargets);
+    },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.performance.okrTargets(variables.okrId),
@@ -802,6 +892,16 @@ export function useDeleteOKRTarget() {
       }
 
       return response.json();
+    },
+    onMutate: async ({ id, okrId }) => {
+      const queryKey = queryKeys.performance.okrTargets(okrId);
+      await queryClient.cancelQueries({ queryKey });
+      const previousTargets = queryClient.getQueryData<OKRTarget[]>(queryKey);
+      queryClient.setQueryData<OKRTarget[]>(queryKey, (current) => current?.filter((target) => target.id !== id));
+      return { previousTargets };
+    },
+    onError: (_error, payload, context) => {
+      queryClient.setQueryData(queryKeys.performance.okrTargets(payload.okrId), context?.previousTargets);
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({

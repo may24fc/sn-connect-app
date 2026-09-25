@@ -7,7 +7,6 @@ import { useAIChat } from '@/hooks/useAIChat';
 import { useAIChatSuggestions } from '@/hooks/useAIChatSuggestions';
 import { useAiSpendingAccess } from '@/hooks/useAiSpendingAccess';
 import { useAtsAccess } from '@/hooks/useAtsAccess';
-import { usePaTaskAccess } from '@/hooks/usePaTaskAccess';
 import {
   useConversations,
   useCreateConversation,
@@ -25,7 +24,9 @@ import {
   useNotifications,
   useUnreadCount,
 } from '@/hooks/useNotifications';
+import { usePaTaskAccess } from '@/hooks/usePaTaskAccess';
 import { useRevenueForecastAccess } from '@/hooks/useRevenueForecastAccess';
+import { useUhpAccess } from '@/hooks/useUhpAccess';
 import {
   Dialog,
   DialogContent,
@@ -150,11 +151,16 @@ function SelfServiceLayoutInner({
   const { startTour, currentGroup } = useTour();
   const { theme, setTheme } = useTheme();
   const marketingReportsAccess = useMarketingReportsAccess();
-  const aiSpendingAccess = useAiSpendingAccess(user.role === 'employee' || user.role === 'associate');
+  const aiSpendingAccess = useAiSpendingAccess(
+    user.role === 'employee' || user.role === 'associate'
+  );
   const atsAccess = useAtsAccess(user.role === 'employee' || user.role === 'associate');
   const crmAccess = useCrmAccess(user.role === 'employee' || user.role === 'associate');
   const paTaskAccess = usePaTaskAccess(
-    user.role === 'employee' || user.role === 'associate' || user.role === 'admin' || user.role === 'super_admin'
+    user.role === 'employee' ||
+      user.role === 'associate' ||
+      user.role === 'admin' ||
+      user.role === 'super_admin'
   );
   const revenueForecastAccess = useRevenueForecastAccess(
     user.role === 'employee' || user.role === 'associate'
@@ -163,6 +169,8 @@ function SelfServiceLayoutInner({
     user.role === 'employee' || user.role === 'associate'
   );
   const expensesAccess = useExpensesAccess();
+  const uhpAccess = useUhpAccess();
+  const uhpModules = uhpAccess.data?.grantedModules ?? [];
   const sidebarVariant =
     user.role === 'associate'
       ? 'associate'
@@ -191,6 +199,9 @@ function SelfServiceLayoutInner({
             expensesAccess.capabilities.canViewDeskDepartment
           }
           showAiSpendingAccess={Boolean(aiSpendingAccess.data?.canAccess)}
+          showUhpClientTracker={uhpModules.includes('client_tracker')}
+          showUhpPortalReminders={uhpModules.includes('portal_reminders')}
+          showUhpVolumePoints={uhpModules.includes('volume_points')}
         />
       </div>
 
@@ -212,6 +223,9 @@ function SelfServiceLayoutInner({
               expensesAccess.capabilities.canViewDeskDepartment
             }
             showAiSpendingAccess={Boolean(aiSpendingAccess.data?.canAccess)}
+            showUhpClientTracker={uhpModules.includes('client_tracker')}
+            showUhpPortalReminders={uhpModules.includes('portal_reminders')}
+            showUhpVolumePoints={uhpModules.includes('volume_points')}
           />
         </DialogContent>
       </Dialog>

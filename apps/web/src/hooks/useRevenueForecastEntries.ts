@@ -92,7 +92,39 @@ export function useUpsertRevenueForecastEntry() {
       );
       return mapEntries(data);
     },
-    onSuccess: (_data, payload) => {
+    onMutate: async (payload) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.revenueForecast.entries() });
+      const previousEntries = queryClient.getQueriesData<Array<RevenueForecastEntry>>({
+        queryKey: queryKeys.revenueForecast.entries(),
+      });
+      const optimisticId = `optimistic-entry-${payload.year}-${payload.month}`;
+      queryClient.setQueriesData<Array<RevenueForecastEntry>>(
+        { queryKey: queryKeys.revenueForecast.entries() },
+        (old) => {
+          if (!old) return old;
+          const optimisticEntry: RevenueForecastEntry = {
+            id: optimisticId,
+            year: payload.year,
+            month: payload.month,
+            actualRevenueAud: payload.actualRevenueAud,
+            notes: payload.notes ?? null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          const existingIndex = old.findIndex(
+            (entry) => entry.year === payload.year && entry.month === payload.month
+          );
+          return existingIndex === -1
+            ? [...old, optimisticEntry]
+            : old.map((entry, index) => (index === existingIndex ? { ...entry, ...optimisticEntry } : entry));
+        }
+      );
+      return { previousEntries };
+    },
+    onError: (_error, _payload, context) => {
+      context?.previousEntries.forEach(([key, data]) => queryClient.setQueryData(key, data));
+    },
+    onSettled: (_data, _error, payload) => {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.revenueForecast.entries(payload.year),
       });
@@ -119,7 +151,35 @@ export function useUpdateRevenueForecastEntry() {
 
       await readJson<{ success: boolean }>(response, 'Failed to update Revenue Forecast entry');
     },
-    onSuccess: () => {
+    onMutate: async (payload) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.revenueForecast.entries() });
+      const previousEntries = queryClient.getQueriesData<Array<RevenueForecastEntry>>({
+        queryKey: queryKeys.revenueForecast.entries(),
+      });
+      queryClient.setQueriesData<Array<RevenueForecastEntry>>(
+        { queryKey: queryKeys.revenueForecast.entries() },
+        (old) =>
+          old
+            ? old.map((entry) =>
+                entry.id === payload.id
+                  ? {
+                      ...entry,
+                      ...(payload.actualRevenueAud !== undefined
+                        ? { actualRevenueAud: payload.actualRevenueAud }
+                        : {}),
+                      ...(payload.notes !== undefined ? { notes: payload.notes } : {}),
+                      updatedAt: new Date().toISOString(),
+                    }
+                  : entry
+              )
+            : old
+      );
+      return { previousEntries };
+    },
+    onError: (_error, _payload, context) => {
+      context?.previousEntries.forEach(([key, data]) => queryClient.setQueryData(key, data));
+    },
+    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.revenueForecast.entries() });
     },
   });
@@ -136,7 +196,21 @@ export function useDeleteRevenueForecastEntry() {
 
       await readJson<{ success: boolean }>(response, 'Failed to delete Revenue Forecast entry');
     },
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.revenueForecast.entries() });
+      const previousEntries = queryClient.getQueriesData<Array<RevenueForecastEntry>>({
+        queryKey: queryKeys.revenueForecast.entries(),
+      });
+      queryClient.setQueriesData<Array<RevenueForecastEntry>>(
+        { queryKey: queryKeys.revenueForecast.entries() },
+        (old) => old?.filter((entry) => entry.id !== id)
+      );
+      return { previousEntries };
+    },
+    onError: (_error, _id, context) => {
+      context?.previousEntries.forEach(([key, data]) => queryClient.setQueryData(key, data));
+    },
+    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.revenueForecast.entries() });
     },
   });

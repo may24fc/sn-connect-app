@@ -90,6 +90,18 @@ export function useDeleteOKRTargetEvidence(okrTargetId: string) {
         throw new Error(error.error || 'Failed to delete evidence');
       }
     },
+    onMutate: async (evidenceId) => {
+      const queryKey = queryKeys.performance.okrTargetEvidence(okrTargetId);
+      await queryClient.cancelQueries({ queryKey });
+      const previousEvidence = queryClient.getQueryData<{ data: OKRTargetEvidenceRow[] }>(queryKey);
+      queryClient.setQueryData<{ data: OKRTargetEvidenceRow[] }>(queryKey, (current) =>
+        current ? { ...current, data: current.data.filter((evidence) => evidence.id !== evidenceId) } : current
+      );
+      return { previousEvidence };
+    },
+    onError: (_error, _evidenceId, context) => {
+      queryClient.setQueryData(queryKeys.performance.okrTargetEvidence(okrTargetId), context?.previousEvidence);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.performance.okrTargetEvidence(okrTargetId),
