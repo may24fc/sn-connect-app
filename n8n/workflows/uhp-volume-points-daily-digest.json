@@ -1,0 +1,121 @@
+{
+  "name": "[Control Hub] UHP Volume Points Daily Digest",
+  "active": false,
+  "settings": { "timezone": "Asia/Manila", "executionOrder": "v1" },
+  "nodes": [
+    {
+      "id": "daily-trigger",
+      "name": "Daily 12:00 PHT",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300],
+      "parameters": { "rule": { "interval": [{ "field": "cronExpression", "expression": "0 12 * * *" }] } }
+    },
+    {
+      "id": "configure-destinations",
+      "name": "Configure Telegram Destinations",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300],
+      "parameters": {
+        "assignments": { "assignments": [
+          { "id": "destinations", "name": "destinationsJson", "type": "string", "value": "[]" },
+          { "id": "control-hub-url", "name": "controlHubUrl", "type": "string", "value": "https://app.sngroup.com.au" }
+        ] },
+        "options": {}
+      }
+    },
+    {
+      "id": "fetch-digest",
+      "name": "Fetch Control Hub Digest",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [690, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.controlHubUrl + '/api/uhp/volume-points/digest' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_CONTROL_HUB_CALLBACK_CREDENTIAL_ID",
+          "name": "Control Hub Callback"
+        }
+      }
+    },
+    {
+      "id": "build-message",
+      "name": "Build Daily Digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [930, 300],
+      "parameters": {
+        "jsCode": "const digest = $json.data;\nconst cfg = $('Configure Telegram Destinations').first().json;\nconst destinations = JSON.parse(cfg.destinationsJson || '[]');\nconst lines = digest.categories.map((row) => `${row.label}: ${row.actualVp} VP (target ${row.targetVp})`);\nconst changeLine = digest.changeCount === 0 ? 'No changes since the previous digest.' : `${digest.changeCount} updated entr${digest.changeCount === 1 ? 'y' : 'ies'} since the previous digest.`;\nconst text = [`UHP Volume Points - ${digest.reportingMonth.slice(0, 7)}`, ...lines, `Total: ${digest.totalActualVp} VP`, changeLine].join('\\n');\nreturn destinations.map((destination) => ({ json: { ...digest, controlHubUrl: cfg.controlHubUrl, destinationKey: destination.key, chatId: destination.chatId, telegramText: text, idempotencyKey: `vp-digest:${digest.intervalEndedAt.slice(0, 10)}:${destination.key}` } }));"
+      }
+    },
+    {
+      "id": "send-telegram",
+      "name": "Send Telegram Digest",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1170, 300],
+      "onError": "continueErrorOutput",
+      "parameters": { "chatId": "={{ $json.chatId }}", "text": "={{ $json.telegramText }}", "additionalFields": { "appendAttribution": false } }
+    },
+    {
+      "id": "record-run",
+      "name": "Record Digest Run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1410, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Build Daily Digest').item.json.controlHubUrl + '/api/uhp/volume-points/digest' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { intervalStartedAt: $('Build Daily Digest').item.json.intervalStartedAt, intervalEndedAt: $('Build Daily Digest').item.json.intervalEndedAt, reportingMonth: $('Build Daily Digest').item.json.reportingMonth, destinationKey: $('Build Daily Digest').item.json.destinationKey, idempotencyKey: $('Build Daily Digest').item.json.idempotencyKey, status: 'sent', summary: { changeCount: $('Build Daily Digest').item.json.changeCount, categories: $('Build Daily Digest').item.json.categories, totalActualVp: $('Build Daily Digest').item.json.totalActualVp }, n8nExecutionId: $execution.id, telegramMessageId: $json.message_id || $json.result?.message_id ? String($json.message_id ?? $json.result.message_id) : undefined, sentAt: $now.toISO() } }}",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_CONTROL_HUB_CALLBACK_CREDENTIAL_ID",
+          "name": "Control Hub Callback"
+        }
+      }
+    },
+    {
+      "id": "record-failure",
+      "name": "Record Digest Failure",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1410, 460],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Build Daily Digest').item.json.controlHubUrl + '/api/uhp/volume-points/digest' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { intervalStartedAt: $('Build Daily Digest').item.json.intervalStartedAt, intervalEndedAt: $('Build Daily Digest').item.json.intervalEndedAt, reportingMonth: $('Build Daily Digest').item.json.reportingMonth, destinationKey: $('Build Daily Digest').item.json.destinationKey, idempotencyKey: $('Build Daily Digest').item.json.idempotencyKey, status: 'failed', summary: { changeCount: $('Build Daily Digest').item.json.changeCount, categories: $('Build Daily Digest').item.json.categories, totalActualVp: $('Build Daily Digest').item.json.totalActualVp }, n8nExecutionId: $execution.id, errorMessage: String($json.error?.message ?? $json.message ?? 'Telegram delivery failed'), sentAt: null } }}",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_CONTROL_HUB_CALLBACK_CREDENTIAL_ID",
+          "name": "Control Hub Callback"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily 12:00 PHT": { "main": [[{ "node": "Configure Telegram Destinations", "type": "main", "index": 0 }]] },
+    "Configure Telegram Destinations": { "main": [[{ "node": "Fetch Control Hub Digest", "type": "main", "index": 0 }]] },
+    "Fetch Control Hub Digest": { "main": [[{ "node": "Build Daily Digest", "type": "main", "index": 0 }]] },
+    "Build Daily Digest": { "main": [[{ "node": "Send Telegram Digest", "type": "main", "index": 0 }]] },
+    "Send Telegram Digest": { "main": [[{ "node": "Record Digest Run", "type": "main", "index": 0 }], [{ "node": "Record Digest Failure", "type": "main", "index": 0 }]] }
+  }
+}

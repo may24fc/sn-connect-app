@@ -1,0 +1,100 @@
+{
+  "name": "[Control Hub] UHP Herbalife Portal Reminders",
+  "active": false,
+  "settings": { "timezone": "Asia/Manila", "executionOrder": "v1" },
+  "nodes": [
+    {
+      "id": "daily-trigger",
+      "name": "Daily 08:00 PHT",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300],
+      "parameters": { "rule": { "interval": [{ "field": "cronExpression", "expression": "0 8 * * *" }] } }
+    },
+    {
+      "id": "configure-destinations",
+      "name": "Configure Telegram Destinations",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300],
+      "parameters": {
+        "assignments": { "assignments": [
+          { "id": "destinations", "name": "destinationsJson", "type": "string", "value": "[]" },
+          { "id": "control-hub-url", "name": "controlHubUrl", "type": "string", "value": "https://app.sngroup.com.au" }
+        ] },
+        "options": {}
+      }
+    },
+    {
+      "id": "build-reminders",
+      "name": "Build Today's Reminders",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [690, 300],
+      "parameters": {
+        "jsCode": "const cfg = $json;\nconst now = $now.setZone('Asia/Manila');\nconst today = now.toFormat('yyyy-MM-dd');\nconst destinations = JSON.parse(cfg.destinationsJson || '[]');\nfunction deliveryFor(day) { const d = now.set({ day }); return d.weekday === 6 ? d.minus({ days: 1 }) : d.weekday === 7 ? d.minus({ days: 2 }) : d; }\nconst definitions = [\n  { type: 'ten_customer_form', day: 5, label: 'Complete the 10-customer form' },\n  { type: 'checks_deposits', day: 16, label: 'Complete checks and deposits' },\n];\nif (now.weekday === 1) definitions.push({ type: 'ro_group_report', day: now.day, label: 'Complete the weekly Monday RO group report' });\nconst due = definitions.filter((item) => deliveryFor(item.day).toFormat('yyyy-MM-dd') === today);\nreturn due.flatMap((item) => destinations.map((destination) => ({ json: { ...cfg, reminderType: item.type, deadlineDate: now.set({ day: item.day }).toFormat('yyyy-MM-dd'), destinationKey: destination.key, chatId: destination.chatId, scheduledFor: now.toISO(), idempotencyKey: `${item.type}:${today}:${destination.key}`, telegramText: `UHP reminder: ${item.label}.` } })));"
+      }
+    },
+    {
+      "id": "send-telegram",
+      "name": "Send Telegram Reminder",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [930, 300],
+      "onError": "continueErrorOutput",
+      "parameters": { "chatId": "={{ $json.chatId }}", "text": "={{ $json.telegramText }}", "additionalFields": { "appendAttribution": false } }
+    },
+    {
+      "id": "record-run",
+      "name": "Record Reminder Run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1170, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Configure Telegram Destinations').first().json.controlHubUrl + '/api/uhp/reminders/runs' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { reminderType: $('Build Today\\'s Reminders').item.json.reminderType, deadlineDate: $('Build Today\\'s Reminders').item.json.deadlineDate, scheduledFor: $('Build Today\\'s Reminders').item.json.scheduledFor, destinationKey: $('Build Today\\'s Reminders').item.json.destinationKey, idempotencyKey: $('Build Today\\'s Reminders').item.json.idempotencyKey, status: 'sent', n8nExecutionId: $execution.id, telegramMessageId: $json.message_id || $json.result?.message_id ? String($json.message_id ?? $json.result.message_id) : undefined, metadata: {}, sentAt: $now.toISO() } }}",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_CONTROL_HUB_CALLBACK_CREDENTIAL_ID",
+          "name": "Control Hub Callback"
+        }
+      }
+    },
+    {
+      "id": "record-failure",
+      "name": "Record Reminder Failure",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1170, 460],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Configure Telegram Destinations').first().json.controlHubUrl + '/api/uhp/reminders/runs' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { reminderType: $('Build Today\\'s Reminders').item.json.reminderType, deadlineDate: $('Build Today\\'s Reminders').item.json.deadlineDate, scheduledFor: $('Build Today\\'s Reminders').item.json.scheduledFor, destinationKey: $('Build Today\\'s Reminders').item.json.destinationKey, idempotencyKey: $('Build Today\\'s Reminders').item.json.idempotencyKey, status: 'failed', n8nExecutionId: $execution.id, errorMessage: String($json.error?.message ?? $json.message ?? 'Telegram delivery failed'), metadata: { telegramError: $json.error ?? $json }, sentAt: null } }}",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_CONTROL_HUB_CALLBACK_CREDENTIAL_ID",
+          "name": "Control Hub Callback"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily 08:00 PHT": { "main": [[{ "node": "Configure Telegram Destinations", "type": "main", "index": 0 }]] },
+    "Configure Telegram Destinations": { "main": [[{ "node": "Build Today's Reminders", "type": "main", "index": 0 }]] },
+    "Build Today's Reminders": { "main": [[{ "node": "Send Telegram Reminder", "type": "main", "index": 0 }]] },
+    "Send Telegram Reminder": { "main": [[{ "node": "Record Reminder Run", "type": "main", "index": 0 }], [{ "node": "Record Reminder Failure", "type": "main", "index": 0 }]] }
+  }
+}
