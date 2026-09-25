@@ -27,6 +27,7 @@ import {
 import { usePaTaskAccess } from '@/hooks/usePaTaskAccess';
 import { useRevenueForecastAccess } from '@/hooks/useRevenueForecastAccess';
 import { useUhpAccess } from '@/hooks/useUhpAccess';
+import { UHP_MODULE_VALUES } from '@/lib/uhp';
 import {
   Dialog,
   DialogContent,
@@ -169,8 +170,11 @@ function SelfServiceLayoutInner({
     user.role === 'employee' || user.role === 'associate'
   );
   const expensesAccess = useExpensesAccess();
-  const uhpAccess = useUhpAccess();
-  const uhpModules = uhpAccess.data?.grantedModules ?? [];
+  const hasAdminUhpAccess = user.role === 'admin' || user.role === 'super_admin';
+  const uhpAccess = useUhpAccess(!hasAdminUhpAccess);
+  const uhpModules = hasAdminUhpAccess
+    ? [...UHP_MODULE_VALUES]
+    : (uhpAccess.data?.grantedModules ?? []);
   const sidebarVariant =
     user.role === 'associate'
       ? 'associate'
