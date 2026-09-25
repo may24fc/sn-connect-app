@@ -577,7 +577,7 @@ export function Sidebar({
   const workspaceItems = navItems.filter((item) => item !== dashboardItem);
   const requestedWorkspace = getWorkspaceForPath(currentPath);
   const availableWorkspaceOptions = workspaceOptions.filter((option) => {
-    if (option.id === 'property' || option.id === 'internal') return true;
+    if (option.id === 'uhp' || option.id === 'property' || option.id === 'internal') return true;
     return createWorkspaceSections(variant, workspaceItems, option.id).length > 0;
   });
   const activeWorkspace = availableWorkspaceOptions.some(
@@ -599,7 +599,11 @@ export function Sidebar({
     }
 
     const firstItem = createWorkspaceSections(variant, workspaceItems, workspace.id)[0]?.items[0];
-    if (firstItem) onNavigate(firstItem.href);
+    if (firstItem) {
+      onNavigate(firstItem.href);
+    } else if (workspace.id === 'uhp') {
+      onNavigate('/uhp');
+    }
   };
 
   return (

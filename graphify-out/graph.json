@@ -191978,7 +191978,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "packages/ui/src/layout/Sidebar.tsx",
-      "source_location": "L608",
+      "source_location": "L612",
       "weight": 1.0
     },
     {
@@ -472710,5 +472710,5 @@
       "source_file": "docs/payments/wise-credentials-collection-form.md"
     }
   ],
-  "built_at_commit": "dbc31d99895c0102bee5c374ae9601ea33ef7824"
+  "built_at_commit": "8ce14a7228eb3923fcdae22f1f35f7cd436b85f5"
 }

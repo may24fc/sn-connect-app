@@ -1,7 +1,7 @@
 # Graph Report - sn-connect-app  (2026-09-25)
 
 ## Corpus Check
-- 1763 files · ~3,842,065 words
+- 1763 files · ~3,842,079 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 81 file(s) not represented in the graph (top: .csv 26, .otf 20, .toml 17)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `dbc31d99`
+- Built from commit: `8ce14a72`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -2623,4 +2623,4 @@ _Questions this graph is uniquely positioned to answer:_
 - **What is the exact relationship between `Intern Dashboard Page (Loading State)` and `Onboarding Flow (Loading State)`?**
   _Edge tagged AMBIGUOUS (relation: semantically_similar_to) - confidence is low._
 - **Why does `Control Hub — Documentation Hub` connect `Control Hub — Documentation Hub` to `Database Schema Reference`, `Production Cost Model`, `SN International Group Public Website — Technical Documentation`, `Apps/Web Audit - 2026-03-29`, `Deployment Documentation`, `PA Workflow & Productivity System Proposal`, `components/README.md`, `Control Hub HR Portal Implementation Checklist (V1)`, `ai/src/index.ts`, `ADR-002: Resources / Information Hub Architecture`, `src/database.types.ts`, `Admin Guides Index`?**
-  _High betweenness centrality (0.125) - this node is a cross-community bridge._
+  _High betweenness centrality (0.132) - this node is a cross-community bridge._

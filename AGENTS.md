@@ -9,7 +9,11 @@ Rules:
 - Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- Run graphify update . only after substantial repository changes, not after small instruction-only edits.
+- Skip graphify updates for AGENTS.md-only edits, prompt text tweaks, and other metadata/doc touchups that do not materially change architecture or code relationships.
+- Trigger graphify update . when either of these is true:
+	- 5 or more source files changed across apps/, packages/, supabase/, scripts/, or n8n/workflows/.
+	- Any structural change such as new/removed modules, route handlers, database migrations, workflow definitions, or cross-cutting architecture docs that affect system relationships.
 
 ## Supabase Environments
 

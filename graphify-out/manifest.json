@@ -6954,9 +6954,9 @@
     "semantic_hash": ""
   },
   "packages/ui/src/layout/Sidebar.tsx": {
-    "mtime": 1790156487.518393,
-    "seen": 1790156807.520473,
-    "ast_hash": "c5299327583164e623cf88bf0e91c1c7",
+    "mtime": 1790304295.701377,
+    "seen": 1790304541.921742,
+    "ast_hash": "3469f03d4938ba5699c6c7cbbea89b3d",
     "semantic_hash": ""
   },
   "packages/ui/src/primitives/avatar.tsx": {

@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "C:/Users/Ceferino Jumao-as V/.local/bin/graphify.EXE hook-check"
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .codex/graphify-hook-check.ps1"
           }
         ]
       }
