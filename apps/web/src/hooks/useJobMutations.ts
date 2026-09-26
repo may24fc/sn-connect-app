@@ -1,3 +1,4 @@
+import { stageFormDataFiles } from '@/lib/storage/stage-form-data';
 import { queryKeys } from '@/lib/query-keys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -266,7 +267,7 @@ export function useBulkImportApplications() {
 
       const res = await fetch('/api/applications/bulk-import', {
         method: 'POST',
-        body: formData,
+        body: await stageFormDataFiles(formData),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: 'Failed to import' }));

@@ -1,3 +1,4 @@
+import { resolveStagedFormData } from '@/lib/storage/upload-staging.server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedSupabase, isAnnouncementAdmin } from '../../_lib';
 
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     if (!isAnnouncementAdmin(role))
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-    const formData = await request.formData();
+    const formData = await resolveStagedFormData(await request.formData());
     const file = formData.get('file');
 
     if (!(file instanceof File)) {

@@ -1,3 +1,4 @@
+import { stageFormDataFiles } from '@/lib/storage/stage-form-data';
 import { queryKeys } from '@/lib/query-keys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -17,7 +18,7 @@ export function useUploadOnboardingDocument() {
 
       const response = await fetch('/api/onboarding/documents', {
         method: 'POST',
-        body: formData,
+        body: await stageFormDataFiles(formData),
       });
 
       if (!response.ok) {

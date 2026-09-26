@@ -1,3 +1,4 @@
+import { resolveStagedFormData } from '@/lib/storage/upload-staging.server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { extractText, getDocumentProxy } from 'unpdf';
 import { extractApplicantContactInfoFromResumeText } from '@/lib/ats/resume-contact';
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const formData = await request.formData();
+    const formData = await resolveStagedFormData(await request.formData());
     const jobPostingId = formData.get('job_posting_id') as string | null;
 
     if (!jobPostingId) {

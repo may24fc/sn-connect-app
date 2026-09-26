@@ -1,3 +1,4 @@
+import { resolveStagedFormData } from '@/lib/storage/upload-staging.server';
 import { logActivity } from '@/lib/audit';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse form data
-    const formData = await request.formData();
+    const formData = await resolveStagedFormData(await request.formData());
     const file = formData.get('file') as File;
     const employeeId = formData.get('employeeId') as string;
     const documentType = formData.get('documentType') as string;

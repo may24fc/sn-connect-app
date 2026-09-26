@@ -1,5 +1,6 @@
 'use client';
 
+import { stageFormDataFiles } from '@/lib/storage/stage-form-data';
 import { useAnnouncement } from '@/hooks/useAnnouncement';
 import {
   useArchiveAnnouncement,
@@ -548,7 +549,7 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
                 formData.append('file', file);
                 const res = await fetch(`/api/announcements/${announcementId}/attachments`, {
                   method: 'POST',
-                  body: formData,
+                  body: await stageFormDataFiles(formData),
                 });
                 if (!res.ok) throw new Error('Upload failed');
                 await uploadAttachment.refetch();

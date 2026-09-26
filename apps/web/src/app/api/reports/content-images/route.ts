@@ -1,3 +1,4 @@
+import { resolveStagedFormData } from '@/lib/storage/upload-staging.server';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const user = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const file = (await request.formData()).get('file');
+    const file = (await resolveStagedFormData(await request.formData())).get('file');
     if (!(file instanceof File)) return NextResponse.json({ error: 'An image file is required' }, { status: 400 });
     if (!ALLOWED_MIME_TYPES.has(file.type)) {
       return NextResponse.json({ error: 'Only JPEG, PNG, and WebP images are supported' }, { status: 400 });

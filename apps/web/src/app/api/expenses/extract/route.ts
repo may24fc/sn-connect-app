@@ -1,3 +1,4 @@
+import { resolveStagedFormData } from '@/lib/storage/upload-staging.server';
 import { logActivity } from '@/lib/audit';
 import { resolveExpenseCapabilities } from '@/lib/expenses/capabilities';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
@@ -314,7 +315,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const formData = await request.formData();
+    const formData = await resolveStagedFormData(await request.formData());
     const { file, businessJustification } = parseExpenseUploadFormData(formData);
 
     const { employeeId, departmentId } = await resolveEmployeeProfile(adminClient, user.id);

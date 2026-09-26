@@ -1,3 +1,4 @@
+import { resolveStagedFormData } from '@/lib/storage/upload-staging.server';
 import { onboardingDocumentTypeSchema } from '@/lib/schemas/onboarding.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedOnboardingContext } from '../_lib';
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const formData = await request.formData();
+    const formData = await resolveStagedFormData(await request.formData());
     const file = formData.get('file');
     const documentTypeRaw = formData.get('documentType');
 

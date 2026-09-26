@@ -1,3 +1,4 @@
+import { stageFormDataFiles } from '@/lib/storage/stage-form-data';
 import { ensureOk } from '@/lib/api-error';
 import { type ResourceFilters, queryKeys } from '@/lib/query-keys';
 import type { CreateResourceInput, UpdateResourceInput } from '@/lib/schemas/resource.schema';
@@ -336,7 +337,7 @@ export function useUploadResource() {
     }> => {
       const response = await fetch('/api/resources/upload', {
         method: 'POST',
-        body: formData,
+        body: await stageFormDataFiles(formData),
       });
 
       if (!response.ok) {
@@ -522,7 +523,7 @@ export function useBulkUploadResources() {
 
       const response = await fetch('/api/resources/bulk-upload', {
         method: 'POST',
-        body: formData,
+        body: await stageFormDataFiles(formData),
       });
 
       if (!response.ok) {

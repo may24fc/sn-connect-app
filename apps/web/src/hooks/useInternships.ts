@@ -1,4 +1,5 @@
 import { type InternshipFilters, queryKeys } from '@/lib/query-keys';
+import { stageFormDataFiles } from '@/lib/storage/stage-form-data';
 import type { DailyLogAttachment, ProjectFocusEntry } from '@hr-portal/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -279,6 +280,33 @@ export function useInternshipLogs(id: string | null, enabled = true) {
   });
 }
 
+/**
+ * Signed URLs for one daily log's attachments. URLs are signed for 10 minutes,
+ * so results go stale after 5 and refetch when the report is reopened.
+ */
+export function useDailyLogAttachments(
+  internshipId: string | null,
+  logId: string | null,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: queryKeys.internships.logAttachments(internshipId || 'none', logId || 'none'),
+    enabled: enabled && !!internshipId && !!logId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<Array<DailyLogAttachment>> => {
+      const response = await fetch(`/api/internships/${internshipId}/logs/${logId}/attachments`);
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to load attachments' }));
+        throw new Error(error.error || 'Failed to load attachments');
+      }
+
+      const { data } = (await response.json()) as { data: Array<DailyLogAttachment> };
+      return data;
+    },
+  });
+}
+
 export function useAssociateEvaluations(internshipId: string | null, enabled = true) {
   return useQuery({
     queryKey: queryKeys.internships.evaluations('self', internshipId || 'none'),
@@ -339,6 +367,10 @@ async function getDailyLogMutationErrorMessage(
   const payload = await response.json().catch(() => ({ error: fallback }));
   const rawError = typeof payload?.error === 'string' ? payload.error : fallback;
 
+  if (response.status === 413) {
+    return 'Attachments are too large to upload. Please reduce the file size and try again.';
+  }
+
   if (
     response.status === 409 &&
     rawError.toLowerCase().includes('daily log already exists for this date')
@@ -367,7 +399,7 @@ export function useCreateInternDailyLog() {
     }) => {
       const response = await fetch(`/api/internships/${payload.internshipId}/logs`, {
         method: 'POST',
-        body: buildDailyLogFormData({
+        body: await stageFormDataFiles(buildDailyLogFormData({
           logDate: payload.logDate,
           hoursWorked: payload.hoursWorked,
           projectEntries: payload.projectEntries,
@@ -379,7 +411,7 @@ export function useCreateInternDailyLog() {
             ? { retainedAttachments: payload.retainedAttachments }
             : {}),
           status: payload.status ?? 'submitted',
-        }),
+        })),
       });
 
       if (!response.ok) {
@@ -422,7 +454,7 @@ export function useUpdateInternDraftLog() {
     }) => {
       const response = await fetch(`/api/internships/${payload.internshipId}/logs`, {
         method: 'PATCH',
-        body: buildDailyLogFormData({
+        body: await stageFormDataFiles(buildDailyLogFormData({
           logId: payload.logId,
           ...(payload.logDate !== undefined ? { logDate: payload.logDate } : {}),
           ...(payload.hoursWorked !== undefined ? { hoursWorked: payload.hoursWorked } : {}),
@@ -437,12 +469,13 @@ export function useUpdateInternDraftLog() {
             ? { retainedAttachments: payload.retainedAttachments }
             : {}),
           ...(payload.status ? { status: payload.status } : {}),
-        }),
+        })),
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Failed to update daily log' }));
-        throw new Error(error.error || 'Failed to update daily log');
+        throw new Error(
+          await getDailyLogMutationErrorMessage(response, 'Failed to update daily log')
+        );
       }
 
       return response.json();

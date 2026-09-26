@@ -1,5 +1,6 @@
 'use client';
 
+import { EODAttachmentGallery } from '@/components/admin/EODAttachmentGallery';
 import type { InternDailyLog } from '@/hooks/useRealtimeInternDailyLogs';
 import {
   Avatar,
@@ -227,18 +228,12 @@ export function EODReportDetailModal({
               <Paperclip className="h-4 w-4 text-slate-700" />
               <Label className="text-sm font-medium">Proof Attachments</Label>
             </div>
-            <div className="space-y-2 rounded-md border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900">
-              {attachments.map((attachment) => (
-                <a
-                  key={attachment.id}
-                  href={attachment.signedUrl ?? attachment.filePath}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900"
-                >
-                  {attachment.fileName}
-                </a>
-              ))}
+            <div className="rounded-md border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900">
+              <EODAttachmentGallery
+                internshipId={log.internship_id}
+                logId={log.id}
+                expectedCount={attachments.length}
+              />
             </div>
           </div>
         )}

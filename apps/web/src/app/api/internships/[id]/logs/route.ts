@@ -1,5 +1,12 @@
 import { logActivity } from '@/lib/audit';
 import {
+  DAILY_LOG_ATTACHMENT_BUCKET,
+  DAILY_LOG_ATTACHMENT_MAX_SIZE,
+  DAILY_LOG_LINK_ATTACHMENT_MIME_TYPE,
+  resolveDailyLogAttachmentMimeType,
+  sanitizeDailyLogAttachmentName,
+} from '@/lib/daily-log-attachments';
+import {
   buildListSummary,
   buildTasksCompletedSummary,
   normalizeAttachmentRecords,
@@ -16,35 +23,15 @@ import {
   updateInternDailyLogSchema,
   updateInternDraftLogSchema,
 } from '@/lib/schemas/internship.schema';
+import { resolveStagedFormData } from '@/lib/storage/upload-staging.server';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import type { DailyLogAttachment } from '@hr-portal/ui';
 import { type NextRequest, NextResponse } from 'next/server';
 import type { z } from 'zod';
 import { canAccessInternship, getAuthedInternshipContext, isInternshipAdmin } from '../../_lib';
-
-const DAILY_LOG_ATTACHMENT_BUCKET = 'associate-daily-log-attachments';
-const DAILY_LOG_ATTACHMENT_SIGNED_URL_TTL_SECONDS = 60 * 10;
-const DAILY_LOG_ATTACHMENT_MAX_SIZE = 10 * 1024 * 1024;
-const DAILY_LOG_LINK_ATTACHMENT_MIME_TYPE = 'text/uri-list';
-const DAILY_LOG_ALLOWED_ATTACHMENT_MIME_TYPES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/gif',
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'text/plain',
-]);
+import { isExternalLinkAttachment, signDailyLogAttachments } from './_lib';
 
 type DailyLogPayload = z.infer<typeof createInternDailyLogSchema>;
-
-function isExternalLinkAttachment(attachment: DailyLogAttachment): boolean {
-  return (
-    attachment.mimeType === DAILY_LOG_LINK_ATTACHMENT_MIME_TYPE ||
-    /^https?:\/\//i.test(attachment.filePath)
-  );
-}
 
 function buildLinkAttachmentDisplayName(url: string): string {
   try {
@@ -70,8 +57,18 @@ function buildLinkAttachments(links: Array<string> | undefined): Array<DailyLogA
   }));
 }
 
-function sanitizeAttachmentName(fileName: string): string {
-  return fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+/**
+ * Drops retained attachments that do not belong to this internship, so a
+ * client cannot attach (and receive signed URLs for) another intern's files.
+ */
+function filterRetainedAttachments(
+  internshipId: string,
+  attachments: Array<DailyLogAttachment>
+): Array<DailyLogAttachment> {
+  return attachments.filter(
+    (attachment) =>
+      isExternalLinkAttachment(attachment) || attachment.filePath.startsWith(`${internshipId}/`)
+  );
 }
 
 function enrichDailyLogRow(
@@ -93,7 +90,7 @@ async function parseDailyLogRequest(
   const contentType = request.headers.get('content-type') || '';
 
   if (contentType.includes('multipart/form-data')) {
-    const formData = await request.formData();
+    const formData = await resolveStagedFormData(await request.formData());
     const payload = formData.get('payload');
 
     if (typeof payload !== 'string') {
@@ -112,31 +109,6 @@ async function parseDailyLogRequest(
   };
 }
 
-async function signDailyLogAttachments(
-  adminClient: ReturnType<typeof createSupabaseAdminClient>,
-  attachments: Array<DailyLogAttachment>
-): Promise<Array<DailyLogAttachment>> {
-  return Promise.all(
-    attachments.map(async (attachment) => {
-      if (isExternalLinkAttachment(attachment)) {
-        return {
-          ...attachment,
-          signedUrl: attachment.filePath,
-        };
-      }
-
-      const { data, error } = await adminClient.storage
-        .from(DAILY_LOG_ATTACHMENT_BUCKET)
-        .createSignedUrl(attachment.filePath, DAILY_LOG_ATTACHMENT_SIGNED_URL_TTL_SECONDS);
-
-      return {
-        ...attachment,
-        signedUrl: error ? null : data?.signedUrl ?? null,
-      };
-    })
-  );
-}
-
 async function uploadDailyLogAttachments(
   adminClient: ReturnType<typeof createSupabaseAdminClient>,
   internshipId: string,
@@ -146,7 +118,8 @@ async function uploadDailyLogAttachments(
   const uploaded: Array<DailyLogAttachment> = [];
 
   for (const file of files) {
-    if (!DAILY_LOG_ALLOWED_ATTACHMENT_MIME_TYPES.has(file.type)) {
+    const mimeType = resolveDailyLogAttachmentMimeType(file.name, file.type);
+    if (!mimeType) {
       throw new Error(`Unsupported attachment type: ${file.type || 'unknown'}`);
     }
 
@@ -154,11 +127,11 @@ async function uploadDailyLogAttachments(
       throw new Error('Attachment exceeds 10MB size limit');
     }
 
-    const filePath = `${internshipId}/${logId}/${crypto.randomUUID()}-${sanitizeAttachmentName(file.name)}`;
+    const filePath = `${internshipId}/${logId}/${crypto.randomUUID()}-${sanitizeDailyLogAttachmentName(file.name)}`;
     const { error } = await adminClient.storage
       .from(DAILY_LOG_ATTACHMENT_BUCKET)
       .upload(filePath, file, {
-        contentType: file.type,
+        contentType: mimeType,
         upsert: false,
       });
 
@@ -171,7 +144,7 @@ async function uploadDailyLogAttachments(
       fileName: file.name,
       filePath,
       fileSize: file.size,
-      mimeType: file.type,
+      mimeType,
     });
   }
 
@@ -338,7 +311,7 @@ export async function POST(
       .from('intern_daily_logs')
       .insert(
         buildDailyLogInsertValues(id, logId, payload, [
-          ...normalizeAttachmentRecords(payload.retainedAttachments),
+          ...filterRetainedAttachments(id, normalizeAttachmentRecords(payload.retainedAttachments)),
           ...uploadedAttachments,
           ...linkAttachments,
         ])
@@ -457,7 +430,7 @@ export async function PATCH(
       const existingAttachments = normalizeAttachmentRecords(existingLog.attachments);
       const retainedAttachments =
         payload.retainedAttachments !== undefined
-          ? normalizeAttachmentRecords(payload.retainedAttachments)
+          ? filterRetainedAttachments(id, normalizeAttachmentRecords(payload.retainedAttachments))
           : existingAttachments;
       const removedAttachments = existingAttachments.filter(
         (attachment) =>

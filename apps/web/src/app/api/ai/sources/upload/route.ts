@@ -1,3 +1,4 @@
+import { resolveStagedFormData } from '@/lib/storage/upload-staging.server';
 import { chunkDocument, generateBatchEmbeddings } from '@hr-portal/ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { extractText, getDocumentProxy } from 'unpdf';
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const formData = await request.formData();
+    const formData = await resolveStagedFormData(await request.formData());
     const file = formData.get('file') as File | null;
     const title = formData.get('title') as string | null;
     const description = formData.get('description') as string | null;

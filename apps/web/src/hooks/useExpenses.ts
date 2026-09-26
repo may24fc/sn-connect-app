@@ -1,3 +1,4 @@
+import { stageFormDataFiles } from '@/lib/storage/stage-form-data';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ExpenseLogRequestInput, ExpenseMatchInput, ExpenseVerifyInput } from '@/lib/schemas/expense.schema';
 
@@ -196,7 +197,7 @@ export function useUploadAndExtractExpense() {
 
       const res = await fetch('/api/expenses/extract', {
         method: 'POST',
-        body: formData,
+        body: await stageFormDataFiles(formData),
       });
 
       if (!res.ok) {
@@ -265,7 +266,7 @@ export function useQueueExpenseIngestion() {
           try {
             const response = await fetch('/api/expenses/ingest', {
               method: 'POST',
-              body: formData,
+              body: await stageFormDataFiles(formData),
             });
 
             const payload = await response.json().catch(() => null);

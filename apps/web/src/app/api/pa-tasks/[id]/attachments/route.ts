@@ -1,3 +1,4 @@
+import { resolveStagedFormData } from '@/lib/storage/upload-staging.server';
 import { logActivity } from '@/lib/audit';
 import { paTaskAttachmentCreateSchema } from '@/lib/schemas/pa-task.schema';
 import { NextRequest, NextResponse } from 'next/server';
@@ -177,7 +178,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     let error: any = null;
 
     if (contentType.includes('multipart/form-data')) {
-      const formData = await request.formData();
+      const formData = await resolveStagedFormData(await request.formData());
       const title = String(formData.get('title') ?? '').trim();
       const file = formData.get('file');
 

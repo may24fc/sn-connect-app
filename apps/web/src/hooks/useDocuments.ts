@@ -1,3 +1,4 @@
+import { stageFormDataFiles } from '@/lib/storage/stage-form-data';
 import { type DocumentFilters, queryKeys } from '@/lib/query-keys';
 import type { Document } from '@hr-portal/database';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -76,7 +77,7 @@ export function useUploadDocument() {
 
       const response = await fetch('/api/documents/upload', {
         method: 'POST',
-        body: formData,
+        body: await stageFormDataFiles(formData),
       });
 
       if (!response.ok) {

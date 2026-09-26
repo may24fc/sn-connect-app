@@ -1,5 +1,6 @@
 'use client';
 
+import { stageFormDataFiles } from '@/lib/storage/stage-form-data';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDirectory } from '@/hooks/useDirectory';
 import {
@@ -631,7 +632,7 @@ export default function PaTasksPage() {
 
       const response = await fetch(`/api/pa-tasks/${taskId}/attachments`, {
         method: 'POST',
-        body: formData,
+        body: await stageFormDataFiles(formData),
       });
       const result = await response.json().catch(() => ({ error: 'Failed to add task attachment' }));
       if (!response.ok) {

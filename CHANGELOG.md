@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **EOD attachment previews for admins** — The admin EOD report modal shows image attachments as thumbnails that open in a click-to-enlarge lightbox (arrow keys / buttons step through images and PDFs); PDFs preview inline and other files open in a new tab. Backed by `GET /api/internships/[id]/logs/[logId]/attachments`, which returns freshly signed URLs
 - **Marketing performance reporting** — Marketing spend tracking, organic-content reporting, ad-platform filters, report calendars, image uploads, and audit coverage; supporting schema and storage migrations (`20260812000001`, `20260814000001`, `20260909000001` through `20260916000001`)
 - **PA task tracker** — Personal-assistant task workspace with access grants, lookup tables, due dates, sorting, pagination, attachments, and protected storage (`20260813000001` through `20260814232637`)
 - **AI spending controls** — Provider-level spend tracking, all-time spend visibility, role-gated access, and legacy-constraint repairs (`20260828000001` through `20260828000004`)
@@ -68,6 +69,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Admin EOD attachment links** — The admin EOD modal linked uploaded attachments to raw storage paths (logs are loaded via realtime, which carries no signed URLs), so files from the private bucket could not be opened; it now fetches signed URLs when a report is opened
+- **File uploads over 4.5 MB failing across the portal** — Vercel rejects function request bodies above 4.5 MB, so attachments that forms advertised as allowed (10 MB) failed with a generic error; first reported on associate EOD submissions. Files now upload from the browser to a private `upload-staging` bucket via signed URLs (`POST /api/uploads/staging`), and the receiving route swaps the reference back into a `File` (`resolveStagedFormData`) before its existing validation runs. Covers EOD logs, tickets, PA tasks, announcements, documents, onboarding documents, OKR evidence, expenses (extract/ingest/import), resources, project documentation, AI knowledge sources, resume bulk import, marketing content images, and avatars (`20260926000001`)
+- **EOD attachment types** — The EOD form now restricts selection to supported types and names rejected files instead of failing on submit; `.doc`/`.docx` files with an empty browser MIME type are accepted by extension; retained attachments are limited to the log's own internship
+- **Careers resume limit** — Public careers form limit lowered from 5 MB to 4 MB (below the platform body limit) and now shows an error instead of silently ignoring oversized files
 - **Marketing schema preservation** — Kept established marketing tables and platform data intact during report-context normalization (`20260916000001`)
 - **Christmas tree access policies** — Hardened ornament access controls and resolved recursive update-policy behavior (`20260912000001`, `20260915000002`, `20260915000003`)
 - `fix(api)`: Use `supabaseAdmin` for all DB operations in POST routes (invoices, OKRs, KPIs, reports) to prevent nested RLS failures

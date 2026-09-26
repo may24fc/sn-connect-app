@@ -1,3 +1,4 @@
+import { stageFormDataFiles } from '@/lib/storage/stage-form-data';
 import { queryKeys } from '@/lib/query-keys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -49,7 +50,7 @@ export function useCreateOKRTargetEvidence(okrTargetId: string) {
         if (payload.label) {
           formData.set('label', payload.label);
         }
-        requestInit.body = formData;
+        requestInit.body = await stageFormDataFiles(formData);
       } else {
         requestInit.headers = { 'Content-Type': 'application/json' };
         requestInit.body = JSON.stringify(payload);

@@ -1,3 +1,4 @@
+import { resolveStagedFormData } from '@/lib/storage/upload-staging.server';
 import { logActivity } from '@/lib/audit';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
@@ -126,7 +127,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const formData = await request.formData();
+    const formData = await resolveStagedFormData(await request.formData());
     const file = formData.get('file');
 
     if (!(file instanceof File)) {

@@ -1,3 +1,4 @@
+import { resolveStagedFormData } from '@/lib/storage/upload-staging.server';
 import { createOKRTargetEvidenceSchema } from '@/lib/schemas/performance.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
@@ -116,7 +117,7 @@ async function createMultipartEvidencePayload(params: {
   okrTargetId: string;
   userId: string;
 }): Promise<CreateEvidencePayloadResult> {
-  const formData = await params.request.formData();
+  const formData = await resolveStagedFormData(await params.request.formData());
   const fileResult = getValidatedFile(formData);
   if ('response' in fileResult) {
     return fileResult;

@@ -1,3 +1,4 @@
+import { stageFormDataFiles } from '@/lib/storage/stage-form-data';
 import { queryKeys } from '@/lib/query-keys';
 import type { PaTaskAttachment } from '@/types/pa-task.types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -46,7 +47,7 @@ export function useCreatePaTaskAttachment(taskId: string) {
               formData.append('file', payload.file);
               return fetch(`/api/pa-tasks/${taskId}/attachments`, {
                 method: 'POST',
-                body: formData,
+                body: await stageFormDataFiles(formData),
               });
             })()
           : await fetch(`/api/pa-tasks/${taskId}/attachments`, {

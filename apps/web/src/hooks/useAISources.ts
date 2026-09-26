@@ -1,3 +1,4 @@
+import { stageFormDataFiles } from '@/lib/storage/stage-form-data';
 import { type AISourceFilters, queryKeys } from '@/lib/query-keys';
 import type { AccessLevel, FileStatus, KnowledgeSource } from '@hr-portal/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -104,7 +105,7 @@ export function useUploadSource() {
 
       const response = await fetch('/api/ai/sources/upload', {
         method: 'POST',
-        body: formData,
+        body: await stageFormDataFiles(formData),
       });
 
       if (!response.ok) {

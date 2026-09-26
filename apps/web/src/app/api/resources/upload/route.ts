@@ -1,3 +1,4 @@
+import { resolveStagedFormData } from '@/lib/storage/upload-staging.server';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedSupabase } from '../_lib';
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
     // Allow any authenticated user to upload a file. Admins keep full privileges.
     // Uploaded files will be associated with the uploader via the file path.
 
-    const formData = await request.formData();
+    const formData = await resolveStagedFormData(await request.formData());
     const file = formData.get('file') as File | null;
     const category = formData.get('category') as string | null;
 

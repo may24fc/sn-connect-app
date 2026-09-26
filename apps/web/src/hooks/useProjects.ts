@@ -1,3 +1,4 @@
+import { stageFormDataFiles } from '@/lib/storage/stage-form-data';
 import { STALE_TIMES } from '@/lib/query-client';
 import { type ProjectFilters, queryKeys } from '@/lib/query-keys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -286,7 +287,7 @@ export function useCreateProjectDocumentation() {
           `/api/projects/${input.projectId}/documentation`,
           {
             method: 'POST',
-            body: formData,
+            body: await stageFormDataFiles(formData),
           }
         );
       }

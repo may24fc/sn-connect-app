@@ -1,3 +1,4 @@
+import { stageFormDataFiles } from '@/lib/storage/stage-form-data';
 import { expenseKeys } from '@/hooks/useExpenses';
 import { toApiError } from '@/lib/api-error';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -36,7 +37,7 @@ export function useImportExpenses() {
 
       const response = await fetch('/api/expenses/import', {
         method: 'POST',
-        body: formData,
+        body: await stageFormDataFiles(formData),
       });
 
       if (!response.ok && response.status !== 207) {

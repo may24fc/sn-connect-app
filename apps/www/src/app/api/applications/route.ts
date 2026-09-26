@@ -3,7 +3,9 @@ import { z } from 'zod';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { sendApplicationConfirmation } from '@/lib/email';
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+// Vercel rejects request bodies over 4.5 MB before this route runs, so the
+// limit must stay below that (the resume shares the body with the form fields).
+const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
 const MAX_APPLICATIONS_PER_EMAIL_PER_HOUR = 3;
 const MAX_APPLICATIONS_PER_IP_PER_HOUR = 10;
 const ALLOWED_MIME_TYPES = [
@@ -154,7 +156,7 @@ export async function POST(request: NextRequest) {
 
     if (resumeFile) {
       if (resumeFile.size > MAX_FILE_SIZE) {
-        return NextResponse.json({ error: 'File too large (max 5MB)' }, { status: 413 });
+        return NextResponse.json({ error: 'File too large (max 4MB)' }, { status: 413 });
       }
       if (!ALLOWED_MIME_TYPES.includes(resumeFile.type)) {
         return NextResponse.json(

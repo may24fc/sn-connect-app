@@ -1,3 +1,4 @@
+import { resolveStagedFormData } from '@/lib/storage/upload-staging.server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { logActivity } from '@/lib/audit';
 import { getProjectAuthedContext, isProjectAdmin, userCanAccessProject } from '../../_lib';
@@ -270,7 +271,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     );
 
     if (contentType.includes('multipart/form-data')) {
-      const formData = await request.formData();
+      const formData = await resolveStagedFormData(await request.formData());
       const label = String(formData.get('label') || '').trim() || null;
       const file = formData.get('file');
 

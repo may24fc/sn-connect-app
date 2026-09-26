@@ -1,5 +1,6 @@
 'use client';
 
+import { stageFormDataFiles } from '@/lib/storage/stage-form-data';
 import { ServerPagination } from '@/components/data-display/ServerPagination';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { TicketDetailDialog } from '@/components/tickets/TicketDetailDialog';
@@ -168,7 +169,7 @@ export default function TicketsPage(): ReactNode {
 
         const response = await fetch(`/api/tickets/${ticketId}/attachments`, {
           method: 'POST',
-          body: formData,
+          body: await stageFormDataFiles(formData),
         });
 
         if (!response.ok) {

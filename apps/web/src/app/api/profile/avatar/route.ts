@@ -1,3 +1,4 @@
+import { resolveStagedFormData } from '@/lib/storage/upload-staging.server';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Parse multipart form data
-    const formData = await request.formData();
+    const formData = await resolveStagedFormData(await request.formData());
     const file = formData.get('file');
 
     if (!file || !(file instanceof File)) {

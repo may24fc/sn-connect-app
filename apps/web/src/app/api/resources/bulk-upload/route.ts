@@ -1,3 +1,4 @@
+import { resolveStagedFormData } from '@/lib/storage/upload-staging.server';
 import { bulkUploadSchema } from '@/lib/schemas/resource.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedSupabase, isResourceAdmin, normalizeExcerpt } from '../_lib';
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const formData = await request.formData();
+    const formData = await resolveStagedFormData(await request.formData());
     const files = formData.getAll('files') as Array<File>;
     const metadataStr = formData.get('metadata') as string | null;
 

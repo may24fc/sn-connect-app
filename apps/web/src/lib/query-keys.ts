@@ -476,6 +476,8 @@ export const queryKeys = {
     details: () => [...queryKeys.internships.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.internships.details(), id] as const,
     logs: (id: string) => [...queryKeys.internships.all, 'logs', id] as const,
+    logAttachments: (id: string, logId: string) =>
+      [...queryKeys.internships.all, 'logs', id, logId, 'attachments'] as const,
     evaluations: (scope: 'self' | 'admin', internshipId: string) =>
       [...queryKeys.internships.all, 'evaluations', scope, internshipId] as const,
   },

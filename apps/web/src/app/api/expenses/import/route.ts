@@ -1,3 +1,4 @@
+import { resolveStagedFormData } from '@/lib/storage/upload-staging.server';
 import { logActivity } from '@/lib/audit';
 import { convertExpenseAmountsToAud, detectExpenseCurrency } from '@/lib/fx/expense-conversion';
 import { parseExpenseImportFile } from '@/lib/import/expense-parser';
@@ -127,7 +128,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const formData = await request.formData();
+    const formData = await resolveStagedFormData(await request.formData());
     const file = formData.get('file');
     const employeeIdInput = formData.get('employeeId');
 

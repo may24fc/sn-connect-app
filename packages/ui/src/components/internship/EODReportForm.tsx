@@ -282,6 +282,15 @@ function buildFallbackProjectEntries(value?: string): Array<ProjectFocusEntry> {
   }));
 }
 
+/** Mirrors the allowed types of the associate-daily-log-attachments bucket. */
+const EOD_ATTACHMENT_EXTENSIONS = ['pdf', 'doc', 'docx', 'txt', 'jpg', 'jpeg', 'png', 'webp', 'gif'];
+const EOD_ATTACHMENT_ACCEPT = EOD_ATTACHMENT_EXTENSIONS.map((extension) => `.${extension}`).join(',');
+
+function isAllowedEodAttachment(file: File): boolean {
+  const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
+  return EOD_ATTACHMENT_EXTENSIONS.includes(extension);
+}
+
 function trimEntry(entry: ProjectFocusEntry): ProjectFocusEntry {
   return {
     id: entry.id,
@@ -368,6 +377,7 @@ export function EODReportForm({
   );
   const [errors, setErrors] = React.useState<FormErrors>({});
   const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [attachmentError, setAttachmentError] = React.useState<string | null>(null);
 
   const getSubmissionErrorMessage = (error: unknown): string => {
     if (error instanceof Error) {
@@ -529,6 +539,7 @@ export function EODReportForm({
     setBlockers(initialBlockers);
     setNextSteps(initialNextSteps);
     setAttachments(defaultValues?.attachments ?? []);
+    setAttachmentError(null);
     setAttachmentLinks(initialAttachmentLinks);
     setExistingAttachments(initialExistingAttachments);
     setErrors({});
@@ -750,8 +761,18 @@ export function EODReportForm({
 
             <FileDropZone
               onFilesSelected={(files) => {
-                setAttachments((currentFiles) => [...currentFiles, ...files]);
+                const rejected = files.filter((file) => !isAllowedEodAttachment(file));
+                setAttachmentError(
+                  rejected.length > 0
+                    ? `Not a supported file type: ${rejected.map((file) => file.name).join(', ')}`
+                    : null
+                );
+                setAttachments((currentFiles) => [
+                  ...currentFiles,
+                  ...files.filter(isAllowedEodAttachment),
+                ]);
               }}
+              accept={EOD_ATTACHMENT_ACCEPT}
               multiple
               maxFiles={10}
               maxSizeMB={10}
@@ -765,6 +786,7 @@ export function EODReportForm({
                 );
               }}
             />
+            {attachmentError && <p className="text-xs text-error">{attachmentError}</p>}
 
             <StringListField
               entries={attachmentLinks}

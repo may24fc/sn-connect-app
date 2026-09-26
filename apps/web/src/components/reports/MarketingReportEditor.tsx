@@ -1,5 +1,6 @@
 'use client';
 
+import { stageFormDataFiles } from '@/lib/storage/stage-form-data';
 import { MarketingReportsAccessState } from '@/components/reports/MarketingReportsAccessState';
 import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { useCreateReport } from '@/hooks/useCreateReport';
@@ -901,7 +902,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     try {
       const response = await fetch('/api/reports/content-images', {
         method: 'POST',
-        body: formData,
+        body: await stageFormDataFiles(formData),
       });
       const payload = await response.json() as { data?: { path: string; signedUrl: string }; error?: string };
 
