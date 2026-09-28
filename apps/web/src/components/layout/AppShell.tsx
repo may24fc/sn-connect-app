@@ -18,6 +18,7 @@ import { useCrmAccess } from '@/hooks/useCrmAccess';
 import { useExpensesAccess } from '@/hooks/useExpensesAccess';
 import { useMarketingAdSpendAccess } from '@/hooks/useMarketingAdSpendAccess';
 import { useMarketingReportsAccess } from '@/hooks/useMarketingReportsAccess';
+import { useHubActivityHeartbeat } from '@/hooks/useHubActivityHeartbeat';
 import {
   useDeleteNotification,
   useMarkAllRead,
@@ -162,6 +163,7 @@ function AppShellInner({
   onSettingsClick: () => void;
   children: ReactNode;
 }): ReactNode {
+  useHubActivityHeartbeat(true);
   const { startTour, currentGroup } = useTour();
   const { theme, setTheme } = useTheme();
   const marketingReportsAccess = useMarketingReportsAccess();
@@ -296,7 +298,8 @@ function AppShellNotificationBell(): ReactNode {
       onMarkRead={(id) => markRead.mutate(id)}
       onMarkAllRead={() =>
         markAllRead.mutate(undefined, {
-          onSuccess: () => addToast({ title: 'All notifications marked as read', variant: 'success' }),
+          onSuccess: () =>
+            addToast({ title: 'All notifications marked as read', variant: 'success' }),
           onError: () => addToast({ title: 'Failed to mark all as read', variant: 'error' }),
         })
       }

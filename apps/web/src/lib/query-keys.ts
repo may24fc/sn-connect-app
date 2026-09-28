@@ -38,7 +38,7 @@ export interface DivisionFilters {
 
 export interface TaskFilters {
   search?: string;
-  status?: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  status?: 'pending' | 'in_progress' | 'blocked' | 'completed' | 'cancelled';
   assigneeId?: string;
   priority?: 'low' | 'medium' | 'high' | 'urgent';
   category?: string;
@@ -345,6 +345,12 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.tasks.all, 'detail', id] as const,
     proofs: (taskId: string) => [...queryKeys.tasks.all, 'proofs', taskId] as const,
     comments: (taskId: string) => [...queryKeys.tasks.all, 'comments', taskId] as const,
+  },
+
+  workTracker: {
+    all: ['work-tracker'] as const,
+    view: (scope: 'mine' | 'team', days: 7 | 30 | 90) =>
+      [...queryKeys.workTracker.all, scope, days] as const,
   },
 
   // Reports

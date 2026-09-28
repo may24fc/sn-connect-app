@@ -1,8 +1,5 @@
 import { logActivity } from '@/lib/audit';
-import {
-  createNotification,
-  getUserDisplayName,
-} from '@/lib/notifications/create-notification';
+import { createNotification, getUserDisplayName } from '@/lib/notifications/create-notification';
 import { taskCreateSchema } from '@/lib/schemas/task.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
@@ -10,6 +7,7 @@ import {
   getTaskAuthedContext,
   getTaskWriteErrorMessage,
   validateTaskAssignee,
+  validateTaskProjectLink,
 } from './_lib';
 
 interface TaskRow {
@@ -19,8 +17,15 @@ interface TaskRow {
   assigned_to: string | null;
   assigned_by: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
-  category: 'launch' | 'optimization' | 'maintenance' | 'research' | 'administrative' | 'other' | null;
+  status: 'pending' | 'in_progress' | 'blocked' | 'completed' | 'cancelled';
+  category:
+    | 'launch'
+    | 'optimization'
+    | 'maintenance'
+    | 'research'
+    | 'administrative'
+    | 'other'
+    | null;
   tags: string[] | null;
   due_date: string | null;
   completed_at: string | null;
@@ -28,6 +33,8 @@ interface TaskRow {
   updated_at: string;
   created_by: string | null;
   deleted_at: string | null;
+  project_id: string | null;
+  milestone_id: string | null;
 }
 
 interface EmployeeNameRow {
@@ -72,11 +79,8 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     // The admin client bypasses RLS, so visibility must be enforced here.
-    // Super-admin task management only shows tasks assigned by the current super-admin.
-    // Everyone else only sees tasks assigned to them.
-    if (role === TASK_ASSIGNER_ROLE) {
-      query = query.eq('assigned_by', user.id);
-    } else {
+    // Super-admins oversee all staff tasks. Everyone else sees tasks assigned to them.
+    if (role !== TASK_ASSIGNER_ROLE) {
       query = query.eq('assigned_to', user.id);
     }
 
@@ -211,6 +215,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const projectLinkValidation = await validateTaskProjectLink(
+      supabaseAdmin,
+      parsed.data.projectId ?? null,
+      parsed.data.milestoneId ?? null,
+      user.id,
+      role
+    );
+    if (!projectLinkValidation.ok) {
+      return NextResponse.json(
+        { error: projectLinkValidation.error },
+        { status: projectLinkValidation.status }
+      );
+    }
+
     // Use admin client for INSERT — RLS tasks_insert_policy fails for
     // super_admin due to cross-table reference issues. Auth is enforced
     // at the application layer above (only super_admin can reach here).
@@ -226,6 +244,8 @@ export async function POST(request: NextRequest) {
         category: parsed.data.category || null,
         tags: parsed.data.tags ?? [],
         due_date: parsed.data.dueDate || null,
+        project_id: parsed.data.projectId ?? null,
+        milestone_id: parsed.data.milestoneId ?? null,
         created_by: user.id,
       })
       .select('*')
