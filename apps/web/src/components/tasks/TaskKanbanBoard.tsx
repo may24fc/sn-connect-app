@@ -7,12 +7,13 @@ import { GripVertical } from 'lucide-react';
 import Link from 'next/link';
 import { type DragEvent, useCallback, useMemo, useState } from 'react';
 
-type TaskStatusDB = 'pending' | 'in_progress' | 'completed' | 'cancelled';
+type TaskStatusDB = 'pending' | 'in_progress' | 'blocked' | 'completed' | 'cancelled';
 
 const COUNT_BADGE_VARIANT_BY_STATUS = {
   pending: 'warning',
   in_progress: 'info',
   completed: 'success',
+  blocked: 'danger',
   cancelled: 'danger',
 } as const;
 
@@ -33,6 +34,12 @@ const STATUS_COLUMNS: Array<{
     label: 'In Progress',
     headerColor: 'bg-zinc-100 dark:bg-zinc-800/50',
     dropZoneColor: 'bg-zinc-50/30 dark:bg-zinc-900/30',
+  },
+  {
+    value: 'blocked',
+    label: 'Blocked',
+    headerColor: 'bg-amber-100 dark:bg-amber-900/50',
+    dropZoneColor: 'bg-amber-50/30 dark:bg-amber-950/30',
   },
   {
     value: 'completed',
@@ -83,6 +90,7 @@ export function TaskKanbanBoard({
     const groups: Record<TaskStatusDB, Array<TaskRecord>> = {
       pending: [],
       in_progress: [],
+      blocked: [],
       completed: [],
       cancelled: [],
     };

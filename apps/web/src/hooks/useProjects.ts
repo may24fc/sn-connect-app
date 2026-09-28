@@ -6,12 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 export type ProjectStatus = 'planning' | 'active' | 'on_hold' | 'completed' | 'archived';
 export type ProjectHealth = 'on_track' | 'at_risk' | 'overdue';
 export type MilestonePeriodType = 'month' | 'week';
-export type MilestoneStatus =
-  | 'not_started'
-  | 'in_progress'
-  | 'submitted'
-  | 'approved'
-  | 'overdue';
+export type MilestoneStatus = 'not_started' | 'in_progress' | 'submitted' | 'approved' | 'overdue';
 export type ChecklistItemStatus = 'todo' | 'done';
 
 export interface ProjectRecord {
@@ -171,8 +166,7 @@ export function useProjectDocumentation(projectId: string | null | undefined) {
 export function useProjectMilestones(projectId: string | null | undefined) {
   return useQuery({
     queryKey: queryKeys.projects.milestones(projectId ?? ''),
-    queryFn: () =>
-      jsonFetch<{ data: MilestoneRecord[] }>(`/api/projects/${projectId}/milestones`),
+    queryFn: () => jsonFetch<{ data: MilestoneRecord[] }>(`/api/projects/${projectId}/milestones`),
     enabled: !!projectId,
     staleTime: STALE_TIMES.dynamic,
   });
@@ -201,7 +195,7 @@ export interface CreateProjectInput {
   targetEndDate: string;
   status?: ProjectStatus;
   pointsTotal?: number;
-   progressPct?: number;
+  progressPct?: number;
   isCompletedAlready?: boolean;
 }
 
@@ -216,6 +210,7 @@ export function useCreateProject() {
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.workTracker.all });
     },
   });
 }
@@ -245,6 +240,7 @@ export function useUpdateProject() {
     onSuccess: (_data, vars) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.workTracker.all });
     },
   });
 }
@@ -257,6 +253,7 @@ export function useDeleteProject() {
     onSuccess: (_data, vars) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.workTracker.all });
     },
   });
 }
@@ -474,32 +471,149 @@ export function useUpdateChecklistItem() {
     onMutate: async (vars) => {
       const checklistKey = queryKeys.projects.checklist(vars.milestoneId);
       await queryClient.cancelQueries({ queryKey: checklistKey });
-      const previousChecklist = queryClient.getQueryData<{ data: ChecklistItemRecord[] }>(checklistKey);
-      queryClient.setQueryData<{ data: ChecklistItemRecord[] }>(checklistKey, (old) =>
-        old
-          ? {
-              ...old,
-              data: old.data.map((item) =>
-                item.id === vars.itemId
-                  ? {
-                      ...item,
-                      ...(vars.status !== undefined ? { status: vars.status } : {}),
-                      ...(vars.title !== undefined ? { title: vars.title } : {}),
-                      ...(vars.description !== undefined ? { description: vars.description } : {}),
-                      updated_at: new Date().toISOString(),
-                    }
-                  : item
-              ),
-            }
-          : old
+      await queryClient.cancelQueries({ queryKey: queryKeys.projects.milestones(vars.projectId) });
+      await queryClient.cancelQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
+      await queryClient.cancelQueries({ queryKey: queryKeys.projects.lists() });
+      await queryClient.cancelQueries({ queryKey: queryKeys.workTracker.all });
+      const previousChecklist = queryClient.getQueryData<{ data: ChecklistItemRecord[] }>(
+        checklistKey
       );
-      return { previousChecklist };
+      const previousMilestones = queryClient.getQueryData<{ data: MilestoneRecord[] }>(
+        queryKeys.projects.milestones(vars.projectId)
+      );
+      const previousProject = queryClient.getQueryData<{ data: ProjectDetail }>(
+        queryKeys.projects.detail(vars.projectId)
+      );
+      const previousProjectLists = queryClient.getQueriesData({
+        queryKey: queryKeys.projects.lists(),
+      });
+      const previousWorkTracker = queryClient.getQueriesData({
+        queryKey: queryKeys.workTracker.all,
+      });
+
+      const nextChecklist = (previousChecklist?.data ?? []).map((item) =>
+        item.id === vars.itemId
+          ? {
+              ...item,
+              ...(vars.status !== undefined ? { status: vars.status } : {}),
+              ...(vars.title !== undefined ? { title: vars.title } : {}),
+              ...(vars.description !== undefined ? { description: vars.description } : {}),
+              updated_at: new Date().toISOString(),
+            }
+          : item
+      );
+      queryClient.setQueryData(checklistKey, { data: nextChecklist });
+
+      let optimisticProjectProgress: number | null = null;
+      if (vars.status !== undefined && nextChecklist.length && previousMilestones?.data) {
+        const directProgress = Math.round(
+          (nextChecklist.filter((item) => item.status === 'done').length / nextChecklist.length) *
+            100
+        );
+        let milestones = previousMilestones.data.map((milestone) =>
+          milestone.id === vars.milestoneId
+            ? { ...milestone, progress_pct: directProgress }
+            : milestone
+        );
+        const changedMilestone = milestones.find((milestone) => milestone.id === vars.milestoneId);
+        if (changedMilestone?.period_type === 'week' && changedMilestone.parent_milestone_id) {
+          const siblings = milestones.filter(
+            (milestone) => milestone.parent_milestone_id === changedMilestone.parent_milestone_id
+          );
+          const parentProgress = siblings.length
+            ? Math.round(
+                siblings.reduce((sum, milestone) => sum + milestone.progress_pct, 0) /
+                  siblings.length
+              )
+            : directProgress;
+          milestones = milestones.map((milestone) =>
+            milestone.id === changedMilestone.parent_milestone_id
+              ? { ...milestone, progress_pct: parentProgress }
+              : milestone
+          );
+        }
+        const months = milestones.filter((milestone) => milestone.period_type === 'month');
+        optimisticProjectProgress = months.length
+          ? Math.round(
+              months.reduce((sum, milestone) => sum + milestone.progress_pct, 0) / months.length
+            )
+          : 0;
+        queryClient.setQueryData(queryKeys.projects.milestones(vars.projectId), {
+          ...previousMilestones,
+          data: milestones,
+        });
+      }
+
+      if (optimisticProjectProgress !== null) {
+        const patchProject = (project: ProjectRecord) =>
+          project.id === vars.projectId
+            ? { ...project, progress_pct: optimisticProjectProgress }
+            : project;
+        queryClient.setQueryData<{ data: ProjectDetail }>(
+          queryKeys.projects.detail(vars.projectId),
+          (old) => (old ? { ...old, data: patchProject(old.data) as ProjectDetail } : old)
+        );
+        queryClient.setQueriesData({ queryKey: queryKeys.projects.lists() }, (old: any) =>
+          old?.data
+            ? { ...old, data: old.data.map((project: ProjectRecord) => patchProject(project)) }
+            : old
+        );
+        queryClient.setQueriesData({ queryKey: queryKeys.workTracker.all }, (old: any) => {
+          if (!old) return old;
+          const patchPerson = (person: any) => {
+            if (!person?.items) return person;
+            const items = person.items.map((item: any) =>
+              item.source === 'project' && item.id === vars.projectId
+                ? { ...item, progressPct: optimisticProjectProgress }
+                : item
+            );
+            const activeProjects = items.filter(
+              (item: any) =>
+                item.source === 'project' && !['completed', 'archived'].includes(item.status)
+            );
+            return {
+              ...person,
+              items,
+              averageProjectProgress: activeProjects.length
+                ? Math.round(
+                    activeProjects.reduce((sum: number, item: any) => sum + item.progressPct, 0) /
+                      activeProjects.length
+                  )
+                : 0,
+            };
+          };
+          return {
+            ...old,
+            ...(old.person ? { person: patchPerson(old.person) } : {}),
+            ...(old.people ? { people: old.people.map(patchPerson) } : {}),
+          };
+        });
+      }
+
+      return {
+        previousChecklist,
+        previousMilestones,
+        previousProject,
+        previousProjectLists,
+        previousWorkTracker,
+      };
     },
     onError: (_error, vars, context) => {
       queryClient.setQueryData(
         queryKeys.projects.checklist(vars.milestoneId),
         context?.previousChecklist
       );
+      queryClient.setQueryData(
+        queryKeys.projects.milestones(vars.projectId),
+        context?.previousMilestones
+      );
+      queryClient.setQueryData(queryKeys.projects.detail(vars.projectId), context?.previousProject);
+      for (const [key, data] of context?.previousProjectLists ?? []) {
+        queryClient.setQueryData(key, data);
+      }
+      for (const [key, data] of context?.previousWorkTracker ?? []) {
+        queryClient.setQueryData(key, data);
+      }
     },
     onSettled: (_data, _error, vars) => {
       void queryClient.invalidateQueries({
@@ -510,6 +624,7 @@ export function useUpdateChecklistItem() {
       });
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.workTracker.all });
     },
   });
 }
@@ -522,7 +637,9 @@ export function useDeleteChecklistItem() {
     onMutate: async (vars) => {
       const checklistKey = queryKeys.projects.checklist(vars.milestoneId);
       await queryClient.cancelQueries({ queryKey: checklistKey });
-      const previousChecklist = queryClient.getQueryData<{ data: ChecklistItemRecord[] }>(checklistKey);
+      const previousChecklist = queryClient.getQueryData<{ data: ChecklistItemRecord[] }>(
+        checklistKey
+      );
       queryClient.setQueryData<{ data: ChecklistItemRecord[] }>(checklistKey, (old) =>
         old ? { ...old, data: old.data.filter((item) => item.id !== vars.itemId) } : old
       );

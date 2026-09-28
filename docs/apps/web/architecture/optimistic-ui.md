@@ -52,8 +52,8 @@ The initial rollout added optimistic updates with rollback and reconciliation to
 | Announcement experience | Star/unstar, mark read, pin, add comment |
 | Information hub | Add/remove bookmark |
 | Preferences | Update notification preferences |
-| Tasks and support | Add task/ticket comments; add/remove task proofs; update/delete PA tasks |
-| Checklists | Employee onboarding and offboarding completion; project checklist update/delete |
+| Tasks and support | Add task/ticket comments; add/remove task proofs; task status across task and Work Tracker views; update/delete PA tasks |
+| Checklists | Employee onboarding and offboarding completion; project checklist update/delete with immediate milestone, project, and Work Tracker progress propagation |
 | Wellness Bingo | Board tiles/custom habit, partner, weekly recording |
 | Recruitment | Application status update and removal |
 | Reports | Archive/restore and approve/reject list transitions |

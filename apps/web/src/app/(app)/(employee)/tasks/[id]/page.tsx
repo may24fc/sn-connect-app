@@ -28,7 +28,18 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import type { TaskPriority, TaskStatus } from '@hr-portal/ui';
-import { AlertCircle, ArrowLeft, ExternalLink, FileText, Link2, Loader2, Plus, Send, Trash2, X } from 'lucide-react';
+import {
+  AlertCircle,
+  ArrowLeft,
+  ExternalLink,
+  FileText,
+  Link2,
+  Loader2,
+  Plus,
+  Send,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { type FormEvent, use, useState } from 'react';
 
 export default function TaskDetailPage({
@@ -137,7 +148,10 @@ export default function TaskDetailPage({
         <CardHeader>
           <div className="flex items-start justify-between gap-3">
             <CardTitle>{task.title}</CardTitle>
-            <TaskStatusBadge status={task.status as TaskStatus} dueDate={task.due_date ?? undefined} />
+            <TaskStatusBadge
+              status={task.status as TaskStatus}
+              dueDate={task.due_date ?? undefined}
+            />
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -169,7 +183,12 @@ export default function TaskDetailPage({
               value={task.status}
               disabled={updateTask.isPending}
               onValueChange={(value) => {
-                const newStatus = value as 'pending' | 'in_progress' | 'completed' | 'cancelled';
+                const newStatus = value as
+                  | 'pending'
+                  | 'in_progress'
+                  | 'blocked'
+                  | 'completed'
+                  | 'cancelled';
                 updateTask.mutate(
                   { status: newStatus },
                   {
@@ -183,8 +202,7 @@ export default function TaskDetailPage({
                     onError: (err) => {
                       addToast({
                         title: 'Error',
-                        description:
-                          err instanceof Error ? err.message : 'Failed to update task',
+                        description: err instanceof Error ? err.message : 'Failed to update task',
                         variant: 'error',
                       });
                     },
@@ -198,6 +216,7 @@ export default function TaskDetailPage({
               <SelectContent>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="blocked">Blocked</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
@@ -225,7 +244,10 @@ export default function TaskDetailPage({
         <CardContent className="space-y-4">
           {/* Add Proof Form */}
           {showAddProof && (
-            <form onSubmit={handleSubmitProof} className="space-y-3 rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
+            <form
+              onSubmit={handleSubmitProof}
+              className="space-y-3 rounded-lg border border-zinc-200 dark:border-zinc-700 p-4"
+            >
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-medium">New Proof</Label>
                 <Button type="button" variant="ghost" size="icon-sm" onClick={resetProofForm}>
@@ -241,10 +263,14 @@ export default function TaskDetailPage({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="link">
-                      <span className="flex items-center gap-1.5"><Link2 className="h-3.5 w-3.5" /> Link / URL</span>
+                      <span className="flex items-center gap-1.5">
+                        <Link2 className="h-3.5 w-3.5" /> Link / URL
+                      </span>
                     </SelectItem>
                     <SelectItem value="note">
-                      <span className="flex items-center gap-1.5"><FileText className="h-3.5 w-3.5" /> Note</span>
+                      <span className="flex items-center gap-1.5">
+                        <FileText className="h-3.5 w-3.5" /> Note
+                      </span>
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -288,7 +314,11 @@ export default function TaskDetailPage({
                 <Button type="button" variant="outline" size="sm" onClick={resetProofForm}>
                   Cancel
                 </Button>
-                <Button type="submit" size="sm" disabled={createProof.isPending || !proofContent.trim()}>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={createProof.isPending || !proofContent.trim()}
+                >
                   {createProof.isPending ? (
                     <>
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -334,9 +364,7 @@ export default function TaskDetailPage({
                       )}
                     </div>
                     <div className="min-w-0">
-                      {proof.label && (
-                        <p className="text-sm font-medium truncate">{proof.label}</p>
-                      )}
+                      {proof.label && <p className="text-sm font-medium truncate">{proof.label}</p>}
                       {proof.proof_type === 'link' ? (
                         <a
                           href={proof.content}
@@ -348,7 +376,9 @@ export default function TaskDetailPage({
                           <ExternalLink className="h-3 w-3 flex-shrink-0" />
                         </a>
                       ) : (
-                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{proof.content}</p>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                          {proof.content}
+                        </p>
                       )}
                       <p className="text-xs text-muted-foreground mt-1">
                         by {proof.submitted_by_name} &middot; {formatDate(proof.created_at)}

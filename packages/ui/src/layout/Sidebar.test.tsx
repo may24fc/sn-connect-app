@@ -17,7 +17,7 @@ describe('Sidebar workspaces', () => {
 
     expect(screen.getByText('Dashboard')).not.toBeNull();
     expect(screen.getByLabelText('Current workspace: Internal Management')).not.toBeNull();
-    expect(screen.getByText('Tasks')).not.toBeNull();
+    expect(screen.getByText('Work Tracker')).not.toBeNull();
     expect(screen.queryByText('Marketing Reports')).toBeNull();
   });
 
@@ -39,7 +39,7 @@ describe('Sidebar workspaces', () => {
     expect(screen.getByText('Ad Spend')).not.toBeNull();
     expect(screen.getByText('CRM Tracker')).not.toBeNull();
     expect(screen.getByText('Revenue Forecast')).not.toBeNull();
-    expect(screen.queryByText('Tasks')).toBeNull();
+    expect(screen.queryByText('Work Tracker')).toBeNull();
   });
 
   it('falls back to Internal Management when the requested workspace is unauthorized', () => {
@@ -59,9 +59,7 @@ describe('Sidebar workspaces', () => {
   it.each(['employee', 'associate'] as const)(
     'hides UHP from an ungranted %s workspace dropdown',
     (variant) => {
-      render(
-        <Sidebar variant={variant} currentPath="/uhp/reminders" onNavigate={vi.fn()} />
-      );
+      render(<Sidebar variant={variant} currentPath="/uhp/reminders" onNavigate={vi.fn()} />);
 
       expect(screen.getByLabelText('Current workspace: Internal Management')).not.toBeNull();
     }
@@ -98,4 +96,15 @@ describe('Sidebar workspaces', () => {
     expect(screen.getByText('CRM Tracker')).not.toBeNull();
     expect(screen.getByText('Revenue Forecast')).not.toBeNull();
   });
+
+  it.each(['admin', 'super_admin'] as const)(
+    'uses the unified Work Tracker for %s internal work visibility',
+    (variant) => {
+      render(<Sidebar variant={variant} currentPath="/work-tracker" onNavigate={vi.fn()} />);
+
+      expect(screen.getByText('Work Tracker')).not.toBeNull();
+      expect(screen.queryByText('Projects Tracker')).toBeNull();
+      expect(screen.queryByText('Task Management')).toBeNull();
+    }
+  );
 });
