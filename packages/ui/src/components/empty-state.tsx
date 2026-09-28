@@ -3,6 +3,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { FileQuestion } from 'lucide-react';
 import { createElement, isValidElement, type ElementType, type ReactNode } from 'react';
+import { AppLink } from '../primitives/app-link';
 import { Button } from '../primitives/button';
 import { cn } from '../utils/cn';
 
@@ -77,7 +78,7 @@ function renderAction(
   if (action.href) {
     return (
       <Button asChild variant={variant} size={size} disabled={action.disabled}>
-        <a href={action.href}>{content}</a>
+        <AppLink href={action.href}>{content}</AppLink>
       </Button>
     );
   }

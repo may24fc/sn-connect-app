@@ -577,7 +577,8 @@ export function Sidebar({
   const workspaceItems = navItems.filter((item) => item !== dashboardItem);
   const requestedWorkspace = getWorkspaceForPath(currentPath);
   const availableWorkspaceOptions = workspaceOptions.filter((option) => {
-    if (option.id === 'uhp' || option.id === 'property' || option.id === 'internal') return true;
+    if (option.id === 'property' || option.id === 'internal') return true;
+    if (option.id === 'uhp' && !isSelfServiceRole(variant)) return true;
     return createWorkspaceSections(variant, workspaceItems, option.id).length > 0;
   });
   const activeWorkspace = availableWorkspaceOptions.some(

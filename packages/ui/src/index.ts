@@ -16,6 +16,13 @@ export {
   type ToastState,
   type ToastVariant,
 } from './primitives/toast';
+export {
+  AppLink,
+  LinkProvider,
+  type AppLinkProps,
+  type LinkComponentType,
+  type LinkProviderProps,
+} from './primitives/app-link';
 export { Label } from './primitives/label';
 export {
   Card,

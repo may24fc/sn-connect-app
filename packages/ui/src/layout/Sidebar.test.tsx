@@ -56,6 +56,33 @@ describe('Sidebar workspaces', () => {
     expect(screen.queryByText('Marketing Reports')).toBeNull();
   });
 
+  it.each(['employee', 'associate'] as const)(
+    'hides UHP from an ungranted %s workspace dropdown',
+    (variant) => {
+      render(
+        <Sidebar variant={variant} currentPath="/uhp/reminders" onNavigate={vi.fn()} />
+      );
+
+      expect(screen.getByLabelText('Current workspace: Internal Management')).not.toBeNull();
+    }
+  );
+
+  it.each(['employee', 'associate'] as const)(
+    'shows UHP to a %s with at least one page grant',
+    (variant) => {
+      render(
+        <Sidebar
+          variant={variant}
+          currentPath="/uhp/reminders"
+          onNavigate={vi.fn()}
+          showUhpPortalReminders
+        />
+      );
+
+      expect(screen.getByLabelText('Current workspace: Ultimate Health Project')).not.toBeNull();
+    }
+  );
+
   it('gives super admins the full SFO toolset', () => {
     render(
       <Sidebar

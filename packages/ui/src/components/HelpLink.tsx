@@ -1,11 +1,12 @@
 'use client';
 
 import { HelpCircle } from 'lucide-react';
+import { AppLink } from '../primitives/app-link';
 
 interface HelpLinkProps {
   href: string;
   label?: string;
-  /** Render function for internal links (pass Next.js Link). Falls back to <a>. */
+  /** Render function for internal links. Defaults to the `LinkProvider` link, then <a>. */
   LinkComponent?: React.ComponentType<{ href: string; className?: string; children: React.ReactNode }>;
 }
 
@@ -27,8 +28,8 @@ export function HelpLink({ href, label = 'Help & FAQ', LinkComponent }: HelpLink
   }
 
   return (
-    <a href={href} className={className}>
+    <AppLink href={href} className={className}>
       {children}
-    </a>
+    </AppLink>
   );
 }

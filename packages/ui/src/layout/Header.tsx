@@ -17,6 +17,7 @@ import {
   User,
 } from 'lucide-react';
 import * as React from 'react';
+import { AppLink } from '../primitives/app-link';
 import { Avatar, AvatarFallback, AvatarImage } from '../primitives/avatar';
 import { Badge } from '../primitives/badge';
 import { Button } from '../primitives/button';
@@ -177,22 +178,22 @@ export function Header({
             <DropdownMenuLabel>Company activities</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <a href="/leaderboard">
+              <AppLink href="/leaderboard">
                 <Trophy className="mr-2 h-4 w-4" />
                 Company Leaderboard
-              </a>
+              </AppLink>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <a href="/bingo">
+              <AppLink href="/bingo">
                 <Grid2x2 className="mr-2 h-4 w-4" />
                 Wellness Bingo
-              </a>
+              </AppLink>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <a href="/christmas-tree">
+              <AppLink href="/christmas-tree">
                 <Gift className="mr-2 h-4 w-4" />
                 Christmas Wish Tree
-              </a>
+              </AppLink>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -200,9 +201,9 @@ export function Header({
         {(bookingUrl || embedUrl) &&
           (embedUrl ? (
             <Button asChild variant="ghost" size="icon">
-              <a href="/booking/steven" aria-label="Call with Steven">
+              <AppLink href="/booking/steven" aria-label="Call with Steven">
                 <Phone className="h-5 w-5" strokeWidth={1.5} />
-              </a>
+              </AppLink>
             </Button>
           ) : (
             <Button asChild variant="ghost" size="icon">
