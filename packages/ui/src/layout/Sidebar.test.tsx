@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Sidebar } from './Sidebar';
 
@@ -105,6 +105,25 @@ describe('Sidebar workspaces', () => {
       expect(screen.getByText('Work Tracker')).not.toBeNull();
       expect(screen.queryByText('Projects Tracker')).toBeNull();
       expect(screen.queryByText('Task Management')).toBeNull();
+    }
+  );
+
+  it.each([
+    ['/admin/resources', 'Resources'],
+    ['/admin/announcements', 'Announcements'],
+  ] as const)(
+    'keeps the super-admin %s route active and canonical',
+    (currentPath, label) => {
+      const onNavigate = vi.fn();
+      render(
+        <Sidebar variant="super_admin" currentPath={currentPath} onNavigate={onNavigate} />
+      );
+
+      const navButton = screen.getByRole('button', { name: label });
+      expect(navButton.className).toContain('bg-white/12');
+
+      fireEvent.click(navButton);
+      expect(onNavigate).toHaveBeenCalledWith(currentPath);
     }
   );
 });

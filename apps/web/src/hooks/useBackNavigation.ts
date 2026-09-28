@@ -8,8 +8,11 @@ interface UseBackNavigationOptions {
 }
 
 /**
- * Navigates back to the previous app location.
- * Priority: safe returnTo param -> browser history -> fallback path.
+ * Navigates to an explicit parent location.
+ * Priority: safe returnTo param -> fallback path.
+ *
+ * Deliberately avoids browser history so controls labelled "Back to X" always
+ * lead to X. Call router.back() directly for intentionally history-based UI.
  */
 export function useBackNavigation({ fallbackPath }: UseBackNavigationOptions): () => void {
   const router = useRouter();
@@ -18,13 +21,12 @@ export function useBackNavigation({ fallbackPath }: UseBackNavigationOptions): (
   return useCallback(() => {
     const returnTo = searchParams.get('returnTo');
 
-    if (returnTo && returnTo.startsWith('/')) {
+    if (
+      returnTo?.startsWith('/') &&
+      !returnTo.startsWith('//') &&
+      !returnTo.includes('\\')
+    ) {
       router.push(returnTo);
-      return;
-    }
-
-    if (typeof window !== 'undefined' && window.history.length > 1) {
-      router.back();
       return;
     }
 

@@ -84,13 +84,13 @@ import {
   Trash2,
   Users,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from 'react';
 import { WeeklyFocusCard } from '@/components/weekly-focus/WeeklyFocusCard';
 import { MondayCommitmentModal } from '@/components/modals/MondayCommitmentModal';
 import { ManageContributorsDialog } from '@/components/projects/ManageContributorsDialog';
 import { useMyWeeklyCommitment } from '@/hooks/useWeeklyCommitments';
+import { useBackNavigation } from '@/hooks/useBackNavigation';
 
 function isIsoAfter(left: string, right: string): boolean {
   return left > right;
@@ -324,7 +324,8 @@ export default function ProjectDetailPage() {
       project.created_by === user?.id ||
       project.supervisor_id === user?.id ||
       project.contributors.some((contributor) => contributor.user_id === user?.id));
-  const projectListPath = isAdmin ? '/admin/projects' : '/projects';
+  const projectListPath = isAdmin ? '/admin/war-room' : '/projects';
+  const handleBack = useBackNavigation({ fallbackPath: projectListPath });
   // The contributors API allows the project lead, the supervisor, and admins.
   // Admins land on this page in read-only mode, so they manage from the admin view.
   const canManageContributors =
@@ -574,12 +575,14 @@ export default function ProjectDetailPage() {
     <div className="flex h-full flex-col overflow-hidden">
       <header className="border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
         <div className="flex items-start gap-4">
-          <Link
-            href={projectListPath}
+          <button
+            type="button"
+            onClick={handleBack}
+            aria-label="Back to projects"
             className="mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
           >
             <ArrowLeft className="h-4 w-4" />
-          </Link>
+          </button>
           <ProgressRing value={project.progress_pct} size={64} strokeWidth={6} />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">

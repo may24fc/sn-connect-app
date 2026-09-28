@@ -106,6 +106,7 @@ export default function ArchivedResourcesPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/admin/resources"
+              aria-label="Back to resources"
               className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
             >
               <ArrowLeft className="h-5 w-5" />

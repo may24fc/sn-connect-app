@@ -2,6 +2,7 @@
 
 import { StatCard, StatCardGrid } from '@/components/data-display';
 import { AtsAccessManagerButton } from '@/components/admin/AtsAccessManagerDialog';
+import { RecruitmentSectionNav } from '@/components/recruitment/RecruitmentSectionNav';
 import { useApplications } from '@/hooks/useApplications';
 import { useJobPostings } from '@/hooks/useJobPostings';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState } from '@hr-portal/ui';
@@ -145,6 +146,7 @@ export default function AdminRecruitmentPage(): ReactNode {
 
   return (
     <div className="h-full space-y-6">
+      <RecruitmentSectionNav current="overview" />
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">

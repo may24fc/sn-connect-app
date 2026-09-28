@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { useBackNavigation } from '@/hooks/useBackNavigation';
 import {
   useFeaturedMasteryPreference,
   useUpdateFeaturedMasteryPreference,
@@ -29,11 +30,10 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import { ArrowLeft, Trophy } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 
 export default function AchievementsPage() {
-  const router = useRouter();
+  const handleBack = useBackNavigation({ fallbackPath: '/projects' });
   const { addToast } = useToast();
   const { user } = useAuth();
   const userId = user?.id ?? null;
@@ -60,10 +60,10 @@ export default function AchievementsPage() {
           <Button
             variant="ghost"
             className="mb-2 -ml-2"
-            onClick={() => router.back()}
+            onClick={handleBack}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
+            Back to projects
           </Button>
           <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
             <Trophy className="h-6 w-6 text-yellow-500" />

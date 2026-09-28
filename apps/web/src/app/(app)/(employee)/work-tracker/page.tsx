@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { WorkTrackerSectionNav } from '@/components/work-tracker/WorkTrackerSectionNav';
 import { useUpdateTask } from '@/hooks/useUpdateTask';
 import {
   type PersonWorkSummary,
@@ -51,6 +52,11 @@ function formatLastActive(value: string | null): string {
   }).format(new Date(value));
 }
 
+function withWorkTrackerReturn(href: string): string {
+  const separator = href.includes('?') ? '&' : '?';
+  return `${href}${separator}returnTo=${encodeURIComponent('/work-tracker')}`;
+}
+
 export default function WorkTrackerPage() {
   const { user } = useAuth();
   const canViewTeam = user?.role === 'admin' || user?.role === 'super_admin';
@@ -83,7 +89,7 @@ export default function WorkTrackerPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline">
-            <Link href="/projects/new">
+            <Link href={`/projects/new?returnTo=${encodeURIComponent('/work-tracker')}`}>
               <FolderKanban className="mr-2 h-4 w-4" />
               New project
             </Link>
@@ -96,6 +102,8 @@ export default function WorkTrackerPage() {
           </Button>
         </div>
       </header>
+
+      <WorkTrackerSectionNav current="overview" />
 
       <div className="flex flex-col gap-3 rounded-lg border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex gap-2">
@@ -349,7 +357,10 @@ function WorkItemCard({ item, canEditTask }: { item: WorkItem; canEditTask: bool
           <div className="flex items-start justify-between gap-3">
             <div>
               <Badge variant="outline">Project · {formatLabel(item.projectRole)}</Badge>
-              <Link href={item.href} className="mt-2 block font-semibold hover:underline">
+              <Link
+                href={withWorkTrackerReturn(item.href)}
+                className="mt-2 block font-semibold hover:underline"
+              >
                 {item.title}
               </Link>
             </div>
@@ -384,7 +395,10 @@ function TaskWorkItemCard({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <Badge variant="outline">Task · {formatLabel(item.priority)}</Badge>
-            <Link href={item.href} className="mt-2 block truncate font-semibold hover:underline">
+            <Link
+              href={withWorkTrackerReturn(item.href)}
+              className="mt-2 block truncate font-semibold hover:underline"
+            >
               {item.title}
             </Link>
             {item.projectName ? (

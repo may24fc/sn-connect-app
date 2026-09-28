@@ -1,6 +1,7 @@
 'use client';
 
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import { WorkTrackerSectionNav } from '@/components/work-tracker/WorkTrackerSectionNav';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { TaskKanbanBoard, type TaskStatusDB } from '@/components/tasks';
 import { SuperAdminTicketsPanel } from '@/components/tickets/SuperAdminTicketsPanel';
@@ -366,6 +367,7 @@ export default function TaskManagementPage() {
 
   return (
     <div className="space-y-6 p-3">
+      <WorkTrackerSectionNav current="tasks" />
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>

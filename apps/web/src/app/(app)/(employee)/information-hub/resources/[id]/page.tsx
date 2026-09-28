@@ -9,6 +9,7 @@ import {
 } from '@/hooks/useResourceBookmarks';
 import { useResourcesByCategory } from '@/hooks/useResourceFeed';
 import { useResource } from '@/hooks/useResources';
+import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { formatDate } from '@/lib/format';
 import {
   Button,
@@ -20,13 +21,14 @@ import {
   VideoPlayer,
   useToast,
 } from '@hr-portal/ui';
-import { Bookmark, CheckCircle2, Download, ExternalLink, FileText, Loader2 } from 'lucide-react';
+import { ArrowLeft, Bookmark, CheckCircle2, Download, ExternalLink, FileText, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export default function ResourceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const handleBack = useBackNavigation({ fallbackPath: '/information-hub' });
   const [resourceId, setResourceId] = useState<string>('');
   const [durationSeconds, setDurationSeconds] = useState(0);
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
@@ -165,9 +167,7 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
     forbiddenDescription: 'This resource is not shared with your role.',
     errorTitle: 'Failed to load resource',
     onRetry: () => void refetch(),
-    onBack: () => {
-      router.push('/information-hub');
-    },
+    onBack: handleBack,
     backLabel: 'Back to Information Hub',
   });
 
@@ -189,7 +189,12 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden -m-4 lg:-m-6">
-      <div className="border-b border-border bg-card px-6 py-3 text-sm">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border bg-card px-6 py-3 text-sm">
+        <Button variant="ghost" size="sm" onClick={handleBack} className="-ml-2">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+        <span className="text-muted-foreground">|</span>
         <Link
           href="/information-hub"
           className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"

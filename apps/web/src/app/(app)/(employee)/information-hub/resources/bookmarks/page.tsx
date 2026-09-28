@@ -93,7 +93,9 @@ export default function ResourceBookmarksPage() {
                       bookmark.resource.published_at || bookmark.resource.created_at
                     )}
                     onClick={() => {
-                      router.push(`/information-hub/resources/${bookmark.resource_id}`);
+                      router.push(
+                        `/information-hub/resources/${bookmark.resource_id}?returnTo=${encodeURIComponent('/information-hub/resources/bookmarks')}`
+                      );
                     }}
                     onBookmark={() => handleRemoveBookmark(bookmark.resource_id)}
                   />

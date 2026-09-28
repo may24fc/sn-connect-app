@@ -49,7 +49,7 @@ export default function TaskDetailPage({
 }) {
   const { id } = use(params);
   const { user } = useAuth();
-  const handleBack = useBackNavigation({ fallbackPath: '/tasks' });
+  const handleBack = useBackNavigation({ fallbackPath: '/work-tracker' });
   const { addToast } = useToast();
 
   const { data, isLoading, error } = useTask(id);
@@ -141,7 +141,7 @@ export default function TaskDetailPage({
     <div className="mx-auto max-w-3xl space-y-6">
       <Button variant="ghost" onClick={handleBack}>
         <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Tasks
+        Back to Work Tracker
       </Button>
 
       <Card>

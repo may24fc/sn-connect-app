@@ -110,6 +110,7 @@ export default function ArchivedAnnouncementsPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/admin/announcements"
+              aria-label="Back to announcements"
               className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
             >
               <ArrowLeft className="h-5 w-5" />

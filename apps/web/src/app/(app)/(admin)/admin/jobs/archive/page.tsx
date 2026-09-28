@@ -4,6 +4,7 @@ import { useRestoreJobPosting } from '@/hooks/useJobMutations';
 import type { JobPostingRecord } from '@/hooks/useJobPostings';
 import { useTableSort } from '@/hooks/useTableSort';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import { RecruitmentSectionNav } from '@/components/recruitment/RecruitmentSectionNav';
 import { formatDate } from '@/lib/format';
 import { queryKeys } from '@/lib/query-keys';
 import { useQuery } from '@tanstack/react-query';
@@ -22,9 +23,7 @@ import {
   TableRow,
   useToast,
 } from '@hr-portal/ui';
-import { AlertCircle, Archive, ArrowLeft, Loader2, RotateCcw, Search } from 'lucide-react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { AlertCircle, Archive, Loader2, RotateCcw, Search } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 
@@ -48,8 +47,6 @@ function useArchivedJobs(search?: string) {
 }
 
 export default function AdminArchivedJobsPage(): ReactNode {
-  const pathname = usePathname();
-  const basePath = pathname.startsWith('/ats') ? '/ats' : '/admin';
   const { addToast } = useToast();
   const [search, setSearch] = useState('');
 
@@ -95,14 +92,9 @@ export default function AdminArchivedJobsPage(): ReactNode {
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <div className="p-3">
+        <RecruitmentSectionNav current="archive" className="mb-6" />
         <div className="flex items-center justify-between gap-3 mb-6">
           <div className="flex items-center gap-3">
-            <Link
-              href={`${basePath}/jobs`}
-              className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
             <div>
               <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
                 Archived Job Postings

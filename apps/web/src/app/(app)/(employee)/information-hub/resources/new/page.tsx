@@ -1,6 +1,7 @@
 'use client';
 
 import { useCreateResource, useUploadResource } from '@/hooks/useResources';
+import { useBackNavigation } from '@/hooks/useBackNavigation';
 import type { CreateResourceInput } from '@/lib/schemas/resource.schema';
 import { Button, Input, ResourceTargetingSelector, ResourceUploader, Textarea, useToast } from '@hr-portal/ui';
 import { ArrowLeft, FileText, Link2, Send, Upload, Target, ChevronDown, ChevronUp } from 'lucide-react';
@@ -13,6 +14,10 @@ export default function EmployeeNewResourcePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const folderId = searchParams?.get('folderId') || undefined;
+  const parentPath = folderId
+    ? `/information-hub/resources/folder/${folderId}`
+    : '/information-hub';
+  const handleBack = useBackNavigation({ fallbackPath: parentPath });
   const uploadResource = useUploadResource();
   const createResource = useCreateResource();
   const { addToast } = useToast();
@@ -75,7 +80,7 @@ export default function EmployeeNewResourcePage() {
       } else {
         router.push('/information-hub');
       }
-    } catch (err) {
+    } catch {
       addToast({ title: 'Failed to submit resource', variant: 'error' });
     }
   };
@@ -87,9 +92,9 @@ export default function EmployeeNewResourcePage() {
     <div className="min-h-screen bg-background">
       <div className="max-w p-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" onClick={() => router.push('/information-hub')}>
+          <Button variant="ghost" onClick={handleBack}>
             <ArrowLeft className="mr-1 h-4 w-4" />
-            Back
+            {folderId ? 'Back to folder' : 'Back to Information Hub'}
           </Button>
           <h1 className="font-heading text-lg font-semibold text-foreground tracking-tight">Submit Resource</h1>
         </div>

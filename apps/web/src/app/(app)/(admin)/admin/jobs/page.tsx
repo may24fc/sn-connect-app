@@ -12,6 +12,7 @@ import { useTableSort } from '@/hooks/useTableSort';
 import { ServerPagination } from '@/components/data-display/ServerPagination';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { AtsAccessManagerButton } from '@/components/admin/AtsAccessManagerDialog';
+import { RecruitmentSectionNav } from '@/components/recruitment/RecruitmentSectionNav';
 import { formatDate } from '@/lib/format';
 import {
   Badge,
@@ -272,6 +273,7 @@ export default function AdminJobsPage(): ReactNode {
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <div className="p-3">
+        <RecruitmentSectionNav current="postings" className="mb-6" />
         <div className="flex items-center justify-between gap-3 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Job Postings</h1>

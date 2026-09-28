@@ -5,7 +5,7 @@ import { MonthlyCallFeedbackAdminReview } from '@/components/performance/Monthly
 import { MonthlySelfEvaluationAdminReview } from '@/components/performance/MonthlySelfEvaluationAdminReview';
 import { QuarterlyTemperatureCheckAdminReview } from '@/components/performance/QuarterlyTemperatureCheckAdminReview';
 import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
-import { ClipboardCheck } from 'lucide-react';
+import { ArrowLeft, ClipboardCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 
@@ -30,6 +30,12 @@ export function SelfEvaluationReviewWorkspace({
   return (
     <div className="space-y-6">
       <div className="space-y-3">
+        <Button asChild variant="ghost" size="sm" className="-ml-2 w-fit">
+          <Link href="/admin/performance">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to performance overview
+          </Link>
+        </Button>
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">

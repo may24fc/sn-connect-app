@@ -224,11 +224,16 @@ const superAdminNavItems: Array<NavItem> = [
   { label: 'AI Spending', href: '/ai-spending', icon: Sparkles },
   {
     label: 'Resources',
-    href: '/super-admin/resources',
+    href: '/admin/resources',
     icon: Library,
-    activeFor: ['/super-admin/ai-knowledge', '/admin/ai-knowledge'],
+    activeFor: ['/super-admin/resources', '/super-admin/ai-knowledge', '/admin/ai-knowledge'],
   },
-  { label: 'Announcements', href: '/super-admin/announcements', icon: Megaphone },
+  {
+    label: 'Announcements',
+    href: '/admin/announcements',
+    icon: Megaphone,
+    activeFor: ['/super-admin/announcements'],
+  },
 ];
 
 const exactOnlyNavHrefs = new Set([

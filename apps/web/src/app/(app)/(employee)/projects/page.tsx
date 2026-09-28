@@ -43,6 +43,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState, type FormEvent, useEffect } from 'react';
 import { WeeklyFocusCard } from '@/components/weekly-focus/WeeklyFocusCard';
+import { WorkTrackerSectionNav } from '@/components/work-tracker/WorkTrackerSectionNav';
 
 export default function ProjectsListPage() {
   const router = useRouter();
@@ -92,6 +93,9 @@ export default function ProjectsListPage() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
+      <div className="px-6 pt-4">
+        <WorkTrackerSectionNav current="projects" />
+      </div>
       <header className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
@@ -115,7 +119,11 @@ export default function ProjectsListPage() {
             <Trophy className="mr-2 h-4 w-4" />
             Achievements
           </Button>
-          <Button onClick={() => router.push('/projects/new')}>
+          <Button
+            onClick={() =>
+              router.push(`/projects/new?returnTo=${encodeURIComponent('/projects')}`)
+            }
+          >
             <Plus className="mr-2 h-4 w-4" />
             New Project
           </Button>

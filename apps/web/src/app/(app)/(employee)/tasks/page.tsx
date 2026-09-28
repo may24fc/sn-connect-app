@@ -1,6 +1,7 @@
 'use client';
 
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
+import { WorkTrackerSectionNav } from '@/components/work-tracker/WorkTrackerSectionNav';
 import { TaskKanbanBoard, type TaskStatusDB } from '@/components/tasks';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreateTask } from '@/hooks/useCreateTask';
@@ -326,6 +327,7 @@ export default function MyTasksPage() {
 
   return (
     <div className="space-y-6">
+      <WorkTrackerSectionNav current="tasks" />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">My Tasks</h1>

@@ -19,6 +19,7 @@ import {
 import { Activity, AlertTriangle, FolderKanban, Inbox, Target, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { WorkTrackerSectionNav } from '@/components/work-tracker/WorkTrackerSectionNav';
 
 export default function AdminProjectsPage() {
   const { user } = useAuth();
@@ -54,6 +55,7 @@ export default function AdminProjectsPage() {
 
   return (
     <div className="space-y-6 p-6">
+      <WorkTrackerSectionNav current="projects" />
       <header className="flex items-start justify-between gap-4">
         <div className="space-y-3">
           <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
@@ -95,7 +97,9 @@ export default function AdminProjectsPage() {
                 </Link>
               </Button>
               <Button asChild>
-                <Link href="/projects/new">
+                <Link
+                  href={`/projects/new?returnTo=${encodeURIComponent('/admin/war-room')}`}
+                >
                   <FolderKanban className="mr-2 h-4 w-4" />
                   New Project
                 </Link>

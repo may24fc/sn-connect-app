@@ -11,7 +11,7 @@ import {
 } from '@/hooks/useJobMutations';
 import { useRealtimeApplications } from '@/hooks/useRealtimeApplications';
 import { useTableSort } from '@/hooks/useTableSort';
-import { useBackNavigation } from '@/hooks/useBackNavigation';
+import { RecruitmentSectionNav } from '@/components/recruitment/RecruitmentSectionNav';
 import { ServerPagination } from '@/components/data-display/ServerPagination';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
@@ -61,7 +61,6 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import {
-  ArrowLeft,
   Bot,
   ChevronDown,
   CheckCircle,
@@ -83,7 +82,6 @@ import {
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { usePathname } from 'next/navigation';
 
 // ── Remove-confirmation dialog state ──
 type RemoveTarget = { id: string; name: string } | null;
@@ -167,9 +165,6 @@ function renderAiEvaluationBadge(application: ApplicationRecord) {
 const PAGE_SIZE = 50;
 
 export default function ApplicationsPage(): ReactNode {
-  const pathname = usePathname();
-  const basePath = pathname.startsWith('/ats') ? '/ats' : '/admin';
-  const handleBack = useBackNavigation({ fallbackPath: `${basePath}/jobs` });
   const { addToast } = useToast();
 
   const [search, setSearch] = useState('');
@@ -480,15 +475,9 @@ export default function ApplicationsPage(): ReactNode {
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <div className="p-3">
+        <RecruitmentSectionNav current="applications" className="mb-6" />
         <div className="flex items-center justify-between gap-3 mb-6">
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleBack}
-              className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
             <div>
               <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
                 Application Pipeline

@@ -140,7 +140,9 @@ export default function ResourceCategoryPage({
               bookmarkCount={resource.bookmark_count}
               dateLabel={formatDate(resource.published_at || resource.created_at)}
               onClick={() => {
-                router.push(`/information-hub/resources/${resource.id}`);
+                router.push(
+                  `/information-hub/resources/${resource.id}?returnTo=${encodeURIComponent(`/information-hub/resources/category/${category}`)}`
+                );
               }}
             />
           ))}

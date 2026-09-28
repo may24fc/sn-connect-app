@@ -1,8 +1,8 @@
 "use client";
 
-import React from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Upload } from 'lucide-react';
+import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { useResources } from '@/hooks/useResources';
 import { useAuth } from '@/contexts/AuthContext';
 import { ResourceGrid, ResourceCard, Card, CardHeader, CardTitle, Button, useToast } from '@hr-portal/ui';
@@ -18,6 +18,10 @@ interface Props {
 
 export default function FolderClient({ folderId }: Props) {
   const router = useRouter();
+  const handleBack = useBackNavigation({ fallbackPath: '/information-hub' });
+  const folderPath = `/information-hub/resources/folder/${folderId}`;
+  const resourceHref = (resourceId: string) =>
+    `/information-hub/resources/${resourceId}?returnTo=${encodeURIComponent(folderPath)}`;
   const { user } = useAuth();
 
   const { data: resourcesResp } = useResources({ page: 1, pageSize: 50, folderId });
@@ -75,7 +79,7 @@ export default function FolderClient({ folderId }: Props) {
       await deleteResource.mutateAsync(id);
       addToast({ title: 'Resource deleted', variant: 'success' });
       setResourceDeleteTarget(null);
-    } catch (err) {
+    } catch {
       addToast({ title: 'Failed to delete resource', variant: 'error' });
     }
   };
@@ -83,11 +87,18 @@ export default function FolderClient({ folderId }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center">
-        <Button variant="ghost" onClick={() => router.back()} className="-ml-2">
+        <Button variant="ghost" onClick={handleBack} className="-ml-2">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
+          Back to Information Hub
         </Button>
-        <Button className="ml-auto" onClick={() => router.push(`/information-hub/resources/new?folderId=${folderId}`)}>
+        <Button
+          className="ml-auto"
+          onClick={() =>
+            router.push(
+              `/information-hub/resources/new?folderId=${folderId}&returnTo=${encodeURIComponent(folderPath)}`
+            )
+          }
+        >
           <Upload className="mr-2 h-4 w-4" />
           Upload Resource
         </Button>
@@ -144,12 +155,12 @@ export default function FolderClient({ folderId }: Props) {
                   disabled={isPending}
                   {...(!isPending
                     ? {
-                        onClick: () => router.push(`/information-hub/resources/${r.id}`),
+                        onClick: () => router.push(resourceHref(r.id)),
                         onBookmark: () => handleBookmarkToggle(r.id),
                       }
                     : {})}
                   isOwner={user?.id === r.author_id}
-                  onEdit={() => router.push(`/information-hub/resources/${r.id}`)}
+                  onEdit={() => router.push(resourceHref(r.id))}
                   onDelete={() => setResourceDeleteTarget({ id: r.id, title: r.title })}
                 />
                   );

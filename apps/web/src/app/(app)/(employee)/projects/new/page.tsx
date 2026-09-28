@@ -2,6 +2,7 @@
 
 import { ProjectDescriptionFields } from '@/components/projects/ProjectDescriptionFields';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { useCreateProject } from '@/hooks/useProjects';
 import {
   type ProjectDescriptionSections,
@@ -16,13 +17,15 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import { ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 
 export default function NewProjectPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const projectListPath =
+    user?.role === 'admin' || user?.role === 'super_admin' ? '/admin/war-room' : '/projects';
+  const handleBack = useBackNavigation({ fallbackPath: projectListPath });
   const { addToast } = useToast();
   const createProject = useCreateProject();
 
@@ -56,7 +59,9 @@ export default function NewProjectPage() {
         isCompletedAlready,
       });
       addToast({ title: 'Project created', description: name.trim(), variant: 'success' });
-      router.push(`/projects/${result.data.id}`);
+      router.push(
+        `/projects/${result.data.id}?returnTo=${encodeURIComponent(projectListPath)}`
+      );
     } catch (err) {
       addToast({
         title: 'Failed to create project',
@@ -69,12 +74,16 @@ export default function NewProjectPage() {
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <header className="flex items-center gap-3 border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
-        <Link
-          href="/projects"
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={handleBack}
+          className="shrink-0"
         >
-          <ArrowLeft className="h-4 w-4" />
-        </Link>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to projects
+        </Button>
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
             New Project
@@ -144,7 +153,7 @@ export default function NewProjectPage() {
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="outline" onClick={() => router.back()}>
+                <Button type="button" variant="outline" onClick={handleBack}>
                   Cancel
                 </Button>
                 <Button type="submit" disabled={createProject.isPending}>

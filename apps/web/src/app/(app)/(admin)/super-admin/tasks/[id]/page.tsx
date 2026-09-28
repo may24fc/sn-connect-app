@@ -87,7 +87,7 @@ interface TaskDetailPageProps {
 export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNode {
   const { id } = use(params);
   const router = useRouter();
-  const handleBack = useBackNavigation({ fallbackPath: '/super-admin/tasks' });
+  const handleBack = useBackNavigation({ fallbackPath: '/work-tracker' });
   const [task, setTask] = useState<Task | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -204,7 +204,7 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
           </p>
           <Button onClick={handleBack}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Tasks
+            Back to Work Tracker
           </Button>
         </div>
       </div>
@@ -217,7 +217,7 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Button variant="ghost" onClick={handleBack} className="w-fit">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Tasks
+          Back to Work Tracker
         </Button>
         <div className="flex gap-2">
           <Button
