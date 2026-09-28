@@ -8,7 +8,6 @@ This guide covers employee project planning, execution tracking, and pool workfl
 - /projects/new — Create a new project
 - /projects/[id] — Project detail view
 - /projects/pool — Shared project pool and backlog
-- /work-tracker — Combined project and task visibility
 
 ## Projects (/projects)
 
@@ -33,7 +32,6 @@ Detail view supports:
 - Milestone/progress review
 - Status and health visibility
 - Collaboration context and updates
-The Work Tracker shows tasks linked to each project for context. Linked task completion does not change calculated project progress; milestone checklist completion remains the canonical progress source.
 
 ## Project Pool (/projects/pool)
 

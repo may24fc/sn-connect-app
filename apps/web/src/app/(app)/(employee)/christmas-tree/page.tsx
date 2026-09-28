@@ -3,6 +3,7 @@
 import type { ChristmasTreeSnapshot } from '@/hooks/useChristmasTree';
 import {
   useChristmasTree,
+  useChristmasTreeRealtime,
   useDeleteChristmasOrnament,
   useDeleteChristmasWish,
   useMoveChristmasOrnament,
@@ -103,6 +104,7 @@ export default function ChristmasTreePage() {
   } | null>(null);
   const [placementMessage, setPlacementMessage] = useState<string | null>(null);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
+  const realtimeStatus = useChristmasTreeRealtime(true);
 
   useEffect(() => {
     const handleFullscreenChange = () => setIsPresentationMode(Boolean(document.fullscreenElement));
@@ -150,6 +152,7 @@ export default function ChristmasTreePage() {
               {data.event.title}
             </h1>
             <div className="flex items-center gap-2">
+              <RealtimeIndicator status={realtimeStatus} />
               <Button
                 aria-label="Exit fullscreen presentation"
                 onClick={() => void togglePresentationMode()}
@@ -195,6 +198,7 @@ export default function ChristmasTreePage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <RealtimeIndicator status={realtimeStatus} />
           <Button onClick={() => void togglePresentationMode()} size="sm" variant="outline">
             <Maximize /> Present tree
           </Button>
@@ -992,6 +996,18 @@ function getChristmasTreeDropPosition(
     positionX <= 50 + horizontalSpread;
 
   return isOnTree ? { positionX, positionY } : null;
+}
+
+function RealtimeIndicator({ status }: { status: ReturnType<typeof useChristmasTreeRealtime> }) {
+  const label =
+    status === 'connected'
+      ? 'Live updates on'
+      : status === 'connecting'
+        ? 'Connecting'
+        : status === 'fallback'
+          ? 'Refreshing every 30 seconds'
+          : 'Refresh to update';
+  return <Badge variant="secondary">{label}</Badge>;
 }
 
 function ChristmasTreeLoading() {

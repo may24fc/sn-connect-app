@@ -1,5 +1,8 @@
 import { logActivity } from '@/lib/audit';
-import { createNotification, getUserDisplayName } from '@/lib/notifications/create-notification';
+import {
+  createNotification,
+  getUserDisplayName,
+} from '@/lib/notifications/create-notification';
 import { taskUpdateSchema } from '@/lib/schemas/task.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
@@ -7,7 +10,6 @@ import {
   getTaskAuthedContext,
   getTaskWriteErrorMessage,
   validateTaskAssignee,
-  validateTaskProjectLink,
 } from '../_lib';
 
 interface EmployeeNameRow {
@@ -89,7 +91,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    const { supabase, supabaseAdmin, user, role } = auth.context;
+    const { supabase, user, role } = auth.context;
 
     const body = await request.json();
     const parsed = taskUpdateSchema.safeParse(body);
@@ -99,23 +101,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         { error: 'Invalid request body', details: parsed.error.flatten() },
         { status: 400 }
       );
-    }
-
-    const { data: authorizationTask } = await supabaseAdmin
-      .from('tasks')
-      .select('assigned_to, assigned_by')
-      .eq('id', id)
-      .is('deleted_at', null)
-      .maybeSingle();
-    if (!authorizationTask) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
-    }
-    if (
-      role !== TASK_ASSIGNER_ROLE &&
-      authorizationTask.assigned_to !== user.id &&
-      authorizationTask.assigned_by !== user.id
-    ) {
-      return NextResponse.json({ error: 'Task update access denied' }, { status: 403 });
     }
 
     const updates: Record<string, string | string[] | null> = {};
@@ -152,37 +137,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (parsed.data.dueDate !== undefined) {
       updates.due_date = parsed.data.dueDate || null;
     }
-    if (parsed.data.projectId !== undefined || parsed.data.milestoneId !== undefined) {
-      const { data: existingLink } = await supabaseAdmin
-        .from('tasks')
-        .select('project_id, milestone_id')
-        .eq('id', id)
-        .is('deleted_at', null)
-        .maybeSingle();
-      const projectId =
-        parsed.data.projectId !== undefined
-          ? parsed.data.projectId
-          : (existingLink?.project_id ?? null);
-      const milestoneId =
-        parsed.data.milestoneId !== undefined
-          ? parsed.data.milestoneId
-          : (existingLink?.milestone_id ?? null);
-      const projectLinkValidation = await validateTaskProjectLink(
-        supabaseAdmin,
-        projectId ?? null,
-        milestoneId ?? null,
-        user.id,
-        role
-      );
-      if (!projectLinkValidation.ok) {
-        return NextResponse.json(
-          { error: projectLinkValidation.error },
-          { status: projectLinkValidation.status }
-        );
-      }
-      updates.project_id = projectId ?? null;
-      updates.milestone_id = milestoneId ?? null;
-    }
 
     if (parsed.data.status === 'completed') {
       updates.completed_at = new Date().toISOString();
@@ -216,7 +170,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const taskTitle = data.title;
 
     // If task was re-assigned to a new person, notify the new assignee
-    if (parsed.data.assignedTo && parsed.data.assignedTo !== existingTask?.assigned_to) {
+    if (
+      parsed.data.assignedTo &&
+      parsed.data.assignedTo !== existingTask?.assigned_to
+    ) {
       createNotification({
         userId: parsed.data.assignedTo,
         type: 'task_assigned',
@@ -233,7 +190,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         pending: 'Pending',
         in_progress: 'In Progress',
         completed: 'Completed',
-        blocked: 'Blocked',
         cancelled: 'Cancelled',
       };
       const statusLabel = statusLabels[parsed.data.status] ?? parsed.data.status;
@@ -243,7 +199,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         createNotification({
           userId: data.assigned_by,
           type: parsed.data.status === 'completed' ? 'system' : 'system',
-          title: parsed.data.status === 'completed' ? 'Task Completed' : 'Task Status Updated',
+          title: parsed.data.status === 'completed'
+            ? 'Task Completed'
+            : 'Task Status Updated',
           message: `${updaterName} updated "${taskTitle}" to ${statusLabel}`,
           link: `/super-admin/tasks/${id}`,
           metadata: { taskId: id, newStatus: parsed.data.status },

@@ -5,6 +5,7 @@ import {
   BellRing,
   Briefcase,
   Building2,
+  CheckSquare,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
@@ -12,6 +13,7 @@ import {
   Factory,
   FileCheck,
   FileText,
+  FolderKanban,
   FolderOpen,
   HeartPulse,
   Home,
@@ -108,12 +110,7 @@ const employeeNavItems: Array<NavItem> = [
   { label: 'Expenses', href: '/expenses', icon: Receipt },
   { label: 'AI Spending', href: '/ai-spending', icon: Sparkles },
   { label: 'Expenses Desk', href: '/expenses/desk', icon: Receipt },
-  {
-    label: 'Work Tracker',
-    href: '/work-tracker',
-    icon: ClipboardList,
-    activeFor: ['/tasks', '/projects'],
-  },
+  { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Tickets', href: '/tickets', icon: LifeBuoy },
   { label: 'Documents', href: '/files', icon: FolderOpen },
   { label: 'Announcements', href: '/announcements', icon: Megaphone },
@@ -131,15 +128,11 @@ const internNavItems: Array<NavItem> = [
     icon: Target,
     activeFor: ['/performance/self-evaluation', '/my-performance'],
   },
+  { label: 'Projects', href: '/projects', icon: FolderKanban },
   { label: 'Expenses', href: '/expenses', icon: Receipt },
   { label: 'AI Spending', href: '/ai-spending', icon: Sparkles },
   { label: 'Expenses Desk', href: '/expenses/desk', icon: Receipt },
-  {
-    label: 'Work Tracker',
-    href: '/work-tracker',
-    icon: ClipboardList,
-    activeFor: ['/tasks', '/projects'],
-  },
+  { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Tickets', href: '/tickets', icon: LifeBuoy },
   { label: 'Documents', href: '/files', icon: FolderOpen },
   { label: 'Announcements', href: '/announcements', icon: Megaphone },
@@ -158,12 +151,7 @@ const adminNavItems: Array<NavItem> = [
   },
   { label: 'Associate Management', href: '/admin/interns', icon: Users },
   { label: 'Invoice', href: '/admin/invoice', icon: Receipt },
-  {
-    label: 'Work Tracker',
-    href: '/work-tracker',
-    icon: ClipboardList,
-    activeFor: ['/admin/war-room', '/admin/projects'],
-  },
+  { label: 'Projects Tracker', href: '/admin/war-room', icon: FolderKanban },
   {
     label: 'OKRs & KPIs',
     href: '/admin/performance',
@@ -203,12 +191,7 @@ const superAdminNavItems: Array<NavItem> = [
   },
   { label: 'Associate Management', href: '/admin/interns', icon: Users },
   { label: 'Invoice', href: '/admin/invoice', icon: Receipt },
-  {
-    label: 'Work Tracker',
-    href: '/work-tracker',
-    icon: ClipboardList,
-    activeFor: ['/admin/war-room', '/admin/projects', '/super-admin/tasks'],
-  },
+  { label: 'Projects Tracker', href: '/admin/war-room', icon: FolderKanban },
   {
     label: 'OKRs & KPIs',
     href: '/admin/performance',
@@ -220,6 +203,7 @@ const superAdminNavItems: Array<NavItem> = [
   { label: 'Revenue Forecast', href: '/super-admin/revenue-forecast', icon: TrendingUp },
   { label: 'CRM Tracker', href: '/admin/crm', icon: Store },
   { label: 'Expenses Desk', href: '/admin/expenses', icon: Receipt },
+  { label: 'Task Management', href: '/super-admin/tasks', icon: CheckSquare },
   { label: 'Payroll Approvals', href: '/super-admin/payroll-approvals', icon: FileCheck },
   { label: 'AI Spending', href: '/ai-spending', icon: Sparkles },
   {
@@ -277,7 +261,7 @@ const adminInternalSectionConfig: ReadonlyArray<{
   },
   {
     title: 'Work & Performance',
-    hrefs: ['/admin/performance', '/work-tracker'],
+    hrefs: ['/admin/performance', '/admin/war-room', '/super-admin/tasks'],
   },
   {
     title: 'Finance',
@@ -301,7 +285,7 @@ const selfServiceInternalSectionConfig: ReadonlyArray<{
 }> = [
   {
     title: 'My Work',
-    hrefs: ['/work-tracker', '/associate/reports', '/ats/recruitment', '/performance'],
+    hrefs: ['/tasks', '/projects', '/associate/reports', '/ats/recruitment', '/performance'],
   },
   {
     title: 'Finance',
@@ -494,7 +478,9 @@ export function Sidebar({
     isSelfServiceRole(variant) ? showPaTaskAccess : variant === 'admin' || variant === 'super_admin'
   ) {
     const paTaskItem: NavItem = { label: 'PA Tracker', href: '/pa-tasks', icon: ClipboardList };
-    const tasksIndex = navItems.findIndex((it) => it.href === '/work-tracker');
+    const tasksIndex = navItems.findIndex(
+      (it) => it.href === '/tasks' || it.href === '/super-admin/tasks'
+    );
     if (tasksIndex >= 0) {
       navItems = [
         ...navItems.slice(0, tasksIndex + 1),

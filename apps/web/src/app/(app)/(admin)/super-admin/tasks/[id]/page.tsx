@@ -37,7 +37,7 @@ interface ApiTaskPayload {
   assigned_to: string | null;
   assigned_by: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'pending' | 'in_progress' | 'blocked' | 'completed' | 'cancelled';
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
   due_date: string | null;
   completed_at: string | null;
   created_at: string;
@@ -47,16 +47,18 @@ interface ApiTaskPayload {
 }
 
 function toApiTaskStatus(status: TaskStatus): ApiTaskPayload['status'] {
-  return status;
+  return status === 'blocked' ? 'cancelled' : status;
 }
 
 function toTaskDetailViewModel(apiTask: ApiTaskPayload): Task {
+  const mappedStatus: TaskStatus = apiTask.status === 'cancelled' ? 'blocked' : apiTask.status;
+
   return {
     id: apiTask.id as Task['id'],
     title: apiTask.title,
     description: apiTask.description || 'No description provided.',
     priority: apiTask.priority,
-    status: apiTask.status,
+    status: mappedStatus,
     dueDate: apiTask.due_date || apiTask.created_at,
     createdBy: apiTask.assigned_by,
     createdByName: apiTask.assigner_name || 'System',

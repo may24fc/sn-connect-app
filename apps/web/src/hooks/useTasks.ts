@@ -9,15 +9,8 @@ export interface TaskRecord {
   assigned_to: string | null;
   assigned_by: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'pending' | 'in_progress' | 'blocked' | 'completed' | 'cancelled';
-  category:
-    | 'launch'
-    | 'optimization'
-    | 'maintenance'
-    | 'research'
-    | 'administrative'
-    | 'other'
-    | null;
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  category: 'launch' | 'optimization' | 'maintenance' | 'research' | 'administrative' | 'other' | null;
   tags: string[] | null;
   due_date: string | null;
   completed_at: string | null;
@@ -25,8 +18,6 @@ export interface TaskRecord {
   updated_at: string;
   created_by: string | null;
   deleted_at: string | null;
-  project_id: string | null;
-  milestone_id: string | null;
   assignee_name?: string | null;
   assigner_name?: string | null;
 }

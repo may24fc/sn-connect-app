@@ -6,7 +6,6 @@ The Tasks page (`/tasks`) shows all tasks assigned to you and lets you track you
 
 - /tasks
 - /tasks/[id]
-- /work-tracker — Combined project, task, progress, and personal activity view
 
 ## Viewing Tasks
 
@@ -19,8 +18,6 @@ Tasks are organized into tabs:
 | **In Progress** | Currently being worked on |
 | **Completed** | Finished tasks |
 | **Blocked** | Waiting on dependencies |
-
-Blocked and cancelled are separate states: blocked work is expected to resume, while cancelled work is intentionally stopped.
 
 Each tab shows a count badge so you can see at a glance how many tasks are in each state.
 

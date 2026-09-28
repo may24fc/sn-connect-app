@@ -6,7 +6,6 @@ import { TaskKanbanBoard, type TaskStatusDB } from '@/components/tasks';
 import { SuperAdminTicketsPanel } from '@/components/tickets/SuperAdminTicketsPanel';
 import { useCreateTask } from '@/hooks/useCreateTask';
 import { useEmployees } from '@/hooks/useEmployees';
-import { useProjectMilestones, useProjects } from '@/hooks/useProjects';
 import { useTaskAssignees } from '@/hooks/useTaskAssignees';
 import { useTasks, type TaskRecord } from '@/hooks/useTasks';
 import { useTasksRealtime } from '@/hooks/useTasksRealtime';
@@ -47,19 +46,7 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import type { TaskPriority, TaskStatus } from '@hr-portal/ui';
-import {
-  Calendar,
-  CheckCircle2,
-  ClipboardList,
-  Clock,
-  LayoutGrid,
-  List,
-  Loader2,
-  Plus,
-  Search,
-  X,
-  XCircle,
-} from 'lucide-react';
+import { Calendar, CheckCircle2, ClipboardList, Clock, LayoutGrid, List, Loader2, Plus, Search, X, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
@@ -231,8 +218,6 @@ export default function TaskManagementPage() {
   const [category, setCategory] = useState<TaskCategoryValue | ''>('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState('');
-  const [projectId, setProjectId] = useState('');
-  const [milestoneId, setMilestoneId] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [tagFilter, setTagFilter] = useState('');
 
@@ -262,8 +247,6 @@ export default function TaskManagementPage() {
     pageSize: 200,
   });
   const createTask = useCreateTask();
-  const { data: projectsData } = useProjects({ pageSize: 100 });
-  const { data: milestonesData } = useProjectMilestones(projectId || null);
 
   useTasksRealtime({ scope: 'all' });
 
@@ -275,8 +258,7 @@ export default function TaskManagementPage() {
     return employees
       .map((employee) => ({
         id: employee.user_id,
-        role:
-          employee.employment_type === 'associate' ? ('associate' as const) : ('employee' as const),
+        role: employee.employment_type === 'associate' ? ('associate' as const) : ('employee' as const),
         name: `${employee.first_name} ${employee.last_name}`,
         email: employee.company_email || employee.personal_email || null,
       }))
@@ -295,7 +277,6 @@ export default function TaskManagementPage() {
       total: tasks.length,
       pending: tasks.filter((t) => t.status === 'pending').length,
       in_progress: tasks.filter((t) => t.status === 'in_progress').length,
-      blocked: tasks.filter((t) => t.status === 'blocked').length,
       cancelled: tasks.filter((t) => t.status === 'cancelled').length,
       completed: tasks.filter((t) => t.status === 'completed').length,
     };
@@ -329,8 +310,6 @@ export default function TaskManagementPage() {
         category: category || undefined,
         tags: selectedTags,
         dueDate: dueDate || undefined,
-        projectId: projectId || null,
-        milestoneId: milestoneId || null,
       });
 
       addToast({
@@ -347,8 +326,6 @@ export default function TaskManagementPage() {
       setCategory('');
       setSelectedTags([]);
       setDueDate('');
-      setProjectId('');
-      setMilestoneId('');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create task';
       setAssignmentError(message);
@@ -393,7 +370,7 @@ export default function TaskManagementPage() {
         </TabsList>
 
         <TabsContent value="tasks" className="space-y-6">
-          <StatCardGrid columns={6}>
+          <StatCardGrid columns={5}>
             <StatCard
               label="All"
               value={taskStats.total}
@@ -408,11 +385,6 @@ export default function TaskManagementPage() {
               label="In Progress"
               value={taskStats.in_progress}
               icon={<Loader2 className="h-4 w-4" strokeWidth={1.5} />}
-            />
-            <StatCard
-              label="Blocked"
-              value={taskStats.blocked}
-              icon={<XCircle className="h-4 w-4" strokeWidth={1.5} />}
             />
             <StatCard
               label="Cancelled"
@@ -488,62 +460,58 @@ export default function TaskManagementPage() {
               </div>
             </div>
 
-            {activeView === 'list' && (
-              <div className="mt-4">
-                {isLoading ? (
-                  <TasksLoadingSkeleton viewMode="list" />
-                ) : error ? (
-                  <Card>
-                    <CardContent className="p-6">
-                      <EmptyState
-                        icon={ClipboardList}
-                        title="Failed to load tasks"
-                        description="The task list could not be retrieved. Refresh and try again."
-                        size="sm"
-                      />
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <TaskListView tasks={tasks} assigneeById={assigneeById} />
-                )}
-              </div>
-            )}
+            {activeView === 'list' && <div className="mt-4">
+              {isLoading ? (
+                <TasksLoadingSkeleton viewMode="list" />
+              ) : error ? (
+                <Card>
+                  <CardContent className="p-6">
+                    <EmptyState
+                      icon={ClipboardList}
+                      title="Failed to load tasks"
+                      description="The task list could not be retrieved. Refresh and try again."
+                      size="sm"
+                    />
+                  </CardContent>
+                </Card>
+              ) : (
+                <TaskListView tasks={tasks} assigneeById={assigneeById} />
+              )}
+            </div>}
 
-            {activeView === 'board' && (
-              <div className="mt-4">
-                {isLoading ? (
-                  <TasksLoadingSkeleton viewMode="board" />
-                ) : error ? (
-                  <Card>
-                    <CardContent className="p-6">
-                      <EmptyState
-                        icon={ClipboardList}
-                        title="Failed to load tasks"
-                        description="The task board could not be retrieved. Refresh and try again."
-                        size="sm"
-                      />
-                    </CardContent>
-                  </Card>
-                ) : tasks.length === 0 ? (
-                  <Card>
-                    <CardContent className="py-12">
-                      <EmptyState
-                        icon={ClipboardList}
-                        title="No tasks found"
-                        description="Create your first task to get started."
-                        size="sm"
-                      />
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <TaskKanbanBoard
-                    tasks={tasks}
-                    onStatusChange={handleStatusChange}
-                    linkPrefix="/super-admin/tasks"
-                  />
-                )}
-              </div>
-            )}
+            {activeView === 'board' && <div className="mt-4">
+              {isLoading ? (
+                <TasksLoadingSkeleton viewMode="board" />
+              ) : error ? (
+                <Card>
+                  <CardContent className="p-6">
+                    <EmptyState
+                      icon={ClipboardList}
+                      title="Failed to load tasks"
+                      description="The task board could not be retrieved. Refresh and try again."
+                      size="sm"
+                    />
+                  </CardContent>
+                </Card>
+              ) : tasks.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12">
+                    <EmptyState
+                      icon={ClipboardList}
+                      title="No tasks found"
+                      description="Create your first task to get started."
+                      size="sm"
+                    />
+                  </CardContent>
+                </Card>
+              ) : (
+                <TaskKanbanBoard
+                  tasks={tasks}
+                  onStatusChange={handleStatusChange}
+                  linkPrefix="/super-admin/tasks"
+                />
+              )}
+            </div>}
           </div>
         </TabsContent>
 
@@ -666,51 +634,6 @@ export default function TaskManagementPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium">Project (optional)</Label>
-              <Select
-                value={projectId || 'unlinked'}
-                onValueChange={(value) => {
-                  setProjectId(value === 'unlinked' ? '' : value);
-                  setMilestoneId('');
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Link to a project" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unlinked">No linked project</SelectItem>
-                  {(projectsData?.data ?? []).map((project) => (
-                    <SelectItem key={project.id} value={project.id}>
-                      {project.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {projectId ? (
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Milestone (optional)</Label>
-                <Select
-                  value={milestoneId || 'unlinked'}
-                  onValueChange={(value) => setMilestoneId(value === 'unlinked' ? '' : value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Link to a milestone" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unlinked">No linked milestone</SelectItem>
-                    {(milestonesData?.data ?? []).map((milestone) => (
-                      <SelectItem key={milestone.id} value={milestone.id}>
-                        {milestone.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ) : null}
-
-            <div className="space-y-1.5">
               <Label className="text-sm font-medium">Tags</Label>
               <TagChipsInput value={selectedTags} onChange={setSelectedTags} />
             </div>
@@ -825,17 +748,9 @@ function TaskListView({
 }) {
   const router = useRouter();
   const priorityOrder: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
-  const statusOrder: Record<string, number> = {
-    pending: 0,
-    in_progress: 1,
-    blocked: 2,
-    completed: 3,
-    cancelled: 4,
-  };
+  const statusOrder: Record<string, number> = { pending: 0, in_progress: 1, completed: 2, cancelled: 3 };
 
-  const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({
-    initialColumn: 'due_date',
-  });
+  const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({ initialColumn: 'due_date' });
 
   const sortedTasks = sortItems(tasks, {
     title: (t) => t.title.toLowerCase(),
@@ -867,21 +782,11 @@ function TaskListView({
         <Table>
           <TableHeader>
             <TableRow>
-              <SortableTableHead column="title" {...sortHeadProps}>
-                Task
-              </SortableTableHead>
-              <SortableTableHead column="assignee" {...sortHeadProps}>
-                Assignee
-              </SortableTableHead>
-              <SortableTableHead column="priority" {...sortHeadProps}>
-                Priority
-              </SortableTableHead>
-              <SortableTableHead column="status" {...sortHeadProps}>
-                Status
-              </SortableTableHead>
-              <SortableTableHead column="due_date" {...sortHeadProps}>
-                Due Date
-              </SortableTableHead>
+              <SortableTableHead column="title" {...sortHeadProps}>Task</SortableTableHead>
+              <SortableTableHead column="assignee" {...sortHeadProps}>Assignee</SortableTableHead>
+              <SortableTableHead column="priority" {...sortHeadProps}>Priority</SortableTableHead>
+              <SortableTableHead column="status" {...sortHeadProps}>Status</SortableTableHead>
+              <SortableTableHead column="due_date" {...sortHeadProps}>Due Date</SortableTableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -890,11 +795,7 @@ function TaskListView({
               const assignee = task.assigned_to ? assigneeById.get(task.assigned_to) : null;
               const assigneeName = assignee?.name || task.assignee_name || 'Unassigned';
               return (
-                <TableRow
-                  key={task.id}
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onDoubleClick={() => router.push(`/super-admin/tasks/${task.id}`)}
-                >
+                <TableRow key={task.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onDoubleClick={() => router.push(`/super-admin/tasks/${task.id}`)}>
                   <TableCell>
                     <p className="text-sm font-medium">{task.title}</p>
                     {task.description && (
@@ -932,11 +833,7 @@ function TaskListView({
                     <TaskPriorityBadge priority={task.priority as TaskPriority} size="sm" />
                   </TableCell>
                   <TableCell>
-                    <TaskStatusBadge
-                      status={task.status as TaskStatus}
-                      size="sm"
-                      dueDate={task.due_date ?? undefined}
-                    />
+                    <TaskStatusBadge status={task.status as TaskStatus} size="sm" dueDate={task.due_date ?? undefined} />
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {formatDate(task.due_date)}

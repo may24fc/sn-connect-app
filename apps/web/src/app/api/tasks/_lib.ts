@@ -104,61 +104,6 @@ export function getTaskWriteErrorMessage(
   return error.message || 'Task operation failed';
 }
 
-export async function validateTaskProjectLink(
-  supabaseAdmin: ReturnType<typeof createSupabaseAdminClient>,
-  projectId: string | null,
-  milestoneId: string | null,
-  userId: string,
-  role: string | null
-): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
-  if (!projectId && milestoneId) {
-    return { ok: false, status: 400, error: 'A milestone requires a project' };
-  }
-  if (!projectId) return { ok: true };
-
-  const { data: project, error } = await supabaseAdmin
-    .from('projects')
-    .select('id, lead_user_id, supervisor_id, created_by')
-    .eq('id', projectId)
-    .is('deleted_at', null)
-    .maybeSingle();
-  if (error) return { ok: false, status: 500, error: 'Failed to validate project' };
-  if (!project) return { ok: false, status: 400, error: 'Project was not found' };
-
-  const hasAdminAccess = ['admin', 'hr', 'cos', 'ceo', 'super_admin'].includes(role ?? '');
-  let canAccess =
-    hasAdminAccess ||
-    project.lead_user_id === userId ||
-    project.supervisor_id === userId ||
-    project.created_by === userId;
-
-  if (!canAccess) {
-    const { data: contributor } = await supabaseAdmin
-      .from('project_contributors')
-      .select('user_id')
-      .eq('project_id', projectId)
-      .eq('user_id', userId)
-      .maybeSingle();
-    canAccess = !!contributor;
-  }
-  if (!canAccess) return { ok: false, status: 403, error: 'Project access denied' };
-
-  if (milestoneId) {
-    const { data: milestone } = await supabaseAdmin
-      .from('project_milestones')
-      .select('id')
-      .eq('id', milestoneId)
-      .eq('project_id', projectId)
-      .is('deleted_at', null)
-      .maybeSingle();
-    if (!milestone) {
-      return { ok: false, status: 400, error: 'Milestone does not belong to the project' };
-    }
-  }
-
-  return { ok: true };
-}
-
 /** Roles that may read and comment on any task, mirroring the task_comments RLS policies. */
 export const TASK_OVERSIGHT_ROLES = ['admin', 'hr', 'cos', 'ceo', TASK_ASSIGNER_ROLE] as const;
 
@@ -171,10 +116,7 @@ export async function canAccessTask(
   context: TaskAuthedContext,
   taskId: string
 ): Promise<
-  | {
-      ok: true;
-      task: { id: string; title: string; assigned_to: string | null; assigned_by: string };
-    }
+  | { ok: true; task: { id: string; title: string; assigned_to: string | null; assigned_by: string } }
   | { ok: false; status: number; error: string }
 > {
   const { supabaseAdmin, user, role } = context;
@@ -195,7 +137,9 @@ export async function canAccessTask(
   }
 
   const isParticipant = task.assigned_to === user.id || task.assigned_by === user.id;
-  const hasOversight = role ? (TASK_OVERSIGHT_ROLES as readonly string[]).includes(role) : false;
+  const hasOversight = role
+    ? (TASK_OVERSIGHT_ROLES as readonly string[]).includes(role)
+    : false;
 
   if (!isParticipant && !hasOversight) {
     return { ok: false, status: 403, error: 'You do not have access to this task' };
