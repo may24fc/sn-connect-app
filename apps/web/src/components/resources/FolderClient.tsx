@@ -144,7 +144,7 @@ export default function FolderClient({ folderId }: Props) {
                   disabled={isPending}
                   {...(!isPending
                     ? {
-                        onClick: () => (window.location.href = `/information-hub/resources/${r.id}`),
+                        onClick: () => router.push(`/information-hub/resources/${r.id}`),
                         onBookmark: () => handleBookmarkToggle(r.id),
                       }
                     : {})}

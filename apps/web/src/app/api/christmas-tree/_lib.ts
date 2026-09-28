@@ -29,6 +29,7 @@ type WishRow = {
   category: 'personal' | 'for_others' | 'for_sn';
   item_number: number;
   content: string;
+  link_url: string | null;
   submitted_at: string;
 };
 
@@ -123,7 +124,7 @@ export async function buildChristmasTreeSnapshot(
   const wishesRequest = ornamentIds.length
     ? adminClient
         .from('christmas_wishes')
-        .select('ornament_id, category, item_number, content, submitted_at')
+        .select('ornament_id, category, item_number, content, link_url, submitted_at')
         .in('ornament_id', ornamentIds)
         .is('deleted_at', null)
     : Promise.resolve({ data: [] as Array<WishRow>, error: null });
@@ -304,7 +305,8 @@ export async function upsertChristmasWish(
   userId: string,
   category: WishRow['category'],
   itemNumber: number,
-  content: string
+  content: string,
+  linkUrl: string | null
 ) {
   const event = await getActiveChristmasEvent(adminClient);
   if (!event) throw new Error('No active Christmas Tree event is configured');
@@ -321,7 +323,14 @@ export async function upsertChristmasWish(
   const { data: wish, error } = await adminClient
     .from('christmas_wishes')
     .upsert(
-      { ornament_id: ornament.id, category, item_number: itemNumber, content, created_by: userId },
+      {
+        ornament_id: ornament.id,
+        category,
+        item_number: itemNumber,
+        content,
+        link_url: linkUrl,
+        created_by: userId,
+      },
       { onConflict: 'ornament_id,category,item_number' }
     )
     .select('id')
@@ -337,7 +346,13 @@ export async function upsertChristmasWish(
     action: 'UPDATE_CHRISTMAS_WISH',
     tableName: 'christmas_wishes',
     recordId: wish.id,
-    metadata: { category, eventId: event.id, itemNumber, ornamentId: ornament.id },
+    metadata: {
+      category,
+      eventId: event.id,
+      itemNumber,
+      ornamentId: ornament.id,
+      hasLink: Boolean(linkUrl),
+    },
   });
 }
 

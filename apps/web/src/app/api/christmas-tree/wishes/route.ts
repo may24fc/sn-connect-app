@@ -29,7 +29,8 @@ export async function PUT(request: NextRequest) {
       user.id,
       parsed.data.category,
       parsed.data.itemNumber,
-      parsed.data.content
+      parsed.data.content,
+      parsed.data.linkUrl
     );
     return NextResponse.json({ data: await buildChristmasTreeSnapshot(adminClient, user.id) });
   } catch (error) {

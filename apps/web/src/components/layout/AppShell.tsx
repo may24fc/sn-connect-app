@@ -1,0 +1,460 @@
+'use client';
+
+import { ApplicationUpdateHeaderAction } from '@/components/ApplicationUpdateProvider';
+import { TourProvider, useTour } from '@/components/TourProvider';
+import { type UserRoleType, useAuth, useRequireAuth } from '@/contexts/AuthContext';
+import { useAIChat } from '@/hooks/useAIChat';
+import { useAIChatSuggestions } from '@/hooks/useAIChatSuggestions';
+import { useTrackAIChatSuggestionClick } from '@/hooks/useTrackAIChatSuggestionClick';
+import { useAiSpendingAccess } from '@/hooks/useAiSpendingAccess';
+import { useAtsAccess } from '@/hooks/useAtsAccess';
+import {
+  useConversations,
+  useCreateConversation,
+  useDeleteConversation,
+  useRenameConversation,
+} from '@/hooks/useConversations';
+import { useCrmAccess } from '@/hooks/useCrmAccess';
+import { useExpensesAccess } from '@/hooks/useExpensesAccess';
+import { useMarketingAdSpendAccess } from '@/hooks/useMarketingAdSpendAccess';
+import { useMarketingReportsAccess } from '@/hooks/useMarketingReportsAccess';
+import {
+  useDeleteNotification,
+  useMarkAllRead,
+  useMarkNotificationRead,
+  useNotifications,
+  useUnreadCount,
+} from '@/hooks/useNotifications';
+import { usePaTaskAccess } from '@/hooks/usePaTaskAccess';
+import { useRevenueForecastAccess } from '@/hooks/useRevenueForecastAccess';
+import { useUhpAccess } from '@/hooks/useUhpAccess';
+import { UHP_MODULE_VALUES } from '@/lib/uhp';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Header,
+  NotificationBell,
+  Sidebar,
+  ToastProvider,
+  useToast,
+} from '@hr-portal/ui';
+import type { ChatMessage, ConversationItem } from '@hr-portal/ui';
+import { useTheme } from 'next-themes';
+import dynamic from 'next/dynamic';
+import { usePathname, useRouter } from 'next/navigation';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+
+const AIChatbot = dynamic(
+  () => import('@hr-portal/ui').then((module_) => ({ default: module_.AIChatbot })),
+  {
+    ssr: false,
+  }
+);
+
+const APP_SHELL_ROLES: Array<UserRoleType> = ['employee', 'associate', 'admin', 'super_admin'];
+
+export interface AppShellProps {
+  children: ReactNode;
+}
+
+/**
+ * The single signed-in chrome (sidebar, header, notifications, AI chat) for every role.
+ *
+ * Rendered once by `app/(app)/layout.tsx` so it stays mounted across client-side
+ * navigation — including between admin and self-service routes. Nested layouts
+ * (e.g. `(admin)/layout.tsx`) only add role/grant guards; they must not render
+ * their own shell, or the sidebar remounts on every cross-section navigation.
+ */
+export function AppShell({ children }: AppShellProps): ReactNode {
+  const user = useRequireAuth(APP_SHELL_ROLES);
+  const { logout } = useAuth();
+  const pathname = usePathname();
+  const router = useRouter();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  if (!user) {
+    return (
+      <div className="flex h-dvh items-center justify-center bg-muted/30">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  const handleNavigate = (href: string): void => {
+    router.push(href);
+    setMobileMenuOpen(false);
+  };
+
+  const handleProfileClick = (): void => {
+    if (user.role === 'associate') {
+      router.push('/associate/profile');
+      return;
+    }
+
+    if (user.role === 'admin' || user.role === 'super_admin') {
+      router.push('/admin/profile');
+      return;
+    }
+
+    router.push('/profile');
+  };
+
+  const handleSettingsClick = (): void => {
+    if (user.role === 'associate') {
+      router.push('/associate/settings');
+      return;
+    }
+
+    if (user.role === 'admin' || user.role === 'super_admin') {
+      router.push(user.role === 'super_admin' ? '/super-admin/settings' : '/admin/settings');
+      return;
+    }
+
+    router.push('/settings');
+  };
+
+  return (
+    <ToastProvider>
+      <TourProvider>
+        <AppShellInner
+          user={user}
+          pathname={pathname}
+          sidebarCollapsed={sidebarCollapsed}
+          setSidebarCollapsed={setSidebarCollapsed}
+          mobileMenuOpen={mobileMenuOpen}
+          setMobileMenuOpen={setMobileMenuOpen}
+          onNavigate={handleNavigate}
+          onLogout={logout}
+          onProfileClick={handleProfileClick}
+          onSettingsClick={handleSettingsClick}
+        >
+          {children}
+        </AppShellInner>
+      </TourProvider>
+    </ToastProvider>
+  );
+}
+
+function AppShellInner({
+  user,
+  pathname,
+  sidebarCollapsed,
+  setSidebarCollapsed,
+  mobileMenuOpen,
+  setMobileMenuOpen,
+  onNavigate,
+  onLogout,
+  onProfileClick,
+  onSettingsClick,
+  children,
+}: {
+  user: NonNullable<ReturnType<typeof useRequireAuth>>;
+  pathname: string;
+  sidebarCollapsed: boolean;
+  setSidebarCollapsed: (value: boolean) => void;
+  mobileMenuOpen: boolean;
+  setMobileMenuOpen: (value: boolean) => void;
+  onNavigate: (href: string) => void;
+  onLogout: () => void;
+  onProfileClick: () => void;
+  onSettingsClick: () => void;
+  children: ReactNode;
+}): ReactNode {
+  const { startTour, currentGroup } = useTour();
+  const { theme, setTheme } = useTheme();
+  const marketingReportsAccess = useMarketingReportsAccess();
+  const aiSpendingAccess = useAiSpendingAccess(
+    user.role === 'employee' || user.role === 'associate'
+  );
+  const atsAccess = useAtsAccess(user.role === 'employee' || user.role === 'associate');
+  const crmAccess = useCrmAccess(user.role === 'employee' || user.role === 'associate');
+  const paTaskAccess = usePaTaskAccess(
+    user.role === 'employee' ||
+      user.role === 'associate' ||
+      user.role === 'admin' ||
+      user.role === 'super_admin'
+  );
+  const revenueForecastAccess = useRevenueForecastAccess(
+    user.role === 'employee' || user.role === 'associate'
+  );
+  const marketingAdSpendAccess = useMarketingAdSpendAccess(
+    user.role === 'employee' || user.role === 'associate'
+  );
+  const expensesAccess = useExpensesAccess();
+  const hasAdminUhpAccess = user.role === 'admin' || user.role === 'super_admin';
+  const uhpAccess = useUhpAccess(!hasAdminUhpAccess);
+  const uhpModules = hasAdminUhpAccess
+    ? [...UHP_MODULE_VALUES]
+    : (uhpAccess.data?.grantedModules ?? []);
+  const sidebarVariant =
+    user.role === 'associate'
+      ? 'associate'
+      : user.role === 'admin' || user.role === 'super_admin'
+        ? user.role
+        : 'employee';
+  const sidebarPath = pathname.startsWith('/my-performance') ? '/performance' : pathname;
+
+  return (
+    <div className="flex h-dvh bg-background">
+      <div className="hidden flex-shrink-0 lg:block">
+        <Sidebar
+          variant={sidebarVariant}
+          currentPath={sidebarPath}
+          onNavigate={onNavigate}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          showMarketingReports={marketingReportsAccess.canAccess}
+          showAtsAccess={Boolean(atsAccess.data?.canAccess)}
+          showPaTaskAccess={Boolean(paTaskAccess.data?.canAccess)}
+          showCrmAccess={Boolean(crmAccess.data?.canAccess)}
+          showMarketingAdSpendAccess={Boolean(marketingAdSpendAccess.data?.canAccess)}
+          showRevenueForecastAccess={Boolean(revenueForecastAccess.data?.canAccess)}
+          showExpenseDeskAccess={
+            expensesAccess.capabilities.canViewDeskGlobal ||
+            expensesAccess.capabilities.canViewDeskDepartment
+          }
+          showAiSpendingAccess={Boolean(aiSpendingAccess.data?.canAccess)}
+          showUhpClientTracker={uhpModules.includes('client_tracker')}
+          showUhpPortalReminders={uhpModules.includes('portal_reminders')}
+          showUhpVolumePoints={uhpModules.includes('volume_points')}
+        />
+      </div>
+
+      <Dialog open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <DialogContent className="left-0 top-0 h-dvh w-64 max-w-none translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none border-0 bg-transparent p-0 shadow-2xl [&>button]:bg-white/10 [&>button]:text-white [&>button]:hover:bg-white/20 lg:hidden sm:rounded-none">
+          <DialogTitle className="sr-only">Main navigation</DialogTitle>
+          <Sidebar
+            variant={sidebarVariant}
+            currentPath={sidebarPath}
+            onNavigate={onNavigate}
+            showMarketingReports={marketingReportsAccess.canAccess}
+            showAtsAccess={Boolean(atsAccess.data?.canAccess)}
+            showPaTaskAccess={Boolean(paTaskAccess.data?.canAccess)}
+            showCrmAccess={Boolean(crmAccess.data?.canAccess)}
+            showMarketingAdSpendAccess={Boolean(marketingAdSpendAccess.data?.canAccess)}
+            showRevenueForecastAccess={Boolean(revenueForecastAccess.data?.canAccess)}
+            showExpenseDeskAccess={
+              expensesAccess.capabilities.canViewDeskGlobal ||
+              expensesAccess.capabilities.canViewDeskDepartment
+            }
+            showAiSpendingAccess={Boolean(aiSpendingAccess.data?.canAccess)}
+            showUhpClientTracker={uhpModules.includes('client_tracker')}
+            showUhpPortalReminders={uhpModules.includes('portal_reminders')}
+            showUhpVolumePoints={uhpModules.includes('volume_points')}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <Header
+          user={user}
+          onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
+          onLogout={onLogout}
+          onProfileClick={onProfileClick}
+          onSettingsClick={onSettingsClick}
+          onHelpClick={currentGroup ? startTour : undefined}
+          notificationSlot={<AppShellNotificationBell />}
+          aiChatSlot={
+            <div className="flex items-center gap-2">
+              <ApplicationUpdateHeaderAction />
+              <AppShellAIChatbot />
+            </div>
+          }
+          theme={theme ?? 'light'}
+          onThemeChange={setTheme}
+        />
+
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
+      </div>
+    </div>
+  );
+}
+
+function AppShellNotificationBell(): ReactNode {
+  const router = useRouter();
+  const { user } = useAuth();
+  const { addToast } = useToast();
+  const { data } = useNotifications({ page: 1, pageSize: 5 });
+  const { data: unreadCount } = useUnreadCount();
+  const markRead = useMarkNotificationRead();
+  const markAllRead = useMarkAllRead();
+  const deleteNotification = useDeleteNotification();
+
+  const notificationsPath =
+    user?.role === 'super_admin'
+      ? '/super-admin/notifications'
+      : user?.role === 'admin'
+        ? '/admin/notifications'
+        : '/notifications';
+
+  return (
+    <NotificationBell
+      notifications={data?.data ?? []}
+      unreadCount={unreadCount ?? 0}
+      onMarkRead={(id) => markRead.mutate(id)}
+      onMarkAllRead={() =>
+        markAllRead.mutate(undefined, {
+          onSuccess: () => addToast({ title: 'All notifications marked as read', variant: 'success' }),
+          onError: () => addToast({ title: 'Failed to mark all as read', variant: 'error' }),
+        })
+      }
+      onDelete={(id) =>
+        deleteNotification.mutate(id, {
+          onSuccess: () => addToast({ title: 'Notification deleted', variant: 'success' }),
+          onError: () => addToast({ title: 'Failed to delete notification', variant: 'error' }),
+        })
+      }
+      onNavigate={(path) => router.push(path)}
+      onViewAll={() => router.push(notificationsPath)}
+    />
+  );
+}
+
+function AppShellAIChatbot(): ReactNode {
+  const pathname = usePathname();
+  const { user } = useAuth();
+  // Suggestion-click analytics are only defined for the admin chatbot surface.
+  const tracksSuggestionClicks = user?.role === 'admin' || user?.role === 'super_admin';
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const activeConversationIdRef = useRef<string | null>(null);
+
+  const { messages, sendMessage, isLoading, clearHistory, abort, loadMessages } = useAIChat({
+    conversationId: activeConversationId,
+  });
+  const {
+    data: suggestionsData,
+    isFetching: isSuggestionsLoading,
+    refetch: refetchSuggestions,
+  } = useAIChatSuggestions({ enabled: false });
+  const trackSuggestionClick = useTrackAIChatSuggestionClick();
+
+  const { data: conversationsData } = useConversations();
+  const createConversation = useCreateConversation();
+  const renameConversation = useRenameConversation();
+  const deleteConversation = useDeleteConversation();
+
+  useEffect(() => {
+    activeConversationIdRef.current = activeConversationId;
+  }, [activeConversationId]);
+
+  const conversations: Array<ConversationItem> = (conversationsData?.data ?? []).map(
+    (conversation) => ({
+      id: conversation.id,
+      title: conversation.title,
+      createdAt: new Date(conversation.created_at),
+      updatedAt: new Date(conversation.updated_at),
+    })
+  );
+
+  const handleCreate = (): void => {
+    createConversation.mutate(undefined, {
+      onSuccess: (conversation) => {
+        activeConversationIdRef.current = conversation.id;
+        setActiveConversationId(conversation.id);
+        clearHistory();
+        void refetchSuggestions();
+      },
+    });
+  };
+
+  const handleSelect = (id: string): void => {
+    activeConversationIdRef.current = id;
+    setActiveConversationId(id);
+    clearHistory();
+    void loadMessages(id);
+  };
+
+  const guardedSendMessage = useCallback(
+    async (content: string): Promise<void> => {
+      const currentConversationId = activeConversationIdRef.current;
+
+      if (currentConversationId) {
+        return sendMessage(content, currentConversationId);
+      }
+
+      try {
+        const conversation = await createConversation.mutateAsync(undefined);
+        activeConversationIdRef.current = conversation.id;
+        setActiveConversationId(conversation.id);
+        return sendMessage(content, conversation.id);
+      } catch {
+        return sendMessage(content);
+      }
+    },
+    [sendMessage, createConversation]
+  );
+
+  const handleRename = (id: string, title: string): void => {
+    renameConversation.mutate({ id, title });
+  };
+
+  const handleDelete = (id: string): void => {
+    const isDeletingActiveConversation = activeConversationIdRef.current === id;
+
+    deleteConversation.mutate(id, {
+      onSuccess: () => {
+        if (isDeletingActiveConversation) {
+          activeConversationIdRef.current = null;
+          setActiveConversationId(null);
+          clearHistory();
+          void refetchSuggestions();
+        }
+      },
+    });
+  };
+
+  const chatMessages: Array<ChatMessage> = messages.map((message) => ({
+    id: message.id,
+    role: message.role,
+    content: message.content,
+    timestamp: message.timestamp,
+    isStreaming: message.isStreaming ?? false,
+    citations:
+      message.citations?.map((citation) => ({
+        id: citation.id,
+        sourceId: citation.sourceId,
+        sourceName: citation.sourceName,
+        exactQuote: citation.exactQuote,
+        ...(citation.citedText !== undefined ? { citedText: citation.citedText } : {}),
+        relevanceScore: citation.relevanceScore,
+      })) ?? [],
+  }));
+
+  return (
+    <AIChatbot
+      messages={chatMessages}
+      onStreamMessage={guardedSendMessage}
+      isStreamLoading={isLoading}
+      onAbort={abort}
+      onClearHistory={clearHistory}
+      conversations={conversations}
+      activeConversationId={activeConversationId}
+      onSelectConversation={handleSelect}
+      onCreateConversation={handleCreate}
+      onRenameConversation={handleRename}
+      onDeleteConversation={handleDelete}
+      suggestions={suggestionsData?.data ?? []}
+      isSuggestionsLoading={isSuggestionsLoading}
+      liveSync={suggestionsData?.liveSync ?? null}
+      onOpenChange={(open) => {
+        if (open) {
+          void refetchSuggestions();
+        }
+      }}
+      onSuggestionSelect={(suggestion) => {
+        if (!tracksSuggestionClicks) return;
+        trackSuggestionClick.mutate({
+          suggestionId: suggestion.id,
+          label: suggestion.label,
+          prompt: suggestion.prompt,
+          surface: 'admin_chatbot',
+          path: pathname,
+          conversationId: activeConversationId,
+          wasFirstMessage: !activeConversationId && messages.length === 0,
+        });
+      }}
+    />
+  );
+}

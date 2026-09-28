@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   toApiTaskStatus,
   toTaskDetailViewModel,
-} from '../../apps/web/src/app/(admin)/super-admin/tasks/[id]/page';
+} from '../../apps/web/src/app/(app)/(admin)/super-admin/tasks/[id]/page';
 
 describe('super-admin task detail helpers', () => {
   it('maps blocked UI status to cancelled for the API', () => {

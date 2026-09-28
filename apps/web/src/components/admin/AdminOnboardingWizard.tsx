@@ -21,10 +21,10 @@ import {
 import { ArrowLeft, ArrowRight, Check, CheckCircle2, ChevronLeft, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { StepDocuments } from '@/app/(employee)/onboarding/setup/components/StepDocuments';
-import { StepPaymentInfo } from '@/app/(employee)/onboarding/setup/components/StepPaymentInfo';
-import { StepPersonalInfo } from '@/app/(employee)/onboarding/setup/components/StepPersonalInfo';
-import { StepReview } from '@/app/(employee)/onboarding/setup/components/StepReview';
+import { StepDocuments } from '@/app/(app)/(employee)/onboarding/setup/components/StepDocuments';
+import { StepPaymentInfo } from '@/app/(app)/(employee)/onboarding/setup/components/StepPaymentInfo';
+import { StepPersonalInfo } from '@/app/(app)/(employee)/onboarding/setup/components/StepPersonalInfo';
+import { StepReview } from '@/app/(app)/(employee)/onboarding/setup/components/StepReview';
 import type { OnboardingStep } from '@/lib/schemas/onboarding.schema';
 import { cn } from '@/lib/utils';
 
