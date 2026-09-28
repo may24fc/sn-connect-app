@@ -52,7 +52,7 @@ sn-connect-app/
 ├── apps/
 │   ├── web/                    # Control Hub portal (@hr-portal/web, :3001)
 │   │   ├── middleware.ts       # Session refresh + coarse route protection (NOT a security boundary)
-│   │   ├── src/app/            # Route groups: (auth), (employee), (admin), (self-service) + api/
+│   │   ├── src/app/            # Route groups: (auth), (app)/{(employee),(admin)} + api/
 │   │   ├── src/components/     # ~20 domain folders (admin, tasks, reports, crm, tickets, …)
 │   │   ├── src/contexts/       # AuthContext
 │   │   ├── src/hooks/          # ~115 useX hooks + hooks/queries
@@ -389,17 +389,19 @@ Set `NEXT_PUBLIC_ENABLE_MOCK_AUTH=true` to bypass Supabase entirely (middleware 
 | superadmin@test.com | password | super_admin |
 
 ### Route groups (`apps/web/src/app/`)
+- `(app)` — `layout.tsx` renders the single persistent `AppShell` (`components/layout/AppShell.tsx`: sidebar, header, notifications, AI chat) for every signed-in role. Everything below lives inside it, so navigation only swaps page content. Nested layouts may add role/grant guards but must **not** render their own shell.
 - `(auth)` — login, forgot-password, reset-password
-- `(employee)` — dashboard, profile, tasks, reports, projects, performance, invoice, expenses, announcements, information-hub, tickets, calendar, notifications, ai-spending, ats, crm, intern, manager, associate, pa-tasks, settings, christmas-tree
-- `(admin)` — `admin/*` (dashboard, directory, employee-management, onboarding, probation, interns, jobs, recruitment, resources, reports, marketing, expenses, tickets, checklists, company-pulse, war-room, ai-knowledge, …) and `super-admin/*` (dashboard, payroll-approvals, revenue-forecast, tasks, performance, ai-knowledge, …)
-- `(self-service)` — bingo, leaderboard, my-performance
-- Standalone — `/booking/steven`, `/coming-soon`, `/account-disabled`, `/onboarding/awaiting-approval`, `/crm`, `/marketing/ad-spend`, `/revenue-forecast`
+- `(app)/(employee)` — dashboard, profile, tasks, reports, projects, performance, invoice, expenses, announcements, information-hub, tickets, calendar, notifications, ai-spending, ats, crm, intern, manager, associate, pa-tasks, settings, christmas-tree, bingo, leaderboard, my-performance (open to all four UI roles)
+- `(app)/(admin)` — guard-only layout (admin/super_admin); `admin/*` (dashboard, directory, employee-management, onboarding, probation, interns, jobs, recruitment, resources, reports, marketing, expenses, tickets, checklists, company-pulse, war-room, ai-knowledge, …) and `super-admin/*` (dashboard, payroll-approvals, revenue-forecast, tasks, performance, ai-knowledge, …)
+- `(app)` grant-gated — `/crm`, `/marketing/ad-spend`, `/revenue-forecast`, `/uhp/*`, `/booking/steven`
+- Standalone (no shell) — `/coming-soon`, `/account-disabled`, `/onboarding/awaiting-approval`
 
 ### Key file locations
 - Auth context: `apps/web/src/contexts/AuthContext.tsx`
 - Role helpers: `apps/web/src/lib/auth/role.ts`, `apps/web/src/lib/roles.ts`
 - Supabase clients: `apps/web/src/lib/supabase/{client,server}.ts`
 - Middleware: `apps/web/middleware.ts`
+- App shell: `apps/web/src/components/layout/AppShell.tsx`; `@hr-portal/ui` internal links go through `AppLink`/`LinkProvider` (wired to `next/link` in `app/providers.tsx`) — use `Link`/`router.push`, never `<a href>` or `window.location`, for in-app navigation
 - Query keys / client: `apps/web/src/lib/query-keys.ts`, `lib/query-client.ts`
 - API error contract: `apps/web/src/lib/api-error.ts`
 - Zod schemas: `apps/web/src/lib/schemas/`
