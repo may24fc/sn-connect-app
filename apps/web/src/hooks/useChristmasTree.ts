@@ -178,6 +178,7 @@ export function useUpsertChristmasWish() {
                       category: payload.category,
                       item_number: payload.itemNumber,
                       content: payload.content,
+                      link_url: payload.linkUrl,
                       submitted_at: new Date().toISOString(),
                     },
                   ],

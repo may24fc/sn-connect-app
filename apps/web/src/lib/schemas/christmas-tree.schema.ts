@@ -18,6 +18,25 @@ const christmasOrnamentPositionSchema = z.object({
   positionY: z.number().finite().min(10).max(80),
 });
 
+const christmasWishLinkSchema = z
+  .string()
+  .trim()
+  .max(2048)
+  .optional()
+  .transform((value) => value || null)
+  .refine(
+    (value) => {
+      if (!value) return true;
+      try {
+        const protocol = new URL(value).protocol;
+        return protocol === 'http:' || protocol === 'https:';
+      } catch {
+        return false;
+      }
+    },
+    { message: 'Enter a valid http:// or https:// link' }
+  );
+
 export const christmasOrnamentPlacementSchema = christmasOrnamentPositionSchema.extend({
   assetType: z.enum(CHRISTMAS_ORNAMENT_ASSETS),
 });
@@ -29,6 +48,7 @@ export const christmasWishUpsertSchema = z
     category: z.enum(CHRISTMAS_WISH_CATEGORIES),
     itemNumber: z.number().int().min(1).max(3).default(1),
     content: z.string().trim().min(1).max(500),
+    linkUrl: christmasWishLinkSchema,
   })
   .superRefine(({ category, itemNumber }, context) => {
     if (category === 'personal' && itemNumber <= 3) {
