@@ -566,7 +566,7 @@ export function Sidebar({
 
   const uhpItems: Array<NavItem> = [];
   if (showUhpClientTracker)
-    uhpItems.push({ label: 'Client Tracker', href: '/uhp/clients', icon: ContactRound });
+    uhpItems.push({ label: 'Outreach Tracker', href: '/uhp/clients', icon: ContactRound });
   if (showUhpPortalReminders)
     uhpItems.push({ label: 'Portal Reminders', href: '/uhp/reminders', icon: BellRing });
   if (showUhpVolumePoints)

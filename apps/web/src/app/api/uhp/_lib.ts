@@ -1,7 +1,12 @@
 import { timingSafeEqual } from 'node:crypto';
 import { getNormalizedMetadataRole, normalizeDbRoleClaim } from '@/lib/auth/role';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
-import { UHP_MODULE_VALUES, type UhpModule } from '@/lib/uhp';
+import {
+  UHP_ATTACHMENT_MAX_FILE_SIZE,
+  UHP_MODULE_VALUES,
+  type UhpModule,
+  isUhpAttachmentMimeType,
+} from '@/lib/uhp';
 
 export interface UhpAuthedContext {
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
@@ -71,6 +76,20 @@ export async function requireUhpModule(module: UhpModule) {
     return { ok: false as const, status: 403, error: 'Forbidden' };
   }
   return auth;
+}
+
+export function readUhpScreenshot(
+  formData: FormData
+): { ok: true; file: File } | { ok: false; error: string } {
+  const file = formData.get('file');
+  if (!(file instanceof File) || file.size === 0) return { ok: false, error: 'No image provided' };
+  if (!isUhpAttachmentMimeType(file.type)) {
+    return { ok: false, error: 'Unsupported file type. Allowed: PNG, JPG, WEBP' };
+  }
+  if (file.size > UHP_ATTACHMENT_MAX_FILE_SIZE) {
+    return { ok: false, error: 'Image exceeds the 10 MB limit' };
+  }
+  return { ok: true, file };
 }
 
 export function isValidN8nCallback(request: Request): boolean {

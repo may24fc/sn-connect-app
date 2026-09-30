@@ -1,7 +1,16 @@
 'use client';
 
 import { queryKeys } from '@/lib/query-keys';
-import { UHP_ACTIVITY_TYPE_VALUES, UHP_CLIENT_STATUS_VALUES } from '@/lib/uhp';
+import {
+  UHP_ACTIVITY_TYPE_VALUES,
+  UHP_CLIENT_STATUS_VALUES,
+  UHP_CLIENT_TYPE_VALUES,
+} from '@/lib/uhp';
+import {
+  imageFromClipboard,
+  uploadUhpScreenshot,
+  validateUhpScreenshot,
+} from '@/lib/uhp-screenshots';
 import {
   Button,
   Checkbox,
@@ -16,7 +25,7 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, MessageSquarePlus, NotebookPen } from 'lucide-react';
+import { Loader2, MessageSquarePlus, NotebookPen, Trash2 } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 
 type ClientDetail = {
@@ -24,6 +33,7 @@ type ClientDetail = {
     id: string;
     name: string;
     status: string;
+    client_type: string | null;
     interest_state: string;
     email: string | null;
     phone: string | null;
@@ -40,7 +50,35 @@ type ClientDetail = {
     appointment_type: string | null;
   }>;
   notes: Array<{ id: string; title: string; body: string | null; created_at: string }>;
+  attachments: Array<{
+    id: string;
+    activity_id: string | null;
+    file_name: string;
+    created_at: string;
+    url: string | null;
+  }>;
 };
+
+type ActivityInput = { fields: Record<string, unknown>; screenshot: File | null };
+
+function ScreenshotThumbnails({ items }: { items: ClientDetail['attachments'] }) {
+  if (!items.length) return null;
+  return (
+    <div className="mt-2 flex flex-wrap gap-2">
+      {items.map((item) =>
+        item.url ? (
+          <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer">
+            <img
+              src={item.url}
+              alt={item.file_name}
+              className="h-20 w-20 rounded-md border object-cover hover:opacity-80"
+            />
+          </a>
+        ) : null
+      )}
+    </div>
+  );
+}
 
 async function json<T>(response: Response): Promise<T> {
   const payload = await response.json();
@@ -53,16 +91,19 @@ export function UhpClientDetailDialog({
   open,
   onOpenChange,
   onChanged,
+  onDelete,
 }: {
   clientId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onChanged: () => void;
+  onDelete: (client: { id: string; name: string }) => void;
 }) {
   const { addToast } = useToast();
   const queryClient = useQueryClient();
   const [activityOpen, setActivityOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
+  const [activityScreenshot, setActivityScreenshot] = useState<File | null>(null);
   const key = queryKeys.uhp.client(clientId ?? 'none');
   const detail = useQuery({
     queryKey: key,
@@ -90,6 +131,10 @@ export function UhpClientDetailDialog({
                 client: {
                   ...current.data.client,
                   status: String(updates.status ?? current.data.client.status),
+                  client_type:
+                    'clientType' in updates
+                      ? ((updates.clientType as string | null) ?? null)
+                      : current.data.client.client_type,
                   interest_state: String(
                     updates.interestState ?? current.data.client.interest_state
                   ),
@@ -121,15 +166,22 @@ export function UhpClientDetailDialog({
   });
 
   const addActivity = useMutation({
-    mutationFn: async (input: Record<string, unknown>) =>
-      json<{ data: ClientDetail['activities'][number] }>(
+    mutationFn: async ({ fields, screenshot }: ActivityInput) => {
+      const created = await json<{ data: ClientDetail['activities'][number] }>(
         await fetch(`/api/uhp/clients/${clientId}/activities`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(input),
+          body: JSON.stringify(fields),
         })
-      ),
-    onMutate: async (input) => {
+      );
+      if (!(screenshot && clientId)) return { screenshotFailed: false };
+      // The activity is already saved; a failed upload is reported without rolling it back.
+      const uploaded = await uploadUhpScreenshot(clientId, screenshot, created.data.id).catch(
+        () => null
+      );
+      return { screenshotFailed: !uploaded };
+    },
+    onMutate: async ({ fields: input }) => {
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<{ data: ClientDetail }>(key);
       const optimistic = {
@@ -158,9 +210,18 @@ export function UhpClientDetailDialog({
         description: error instanceof Error ? error.message : 'Please try again.',
       });
     },
-    onSuccess: () => {
+    onSuccess: ({ screenshotFailed }) => {
       setActivityOpen(false);
-      addToast({ variant: 'success', title: 'Activity logged' });
+      setActivityScreenshot(null);
+      addToast(
+        screenshotFailed
+          ? {
+              variant: 'warning',
+              title: 'Activity logged, screenshot not saved',
+              description: 'Try attaching it again.',
+            }
+          : { variant: 'success', title: 'Activity logged' }
+      );
       onChanged();
     },
     onSettled: () => {
@@ -215,16 +276,29 @@ export function UhpClientDetailDialog({
     const appointmentType = String(form.get('appointmentType') || '');
     const appointmentAt = String(form.get('appointmentAt') || '');
     addActivity.mutate({
-      activityType: form.get('activityType'),
-      title: form.get('title'),
-      notes: form.get('notes') || undefined,
-      direction: form.get('direction') || undefined,
-      channel: form.get('channel') || undefined,
-      replyReceived: form.get('replyReceived') === 'on',
-      prospectOutcome: form.get('prospectOutcome') || undefined,
-      appointmentType: appointmentType || undefined,
-      appointmentAt: appointmentAt ? new Date(appointmentAt).toISOString() : undefined,
+      screenshot: activityScreenshot,
+      fields: {
+        activityType: form.get('activityType'),
+        title: form.get('title'),
+        notes: form.get('notes') || undefined,
+        direction: form.get('direction') || undefined,
+        channel: form.get('channel') || undefined,
+        replyReceived: form.get('replyReceived') === 'on',
+        prospectOutcome: form.get('prospectOutcome') || undefined,
+        appointmentType: appointmentType || undefined,
+        appointmentAt: appointmentAt ? new Date(appointmentAt).toISOString() : undefined,
+      },
     });
+  }
+
+  function selectActivityScreenshot(file: File | null) {
+    if (!file) return;
+    const invalid = validateUhpScreenshot(file);
+    if (invalid) {
+      addToast({ variant: 'error', title: 'Screenshot not added', description: invalid });
+      return;
+    }
+    setActivityScreenshot(file);
   }
 
   function submitNote(event: FormEvent<HTMLFormElement>) {
@@ -255,7 +329,7 @@ export function UhpClientDetailDialog({
           </p>
         ) : (
           <div className="space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-1">
                 <Label>Status</Label>
                 <select
@@ -265,6 +339,21 @@ export function UhpClientDetailDialog({
                 >
                   {UHP_CLIENT_STATUS_VALUES.map((status) => (
                     <option key={status}>{status}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <Label>Client type</Label>
+                <select
+                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                  value={data.client.client_type ?? ''}
+                  onChange={(event) =>
+                    updateClient.mutate({ clientType: event.target.value || null })
+                  }
+                >
+                  <option value="">Unassigned</option>
+                  {UHP_CLIENT_TYPE_VALUES.map((type) => (
+                    <option key={type}>{type}</option>
                   ))}
                 </select>
               </div>
@@ -290,11 +379,26 @@ export function UhpClientDetailDialog({
                 <NotebookPen className="mr-2 h-4 w-4" />
                 Add note
               </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="ml-auto text-destructive hover:text-destructive"
+                onClick={() => onDelete({ id: data.client.id, name: data.client.name })}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete client
+              </Button>
             </div>
             {activityOpen && (
               <form
                 className="grid gap-3 rounded-md border p-4 sm:grid-cols-2"
                 onSubmit={submitActivity}
+                onPaste={(event) => {
+                  const file = imageFromClipboard(event);
+                  if (!file) return;
+                  event.preventDefault();
+                  selectActivityScreenshot(file);
+                }}
               >
                 <div className="space-y-1">
                   <Label>Activity type</Label>
@@ -315,6 +419,7 @@ export function UhpClientDetailDialog({
                   <Label>Direction</Label>
                   <select
                     name="direction"
+                    defaultValue="outbound"
                     className="h-10 w-full rounded-md border bg-background px-3 text-sm"
                   >
                     <option value="">Not applicable</option>
@@ -360,6 +465,23 @@ export function UhpClientDetailDialog({
                   <Label>Notes</Label>
                   <Textarea name="notes" />
                 </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label htmlFor="uhp-activity-screenshot">Conversation screenshot</Label>
+                  <Input
+                    id="uhp-activity-screenshot"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={(event) => {
+                      selectActivityScreenshot(event.target.files?.[0] ?? null);
+                      event.target.value = '';
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {activityScreenshot
+                      ? `${activityScreenshot.name} will be attached`
+                      : 'Upload or paste (Ctrl+V) a screenshot of the conversation.'}
+                  </p>
+                </div>
                 <div className="sm:col-span-2">
                   <Button type="submit" disabled={addActivity.isPending}>
                     Save activity
@@ -381,6 +503,14 @@ export function UhpClientDetailDialog({
                   Save note
                 </Button>
               </form>
+            )}
+            {(data.attachments ?? []).some((attachment) => !attachment.activity_id) && (
+              <section>
+                <h3 className="mb-2 font-semibold">Screenshots</h3>
+                <ScreenshotThumbnails
+                  items={(data.attachments ?? []).filter((attachment) => !attachment.activity_id)}
+                />
+              </section>
             )}
             <section>
               <h3 className="mb-2 font-semibold">Activity timeline</h3>
@@ -404,6 +534,11 @@ export function UhpClientDetailDialog({
                           : ''}
                       </p>
                       {item.notes && <p className="mt-2 text-sm">{item.notes}</p>}
+                      <ScreenshotThumbnails
+                        items={(data.attachments ?? []).filter(
+                          (attachment) => attachment.activity_id === item.id
+                        )}
+                      />
                     </div>
                   ))
                 ) : (

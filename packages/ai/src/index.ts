@@ -54,3 +54,9 @@ export {
   type ReceiptExtractionConfig,
   type ReceiptExtractionFieldConfidence,
 } from './receipt';
+
+export {
+  extractContactFromImage,
+  type ContactExtractionResult,
+  type ContactExtractionConfig,
+} from './contact';

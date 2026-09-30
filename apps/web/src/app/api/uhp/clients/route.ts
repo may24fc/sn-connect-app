@@ -1,8 +1,51 @@
 import { logActivity } from '@/lib/audit';
-import { uhpClientSchema } from '@/lib/schemas/uhp.schema';
-import { UHP_CLIENT_STATUS_VALUES, UHP_CLIENT_TYPE_VALUES } from '@/lib/uhp';
+import { uhpClientCreateSchema } from '@/lib/schemas/uhp.schema';
+import {
+  UHP_CLIENT_STATUS_VALUES,
+  UHP_CLIENT_TYPE_VALUES,
+  type UhpClientContact,
+  findUhpDuplicateClients,
+} from '@/lib/uhp';
 import { type NextRequest, NextResponse } from 'next/server';
-import { requireUhpModule } from '../_lib';
+import { type UhpAuthedContext, requireUhpModule } from '../_lib';
+
+async function findExistingDuplicates(
+  admin: UhpAuthedContext['admin'],
+  input: { name: string; email?: string | null | undefined; phone?: string | null | undefined }
+): Promise<Array<UhpClientContact> | null> {
+  // Phone formats vary in migrated data, so matching happens in app code rather than SQL filters.
+  const { data, error } = await admin
+    .from('uhp_clients')
+    .select('id, name, email, phone')
+    .is('deleted_at', null)
+    .limit(10000);
+  if (error) {
+    console.error('Failed to check UHP client duplicates:', error);
+    return null;
+  }
+  return findUhpDuplicateClients(
+    { name: input.name, email: input.email ?? null, phone: input.phone ?? null },
+    (data ?? []) as Array<UhpClientContact>
+  );
+}
+
+async function logInitialOutreach(
+  context: UhpAuthedContext,
+  clientId: string,
+  channel: string | null
+): Promise<void> {
+  const { error } = await context.admin.from('uhp_client_activities').insert({
+    client_id: clientId,
+    activity_type: 'Interaction',
+    direction: 'outbound',
+    channel,
+    title: 'Initial outreach',
+    status: 'Complete',
+    created_by: context.userId,
+    updated_by: context.userId,
+  });
+  if (error) console.error('Failed to log UHP initial outreach:', error);
+}
 
 export async function GET(request: NextRequest) {
   const auth = await requireUhpModule('client_tracker');
@@ -41,7 +84,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const auth = await requireUhpModule('client_tracker');
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
-  const parsed = uhpClientSchema.safeParse(await request.json().catch(() => ({})));
+  const parsed = uhpClientCreateSchema.safeParse(await request.json().catch(() => ({})));
   if (!parsed.success) {
     return NextResponse.json(
       { error: 'Invalid client', details: parsed.error.flatten() },
@@ -49,6 +92,20 @@ export async function POST(request: NextRequest) {
     );
   }
   const input = parsed.data;
+
+  if (!input.allowDuplicate) {
+    const duplicates = await findExistingDuplicates(auth.context.admin, input);
+    if (!duplicates) {
+      return NextResponse.json({ error: 'Failed to create client' }, { status: 500 });
+    }
+    if (duplicates.length) {
+      return NextResponse.json(
+        { error: 'A client with the same details is already on file', duplicates },
+        { status: 409 }
+      );
+    }
+  }
+
   const { data, error } = await auth.context.admin
     .from('uhp_clients')
     .insert({
@@ -73,6 +130,9 @@ export async function POST(request: NextRequest) {
     .select('*')
     .single();
   if (error) return NextResponse.json({ error: 'Failed to create client' }, { status: 500 });
+  if (input.logInitialOutreach) {
+    await logInitialOutreach(auth.context, data.id, input.outreachChannel ?? null);
+  }
   void logActivity(auth.context.admin, {
     userId: auth.context.userId,
     action: 'create_uhp_client',

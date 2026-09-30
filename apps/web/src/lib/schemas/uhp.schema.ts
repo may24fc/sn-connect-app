@@ -35,6 +35,11 @@ export const uhpClientSchema = z.object({
   dueDate: optionalDate,
 });
 export const uhpClientUpdateSchema = uhpClientSchema.partial();
+export const uhpClientCreateSchema = uhpClientSchema.extend({
+  allowDuplicate: z.boolean().default(false),
+  logInitialOutreach: z.boolean().default(false),
+  outreachChannel: optionalText,
+});
 
 export const uhpClientActivitySchema = z.object({
   activityType: z.enum(UHP_ACTIVITY_TYPE_VALUES).default('Interaction'),
@@ -97,6 +102,19 @@ export const uhpVpTargetsSchema = z.object({
       forecastVp: z.number().finite().min(0),
     })
   ),
+});
+
+export const uhpOutreachDigestRunSchema = z.object({
+  intervalStartedAt: z.string().datetime(),
+  intervalEndedAt: z.string().datetime(),
+  destinationKey: z.string().trim().min(1).max(200),
+  idempotencyKey: z.string().trim().min(1).max(300),
+  status: z.enum(['pending', 'sent', 'failed', 'skipped']),
+  summary: z.record(z.unknown()),
+  n8nExecutionId: optionalText,
+  telegramMessageId: optionalText,
+  errorMessage: optionalText,
+  sentAt: z.string().datetime().nullable().optional(),
 });
 
 export const uhpVpDigestRunSchema = z.object({

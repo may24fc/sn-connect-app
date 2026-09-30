@@ -1,9 +1,23 @@
 'use client';
 
-import { UHP_CLIENT_STATUS_VALUES, UHP_CLIENT_TYPE_VALUES } from '@/lib/uhp';
-import { Button, Card, CardContent, Input, Label, useToast } from '@hr-portal/ui';
-import { Loader2, Plus, RefreshCw, Search } from 'lucide-react';
-import { type FormEvent, useCallback, useEffect, useState } from 'react';
+import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
+import { UHP_CLIENT_STATUS_VALUES, UHP_CLIENT_TYPE_VALUES, type UhpClientContact } from '@/lib/uhp';
+import {
+  extractUhpContact,
+  imageFromClipboard,
+  uploadUhpScreenshot,
+  validateUhpScreenshot,
+} from '@/lib/uhp-screenshots';
+import { Button, Card, CardContent, Checkbox, Input, Label, useToast } from '@hr-portal/ui';
+import { AlertTriangle, ImageUp, Loader2, Plus, RefreshCw, Search } from 'lucide-react';
+import {
+  type ClipboardEvent,
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { UhpAccessManagerButton } from './UhpAccessManagerDialog';
 import { UhpClientDetailDialog } from './UhpClientDetailDialog';
 import { UhpWorkspaceHeader } from './UhpWorkspaceHeader';
@@ -41,28 +55,70 @@ const emptyMetrics: Metrics = {
   callsScheduled: 0,
 };
 
+type MetricsPeriod = 'week' | 'month' | 'quarter';
+
+const PERIOD_LABELS: Record<MetricsPeriod, string> = {
+  week: 'This week',
+  month: 'This month',
+  quarter: 'This quarter',
+};
+
+function getPeriodStart(period: MetricsPeriod, now = new Date()): Date {
+  if (period === 'week') {
+    const daysSinceMonday = (now.getDay() + 6) % 7;
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysSinceMonday);
+  }
+  if (period === 'quarter') {
+    return new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+  }
+  return new Date(now.getFullYear(), now.getMonth(), 1);
+}
+
+type CreateClientPayload = {
+  name: string;
+  clientType: string;
+  status: 'Prospect';
+  leadOwner?: string | undefined;
+  email?: string | undefined;
+  phone?: string | undefined;
+  logInitialOutreach: boolean;
+  outreachChannel?: string | undefined;
+  allowDuplicate?: boolean;
+};
+
 export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean }) {
   const { addToast } = useToast();
+  const formRef = useRef<HTMLFormElement>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [metrics, setMetrics] = useState<Metrics>(emptyMetrics);
+  const [period, setPeriod] = useState<MetricsPeriod>('month');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [duplicateCheck, setDuplicateCheck] = useState<{
+    payload: CreateClientPayload;
+    matches: Array<UhpClientContact>;
+  } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [extracting, setExtracting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
+      const from = getPeriodStart(period).toISOString();
       const [clientsResponse, metricsResponse] = await Promise.all([
         fetch(`/api/uhp/clients?search=${encodeURIComponent(search)}`),
-        fetch('/api/uhp/clients/metrics'),
+        fetch(`/api/uhp/clients/metrics?from=${encodeURIComponent(from)}`),
       ]);
       const clientsPayload = await clientsResponse.json();
       const metricsPayload = await metricsResponse.json();
       if (!clientsResponse.ok || !metricsResponse.ok) {
         throw new Error(
-          clientsPayload.error ?? metricsPayload.error ?? 'Failed to load client tracker'
+          clientsPayload.error ?? metricsPayload.error ?? 'Failed to load outreach tracker'
         );
       }
       setClients(clientsPayload.data);
@@ -70,59 +126,127 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
     } catch (error) {
       addToast({
         variant: 'error',
-        title: 'Could not load the client tracker',
+        title: 'Could not load the outreach tracker',
         description: error instanceof Error ? error.message : 'Please try again.',
       });
     } finally {
       setLoading(false);
     }
-  }, [addToast, search]);
+  }, [addToast, search, period]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 250);
     return () => window.clearTimeout(timer);
   }, [load]);
 
-  async function createClient(event: FormEvent<HTMLFormElement>) {
+  function closeForm() {
+    setShowForm(false);
+    setDuplicateCheck(null);
+    setScreenshot(null);
+  }
+
+  function fillField(name: string, value: string | null) {
+    const field = formRef.current?.elements.namedItem(name);
+    if (value && field instanceof HTMLInputElement) field.value = value;
+  }
+
+  async function handleScreenshot(file: File | null) {
+    if (!file) return;
+    const invalid = validateUhpScreenshot(file);
+    if (invalid) {
+      addToast({ variant: 'error', title: 'Screenshot not added', description: invalid });
+      return;
+    }
+    setScreenshot(file);
+    setExtracting(true);
+    try {
+      const contact = await extractUhpContact(file);
+      fillField('name', contact.name);
+      fillField('phone', contact.phone);
+      fillField('email', contact.email);
+      fillField('outreachChannel', contact.channel);
+      addToast({
+        variant: contact.name || contact.phone ? 'success' : 'warning',
+        title: contact.name || contact.phone ? 'Details read from screenshot' : 'No details found',
+        description: 'Check the name and number before saving.',
+      });
+    } catch (error) {
+      addToast({
+        variant: 'error',
+        title: 'Could not read the screenshot',
+        description: error instanceof Error ? error.message : 'Enter the details manually.',
+      });
+    } finally {
+      setExtracting(false);
+    }
+  }
+
+  function handlePaste(event: ClipboardEvent<HTMLFormElement>) {
+    const file = imageFromClipboard(event);
+    if (!file) return;
+    event.preventDefault();
+    void handleScreenshot(file);
+  }
+
+  function createClient(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const name = String(form.get('name'));
-    const clientType = String(form.get('clientType'));
-    const leadOwner = String(form.get('leadOwner') || '') || null;
-    const email = String(form.get('email') || '') || null;
-    const phone = String(form.get('phone') || '') || null;
+    const text = (key: string) => String(form.get(key) ?? '').trim() || undefined;
+    void submitClient({
+      name: String(form.get('name')).trim(),
+      clientType: String(form.get('clientType')),
+      status: 'Prospect',
+      leadOwner: text('leadOwner'),
+      email: text('email'),
+      phone: text('phone'),
+      logInitialOutreach: form.get('logInitialOutreach') === 'on',
+      outreachChannel: text('outreachChannel'),
+    });
+  }
+
+  async function submitClient(payload: CreateClientPayload) {
     const optimisticClient: Client = {
       id: `optimistic-client-${crypto.randomUUID()}`,
-      name,
-      client_type: clientType,
+      name: payload.name,
+      client_type: payload.clientType,
       status: 'Prospect',
       interest_state: 'unknown',
-      lead_owner: leadOwner,
-      email,
-      phone,
+      lead_owner: payload.leadOwner ?? null,
+      email: payload.email ?? null,
+      phone: payload.phone ?? null,
       migration_review_required: false,
       updated_at: new Date().toISOString(),
     };
     const previousClients = clients;
     setSaving(true);
+    setDuplicateCheck(null);
     setClients((current) => [optimisticClient, ...current]);
     try {
       const response = await fetch('/api/uhp/clients', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          clientType,
-          status: 'Prospect',
-          leadOwner: leadOwner || undefined,
-          email: email || undefined,
-          phone: phone || undefined,
-        }),
+        body: JSON.stringify(payload),
       });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error ?? 'Failed to create client');
-      setShowForm(false);
-      event.currentTarget.reset();
+      const result = await response.json();
+      if (response.status === 409 && Array.isArray(result.duplicates)) {
+        setClients(previousClients);
+        setDuplicateCheck({ payload, matches: result.duplicates });
+        return;
+      }
+      if (!response.ok) throw new Error(result.error ?? 'Failed to create client');
+      const attachedScreenshot = screenshot;
+      // Read the form through a ref: React nulls event.currentTarget once the handler awaits.
+      formRef.current?.reset();
+      closeForm();
+      if (attachedScreenshot && result.data?.id) {
+        await uploadUhpScreenshot(result.data.id, attachedScreenshot).catch(() =>
+          addToast({
+            variant: 'warning',
+            title: 'Client added, screenshot not saved',
+            description: 'Open the client and attach it to a communication.',
+          })
+        );
+      }
       await load();
       addToast({ variant: 'success', title: 'Client added to UHP' });
     } catch (error) {
@@ -134,6 +258,30 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
       });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function deleteClient() {
+    if (!deleteTarget) return;
+    const previousClients = clients;
+    setDeleting(true);
+    setClients((current) => current.filter((client) => client.id !== deleteTarget.id));
+    try {
+      const response = await fetch(`/api/uhp/clients/${deleteTarget.id}`, { method: 'DELETE' });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error ?? 'Failed to delete client');
+      addToast({ variant: 'success', title: 'Client deleted', description: deleteTarget.name });
+      setDeleteTarget(null);
+    } catch (error) {
+      setClients(previousClients);
+      addToast({
+        variant: 'error',
+        title: 'Could not delete client',
+        description: error instanceof Error ? error.message : 'Please try again.',
+      });
+    } finally {
+      setDeleting(false);
+      void load();
     }
   }
 
@@ -149,17 +297,35 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
   return (
     <div className="space-y-6 p-4 sm:p-6 lg:p-8">
       <UhpWorkspaceHeader
-        title="Client Tracker"
-        description="The UHP source of truth for prospects, communication activity, outcomes, and scheduled appointments. Metrics show the current month."
+        title="Outreach Tracker"
+        description="The UHP source of truth for prospects, communication activity, outcomes, and scheduled appointments."
         actions={
           <div className="flex gap-2">
-            {isAdmin && <UhpAccessManagerButton module="client_tracker" label="Client Tracker" />}
-            <Button onClick={() => setShowForm((value) => !value)}>
+            {isAdmin && <UhpAccessManagerButton module="client_tracker" label="Outreach Tracker" />}
+            <Button onClick={() => (showForm ? closeForm() : setShowForm(true))}>
               <Plus className="mr-2 h-4 w-4" /> Add client
             </Button>
           </div>
         }
       />
+
+      <div className="flex items-center gap-2">
+        <Label htmlFor="uhp-metrics-period" className="text-sm text-muted-foreground">
+          Metrics period
+        </Label>
+        <select
+          id="uhp-metrics-period"
+          value={period}
+          onChange={(event) => setPeriod(event.target.value as MetricsPeriod)}
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+        >
+          {(Object.keys(PERIOD_LABELS) as Array<MetricsPeriod>).map((value) => (
+            <option key={value} value={value}>
+              {PERIOD_LABELS[value]}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         {metricCards.map(([label, value]) => (
@@ -175,7 +341,41 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
       {showForm && (
         <Card>
           <CardContent className="p-5">
-            <form className="grid gap-4 md:grid-cols-3" onSubmit={createClient}>
+            <form
+              ref={formRef}
+              className="grid gap-4 md:grid-cols-3"
+              onSubmit={createClient}
+              onPaste={handlePaste}
+            >
+              <div className="space-y-1 md:col-span-3">
+                <Label htmlFor="uhp-screenshot">Conversation screenshot (optional)</Label>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Input
+                    id="uhp-screenshot"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="max-w-sm"
+                    disabled={extracting}
+                    onChange={(event) => {
+                      void handleScreenshot(event.target.files?.[0] ?? null);
+                      event.target.value = '';
+                    }}
+                  />
+                  <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                    {extracting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" /> Reading name and number...
+                      </>
+                    ) : screenshot ? (
+                      <>
+                        <ImageUp className="h-4 w-4" /> {screenshot.name} will be attached
+                      </>
+                    ) : (
+                      'Upload or paste (Ctrl+V) a chat screenshot to fill in the name and number.'
+                    )}
+                  </span>
+                </div>
+              </div>
               <div className="space-y-1">
                 <Label htmlFor="uhp-name">Name</Label>
                 <Input id="uhp-name" name="name" required />
@@ -207,11 +407,62 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
                 <Label htmlFor="uhp-phone">Phone</Label>
                 <Input id="uhp-phone" name="phone" />
               </div>
+              <div className="space-y-1">
+                <Label htmlFor="uhp-outreach-channel">Outreach channel</Label>
+                <Input
+                  id="uhp-outreach-channel"
+                  name="outreachChannel"
+                  placeholder="Telegram, phone, email..."
+                />
+              </div>
+              <div className="flex items-center gap-2 md:col-span-3">
+                <Checkbox id="uhp-log-outreach" name="logInitialOutreach" defaultChecked />
+                <Label htmlFor="uhp-log-outreach">
+                  I've already reached out (counts as an outreach attempt)
+                </Label>
+              </div>
+              {duplicateCheck && (
+                <div className="space-y-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 md:col-span-3">
+                  <p className="flex items-center gap-2 font-medium">
+                    <AlertTriangle className="h-4 w-4" />A client with the same details is already
+                    on file
+                  </p>
+                  <ul className="space-y-1">
+                    {duplicateCheck.matches.map((match) => (
+                      <li key={match.id} className="flex items-center justify-between gap-2">
+                        <span>
+                          {match.name}
+                          {match.phone || match.email ? ` · ${match.phone ?? match.email}` : ''}
+                        </span>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedClientId(match.id)}
+                        >
+                          Open existing
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={saving}
+                    onClick={() =>
+                      void submitClient({ ...duplicateCheck.payload, allowDuplicate: true })
+                    }
+                  >
+                    Add anyway
+                  </Button>
+                </div>
+              )}
               <div className="flex items-end gap-2">
-                <Button type="submit" disabled={saving}>
+                <Button type="submit" disabled={saving || extracting}>
                   {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                <Button type="button" variant="outline" onClick={closeForm}>
                   Cancel
                 </Button>
               </div>
@@ -313,6 +564,21 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
           if (!open) setSelectedClientId(null);
         }}
         onChanged={() => void load()}
+        onDelete={(client) => {
+          setSelectedClientId(null);
+          setDeleteTarget(client);
+        }}
+      />
+      <ConfirmActionDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        title="Delete client?"
+        description={`${deleteTarget?.name ?? 'This client'} and their activity will be removed from the Outreach Tracker.`}
+        confirmLabel="Delete client"
+        isPending={deleting}
+        onConfirm={() => void deleteClient()}
       />
     </div>
   );

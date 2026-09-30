@@ -1,7 +1,8 @@
 'use client';
 
 import type { TaskRecord } from '@/hooks/useTasks';
-import { Card, CardContent, CountBadge, TaskPriorityBadge, useToast } from '@hr-portal/ui';
+import { getTaskDetailPath } from '@/lib/task-navigation';
+import { Card, CardContent, CountBadge, TaskPriorityBadge } from '@hr-portal/ui';
 import type { TaskPriority } from '@hr-portal/ui';
 import { GripVertical } from 'lucide-react';
 import Link from 'next/link';
@@ -59,6 +60,7 @@ interface TaskKanbanBoardProps {
   tasks: Array<TaskRecord>;
   onStatusChange: (taskId: string, newStatus: TaskStatusDB) => Promise<void>;
   linkPrefix?: string;
+  returnTo?: string;
   isUpdating?: boolean;
 }
 
@@ -80,8 +82,8 @@ export function TaskKanbanBoard({
   tasks,
   onStatusChange,
   linkPrefix = '/tasks',
+  returnTo = linkPrefix,
 }: TaskKanbanBoardProps) {
-  const { addToast } = useToast();
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatusDB | null>(null);
 
@@ -147,24 +149,11 @@ export function TaskKanbanBoard({
         return;
       }
 
-      try {
-        await onStatusChange(taskId, newStatus);
-        addToast({
-          title: 'Task updated',
-          description: `Task status changed to ${STATUS_COLUMNS.find((c) => c.value === newStatus)?.label}`,
-          variant: 'success',
-        });
-      } catch (error) {
-        addToast({
-          title: 'Update failed',
-          description: error instanceof Error ? error.message : 'Failed to update task status',
-          variant: 'error',
-        });
-      }
+      await onStatusChange(taskId, newStatus);
 
       setDraggedTaskId(null);
     },
-    [draggedTaskId, tasks, onStatusChange, addToast]
+    [draggedTaskId, tasks, onStatusChange]
   );
 
   return (
@@ -208,6 +197,7 @@ export function TaskKanbanBoard({
                     key={task.id}
                     task={task}
                     linkPrefix={linkPrefix}
+                    returnTo={returnTo}
                     isDragging={draggedTaskId === task.id}
                     onDragStart={handleDragStart}
                     onDragEnd={handleDragEnd}
@@ -225,6 +215,7 @@ export function TaskKanbanBoard({
 interface TaskKanbanCardProps {
   task: TaskRecord;
   linkPrefix: string;
+  returnTo: string;
   isDragging: boolean;
   onDragStart: (e: DragEvent<HTMLDivElement>, taskId: string) => void;
   onDragEnd: (e: DragEvent<HTMLDivElement>) => void;
@@ -233,6 +224,7 @@ interface TaskKanbanCardProps {
 function TaskKanbanCard({
   task,
   linkPrefix,
+  returnTo,
   isDragging,
   onDragStart,
   onDragEnd,
@@ -250,7 +242,7 @@ function TaskKanbanCard({
             <GripVertical className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="flex-1 min-w-0">
               <Link
-                href={`${linkPrefix}/${task.id}`}
+                href={getTaskDetailPath(task.id, linkPrefix, returnTo)}
                 className="block"
                 onClick={(e) => e.stopPropagation()}
               >

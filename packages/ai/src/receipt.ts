@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { extractJsonFromImage } from './vision';
 
 export interface ReceiptExtractionFieldConfidence {
   vendorName: number;
@@ -33,10 +34,10 @@ const DEFAULT_RECEIPT_MODEL = 'gpt-4o-mini';
 const SUPPORTED_CURRENCY_CODES = ['PHP', 'USD', 'EUR', 'AUD', 'GBP', 'SGD', 'JPY'] as const;
 
 const CURRENCY_SYMBOL_TO_CODE: Record<string, (typeof SUPPORTED_CURRENCY_CODES)[number]> = {
-  '$': 'USD',
-  'A$': 'AUD',
-  'US$': 'USD',
-  'S$': 'SGD',
+  $: 'USD',
+  A$: 'AUD',
+  US$: 'USD',
+  S$: 'SGD',
   '£': 'GBP',
   '€': 'EUR',
   '¥': 'JPY',
@@ -81,7 +82,14 @@ const RECEIPT_RESPONSE_JSON_SCHEMA = {
           taxAmount: { type: 'number', minimum: 0, maximum: 1 },
           currency: { type: 'number', minimum: 0, maximum: 1 },
         },
-        required: ['vendorName', 'invoiceNumber', 'transactionDate', 'totalAmount', 'taxAmount', 'currency'],
+        required: [
+          'vendorName',
+          'invoiceNumber',
+          'transactionDate',
+          'totalAmount',
+          'taxAmount',
+          'currency',
+        ],
       },
     },
     required: [
@@ -203,35 +211,16 @@ export async function extractReceiptFromImage(
   mimeType: string,
   config: ReceiptExtractionConfig = {}
 ): Promise<ReceiptExtractionResult> {
-  const client = getClient(config.apiKey);
   const model = config.model ?? DEFAULT_RECEIPT_MODEL;
-
-  const response = await client.chat.completions.create({
+  const content = await extractJsonFromImage({
+    imageBase64,
+    mimeType,
+    systemPrompt: RECEIPT_SYSTEM_PROMPT,
+    userText: 'Extract receipt data from this image.',
+    jsonSchema: RECEIPT_RESPONSE_JSON_SCHEMA,
+    apiKey: config.apiKey,
     model,
-    temperature: 0,
-    messages: [
-      { role: 'system', content: RECEIPT_SYSTEM_PROMPT },
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'text',
-            text: 'Extract receipt data from this image.',
-          },
-          {
-            type: 'image_url',
-            image_url: {
-              url: `data:${mimeType};base64,${imageBase64}`,
-            },
-          },
-        ],
-      },
-    ],
-    response_format: {
-      type: 'json_schema',
-      json_schema: RECEIPT_RESPONSE_JSON_SCHEMA,
-    },
   });
 
-  return parseReceiptResponse(response.choices[0]?.message?.content ?? null, model);
+  return parseReceiptResponse(content, model);
 }

@@ -1,13 +1,33 @@
 import { logActivity } from '@/lib/audit';
 import { uhpClientUpdateSchema } from '@/lib/schemas/uhp.schema';
+import { UHP_ATTACHMENTS_BUCKET } from '@/lib/uhp';
 import { type NextRequest, NextResponse } from 'next/server';
-import { requireUhpModule } from '../../_lib';
+import { type UhpAuthedContext, requireUhpModule } from '../../_lib';
+
+type AttachmentRow = {
+  id: string;
+  activity_id: string | null;
+  file_name: string;
+  mime_type: string;
+  storage_path: string;
+  created_at: string;
+};
+
+async function signAttachments(admin: UhpAuthedContext['admin'], rows: Array<AttachmentRow>) {
+  if (!rows.length) return [];
+  const { data } = await admin.storage.from(UHP_ATTACHMENTS_BUCKET).createSignedUrls(
+    rows.map((row) => row.storage_path),
+    60 * 60
+  );
+  const urls = new Map((data ?? []).map((item) => [item.path, item.signedUrl]));
+  return rows.map(({ storage_path, ...row }) => ({ ...row, url: urls.get(storage_path) ?? null }));
+}
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireUhpModule('client_tracker');
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
   const { id } = await params;
-  const [clientResult, activitiesResult, notesResult] = await Promise.all([
+  const [clientResult, activitiesResult, notesResult, attachmentsResult] = await Promise.all([
     auth.context.admin
       .from('uhp_clients')
       .select('*')
@@ -26,6 +46,12 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       .eq('client_id', id)
       .is('deleted_at', null)
       .order('created_at', { ascending: false }),
+    auth.context.admin
+      .from('uhp_client_attachments')
+      .select('id, activity_id, file_name, mime_type, storage_path, created_at')
+      .eq('client_id', id)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false }),
   ]);
   if (clientResult.error)
     return NextResponse.json({ error: 'Failed to fetch client' }, { status: 500 });
@@ -35,6 +61,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       client: clientResult.data,
       activities: activitiesResult.data ?? [],
       notes: notesResult.data ?? [],
+      attachments: await signAttachments(auth.context.admin, attachmentsResult.data ?? []),
     },
   });
 }

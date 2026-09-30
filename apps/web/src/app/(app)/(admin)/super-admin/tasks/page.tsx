@@ -11,8 +11,10 @@ import { useProjectMilestones, useProjects } from '@/hooks/useProjects';
 import { useTaskAssignees } from '@/hooks/useTaskAssignees';
 import { useTasks, type TaskRecord } from '@/hooks/useTasks';
 import { useTasksRealtime } from '@/hooks/useTasksRealtime';
+import { useUpdateTaskStatus } from '@/hooks/useUpdateTask';
 import { useTableSort } from '@/hooks/useTableSort';
 import type { TaskFilters } from '@/lib/query-keys';
+import { getTaskDetailPath } from '@/lib/task-navigation';
 import {
   Badge,
   Button,
@@ -269,6 +271,7 @@ export default function TaskManagementPage() {
   useTasksRealtime({ scope: 'all' });
 
   const tasks = tasksData?.data || [];
+  const updateTaskStatus = useUpdateTaskStatus();
   const assignees = assigneesData?.data || [];
 
   const employeeFallbackAssignees = useMemo(() => {
@@ -303,18 +306,25 @@ export default function TaskManagementPage() {
   }, [tasks]);
 
   // Handler for drag-and-drop status change in Kanban board
-  const handleStatusChange = useCallback(async (taskId: string, newStatus: TaskStatusDB) => {
-    const response = await fetch(`/api/tasks/${taskId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to update task');
-    }
-  }, []);
+  const handleStatusChange = useCallback(
+    async (taskId: string, newStatus: TaskStatusDB) => {
+      try {
+        await updateTaskStatus.mutateAsync({ taskId, status: newStatus });
+        addToast({
+          title: 'Task status updated',
+          description: `Changed to ${newStatus.replace('_', ' ')}`,
+          variant: 'success',
+        });
+      } catch (error) {
+        addToast({
+          title: 'Failed to update task',
+          description: error instanceof Error ? error.message : 'An error occurred',
+          variant: 'error',
+        });
+      }
+    },
+    [addToast, updateTaskStatus]
+  );
 
   const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -895,7 +905,9 @@ function TaskListView({
                 <TableRow
                   key={task.id}
                   className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onDoubleClick={() => router.push(`/super-admin/tasks/${task.id}`)}
+                  onDoubleClick={() =>
+                    router.push(getTaskDetailPath(task.id, '/super-admin/tasks'))
+                  }
                 >
                   <TableCell>
                     <p className="text-sm font-medium">{task.title}</p>
@@ -945,7 +957,7 @@ function TaskListView({
                   </TableCell>
                   <TableCell className="text-right">
                     <Button asChild variant="outline" size="sm">
-                      <Link href={`/super-admin/tasks/${task.id}`}>View</Link>
+                      <Link href={getTaskDetailPath(task.id, '/super-admin/tasks')}>View</Link>
                     </Button>
                   </TableCell>
                 </TableRow>

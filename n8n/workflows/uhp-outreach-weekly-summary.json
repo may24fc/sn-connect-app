@@ -1,0 +1,127 @@
+{
+  "name": "[Control Hub] UHP Outreach Weekly Summary",
+  "active": false,
+  "settings": { "timezone": "Asia/Manila", "executionOrder": "v1" },
+  "nodes": [
+    {
+      "id": "weekly-trigger",
+      "name": "Friday 17:00 PHT",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300],
+      "parameters": { "rule": { "interval": [{ "field": "cronExpression", "expression": "0 17 * * 5" }] } }
+    },
+    {
+      "id": "configure-destinations",
+      "name": "Configure Telegram Destinations",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300],
+      "parameters": {
+        "assignments": { "assignments": [
+          { "id": "destinations", "name": "destinationsJson", "type": "string", "value": "[]" },
+          { "id": "control-hub-url", "name": "controlHubUrl", "type": "string", "value": "https://app.sngroup.com.au" }
+        ] },
+        "options": {}
+      }
+    },
+    {
+      "id": "fetch-summary",
+      "name": "Fetch Outreach Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [690, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.controlHubUrl + '/api/uhp/clients/digest' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_CONTROL_HUB_CALLBACK_CREDENTIAL_ID",
+          "name": "Control Hub Callback"
+        }
+      }
+    },
+    {
+      "id": "build-message",
+      "name": "Build Weekly Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [930, 300],
+      "parameters": {
+        "jsCode": "const digest = $json.data;\nconst s = digest.summary;\nconst cfg = $('Configure Telegram Destinations').first().json;\nconst destinations = JSON.parse(cfg.destinationsJson || '[]');\nconst range = `${digest.intervalStartedAt.slice(0, 10)} to ${digest.intervalEndedAt.slice(0, 10)}`;\nconst text = [\n  `UHP Outreach Summary (${range})`,\n  `Clients reached out to: ${s.clientsReachedOut} (${s.outreachAttempts} messages)`,\n  `Replied: ${s.clientsReplied}`,\n  `Response rate: ${s.responseRate}%`,\n  `Interested: ${s.interested} | Declined: ${s.declined}`,\n  `No response yet: ${s.noResponse}`,\n  `New clients added: ${s.newClients}`,\n  `Wellness evaluations booked: ${s.wellnessEvaluationsScheduled} | Calls booked: ${s.callsScheduled}`,\n].join('\\n');\nreturn destinations.map((destination) => ({ json: { ...digest, controlHubUrl: cfg.controlHubUrl, destinationKey: destination.key, chatId: destination.chatId, telegramText: text, idempotencyKey: `outreach-digest:${digest.intervalEndedAt.slice(0, 10)}:${destination.key}` } }));"
+      }
+    },
+    {
+      "id": "send-telegram",
+      "name": "Send Telegram Summary",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1170, 300],
+      "onError": "continueErrorOutput",
+      "parameters": { "chatId": "={{ $json.chatId }}", "text": "={{ $json.telegramText }}", "additionalFields": { "appendAttribution": false } },
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_TELEGRAM_CREDENTIAL_ID",
+          "name": "Control Hub Notifications"
+        }
+      }
+    },
+    {
+      "id": "record-run",
+      "name": "Record Summary Run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1410, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Build Weekly Summary').item.json.controlHubUrl + '/api/uhp/clients/digest' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { intervalStartedAt: $('Build Weekly Summary').item.json.intervalStartedAt, intervalEndedAt: $('Build Weekly Summary').item.json.intervalEndedAt, destinationKey: $('Build Weekly Summary').item.json.destinationKey, idempotencyKey: $('Build Weekly Summary').item.json.idempotencyKey, status: 'sent', summary: $('Build Weekly Summary').item.json.summary, n8nExecutionId: $execution.id, telegramMessageId: $json.message_id || $json.result?.message_id ? String($json.message_id ?? $json.result.message_id) : undefined, sentAt: $now.toISO() } }}",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_CONTROL_HUB_CALLBACK_CREDENTIAL_ID",
+          "name": "Control Hub Callback"
+        }
+      }
+    },
+    {
+      "id": "record-failure",
+      "name": "Record Summary Failure",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1410, 460],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Build Weekly Summary').item.json.controlHubUrl + '/api/uhp/clients/digest' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { intervalStartedAt: $('Build Weekly Summary').item.json.intervalStartedAt, intervalEndedAt: $('Build Weekly Summary').item.json.intervalEndedAt, destinationKey: $('Build Weekly Summary').item.json.destinationKey, idempotencyKey: $('Build Weekly Summary').item.json.idempotencyKey, status: 'failed', summary: $('Build Weekly Summary').item.json.summary, n8nExecutionId: $execution.id, errorMessage: String($json.error?.message ?? $json.message ?? 'Telegram delivery failed'), sentAt: null } }}",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_CONTROL_HUB_CALLBACK_CREDENTIAL_ID",
+          "name": "Control Hub Callback"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Friday 17:00 PHT": { "main": [[{ "node": "Configure Telegram Destinations", "type": "main", "index": 0 }]] },
+    "Configure Telegram Destinations": { "main": [[{ "node": "Fetch Outreach Summary", "type": "main", "index": 0 }]] },
+    "Fetch Outreach Summary": { "main": [[{ "node": "Build Weekly Summary", "type": "main", "index": 0 }]] },
+    "Build Weekly Summary": { "main": [[{ "node": "Send Telegram Summary", "type": "main", "index": 0 }]] },
+    "Send Telegram Summary": { "main": [[{ "node": "Record Summary Run", "type": "main", "index": 0 }], [{ "node": "Record Summary Failure", "type": "main", "index": 0 }]] }
+  }
+}

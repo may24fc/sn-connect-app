@@ -23,7 +23,11 @@ function workflow(name: string): Workflow {
 }
 
 describe('UHP n8n workflows', () => {
-  const names = ['uhp-herbalife-portal-reminders.json', 'uhp-volume-points-daily-digest.json'];
+  const names = [
+    'uhp-herbalife-portal-reminders.json',
+    'uhp-volume-points-daily-digest.json',
+    'uhp-outreach-weekly-summary.json',
+  ];
 
   it.each(names)('%s uses the Control Hub Header Auth credential', (name) => {
     const definition = workflow(name);
@@ -44,6 +48,7 @@ describe('UHP n8n workflows', () => {
   it.each([
     ['uhp-herbalife-portal-reminders.json', 'Send Telegram Reminder', 'Record Reminder Failure'],
     ['uhp-volume-points-daily-digest.json', 'Send Telegram Digest', 'Record Digest Failure'],
+    ['uhp-outreach-weekly-summary.json', 'Send Telegram Summary', 'Record Summary Failure'],
   ])('%s records Telegram failures', (name, sendNodeName, failureNodeName) => {
     const definition = workflow(name);
     const sendNode = definition.nodes.find((node) => node.name === sendNodeName);

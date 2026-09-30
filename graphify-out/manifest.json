@@ -2280,9 +2280,9 @@
     "semantic_hash": "5871ebdac954ee6be02d3267d6dc00f0"
   },
   "apps/web/src/components/tasks/TaskKanbanBoard.tsx": {
-    "mtime": 1790597973.097095,
-    "seen": 1790599138.0197043,
-    "ast_hash": "bc54af31b32f2facd8d71a9d0d89e37f",
+    "mtime": 1790675478.2277417,
+    "seen": 1790685193.8159127,
+    "ast_hash": "9bb7774fd5ec058263d9f1fd0d27b817",
     "semantic_hash": ""
   },
   "apps/web/src/components/tasks/index.ts": {
@@ -3012,9 +3012,9 @@
     "semantic_hash": "fac2ac00c6990e6b6e14aa456629ec59"
   },
   "apps/web/src/hooks/useUpdateTask.ts": {
-    "mtime": 1790597973.102095,
-    "seen": 1790599138.019822,
-    "ast_hash": "16a41851e81aeff0e1536273b1124bf0",
+    "mtime": 1790675212.6042645,
+    "seen": 1790685193.8164098,
+    "ast_hash": "edc7eab4c086237da226e8b52f46f6a2",
     "semantic_hash": ""
   },
   "apps/web/src/hooks/useUploadAnnouncementAttachment.ts": {
@@ -3174,8 +3174,8 @@
     "semantic_hash": "7a0dc3198c754c2a24e5a4a5466f950f"
   },
   "apps/web/src/lib/generated/application-update-summary.generated.ts": {
-    "mtime": 1790596311.7035081,
-    "seen": 1790599138.019849,
+    "mtime": 1790675695.6910362,
+    "seen": 1790685193.816519,
     "ast_hash": "7322821048c7b2c5f9f9ddca7c61261a",
     "semantic_hash": "7322821048c7b2c5f9f9ddca7c61261a"
   },
@@ -4686,9 +4686,9 @@
     "semantic_hash": "2004a8fb972b5408ba2123bbced6d8fb"
   },
   "package.json": {
-    "mtime": 1790597973.1091275,
-    "seen": 1790599138.020086,
-    "ast_hash": "4fb3dd0418a351f81fe78a5dbf9e475f",
+    "mtime": 1790674244.3603919,
+    "seen": 1790685193.817717,
+    "ast_hash": "d137d8f100f78006a1c3d8a845c9192c",
     "semantic_hash": ""
   },
   "packages/ai/package.json": {
@@ -4698,52 +4698,52 @@
     "semantic_hash": "c5f83aff44e126d18a75dcb6d29f2b09"
   },
   "packages/ai/src/chat.ts": {
-    "mtime": 1788257423.3972702,
-    "seen": 1789664611.8291202,
-    "ast_hash": "1e05e3a42c668c7995ee908373f31a03",
-    "semantic_hash": "1e05e3a42c668c7995ee908373f31a03"
+    "mtime": 1790744934.7645676,
+    "seen": 1790746105.0938277,
+    "ast_hash": "4d72e5d55c8a7fd2e9b606d63b6d37b4",
+    "semantic_hash": ""
   },
   "packages/ai/src/chunking.ts": {
-    "mtime": 1788257423.3972702,
-    "seen": 1789664611.829121,
-    "ast_hash": "83200f1af5686af3663fa7f21b07cdef",
-    "semantic_hash": "83200f1af5686af3663fa7f21b07cdef"
+    "mtime": 1790744934.770926,
+    "seen": 1790746105.0938287,
+    "ast_hash": "af6ab629124182dad8e9e441305329c5",
+    "semantic_hash": ""
   },
   "packages/ai/src/drive-chunking.ts": {
-    "mtime": 1788257423.3972702,
-    "seen": 1789664611.8291218,
-    "ast_hash": "c61c5bb8957cb1158c9a06b3dfe9bdd2",
-    "semantic_hash": "c61c5bb8957cb1158c9a06b3dfe9bdd2"
+    "mtime": 1790744934.763044,
+    "seen": 1790746105.0938303,
+    "ast_hash": "f76080aaef3fbc427c17fe1f89580bec",
+    "semantic_hash": ""
   },
   "packages/ai/src/embeddings.ts": {
-    "mtime": 1788257423.3982723,
-    "seen": 1789664611.8291225,
-    "ast_hash": "2aa871604818a349c310b63ae8e45a10",
-    "semantic_hash": "2aa871604818a349c310b63ae8e45a10"
+    "mtime": 1790744934.7704184,
+    "seen": 1790746105.0938315,
+    "ast_hash": "e2976986acc5b166e280d3ede9729af4",
+    "semantic_hash": ""
   },
   "packages/ai/src/index.ts": {
-    "mtime": 1788257423.3992772,
-    "seen": 1789664611.829123,
-    "ast_hash": "2bce2bb5a36b411816c3f4ad6a622055",
-    "semantic_hash": "2bce2bb5a36b411816c3f4ad6a622055"
+    "mtime": 1790744934.7603967,
+    "seen": 1790746105.0938323,
+    "ast_hash": "7c564a9291eb1448397a2759cc64a58d",
+    "semantic_hash": ""
   },
   "packages/ai/src/intake.ts": {
-    "mtime": 1788257423.3992772,
-    "seen": 1789664611.8291237,
-    "ast_hash": "5a950a943974d576a4703782516e6497",
-    "semantic_hash": "5a950a943974d576a4703782516e6497"
+    "mtime": 1790744934.758384,
+    "seen": 1790746105.0938332,
+    "ast_hash": "d164b0ce154b5960690d728ccb73f62c",
+    "semantic_hash": ""
   },
   "packages/ai/src/receipt.ts": {
-    "mtime": 1788257423.400273,
-    "seen": 1789664611.8291247,
-    "ast_hash": "092f3371d0e0f4ea1cbd70e18cb20630",
-    "semantic_hash": "092f3371d0e0f4ea1cbd70e18cb20630"
+    "mtime": 1790744934.74806,
+    "seen": 1790746105.093834,
+    "ast_hash": "32305697d5f90a8415015349077f57a7",
+    "semantic_hash": ""
   },
   "packages/ai/src/types/env.d.ts": {
-    "mtime": 1788257423.401273,
-    "seen": 1789664611.8291252,
-    "ast_hash": "58128f0fbe8001068d2c050862cb041a",
-    "semantic_hash": "58128f0fbe8001068d2c050862cb041a"
+    "mtime": 1790744934.7378376,
+    "seen": 1790746105.0938346,
+    "ast_hash": "e9818bed4495d62a0033529e349e2dd1",
+    "semantic_hash": ""
   },
   "packages/ai/tsconfig.json": {
     "mtime": 1788257423.401273,
@@ -5712,9 +5712,9 @@
     "semantic_hash": ""
   },
   "packages/ui/src/layout/Sidebar.tsx": {
-    "mtime": 1790599713.092394,
-    "seen": 1790600074.2325811,
-    "ast_hash": "158168e2556e08a307f544b815a8fc65",
+    "mtime": 1790735705.889161,
+    "seen": 1790736000.3574672,
+    "ast_hash": "5b6546d71f5933f348cede666f95ef79",
     "semantic_hash": ""
   },
   "packages/ui/src/primitives/avatar.tsx": {
@@ -8052,9 +8052,9 @@
     "semantic_hash": "5b21e7c028b1f48c0ab88ff2972a553c"
   },
   "CHANGELOG.md": {
-    "mtime": 1790581708.1930933,
-    "seen": 1790581746.5310771,
-    "ast_hash": "c247dfb45e0d18a197a74d8728170f04",
+    "mtime": 1790746055.6423478,
+    "seen": 1790746105.0944228,
+    "ast_hash": "d4917f0b47c0a1996e956c79eac132a0",
     "semantic_hash": ""
   },
   "CLAUDE.md": {
@@ -10002,9 +10002,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/uhp/_lib.ts": {
-    "mtime": 1790300920.4834583,
-    "seen": 1790301287.937659,
-    "ast_hash": "d03ca147b0c3f5c0a5a3a06c24935154",
+    "mtime": 1790744645.1968076,
+    "seen": 1790746105.0932374,
+    "ast_hash": "e3c4f3a3a90eb9da962787e3fb0cccb4",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/uhp/access-grants/route.ts": {
@@ -10032,9 +10032,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/uhp/clients/[id]/route.ts": {
-    "mtime": 1790156487.4933493,
-    "seen": 1790156807.518538,
-    "ast_hash": "902645dad952225aa06aa75ad1254ba4",
+    "mtime": 1790744651.1227987,
+    "seen": 1790746105.0932467,
+    "ast_hash": "d494005885e2c48fa5647ababd8ccd10",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/uhp/clients/metrics/route.ts": {
@@ -10044,9 +10044,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/uhp/clients/route.ts": {
-    "mtime": 1790156487.489349,
-    "seen": 1790156807.518542,
-    "ast_hash": "546ac93e9332b80450d0cc051c48f84c",
+    "mtime": 1790735873.3150594,
+    "seen": 1790736000.3568532,
+    "ast_hash": "7b8d0d99d35a789a4af9f279b4a60708",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/uhp/reminders/route.ts": {
@@ -10098,9 +10098,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/lib/schemas/uhp.schema.ts": {
-    "mtime": 1790156487.5258615,
-    "seen": 1790156807.5194106,
-    "ast_hash": "d3ce50ad373e41338947f74250e0ca4e",
+    "mtime": 1790744652.3758185,
+    "seen": 1790746105.0936105,
+    "ast_hash": "47170c2fd65d6438d0c97343562a4ff5",
     "semantic_hash": ""
   },
   "apps/web/src/lib/uhp-reminders.ts": {
@@ -10110,9 +10110,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/lib/uhp.ts": {
-    "mtime": 1790156487.517396,
-    "seen": 1790156807.519605,
-    "ast_hash": "20399bdbd7b3e9dccd7ceb1501a84389",
+    "mtime": 1790744651.7780719,
+    "seen": 1790746105.0936263,
+    "ast_hash": "b31a9d245a7ae600ab43503b2564e7ea",
     "semantic_hash": ""
   },
   "supabase/migrations/20260923000002_create_uhp_workspace.sql": {
@@ -10122,9 +10122,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpClientTrackerPage.tsx": {
-    "mtime": 1790300619.653201,
-    "seen": 1790301287.937825,
-    "ast_hash": "d15cb3d6691efdd62b2ea2ac53b15e2e",
+    "mtime": 1790745048.548852,
+    "seen": 1790746105.093399,
+    "ast_hash": "1c033778241a8513394208bf2c0d52ac",
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpRemindersPage.tsx": {
@@ -10176,9 +10176,9 @@
     "semantic_hash": ""
   },
   "docs/apps/web/architecture/optimistic-ui.md": {
-    "mtime": 1790597973.104601,
-    "seen": 1790599138.020698,
-    "ast_hash": "c2b8d692b5b41225e91056ba42a65b07",
+    "mtime": 1790746019.3238435,
+    "seen": 1790746105.0944939,
+    "ast_hash": "bd398c11d5d6983023df657db9d19a17",
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpAccessManagerDialog.tsx": {
@@ -10188,15 +10188,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpClientDetailDialog.tsx": {
-    "mtime": 1790300619.2399487,
-    "seen": 1790301287.937824,
-    "ast_hash": "91a761fccf392fa64d07f133d3393519",
+    "mtime": 1790745049.2972915,
+    "seen": 1790746105.093398,
+    "ast_hash": "b53b41f9cd4208478fdd8b8dff77373e",
     "semantic_hash": ""
   },
   "n8n/workflows/uhp-workflows.test.ts": {
-    "mtime": 1790300920.4990008,
-    "seen": 1790301287.9382172,
-    "ast_hash": "11cd345d1401fd8644d4bde72852ecfd",
+    "mtime": 1790745046.5143936,
+    "seen": 1790746105.0938246,
+    "ast_hash": "a8ce5190493f2995a74e533d6bf3c39d",
     "semantic_hash": ""
   },
   "scripts/backfill/import-uhp-workspace.test.ts": {
@@ -10914,15 +10914,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(admin)/super-admin/tasks/[id]/page.tsx": {
-    "mtime": 1790598793.8304408,
-    "seen": 1790599138.0192325,
-    "ast_hash": "6358c9bf4bce24ed9878dfe8a089ba56",
+    "mtime": 1790674898.6141486,
+    "seen": 1790685193.8135526,
+    "ast_hash": "92486d714867e58202a7432abac6756a",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(admin)/super-admin/tasks/page.tsx": {
-    "mtime": 1790598749.0723307,
-    "seen": 1790599138.0192335,
-    "ast_hash": "37060cf23ccdfa0061ac3c68841f0c09",
+    "mtime": 1790675488.1938348,
+    "seen": 1790685193.8135588,
+    "ast_hash": "407a97bf0d7fd5cb6ec5cb58dc3f5d18",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/ai-spending/layout.tsx": {
@@ -11448,9 +11448,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/tasks/[id]/page.tsx": {
-    "mtime": 1790598793.2143958,
-    "seen": 1790599138.01933,
-    "ast_hash": "1600a03ab01148fb1868e4ee1f444c75",
+    "mtime": 1790674896.423126,
+    "seen": 1790685193.813872,
+    "ast_hash": "8b1ea340787228470d20093a74af31d1",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/tasks/loading.tsx": {
@@ -11460,9 +11460,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/tasks/page.tsx": {
-    "mtime": 1790598747.6382174,
-    "seen": 1790599138.019332,
-    "ast_hash": "e0d6b48f3685b1da0600be2382ad1cbe",
+    "mtime": 1790675488.1938348,
+    "seen": 1790685193.8138797,
+    "ast_hash": "ab99b273ad478b53b66ad576e6ee082b",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/tickets/page.tsx": {
@@ -11607,6 +11607,96 @@
     "mtime": 1790599656.717529,
     "seen": 1790600074.2329116,
     "ast_hash": "806f43c323229cf2f3ed76745b2e7d62",
+    "semantic_hash": ""
+  },
+  "apps/web/src/lib/task-navigation.ts": {
+    "mtime": 1790675477.8243814,
+    "seen": 1790685193.8168411,
+    "ast_hash": "d65d0ff797efa7ff5bd5e2df4f0e197d",
+    "semantic_hash": ""
+  },
+  "tests/hooks/useUpdateTaskStatus.test.tsx": {
+    "mtime": 1790675212.6012626,
+    "seen": 1790685193.8197732,
+    "ast_hash": "9b0670b7880d9368a2b78a1f535599ac",
+    "semantic_hash": ""
+  },
+  "tests/lib/task-navigation.test.ts": {
+    "mtime": 1790675488.1838346,
+    "seen": 1790685193.8198068,
+    "ast_hash": "daef290f2c05812ccbec3ffcdcb7eb94",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260928000002_create_work_tracker_visibility.sql": {
+    "mtime": 1790734451.6864424,
+    "seen": 1790736000.3577278,
+    "ast_hash": "5ab083da1c393698db546ba4fb25ea7a",
+    "semantic_hash": ""
+  },
+  "tests/lib/uhp-duplicates.test.ts": {
+    "mtime": 1790735705.8531566,
+    "seen": 1790736000.3577871,
+    "ast_hash": "0f349a190a18dbb19f2a48fffe532c79",
+    "semantic_hash": ""
+  },
+  "UHP Workflow on SN Control Hub (Comments).pdf": {
+    "mtime": 1790735285.4400592,
+    "seen": 1790736000.3579435,
+    "ast_hash": "112b7791676f5c5f5e5613d6863fcc10",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/api/uhp/clients/[id]/attachments/route.ts": {
+    "mtime": 1790744934.7355685,
+    "seen": 1790746105.0932438,
+    "ast_hash": "36efee47bbdd36fb186ff170237cbcb3",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/api/uhp/clients/digest/route.ts": {
+    "mtime": 1790744934.7315698,
+    "seen": 1790746105.093248,
+    "ast_hash": "339983781ac57b7b685b0cbb7252c519",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/api/uhp/clients/extract-contact/route.ts": {
+    "mtime": 1790744934.7378376,
+    "seen": 1790746105.0932496,
+    "ast_hash": "24b35f6bc738dafd668dd03efa947165",
+    "semantic_hash": ""
+  },
+  "apps/web/src/lib/uhp-screenshots.ts": {
+    "mtime": 1790745051.127681,
+    "seen": 1790746105.093625,
+    "ast_hash": "51775c3bbfef0e374d9e9ab8c4bdb281",
+    "semantic_hash": ""
+  },
+  "n8n/workflows/uhp-outreach-weekly-summary.json": {
+    "mtime": 1790745047.6588826,
+    "seen": 1790746105.0938222,
+    "ast_hash": "261a2a933046d796f74cee40b8c2580f",
+    "semantic_hash": ""
+  },
+  "packages/ai/src/contact.ts": {
+    "mtime": 1790744934.7570593,
+    "seen": 1790746105.0938294,
+    "ast_hash": "10d821984c80fb599e39942db95dcf6f",
+    "semantic_hash": ""
+  },
+  "packages/ai/src/vision.ts": {
+    "mtime": 1790744934.7355685,
+    "seen": 1790746105.0938356,
+    "ast_hash": "308c410b8d06f237bf7d9cc489bee431",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20260930000001_create_uhp_client_attachments_and_outreach_digest.sql": {
+    "mtime": 1790744652.941919,
+    "seen": 1790746105.09431,
+    "ast_hash": "be947024909425660305d28b10ef1f03",
+    "semantic_hash": ""
+  },
+  "tests/lib/uhp-outreach-summary.test.ts": {
+    "mtime": 1790745051.5450146,
+    "seen": 1790746105.0943859,
+    "ast_hash": "0ada112da26e7a7839eceede78d12855",
     "semantic_hash": ""
   }
 }

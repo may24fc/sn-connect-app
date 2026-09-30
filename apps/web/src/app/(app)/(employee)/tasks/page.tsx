@@ -8,7 +8,9 @@ import { useCreateTask } from '@/hooks/useCreateTask';
 import { useProjectMilestones, useProjects } from '@/hooks/useProjects';
 import { useTasks } from '@/hooks/useTasks';
 import { useTasksRealtime } from '@/hooks/useTasksRealtime';
+import { useUpdateTaskStatus } from '@/hooks/useUpdateTask';
 import { formatDate } from '@/lib/format';
+import { getTaskDetailPath } from '@/lib/task-navigation';
 import {
   Badge,
   Button,
@@ -274,6 +276,7 @@ export default function MyTasksPage() {
   };
 
   const { data, isLoading, error } = useTasks(taskFilters, { enabled: Boolean(user?.id) });
+  const updateTaskStatus = useUpdateTaskStatus();
 
   useTasksRealtime({
     scope: 'assigned',
@@ -297,16 +300,7 @@ export default function MyTasksPage() {
     async (taskId: string, newStatus: TaskStatusDB) => {
       setUpdatingTaskId(taskId);
       try {
-        const response = await fetch(`/api/tasks/${taskId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to update task');
-        }
+        await updateTaskStatus.mutateAsync({ taskId, status: newStatus });
         addToast({
           title: 'Task status updated',
           description: `Changed to ${newStatus.replace('_', ' ')}`,
@@ -322,7 +316,7 @@ export default function MyTasksPage() {
         setUpdatingTaskId(null);
       }
     },
-    [addToast]
+    [addToast, updateTaskStatus]
   );
 
   return (
@@ -835,7 +829,7 @@ function TaskListView({ tasks, onStatusChange, updatingTaskId }: TaskListViewPro
               <TableRow
                 key={task.id}
                 className="cursor-pointer hover:bg-muted/50 transition-colors"
-                onDoubleClick={() => router.push(`/tasks/${task.id}`)}
+                onDoubleClick={() => router.push(getTaskDetailPath(task.id, '/tasks'))}
               >
                 <TableCell>
                   <p className="text-sm font-medium">{task.title}</p>
@@ -890,7 +884,7 @@ function TaskListView({ tasks, onStatusChange, updatingTaskId }: TaskListViewPro
                 <TableCell className="text-sm">{task.assigner_name || '—'}</TableCell>
                 <TableCell className="text-right">
                   <Button asChild variant="outline" size="sm">
-                    <Link href={`/tasks/${task.id}`}>View</Link>
+                    <Link href={getTaskDetailPath(task.id, '/tasks')}>View</Link>
                   </Button>
                 </TableCell>
               </TableRow>

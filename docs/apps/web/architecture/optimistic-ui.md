@@ -52,7 +52,7 @@ The initial rollout added optimistic updates with rollback and reconciliation to
 | Announcement experience | Star/unstar, mark read, pin, add comment |
 | Information hub | Add/remove bookmark |
 | Preferences | Update notification preferences |
-| Tasks and support | Add task/ticket comments; add/remove task proofs; task status across task and Work Tracker views; update/delete PA tasks |
+| Tasks and support | Add task/ticket comments; add/remove task proofs; task status, including Kanban moves, across task and Work Tracker views; update/delete PA tasks |
 | Checklists | Employee onboarding and offboarding completion; project checklist update/delete with immediate milestone, project, and Work Tracker progress propagation |
 | Wellness Bingo | Board tiles/custom habit, partner, weekly recording |
 | Recruitment | Application status update and removal |
@@ -61,12 +61,12 @@ The initial rollout added optimistic updates with rollback and reconciliation to
 | Revenue forecast | Entry upsert/update/delete and goal create/delete |
 | Expenses | Verification fields, matching, leadership decision, and deletion |
 | Directory | Employee edit, deactivate, and restore |
-| UHP workspace | Client and VP creates; client status/activity/note changes; VP target/edit/delete changes; access grant revocation |
+| UHP workspace | Client and VP creates; client status/type/activity/note changes; client delete (after confirmation); VP target/edit/delete changes; access grant revocation. Screenshot contact extraction and screenshot uploads stay server-confirmed |
 | Christmas Tree | Ornament placement/move/delete and wish add/edit/delete |
 | Onboarding checklist | Task create/edit/delete, clear, and default-template edits |
 | Offboarding checklist | Task create/edit/delete, clear, default-template edits, and template application |
 
-The rollout also corrected rollback coverage in `useUpdateTask` and `useToggleResourceFeatured`: both now snapshot every matching list cache rather than only an umbrella key.
+The rollout also corrected rollback coverage in `useUpdateTask` and `useToggleResourceFeatured`: both now snapshot every matching list cache rather than only an umbrella key. Kanban task moves use the same task-cache mutation path, so cards move immediately and roll back to their prior column if the request fails.
 
 ## Remaining rollout candidates
 
