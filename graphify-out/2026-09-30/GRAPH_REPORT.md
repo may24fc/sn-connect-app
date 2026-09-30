@@ -1,12 +1,12 @@
 # Graph Report - sn-connect-app  (2026-09-30)
 
 ## Corpus Check
-- 1791 files · ~3,853,864 words
+- 1800 files · ~3,857,764 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 81 file(s) not represented in the graph (top: .csv 26, .otf 20, .toml 17)
 
 ## Summary
-- 11775 nodes · 29110 edges · 761 communities (491 shown, 270 thin omitted)
+- 11833 nodes · 29258 edges · 731 communities (455 shown, 276 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 359 edges (avg confidence: 0.89)
 - Token cost: 0 input · 0 output
 
@@ -18,98 +18,98 @@
 ## Community Hubs (Navigation)
 - performance.schema.ts
 - useCrm.ts
-- getMarketingReportDisplayName
-- hooks/useResources.ts
-- performance.types.ts
-- useMarketingDeliverablesReminderRecipients.ts
-- createSupabaseAdminClient
+- isMarketingWeeklyPlan
+- useToast
+- cn
+- Badge
+- createSupabaseServerClient
 - getProjectAuthedContext
-- create-notification.ts
-- ProfilePageSkeleton.tsx
-- resources/index.ts
+- ref_zod
+- Skeleton
+- forms/index.ts
 - reports/index.ts
-- @testing-library/react
+- useResourceFeed.test.tsx
 - ui/src/index.ts
-- requireUhpModule
+- getAuthedSupabase
 - ReportsAnalyticsTab.tsx
-- logActivity
+- getPaTaskAuthedContext
 - intern/profile/page.tsx
-- ApplicationsPage
-- resolveStagedFormData
+- FivePercentReflectionForm.tsx
+- createSupabaseAdminClient
 - ai-spending/page.tsx
-- getTaskAuthedContext
+- empty-state.tsx
 - useInternships.ts
-- useAuth
+- (employee)/dashboard/page.tsx
 - bulk-import/route.ts
 - RebrandHome.tsx
-- getAuthedSupabase
+- ref_next_server
 - report-utils.ts
 - MarketingReportEditor.tsx
 - web/src/app/layout.tsx
 - Implementation Checklist
 - ChecklistSection
 - Database Schema Reference
-- (employee)/announcements/page.tsx
+- Control Hub HR Portal V2 Implementation Checklist
 - SN International Group Public Website — Technical Documentation
 - type-helpers.ts
 - useOnboardingProgressSummary.ts
 - Control Hub — Documentation Hub
 - dependencies
-- stageFormDataFiles
-- OnboardingWizard.tsx
-- OKRDetailWorkspace.tsx
+- verify/route.ts
+- getAuthedSupabase
+- OKRDetailWorkspace
 - christmas-tree/page.tsx
 - getAuthedSupabase
 - web/package.json
-- Badge
+- EmptyState
 - tickets/_lib.ts
-- parseMarkdownBlocks
+- AIChatbot.tsx
 - enums.ts
 - Sidebar.tsx
 - Detailed Findings
-- admin/marketing/ad-spend/page.tsx
+- ingest/route.ts
 - scripts
 - ai/src/index.ts
 - agent.ts
 - mobile/package.json
-- approve-onboarding/route.ts
+- wise/client.ts
 - CompanyCalendarView.tsx
 - biome.json
-- getAuthedPerformanceContext
+- okrs/route.ts
 - admin/directory/page.tsx
 - csv.ts
 - revenue-forecast.ts
-- directory/route.ts
+- pa-tasks/page.tsx
 - CompareExecutiveDashboard.tsx
 - 20260211000002_create_resources_tables.sql
 - admin/performance/page.tsx
-- (employee)/tickets/page.tsx
+- Button
 - placeholder.ts
 - Vercel Deployment Guide - HR Portal
 - marketing/_lib.ts
 - generate-implementation-checklist.mjs
 - Vercel Setup Summary
 - inquiries/route.ts
-- cn
+- feedback/index.ts
 - getNormalizedMetadataRole
 - evaluation-cadence.ts
 - process-project-intake-message.ts
 - in-app-notify.ts
 - www/package.json
 - evaluation-cadence-reminders/index.ts
-- CrmPageContent.tsx
+- CrmPageContent
 - wellness-bingo/_lib.ts
 - bingo/page.tsx
 - generate-sprint-report.mjs
 - UI Primitives Reference
-- ref_zod
+- invite/route.ts
 - admin/reports/page.tsx
 - announcements/index.ts
 - performance/_lib.ts
 - @playwright/test
 - branded-types.ts
 - ui/package.json
-- auth.ts
+- milestone-announcements/index.ts
 - compilerOptions
 - ref_node_path
 - onboarding.schema.ts
@@ -120,27 +120,27 @@
 - getAuthedOnboardingContext
 - monthly-report-pdf.ts
 - audit-logs/route.ts
-- isOnboardingAdmin
+- ProjectDetailPage
 - Quick Start: Role-Based Access Control
-- ref_next_server
+- getAuthedSupabase
 - design_system.py
 - evaluation-summary.ts
 - 20260306000001_create_corporate_website_tables.sql
 - _drive-watch-utils.mjs
-- PerformanceWorkspace
+- PerformanceWorkspace.tsx
 - 20260507000001_create_project_tables.sql
-- work-tracker/page.tsx
-- probation/route.ts
+- CrmPageContent.tsx
+- getAuthedPerformanceContext
 - SettingsPage.tsx
 - Vercel Setup - Interactive Steps
 - tours.ts
 - dependencies
 - usePaTaskLookups.ts
 - database/package.json
-- Card
+- ref_react
 - useProjects.ts
 - Resources Components Documentation
-- files/page.tsx
+- useDepartments.test.tsx
 - InquiryForm.tsx
 - example-usage.ts
 - Common Tasks
@@ -150,15 +150,15 @@
 - useAIChat.ts
 - chat/route.ts
 - interns/page.tsx
-- useUpdateTask.ts
+- Optimistic UI Rollout
 - ref_lib_schemas_internship_schema
 - components.json
 - www/src/app/layout.tsx
 - getAuthedInternshipContext
 - Control Hub HR Portal
-- MonthlySelfEvaluationAdminReview
-- InternDetailPage
-- CompanyPulseWidget.tsx
+- usePaTasks.ts
+- process-drive-doc.ts
+- super-admin/dashboard/page.tsx
 - internships/[id]/route.ts
 - internship.schema.ts
 - checklist-templates/route.ts
@@ -169,9 +169,9 @@
 - 20260216000016_ensure_performance_tables.sql
 - 20260216000018_repair_invoices_and_reports_tables.sql
 - compilerOptions
-- getAuthedSupabase
+- getAdminClient
 - RevenueForecastPageContent
-- phone.ts
+- contact.ts
 - compilerOptions
 - generate-application-update-summary.mjs
 - 20260216000015_verify_and_repair_schema.sql
@@ -181,16 +181,16 @@
 - suggestions/route.ts
 - buildWellnessBingoSnapshot
 - Form Components Reference
-- useConversations.ts
+- 20260930000001_create_uhp_client_attachments_and_outreach_digest.sql
 - ProjectDescriptionFields.tsx
 - www/src/app/api/applications/route.ts
 - package.json
 - auth/package.json
 - backfill-notification-names.mjs
-- uhp/_lib.ts
+- drive-doc-sync/route.ts
 - okr-targets/[id]/evidence/route.ts
-- components/README.md
-- toast.tsx
+- AI Knowledge Components Reference
+- composeProjectDescription
 - ref_tanstack_react_query
 - setup-playwright-auth.js
 - 20260228000007_okr_targets_redesign.sql
@@ -204,16 +204,16 @@
 - ai/package.json
 - config/package.json
 - generate-embeddings/index.ts
-- useAISources.ts
-- pa-tasks/page.tsx
-- expense-parser.ts
-- useUpdateTaskStatus.test.tsx
+- actions/route.ts
+- PaTasksPage
+- EODAttachmentGallery.tsx
+- @testing-library/react
 - create-sample-accounts.mjs
 - run-notification-backfill-targets.mjs
 - 20260411000003_add_divisions_and_org_placement.sql
 - dashboard/analytics/route.ts
-- ai-expenses/_lib.ts
-- DataTable.tsx
+- ExecutivePortraits.tsx
+- revenue-forecast/access-grants/route.ts
 - MonthlyCallFeedbackForm.tsx
 - www/src/lib/email.ts
 - core.py
@@ -224,15 +224,15 @@
 - 20260507120001_create_gamification_tables.sql
 - 20260813000002_create_pa_task_lookup_tables.sql
 - monthlyCallFeedbackDetailConfig.ts
-- useInvoices.ts
+- admin/invoice/page.tsx
 - Control Hub HR Portal Implementation Checklist (V1)
 - 20260329000006_create_ticketing_tables.sql
 - public.associate_evaluations
 - Recruitment (Admin)
-- useAtsAccess.ts
+- PerformancePage
 - abuse-controls.ts
-- useCrmAccess.ts
-- crm/access-grants/route.ts
+- AtsAccessManagerDialog.tsx
+- sources/upload/route.ts
 - leadership-profile-setup.spec.ts
 - bootstrap-super-admin.mjs
 - 20260123000007_create_triggers.sql
@@ -249,8 +249,8 @@
 - apps/www Hidden Sections Log
 - Deployment Documentation
 - PA Workflow & Productivity System Proposal
-- useOffboardingSummary.ts
-- useUhpAccess.ts
+- ResourceCard
+- UhpClientTrackerPage.tsx
 - onboarding-new-employee/index.ts
 - public.employees
 - public.reports
@@ -260,12 +260,12 @@
 - Resources
 - partner/route.ts
 - ai.schema.ts
-- file-drop-zone.tsx
+- PerformanceRating
 - ref_framer_motion
-- Apps/Web Audit - 2026-03-29
+- renderSfoContent
 - src/database.types.ts
 - overrides
-- war-room/pool/page.tsx
+- useDocuments.test.tsx
 - useWeeklyCommitments.ts
 - public.christmas_ornaments
 - 20260507000002_create_project_progress_functions.sql
@@ -278,13 +278,13 @@
 - 20260329000003_repair_missing_offboarding_tables.sql
 - 20260611000001_create_weekly_commitments.sql
 - 20260709000001_create_revenue_forecast_tables.sql
-- useRevenueForecastAccess.ts
-- useGamification.ts
+- RevenueForecastAccessManagerDialog.tsx
+- achievements/page.tsx
 - dashboard-analytics-route.test.ts
-- ai-knowledge/index.ts
+- cn.ts
 - collections-route.test.ts
 - Core Components
-- businesses/[slug]/page.tsx
+- cn
 - onboarding-validation.spec.ts
 - Mobile Navigation Menu Overlay
 - ui/tsconfig.json
@@ -299,9 +299,9 @@
 - scripts
 - useRequireAuth
 - site-config.ts
-- AI Knowledge Components Reference
-- uhp.schema.ts
-- ref_supabase_supabase_js
+- ai-suggestions-route.test.ts
+- uhp.ts
+- import/route.ts
 - Performance Reviews
 - BM25
 - 20260928000002_create_work_tracker_visibility.sql
@@ -312,7 +312,7 @@
 - 20260227000001_audit_logs_normalization_and_notifications.sql
 - public.employee_directory
 - AppShell.tsx
-- transcribe-recording/index.ts
+- ref_supabase_supabase_js
 - vercel-setup.sh
 - public.users
 - 20260217000009_add_all_missing_resources_columns.sql
@@ -323,15 +323,15 @@
 - ensureBoard
 - resourceSchema.ts
 - ApplicationForm.tsx
-- useAiSpendingAccess.ts
-- ServicesAccordion.tsx
-- admin/ai-knowledge/page.tsx
+- CRMInteractionPanel
+- route.test.ts
+- useSearchResources.test.tsx
 - LeadershipSection.tsx
-- VisionSection.tsx
+- super-admin/performance/monthly-self-evaluations/page.tsx
 - tasks-id-route.test.ts
 - renew-drive-watches/route.ts
 - public.project_documentations
-- embeddings.ts
+- super-admin/performance/self-evaluation/page.tsx
 - 20260217000004_add_evaluation_fields_to_performance.sql
 - 20260227000010_add_report_hierarchy.sql
 - 20260402000001_add_company_calendar_notification_sync.sql
@@ -343,7 +343,7 @@
 - 20260731000001_secure_public_inquiries.sql
 - Associate Guide
 - Admin Guides Index
-- uhp-reminders.ts
+- WorkTrackerSectionNav.test.tsx
 - mutation-helpers.ts
 - web/vercel.json
 - usePaTaskAccess.ts
@@ -352,7 +352,7 @@
 - public.individual_performance_summary
 - 20260402000002_enhance_ticket_submission.sql
 - 20260526000002_sync_okr_progress_from_targets.sql
-- CyclesPage
+- mutation-helpers.test.ts
 - ensure-test-accounts.mjs
 - web/src/app/providers.tsx
 - Pages to Test
@@ -369,7 +369,7 @@
 - Technical implementation
 - Supabase Edge Functions Deployment
 - OurStorySection.tsx
-- EODReportForm.tsx
+- interns/[id]/page.tsx
 - Virtual Christmas Tree Implementation Checklist
 - Calendar Feature 404 Error Screenshot
 - public.announcement_stars
@@ -401,7 +401,7 @@
 - 20260628000001_add_expense_entries_fx_normalization.sql
 - (employee)/projects/[id]/page.tsx
 - employee/[id]/page.tsx
-- hasRevenueForecastAccess
+- revenue-forecast.schema.ts
 - Login Page Screenshot
 - SN International Group Homepage (Full Page)
 - 20260915000003_fix_christmas_ornament_update_recursion.sql
@@ -453,7 +453,7 @@
 - idx_invoices_document_id
 - mobile/next-env.d.ts
 - web/next-env.d.ts
-- useUserManagement.ts
+- Department
 - www/next-env.d.ts
 - www/src/lib/query-keys.ts
 - style.d.ts
@@ -502,7 +502,6 @@
 - Overwrite Never Duplicate rule (embedding upsert)
 - Version Before Mutating rule
 - invoices
-- Announcement Components Reference
 - public.ai_expenses
 - public.performance_evaluation_drafts
 - public.project_checklist_items
@@ -528,18 +527,14 @@
 - public.project_milestones
 - public.expense_entries
 - public.marketing_entries
-- Task Components Reference
 - ref_next_navigation
-- Supabase Migrations README (HR Portal Phase 1)
 - CardSwap.jsx
 - getRevenueForecastAuthedContext
-- UhpVolumePointsPage
 - Employee Dashboard (`/dashboard`)
 - Documents (My 201 Files)
 - Tasks
-- receipt.ts
+- extract/route.ts
 - CompanyTimeline.tsx
-- Frontend–Backend Integration Audit — 2026-09-18
 - useExpenseImport.test.tsx
 - upload-staging.test.ts
 - resourceFilterSchema.ts
@@ -547,14 +542,10 @@
 - AI HR Assistant
 - Notifications
 - apps/www — Documentation Hub
-- BadgeIcon.tsx
 - ADR-007: Ownership of Backend Surfaces With No Frontend
-- MasteryTrackCard.tsx
 - internship-log-attachments-route.test.ts
-- useRevenueForecastGoals.ts
 - search.py
 - auth.schema.ts
-- middleware.ts
 - onboarding-view.schema.ts
 - Priority Roadmap
 - Expenses and Reconciliation
@@ -567,58 +558,37 @@
 - Vercel Quick Start Guide
 - expenses-monthly-report.test.ts
 - instrumentation.ts
-- Data Display Components Reference
 - announcement-comments-route.test.ts
-- events/route.ts
-- cycles/route.ts
-- EmployeeSpotlight.tsx
 - public.marketing_deliverables_reminder_recipients
 - Help Center
 - src/env.ts
-- WhatWeDo.tsx
 - public.ats_access_grants
-- UhpClientTrackerPage
 - Local Supabase Workflow
 - ResourceFilters
 - EditSfoLeadDialog
 - AGENTS.md
 - page.test.ts
 - errors.ts
-- useOnboardingWizard.ts
 - ref_vitest
-- ref_lucide_react
+- super-admin/tasks/page.tsx
 - Work Tracker
-- Toast
 - ReportsCompareTab.tsx
 - Ultimate Health Project workspace
-- _department.ts
 - ResourceDetailPanel
-- TeamGrid.tsx
-- ui/button.tsx
-- update-fx-rates/index.ts
-- Internship Components Reference
+- auth.ts
 - admin/performance/self-evaluation/page.tsx
-- crm/_lib.ts
+- logActivity
 - public.christmas_wishes
-- VersionHistory.tsx
 - create-admin-test-accounts.mjs
 - setup-sample-accounts.mjs
-- 9. GLOBAL / LAYOUT
-- useKPIEvidence.ts
-- image-quality.ts
 - Feedback Components Reference
-- 7. TEAM PAGE (`/team`)
-- 1. HOMEPAGE (`/`)
-- 4. CAREERS PAGE (`/careers`)
-- 5. CONTACT PAGE (`/contact`)
-- contact/BookingCard.tsx
 
 ## God Nodes (most connected - your core abstractions)
 1. `cn()` - 355 edges
-2. `createSupabaseAdminClient()` - 267 edges
+2. `createSupabaseAdminClient()` - 270 edges
 3. `useToast()` - 239 edges
 4. `createSupabaseServerClient()` - 235 edges
-5. `logActivity()` - 223 edges
+5. `logActivity()` - 225 edges
 6. `Button` - 202 edges
 7. `Card` - 151 edges
 8. `CardContent` - 150 edges
@@ -628,13 +598,13 @@
 ## Surprising Connections (you probably didn't know these)
 - `SkeletonTable` --references--> `DataTable()`  [INFERRED]
   docs/apps/web/components/feedback.md → apps/web/src/components/data-display/DataTable/DataTable.tsx
-- `Best Practices` --references--> `useRequireAuth()`  [INFERRED]
-  docs/guides/QUICK-START-RBAC.md → apps/web/src/contexts/AuthContext.tsx
 - `Standard mutation contract` --references--> `QueryKeys`  [INFERRED]
   docs/apps/web/architecture/optimistic-ui.md → apps/web/src/lib/query-keys.ts
 - `FormInput` --references--> `FormField()`  [INFERRED]
   docs/apps/web/components/forms.md → packages/ui/src/components/forms/FormField.tsx
 - `FormSelect` --references--> `FormField()`  [INFERRED]
+  docs/apps/web/components/forms.md → packages/ui/src/components/forms/FormField.tsx
+- `FormTextarea` --references--> `FormField()`  [INFERRED]
   docs/apps/web/components/forms.md → packages/ui/src/components/forms/FormField.tsx
 
 ## Import Cycles
@@ -660,139 +630,135 @@
 - **Supabase migrations and setup docs jointly implementing RLS-as-final-gatekeeper zero-trust security model** — supabase_migrations_readme, supabase_setup, concept_rls_final_gatekeeper [INFERRED 0.85]
 - **Wise Production Credential Collection & Handoff Flow** — docs_payments_wise_production_setup_for_non_tech, docs_payments_wise_credentials_collection_form, docs_production_production_launch_checklist [INFERRED 0.85]
 
-## Communities (761 total, 270 thin omitted)
+## Communities (731 total, 276 thin omitted)
 
 ### Community 0 - "performance.schema.ts"
-Cohesion: 0.03
-Nodes (63): SummaryGenerateResponse, SummaryLookupResponse, SummaryLookupResult, SummaryRecord, UseEvaluationSummaryOptions, assignmentSnapshotSchema, CreateKPIInput, createKPISchema (+55 more)
+Cohesion: 0.04
+Nodes (59): GET(), getDeadlineValidationError(), getNextQuarter(), getQuarterFromStartDate(), PATCH(), assignmentSnapshotSchema, CreateKPIInput, CreateOKRInput (+51 more)
 
 ### Community 1 - "useCrm.ts"
-Cohesion: 0.08
-Nodes (29): SfoLeadRow, TechInquiryRow, CRMInteractionPanelProps, ListResponse, SfoCustomerType, SfoLeadInput, SfoLeadRecord, SfoLeadUpdateInput (+21 more)
+Cohesion: 0.12
+Nodes (17): CRMInteractionPanelProps, ListResponse, SfoCustomerType, SfoLeadInput, SfoLeadRecord, SfoLeadUpdateInput, SfoPlatform, SfoStatus (+9 more)
 
-### Community 2 - "getMarketingReportDisplayName"
-Cohesion: 0.08
-Nodes (43): GET(), PATCH(), POST(), computeExchangeRate(), GET(), POST(), runtime, DELETE() (+35 more)
+### Community 2 - "isMarketingWeeklyPlan"
+Cohesion: 0.25
+Nodes (18): DELETE(), GET(), PATCH(), POST(), notifyMarketingSubmissionWebhook(), NotifyMarketingSubmissionWebhookOptions, NotifySubmittedReportOptions, notifySuperAdminsAboutSubmittedReport() (+10 more)
 
-### Community 3 - "hooks/useResources.ts"
-Cohesion: 0.06
-Nodes (38): AdminResourceDetailPage(), AdminPendingResourcesPage(), isPendingApprovalStatus(), ResourcesPage(), ResourceBookmarksPage(), ResourceDetailPage(), FolderClient(), BookmarkRecord (+30 more)
+### Community 3 - "useToast"
+Cohesion: 0.03
+Nodes (103): CollectionDetailPage(), NewCollectionPage(), AdminResourceDetailPage(), NewResourcePage(), AdminResourcesPage(), AdminPendingResourcesPage(), categoryLabels, isPendingApprovalStatus() (+95 more)
 
-### Community 4 - "performance.types.ts"
-Cohesion: 0.06
-Nodes (44): KPICard / KPIList / KPISummary, PerformanceCharts, PerformanceSummaryCards / CycleProgressCards, getScoreStatus(), KPICard(), KPICardProps, KPIList(), KPIListProps (+36 more)
+### Community 4 - "cn"
+Cohesion: 0.04
+Nodes (63): Composite Components by Domain, Dashboard (5), Documents (1), Notifications (1), Profile (1), DashboardAttentionCarousel(), DashboardAttentionCarouselProps, DashboardAttentionItem (+55 more)
 
-### Community 5 - "useMarketingDeliverablesReminderRecipients.ts"
-Cohesion: 0.36
-Nodes (6): MarketingDeliverablesReminderRecipientsDialog(), MarketingDeliverablesReminderRecipient, readJson(), RecipientsResponse, useMarketingDeliverablesReminderRecipients(), useUpdateMarketingDeliverablesReminderRecipient()
+### Community 5 - "Badge"
+Cohesion: 0.10
+Nodes (46): Tasks (10), TaskAssigneeSelect(), TaskAssigneeSelectProps, formatTaskCategory(), TASK_CATEGORY_STYLES, TaskCard(), TaskCardProps, formatTaskCategory() (+38 more)
 
-### Community 6 - "createSupabaseAdminClient"
+### Community 6 - "createSupabaseServerClient"
 Cohesion: 0.02
-Nodes (158): GET(), POST(), BankRegistryRow, GET(), GET(), CrmAuthedContext, GET(), isAuthorizedCronRequest() (+150 more)
+Nodes (127): GET(), POST(), BankRegistryRow, GET(), GET(), ADMIN_ROLES, GET(), GET() (+119 more)
 
 ### Community 7 - "getProjectAuthedContext"
-Cohesion: 0.04
-Nodes (79): dynamic, GET(), InternRow, backlogPrioritySchema, backlogStatusSchema, DELETE(), PATCH(), projectBacklogUpdateSchema (+71 more)
+Cohesion: 0.03
+Nodes (106): dynamic, GET(), InternRow, backlogPrioritySchema, backlogStatusSchema, DELETE(), PATCH(), projectBacklogUpdateSchema (+98 more)
 
-### Community 8 - "create-notification.ts"
-Cohesion: 0.05
-Nodes (93): POST(), RouteContext, expenseDecisionSchema, POST(), runtime, fetchExpenseEntry(), MinimalExpenseEntry, notifyMatchResult() (+85 more)
+### Community 8 - "ref_zod"
+Cohesion: 0.03
+Nodes (126): expenseDecisionSchema, POST(), runtime, POST(), POST(), DELETE(), deleteTaskSchema, offboardingTaskDetailsSchema (+118 more)
 
-### Community 10 - "resources/index.ts"
-Cohesion: 0.06
-Nodes (50): AdminCreateInvoicePage(), AdminCollectionsPage(), NewResourcePage(), ResourceCategoryPage(), EmployeeNewResourcePage(), Props, useBackNavigation(), UseBackNavigationOptions (+42 more)
+### Community 10 - "forms/index.ts"
+Cohesion: 0.08
+Nodes (33): Forms (6), BankOption, BankSelector, BankSelectorProps, CurrencyOption, CurrencySelector, CurrencySelectorProps, DEFAULT_CURRENCIES (+25 more)
 
 ### Community 11 - "reports/index.ts"
-Cohesion: 0.07
-Nodes (58): Reports (14), Analytics Charts (Recharts), Usage, WeekSelector / WeekDropdownSelector, ExpenditureVsResultsChart(), ROIByDepartmentChart(), SpendByCategoryChart(), StatusBreakdownChart() (+50 more)
-
-### Community 12 - "@testing-library/react"
-Cohesion: 0.07
-Nodes (13): ref_components_data_display_serverpagination, ref_components_recruitment_recruitmentsectionnav, ref_components_work_tracker_worktrackersectionnav, ref_hooks_useannouncementfeed, ref_hooks_useannouncements, ref_hooks_usebacknavigation, ref_hooks_usecreateannouncement, @testing-library/react (+5 more)
+Cohesion: 0.06
+Nodes (66): Reports (14), Analytics Charts (Recharts), Usage, WeekSelector / WeekDropdownSelector, ExpenditureVsResultsChart(), CHART_COLORS, MetricDataPoint, ReportMetricsChart() (+58 more)
 
 ### Community 13 - "ui/src/index.ts"
-Cohesion: 0.01
-Nodes (296): LeagueFilter, XpTierPill(), InternCard / InternList / InternRow, AI Chat (7), Composite Components by Domain, Dashboard (5), Documents (1), Forms (6) (+288 more)
+Cohesion: 0.02
+Nodes (165): PerformanceReviewRecord, KPICard / KPIList / KPISummary, PerformanceCharts, PerformanceSummaryCards / CycleProgressCards, Performance (8), Resources (12), INVOICE_STATUS_CONFIG, InvoiceStatus (+157 more)
 
-### Community 14 - "requireUhpModule"
-Cohesion: 0.16
-Nodes (14): DELETE(), GET(), PATCH(), GET(), GET(), requireUhpModule(), DELETE(), PATCH() (+6 more)
+### Community 14 - "getAuthedSupabase"
+Cohesion: 0.22
+Nodes (14): DELETE(), GET(), PATCH(), RouteContext, updateStandupSchema, getAuthedSupabase(), isStandupAdmin(), STANDUP_ADMIN_ROLES (+6 more)
 
 ### Community 15 - "ReportsAnalyticsTab.tsx"
-Cohesion: 0.09
-Nodes (43): AnalyticsReportLike, buildForecastBuckets(), buildForecastDiagnostics(), buildForecastSummary(), buildUtcDate(), extractDateString(), FORECAST_INCLUDED_STATUSES, FORECAST_WEEK_BUCKETS (+35 more)
+Cohesion: 0.10
+Nodes (37): AnalyticsReportLike, buildForecastBuckets(), buildForecastDiagnostics(), buildForecastSummary(), buildUtcDate(), extractDateString(), FORECAST_INCLUDED_STATUSES, FORECAST_WEEK_BUCKETS (+29 more)
 
-### Community 16 - "logActivity"
+### Community 16 - "getPaTaskAuthedContext"
 Cohesion: 0.04
-Nodes (94): DELETE(), DELETE(), deriveReviewState(), DELETE(), deleteAccessGrantSchema, GET(), POST(), GET() (+86 more)
+Nodes (84): DELETE(), deleteAccessGrantSchema, GET(), POST(), GET(), GET(), GET(), categoryDeleteSchema (+76 more)
 
 ### Community 17 - "intern/profile/page.tsx"
-Cohesion: 0.09
-Nodes (52): formatDateTime(), ItHandlersManagementTab(), AdminProfilePage(), calculateAge(), formatBirthday(), calculateAge(), formatBirthday(), SuperAdminProfilePage() (+44 more)
+Cohesion: 0.10
+Nodes (44): AdminProfilePage(), calculateAge(), formatBirthday(), calculateAge(), formatBirthday(), SuperAdminProfilePage(), calculateAge(), formatBirthday() (+36 more)
 
-### Community 18 - "ApplicationsPage"
-Cohesion: 0.11
-Nodes (17): ApplicationsPage(), getApplicationName(), handleHire(), handleRemoveApplication(), handleStatusChange(), renderAiEvaluationBadge(), AdminJobsPage(), CreateJobPayload (+9 more)
+### Community 18 - "FivePercentReflectionForm.tsx"
+Cohesion: 0.16
+Nodes (17): buildDefaultValues(), CurrentReflectionResponse, FivePercentReflectionForm(), loadCurrentSubmission(), formatMonthKey(), getCurrentMonthKey(), PerformanceIdentityProfile, RankFieldName (+9 more)
 
-### Community 19 - "resolveStagedFormData"
-Cohesion: 0.05
-Nodes (61): ALLOWED_MIME_TYPES, POST(), ALLOWED_MIME_TYPES, DraftAccountSuggestion, extractFromPdf(), getErrorStatusCode(), inferExpenseType(), parseExpenseUploadFormData() (+53 more)
+### Community 19 - "createSupabaseAdminClient"
+Cohesion: 0.04
+Nodes (68): GET(), isAuthorizedCronRequest(), ALLOWED_MIME_TYPES, POST(), ALLOWED_TYPES, DELETE(), POST(), ALLOWED_MIME_TYPES (+60 more)
 
 ### Community 20 - "ai-spending/page.tsx"
-Cohesion: 0.06
-Nodes (51): DELETE(), GET(), PATCH(), POST(), DELETE(), ensureExpenseOwnership(), GET(), PATCH() (+43 more)
+Cohesion: 0.05
+Nodes (63): createGrantSchema, DELETE(), GET(), POST(), GET(), DELETE(), GET(), PATCH() (+55 more)
 
-### Community 21 - "getTaskAuthedContext"
-Cohesion: 0.12
-Nodes (28): EmployeeNameRow, GET(), TaskAssigneeOption, EmployeeNameRow, GET(), POST(), TaskCommentRow, taskCommentSchema (+20 more)
+### Community 21 - "empty-state.tsx"
+Cohesion: 0.15
+Nodes (14): appearanceClasses, EmptyStateAction, EmptyStateProps, renderAction(), sizeClasses, HelpLink(), HelpLinkProps, AnchorProps (+6 more)
 
 ### Community 22 - "useInternships.ts"
-Cohesion: 0.10
-Nodes (30): InternReportsPage(), logToReport(), EditInternshipDialogProps, AttachmentFileRow(), EODAttachmentGallery(), EODAttachmentGalleryProps, formatFileSize(), isImageAttachment() (+22 more)
+Cohesion: 0.14
+Nodes (19): InternReportsPage(), logToReport(), AssociateEvaluationsResponse, buildDailyLogFormData(), getDailyLogMutationErrorMessage(), InitializeInternshipPayload, InitializeInternshipResponse, InternshipActionResponse (+11 more)
 
-### Community 23 - "useAuth"
-Cohesion: 0.04
-Nodes (71): AdminDashboardPage(), formatRelativeTime(), getActionIcon(), getGreeting(), AdminOnboardingSetupPage(), formatRelativeTime(), getActionIcon(), getGreeting() (+63 more)
+### Community 23 - "(employee)/dashboard/page.tsx"
+Cohesion: 0.07
+Nodes (49): KPIEntryWidget(), announcementCategoryLabels, DashboardPage(), getAnnouncementCategoryBadgeVariant(), getAnnouncementCategoryLabel(), getGreeting(), AdminProgressStepper(), BentoCard() (+41 more)
 
 ### Community 24 - "bulk-import/route.ts"
-Cohesion: 0.06
-Nodes (48): ALLOWED_EXTENSIONS, extractResumeText(), FILENAME_NOISE_TOKENS, getExtension(), nameFromFilename(), POST(), runtime, Params (+40 more)
+Cohesion: 0.09
+Nodes (35): ALLOWED_EXTENSIONS, extractResumeText(), FILENAME_NOISE_TOKENS, getExtension(), nameFromFilename(), POST(), runtime, Params (+27 more)
 
 ### Community 25 - "RebrandHome.tsx"
 Cohesion: 0.05
 Nodes (49): metadata, metadata, metadata, AboutCard(), ease, fade, AboutHero(), ease (+41 more)
 
-### Community 26 - "getAuthedSupabase"
+### Community 26 - "ref_next_server"
 Cohesion: 0.05
-Nodes (65): GET(), GET(), RouteContext, POST(), RouteContext, DELETE(), RouteContext, ALLOWED_MIME_TYPES (+57 more)
+Nodes (69): GET(), GET(), RouteContext, POST(), RouteContext, DELETE(), RouteContext, ALLOWED_MIME_TYPES (+61 more)
 
 ### Community 27 - "report-utils.ts"
 Cohesion: 0.04
-Nodes (56): AWARENESS_OBJECTIVES, CONSIDERATION_OBJECTIVES, CONVERSION_OBJECTIVES, deriveMarketingSpendFromMetrics(), EMAIL_MARKETING_METRIC_PRESET, FACEBOOK_MARKETING_METRIC_PRESETS, FACEBOOK_OBJECTIVES_BY_CAMPAIGN_TYPE, getMetricNumericValue() (+48 more)
+Nodes (57): AWARENESS_OBJECTIVES, CONSIDERATION_OBJECTIVES, CONVERSION_OBJECTIVES, deriveMarketingSpendFromMetrics(), EMAIL_MARKETING_METRIC_PRESET, FACEBOOK_MARKETING_METRIC_PRESETS, FACEBOOK_OBJECTIVES_BY_CAMPAIGN_TYPE, getMarketingMetricAnalyticsCategory() (+49 more)
 
 ### Community 28 - "MarketingReportEditor.tsx"
-Cohesion: 0.06
-Nodes (52): CONTENT_CREATION_APP_OPTIONS, createMetricEntryId(), getMetricUnitLabel(), getMetricUnitOptions(), getMetricValueRule(), getNumericInputAdornment(), HUNDREDTH_STEP_UNITS, INTEGER_ONLY_UNITS (+44 more)
+Cohesion: 0.07
+Nodes (44): CONTENT_CREATION_APP_OPTIONS, createMetricEntryId(), getMetricUnitLabel(), getMetricUnitOptions(), getMetricValueRule(), getNumericInputAdornment(), HUNDREDTH_STEP_UNITS, INTEGER_ONLY_UNITS (+36 more)
 
 ### Community 29 - "web/src/app/layout.tsx"
-Cohesion: 0.16
-Nodes (13): aspekta, apps_web_src_app_globals, metadata, RootLayout(), dynamic, GET(), revalidate, ApplicationVersionPayload (+5 more)
+Cohesion: 0.18
+Nodes (12): aspekta, apps_web_src_app_globals, metadata, RootLayout(), dynamic, GET(), revalidate, ApplicationVersionPayload (+4 more)
 
 ### Community 30 - "Implementation Checklist"
-Cohesion: 0.11
-Nodes (19): 10.1 Replace Hardcoded Data 🟡, 10.2 Content Completeness 🔴, 10. DATA & CONTENT INFRASTRUCTURE, 2.1 Hero 🟡, 2.2 Mission & Vision Cards 🟢, 2.3 CEO Message 🔴, 2.4 New Section: Company Timeline 🟡, 2. ABOUT PAGE (`/about`) (+11 more)
+Cohesion: 0.05
+Nodes (42): 10.1 Replace Hardcoded Data 🟡, 10.2 Content Completeness 🔴, 10. DATA & CONTENT INFRASTRUCTURE, 1.1 Hero Section 🔴, 1.2 What's New Marquee 🟢, 1.3 Business Cards Carousel 🟡, 1. HOMEPAGE (`/`), 2.1 Hero 🟡 (+34 more)
 
 ### Community 31 - "ChecklistSection"
-Cohesion: 0.13
-Nodes (11): ChecklistSection(), handleDelete(), EditChecklistItemDialog(), MonthColumn(), useMilestoneApprovalCelebration(), WeekCard(), useCreateChecklistItem(), useDeleteChecklistItem() (+3 more)
+Cohesion: 0.16
+Nodes (9): ChecklistSection(), handleDelete(), MonthColumn(), useMilestoneApprovalCelebration(), WeekCard(), useCreateChecklistItem(), useDeleteChecklistItem(), useDeleteMilestone() (+1 more)
 
 ### Community 32 - "Database Schema Reference"
 Cohesion: 0.06
-Nodes (66): Announcements API, Announcement Lifecycle, Auth API, Mock Authentication, PKCE Auth Flow, Banks API, Calendar API, Google Calendar Integration (+58 more)
+Nodes (65): Announcements API, Announcement Lifecycle, Auth API, Mock Authentication, PKCE Auth Flow, Banks API, Calendar API, Google Calendar Integration (+57 more)
 
-### Community 33 - "(employee)/announcements/page.tsx"
-Cohesion: 0.17
-Nodes (22): announcementCategoryLabels, announcementCategoryOptions, AnnouncementsPage(), readStatusOptions, announcementCategoryLabels, StarredAnnouncementsPage(), AnnouncementFeedResponse, useAnnouncementFeed() (+14 more)
+### Community 33 - "Control Hub HR Portal V2 Implementation Checklist"
+Cohesion: 0.14
+Nodes (16): Control Hub Sprint Implementation Checklist (8-Sprint Plan), Standardized 6-Stage Approval Workflow (Week 7), Dual-Pipeline CRM Tracker (SFO retail / SN Tech B2B) (Week 5), Tech Expense Tracker (Week 8), Control Hub HR Portal V2 Implementation Checklist, Associate "No Active Record" Dead-End Fix (P0), Extensible User Profiles (JSONB role metadata, avoids God Table), Multi-Currency Support (FX Rates, currency.js) (+8 more)
 
 ### Community 34 - "SN International Group Public Website — Technical Documentation"
 Cohesion: 0.10
@@ -800,71 +766,71 @@ Nodes (19): apps/www Public Website, apps/www Developer Handoff, apps/www src/li
 
 ### Community 35 - "type-helpers.ts"
 Cohesion: 0.04
-Nodes (56): Announcement, AnnouncementAttachment, AnnouncementAttachmentInsert, AnnouncementAttachmentUpdate, AnnouncementComment, AnnouncementCommentInsert, AnnouncementCommentUpdate, AnnouncementInsert (+48 more)
+Nodes (55): Announcement, AnnouncementAttachment, AnnouncementAttachmentInsert, AnnouncementAttachmentUpdate, AnnouncementComment, AnnouncementCommentInsert, AnnouncementCommentUpdate, AnnouncementInsert (+47 more)
 
 ### Community 36 - "useOnboardingProgressSummary.ts"
-Cohesion: 0.07
-Nodes (36): acceptMap, DocumentUploadCard(), labels, DocumentType, documentTypeLabels, requiredTypes, StepDocuments(), uploadOrder (+28 more)
+Cohesion: 0.09
+Nodes (33): DocumentUploadCard(), DocumentType, documentTypeLabels, requiredTypes, StepDocuments(), uploadOrder, DOCUMENT_TYPE_LABELS, EXPECTED_DOCUMENT_TYPES (+25 more)
 
 ### Community 37 - "Control Hub — Documentation Hub"
-Cohesion: 0.20
-Nodes (11): Authentication & Authorization, Architecture Overview, apps/web — Documentation Hub, SN HR Portal UI Architecture Guide, Sidebar Variant System (UserRole-driven navigation), Control Hub HR Portal User Testing Guide, Known Limitations (Not Yet Implemented) rationale, SN HR Portal User Workflows Guide (+3 more)
+Cohesion: 0.17
+Nodes (13): Associate Management, Associate Program Lifecycle, Employee Management, Inactive Account Deactivation/Reactivation, Profile Change Request Workflow, Tickets (Admin), Authentication & Authorization, Data Flow Architecture (+5 more)
 
 ### Community 38 - "dependencies"
 Cohesion: 0.04
 Nodes (54): dependencies, class-variance-authority, clsx, currency.js, date-fns, exceljs, framer-motion, google-auth-library (+46 more)
 
-### Community 39 - "stageFormDataFiles"
-Cohesion: 0.14
-Nodes (14): addTaskAttachment(), ExchangeRateToAudResponse, QueuedExpenseUploadResult, useQueueExpenseIngestion(), useUploadAndExtractExpense(), EXPENSE_TYPES, ExpenseLogRequestInput, expenseLogRequestSchema (+6 more)
+### Community 39 - "verify/route.ts"
+Cohesion: 0.09
+Nodes (28): GET(), runtime, fetchExpenseEntry(), MinimalExpenseEntry, notifyMatchResult(), POST(), runtime, classifyLogRequestInsertError() (+20 more)
 
-### Community 40 - "OnboardingWizard.tsx"
-Cohesion: 0.08
-Nodes (22): NavigationControls(), requiredDocumentLabels, requiredDocumentTypes, Step, steps, labels, ProgressStepper(), StepPaymentInfo() (+14 more)
+### Community 40 - "getAuthedSupabase"
+Cohesion: 0.23
+Nodes (10): GET(), DELETE(), PATCH(), renameSchema, createConversationSchema, GET(), POST(), AI_ADMIN_ROLES (+2 more)
 
-### Community 41 - "OKRDetailWorkspace.tsx"
-Cohesion: 0.10
-Nodes (29): emptyObjectiveForm, emptyTargetForm, formatDate(), formatEvaluatorSummary(), formatFileSize(), formatRatingLabel(), getProgressBarColor(), getProgressColor() (+21 more)
+### Community 41 - "OKRDetailWorkspace"
+Cohesion: 0.12
+Nodes (15): formatDate(), formatEvaluatorSummary(), formatFileSize(), formatRatingLabel(), getProgressBarColor(), getProgressColor(), isValidEvidenceLink(), objectiveFormForEdit() (+7 more)
 
 ### Community 42 - "christmas-tree/page.tsx"
 Cohesion: 0.06
 Nodes (64): GET(), buildChristmasTreeSnapshot(), categoryState(), ChristmasEventRow, ChristmasTreeAdminClient, ChristmasTreeRequestError, deleteChristmasOrnament(), deleteChristmasWish() (+56 more)
 
 ### Community 43 - "getAuthedSupabase"
-Cohesion: 0.08
-Nodes (49): Params, POST(), DELETE(), GET(), normalizeApplication(), Params, PATCH(), ApplicationRow (+41 more)
+Cohesion: 0.10
+Nodes (40): Params, POST(), DELETE(), GET(), normalizeApplication(), Params, PATCH(), ApplicationRow (+32 more)
 
 ### Community 44 - "web/package.json"
 Cohesion: 0.04
-Nodes (51): autoprefixer, class-variance-authority, clsx, framer-motion, @hookform/resolvers, @hr-portal/ai, @hr-portal/auth, @hr-portal/database (+43 more)
+Nodes (50): autoprefixer, class-variance-authority, clsx, framer-motion, @hookform/resolvers, @hr-portal/ai, @hr-portal/auth, @hr-portal/database (+42 more)
 
-### Community 45 - "Badge"
+### Community 45 - "EmptyState"
 Cohesion: 0.03
-Nodes (158): ArchivedAnnouncementsPage(), getCategoryLabel(), getPriorityVariant(), AdminAnnouncementsPage(), formatLabel(), getPriorityBadgeVariant(), getStatusBadgeVariant(), SETTLED_MATCH_STATUSES (+150 more)
+Nodes (167): ArchivedAnnouncementsPage(), getCategoryLabel(), getPriorityVariant(), AdminAnnouncementsPage(), formatLabel(), getPriorityBadgeVariant(), getStatusBadgeVariant(), AI_ACTIVE_EVALUATION_STATUSES (+159 more)
 
 ### Community 46 - "tickets/_lib.ts"
 Cohesion: 0.06
 Nodes (67): GET(), DELETE(), GET(), POST(), GET(), TicketAssigneeOption, ALLOWED_MIME_TYPES, GET() (+59 more)
 
-### Community 47 - "parseMarkdownBlocks"
-Cohesion: 0.70
-Nodes (5): parseMarkdownBlocks(), flushAll(), flushList(), flushParagraph(), flushQuote()
+### Community 47 - "AIChatbot.tsx"
+Cohesion: 0.07
+Nodes (45): AIChatSuggestionsResponse, AI Chat (7), AttachedFile, ChatInput(), ChatInputProps, FilePreviewCard(), FilePreviewCardProps, formatFileSize() (+37 more)
 
 ### Community 48 - "enums.ts"
 Cohesion: 0.04
 Nodes (46): DocumentMetaInput, documentMetaSchema, DocumentUploadInput, documentUploadSchema, dateSchema, employeeBaseSchema, EmployeeCreateInput, employeeCreateSchema (+38 more)
 
 ### Community 49 - "Sidebar.tsx"
-Cohesion: 0.10
-Nodes (24): adminInternalSectionConfig, adminNavItems, createWorkspaceSections(), employeeAtsNavItems, employeeNavItems, exactOnlyNavHrefs, getNavMatchLength(), getWorkspaceForPath() (+16 more)
+Cohesion: 0.05
+Nodes (51): AdminProjectsPage(), useAdminProjectsOverview(), HoverActionButtons(), HoverActionButtonsProps, HoverActionTone, PLACEMENT_CLASSES, TONE_CLASSES, DOMAIN_ICON (+43 more)
 
 ### Community 50 - "Detailed Findings"
-Cohesion: 0.07
-Nodes (27): 10. Health endpoint is not consumed, 11. Standups have no frontend owner, 1. Resource bulk actions are dead controls, 2. Task comments are completely disconnected, 3. Admin onboarding review cannot inspect uploaded documents, 4. Pagination is systemically incomplete, 5. Announcement comments are implemented only on the backend, 6. Associate-detail and admin actions are visible but disconnected (+19 more)
+Cohesion: 0.05
+Nodes (36): 10. Health endpoint is not consumed, 11. Standups have no frontend owner, 1. Resource bulk actions are dead controls, 2. Task comments are completely disconnected, 3. Admin onboarding review cannot inspect uploaded documents, 4. Pagination is systemically incomplete, 5. Announcement comments are implemented only on the backend, 6. Associate-detail and admin actions are visible but disconnected (+28 more)
 
-### Community 51 - "admin/marketing/ad-spend/page.tsx"
-Cohesion: 0.15
-Nodes (18): AdSpendEntry, defaultMonthly, defaultOverview, extractLabelFromUrl(), fetchRevenueComparison(), formatCurrency(), isValidHttpUrl(), looksLikeUrl() (+10 more)
+### Community 51 - "ingest/route.ts"
+Cohesion: 0.25
+Nodes (13): ALLOWED_MIME_TYPES, extractFromPdf(), getErrorStatusCode(), inferExpenseType(), parseExpenseUploadFormData(), persistReceiptDocument(), POST(), processReceiptInlineFallback() (+5 more)
 
 ### Community 52 - "scripts"
 Cohesion: 0.04
@@ -872,7 +838,7 @@ Nodes (50): scripts, accounts:temp:create, accounts:temp:delete, accounts:temp:l
 
 ### Community 53 - "ai/src/index.ts"
 Cohesion: 0.09
-Nodes (40): @hr-portal/ai Package README, buildSystemPrompt(), chat(), ChatConfig, ChatMessage, ChatResponse, ChatRole, chatStream() (+32 more)
+Nodes (43): @hr-portal/ai Package README, buildSystemPrompt(), chat(), ChatConfig, ChatMessage, ChatResponse, ChatRole, chatStream() (+35 more)
 
 ### Community 54 - "agent.ts"
 Cohesion: 0.10
@@ -882,25 +848,25 @@ Nodes (32): uiAgent, UIConsistencyAgent, checkAccessibility(), checkConsoleError
 Cohesion: 0.04
 Nodes (43): config, dependencies, @capacitor/android, @capacitor/core, @capacitor/ios, @hr-portal/ai, @hr-portal/auth, @hr-portal/database (+35 more)
 
-### Community 56 - "approve-onboarding/route.ts"
-Cohesion: 0.08
-Nodes (38): executePayroll(), ExecutePayrollResult, dynamic, POST(), resolveWiseRecipientType(), ALLOWED_ROLES, buildWiseRecipientDetails(), getWiseRecipientApiFailureReason() (+30 more)
+### Community 56 - "wise/client.ts"
+Cohesion: 0.09
+Nodes (30): executePayroll(), ExecutePayrollResult, dynamic, POST(), resolveWiseRecipientType(), ALLOWED_ROLES, buildWiseRecipientDetails(), getWiseRecipientApiFailureReason() (+22 more)
 
 ### Community 57 - "CompanyCalendarView.tsx"
-Cohesion: 0.18
-Nodes (19): buildCalendarDays(), CompanyCalendarView(), CompanyCalendarViewProps, endOfCalendarGrid(), endOfMonth(), formatMonthLabel(), getDateKey(), getNextUpcomingEvent() (+11 more)
+Cohesion: 0.09
+Nodes (41): GET(), mapGoogleEvent(), parseDateParam(), syncCalendarNotifications(), SyncStateRow, AdminCompanyPulsePage(), buildCalendarDays(), CompanyCalendarView() (+33 more)
 
 ### Community 58 - "biome.json"
 Cohesion: 0.05
 Nodes (44): noExcessiveCognitiveComplexity, useSimplifiedLogicExpression, noUnusedImports, noUnusedVariables, useExhaustiveDependencies, files, ignore, formatter (+36 more)
 
-### Community 59 - "getAuthedPerformanceContext"
-Cohesion: 0.09
-Nodes (48): DELETE(), DELETE(), GET(), PUT(), DELETE(), GET(), POST(), GET() (+40 more)
+### Community 59 - "okrs/route.ts"
+Cohesion: 0.12
+Nodes (28): ADMIN_ROLES, EvaluatorIdentity, GET(), applyComputedOkrState(), calculateOkrProgress(), calculateTargetProgress(), fetchOkrTargetsByOkrIds(), fetchTargets() (+20 more)
 
 ### Community 60 - "admin/directory/page.tsx"
-Cohesion: 0.11
-Nodes (26): AdminDirectoryPage(), formatDate(), getInitials(), getStatusBadgeVariant(), isManageableDirectoryEntry(), calculateAge(), DirectoryDetailPage(), FIELD_LABELS (+18 more)
+Cohesion: 0.05
+Nodes (60): AdminDirectoryPage(), formatDate(), getInitials(), getStatusBadgeVariant(), isManageableDirectoryEntry(), calculateAge(), DirectoryDetailPage(), FIELD_LABELS (+52 more)
 
 ### Community 61 - "csv.ts"
 Cohesion: 0.39
@@ -910,13 +876,13 @@ Nodes (6): convertToCsv(), CsvOptions, downloadCsv(), escapeCsvValue(), exportTo
 Cohesion: 0.16
 Nodes (18): formatCurrency(), buildGoalProgressRows(), computeRevenueForecast(), ForecastComputation, ForecastMonthRow, ForecastRecordBanner, ForecastScenarioKey, formatCurrencyNoCents() (+10 more)
 
-### Community 63 - "directory/route.ts"
-Cohesion: 0.15
-Nodes (15): ADMIN_ROLES, DirectoryExportRow, escapeCsv(), GET(), ADMIN_ROLES, DirectoryRow, DirectorySearchResult, fuzzyScore() (+7 more)
+### Community 63 - "pa-tasks/page.tsx"
+Cohesion: 0.23
+Nodes (10): ALLOWED_ATTACHMENT_EXTENSIONS, ALLOWED_ATTACHMENT_MIME_TYPES, LookupItem, PaTaskListRow, PaTaskAttachmentsResponse, readJson(), useCreatePaTaskAttachment(), useDeletePaTaskAttachment() (+2 more)
 
 ### Community 64 - "CompareExecutiveDashboard.tsx"
-Cohesion: 0.09
-Nodes (44): buildExecutiveNarrative(), buildMetricTableRows(), buildSparklinePoints(), calculatePercentChange(), CampaignComparisonCard(), CampaignComparisonRow, CampaignDeltaPanel(), CampaignPeriodSnapshot() (+36 more)
+Cohesion: 0.10
+Nodes (42): buildExecutiveNarrative(), buildMetricTableRows(), buildSparklinePoints(), calculatePercentChange(), CampaignComparisonCard(), CampaignComparisonRow, CampaignDeltaPanel(), CampaignPeriodSnapshot() (+34 more)
 
 ### Community 65 - "20260211000002_create_resources_tables.sql"
 Cohesion: 0.08
@@ -924,15 +890,15 @@ Nodes (36): public.auto_generate_resource_excerpt, public.update_resource_bookma
 
 ### Community 66 - "admin/performance/page.tsx"
 Cohesion: 0.12
-Nodes (25): AdminPerformancePage(), CardSortMode, EmployeePerformanceSummary, EvaluationAwareOkr, formatDate(), formatNameList(), getCycleBannerBadgeLabel(), getEvaluationBadgeLabel() (+17 more)
+Nodes (26): AdminPerformancePage(), CardSortMode, EmployeePerformanceSummary, EvaluationAwareOkr, formatDate(), formatNameList(), getCycleBannerBadgeLabel(), getEvaluationBadgeLabel() (+18 more)
 
-### Community 67 - "(employee)/tickets/page.tsx"
-Cohesion: 0.07
-Nodes (58): AdminTicketsPage(), normalizeOptionalText(), TICKET_ATTACHMENT_ACCEPT, TicketsPage(), SuperAdminTicketsPanel(), TicketStatusFilter, getTicketCategoryLabel(), getTicketFeatureAreaLabel() (+50 more)
+### Community 67 - "Button"
+Cohesion: 0.03
+Nodes (141): AdSpendEntry, defaultMonthly, defaultOverview, extractLabelFromUrl(), fetchRevenueComparison(), formatCurrency(), isValidHttpUrl(), looksLikeUrl() (+133 more)
 
 ### Community 68 - "placeholder.ts"
-Cohesion: 0.04
-Nodes (37): metadata, metadata, PageProps, metadata, metadata, Service, ServicesGrid(), ServicesGridProps (+29 more)
+Cohesion: 0.03
+Nodes (59): nextConfig, metadata, metadata, BusinessDetailPage(), PageProps, deriveHighlights(), generateMetadata(), generateStaticParams() (+51 more)
 
 ### Community 69 - "Vercel Deployment Guide - HR Portal"
 Cohesion: 0.05
@@ -951,24 +917,24 @@ Cohesion: 0.05
 Nodes (39): 1. Login to Vercel, 2. Link Project, 3. Extract IDs, 4. Add Environment Variables, 5. Test Deploy, 6. Add GitHub Secrets, 7. Deploy to Production, Build Fails (+31 more)
 
 ### Community 73 - "inquiries/route.ts"
-Cohesion: 0.19
-Nodes (17): AdminClient, claimUniqueInquiry(), deliveryUpdate(), enforceEmailLimits(), GuardResult, initializeGuardedClient(), isSilentlyTrappedSubmission(), logGuardFailure() (+9 more)
+Cohesion: 0.26
+Nodes (16): AdminClient, claimUniqueInquiry(), deliveryUpdate(), enforceEmailLimits(), GuardResult, initializeGuardedClient(), isSilentlyTrappedSubmission(), logGuardFailure() (+8 more)
 
-### Community 74 - "cn"
-Cohesion: 0.05
-Nodes (52): CollectionDetailPage(), AdminProgressStepper(), ImportExpensesDialog(), AnnouncementCommentsPanel(), ErrorBoundary, ErrorBoundaryProps, ErrorBoundaryState, ErrorFallbackUI() (+44 more)
+### Community 74 - "feedback/index.ts"
+Cohesion: 0.08
+Nodes (18): ErrorBoundary, ErrorBoundaryProps, ErrorBoundaryState, ErrorFallbackUI(), ErrorFallbackUIProps, gridColumnClasses, SkeletonBentoCard(), SkeletonBentoCardProps (+10 more)
 
 ### Community 75 - "getNormalizedMetadataRole"
-Cohesion: 0.13
-Nodes (25): resolveUserRole(), ALLOWED_ROLES, escapeCsv(), GET(), resolveRole(), runtime, toCsv(), toXlsxBuffer() (+17 more)
+Cohesion: 0.09
+Nodes (33): resolveUserRole(), ALLOWED_ROLES, escapeCsv(), GET(), resolveRole(), runtime, toCsv(), toXlsxBuffer() (+25 more)
 
 ### Community 76 - "evaluation-cadence.ts"
-Cohesion: 0.15
-Nodes (29): GET(), EvaluationCadenceBannerProps, addBusinessDays(), addCalendarDays(), buildBanner(), buildEvaluationCadenceSummary(), buildPrompt(), buildPromptMeta() (+21 more)
+Cohesion: 0.16
+Nodes (27): GET(), addBusinessDays(), addCalendarDays(), buildBanner(), buildEvaluationCadenceSummary(), buildPrompt(), buildPromptMeta(), countBusinessDaysUntil() (+19 more)
 
 ### Community 77 - "process-project-intake-message.ts"
 Cohesion: 0.09
-Nodes (34): IntakeSchema, isAuthorized(), POST(), PriorityEnum, runtime, INTAKE_ALLOWED_ROLES, isAuthorizedWebhook(), LinkedTelegramUserRow (+26 more)
+Nodes (35): IntakeSchema, isAuthorized(), POST(), PriorityEnum, runtime, INTAKE_ALLOWED_ROLES, isAuthorizedWebhook(), LinkedTelegramUserRow (+27 more)
 
 ### Community 78 - "in-app-notify.ts"
 Cohesion: 0.10
@@ -982,9 +948,9 @@ Nodes (49): devDependencies, autoprefixer, postcss, tailwindcss, @types/react, @
 Cohesion: 0.11
 Nodes (24): ActivePerformanceCycle, addBusinessDays(), addCalendarDays(), buildPerformanceReminderMessage(), countBusinessDaysUntil(), countCalendarDaysUntil(), ensureQuarterlyLaunchAnnouncement(), EvaluationAudienceUser (+16 more)
 
-### Community 81 - "CrmPageContent.tsx"
-Cohesion: 0.07
-Nodes (28): CrmAccessManagerButton(), CRMInteractionPanel(), PipelineContext, audNumberFormatter, createdAtFormatter, CrmPageContent(), handleSfoStatusUpdate(), renderSfoContent() (+20 more)
+### Community 81 - "CrmPageContent"
+Cohesion: 0.12
+Nodes (8): CrmPageContent(), formatStageLabel(), trackerKeyToTab(), useCreateTechInquiry(), useDeleteSfoLead(), useTechInquiries(), useUpdateSfoLead(), useUpdateTechInquiry()
 
 ### Community 82 - "wellness-bingo/_lib.ts"
 Cohesion: 0.11
@@ -999,24 +965,24 @@ Cohesion: 0.09
 Nodes (32): ref_url, body(), boldParts(), bullet(), check(), coverBlock, __dirname, doc (+24 more)
 
 ### Community 85 - "UI Primitives Reference"
-Cohesion: 0.06
-Nodes (33): Card(), Avatar, Badge, Button, Card, Checkbox, DropdownMenu, Input (+25 more)
+Cohesion: 0.05
+Nodes (37): Card(), API, Avatar, Badge, Button, Card, Checkbox, DropdownMenu (+29 more)
 
-### Community 86 - "ref_zod"
-Cohesion: 0.07
-Nodes (38): GET(), bodySchema, buildResetEmailHtml(), POST(), DELETE(), GET(), PATCH(), RouteContext (+30 more)
+### Community 86 - "invite/route.ts"
+Cohesion: 0.05
+Nodes (60): GET(), bodySchema, buildResetEmailHtml(), POST(), approveOnboardingSchema, buildWiseRecipientDetails(), generateEmployeeNumber(), getWiseRecipientApiFailureReason() (+52 more)
 
 ### Community 87 - "admin/reports/page.tsx"
 Cohesion: 0.12
-Nodes (22): ReportsAnalyticsTabProps, ReportsCompareTabProps, isIncludedStatus(), mergePlanItems(), ReportsPlansTab(), ReportsSubmissionsTabProps, AdminReportsPage(), FILTER_INCLUDED_STATUSES (+14 more)
+Nodes (22): ReportsAnalyticsTabProps, ReportsCompareTabProps, ReportsSubmissionsTabProps, AdminReportsPage(), FILTER_INCLUDED_STATUSES, isFilterEligibleStatus(), ReportsAnalyticsTab, MarketingDeliverablesReminderRecipientsButton() (+14 more)
 
 ### Community 88 - "announcements/index.ts"
-Cohesion: 0.10
-Nodes (28): Announcements (9), AnnouncementAnalytics(), AnnouncementAnalyticsProps, AnnouncementAnalyticsDashboard(), AnnouncementAnalyticsDashboardProps, AnnouncementAnalyticsData, formatDuration(), SummaryCard() (+20 more)
+Cohesion: 0.05
+Nodes (37): acceptMap, labels, Announcements (9), AnnouncementAnalytics(), AnnouncementAnalyticsProps, AnnouncementAnalyticsDashboard(), AnnouncementAnalyticsDashboardProps, AnnouncementAnalyticsData (+29 more)
 
 ### Community 89 - "performance/_lib.ts"
-Cohesion: 0.07
-Nodes (49): getCurrentMonthKey(), POST(), GET(), getAverageRank(), getCurrentMonthKey(), mapSubmissionPayload(), POST(), canManagePerformance() (+41 more)
+Cohesion: 0.09
+Nodes (46): getCurrentMonthKey(), POST(), GET(), getAverageRank(), getCurrentMonthKey(), mapSubmissionPayload(), POST(), canManagePerformance() (+38 more)
 
 ### Community 90 - "@playwright/test"
 Cohesion: 0.06
@@ -1028,11 +994,11 @@ Nodes (14): AnnouncementId, DepartmentId, DocumentId, EmployeeId, ExpenseId, Kpi
 
 ### Community 92 - "ui/package.json"
 Cohesion: 0.06
-Nodes (30): dependencies, framer-motion, hls.js, react-hook-form, recharts, devDependencies, @types/react, @types/react-dom (+22 more)
+Nodes (31): dependencies, framer-motion, hls.js, react-hook-form, recharts, devDependencies, @types/react, @types/react-dom (+23 more)
 
-### Community 93 - "auth.ts"
-Cohesion: 0.14
-Nodes (28): ref_https_deno_land_std_0_208_0_http_server_ts, AnnouncementRow, LateEmployee, LateIntern, SOFT_DELETE_TABLES, ActiveIntern, InternSummary, buildAnniversaryAnnouncementContent() (+20 more)
+### Community 93 - "milestone-announcements/index.ts"
+Cohesion: 0.19
+Nodes (19): ref_https_deno_land_std_0_208_0_http_server_ts, AnnouncementRow, LateEmployee, LateIntern, SOFT_DELETE_TABLES, ActiveIntern, InternSummary, buildAnniversaryAnnouncementContent() (+11 more)
 
 ### Community 94 - "compilerOptions"
 Cohesion: 0.06
@@ -1043,12 +1009,12 @@ Cohesion: 0.07
 Nodes (24): nextConfig, nextConfig, screenshot(), testCredentials, Workflow, WorkflowNode, ref_node_fs, ref_node_path (+16 more)
 
 ### Community 96 - "onboarding.schema.ts"
-Cohesion: 0.09
-Nodes (26): formatPersonalAddress(), PATCH(), bankSelectionSchema, coercePhoneCountryCode(), CompleteOnboardingInput, completeOnboardingSchema, documentMetadataSchema, DocumentsInput (+18 more)
+Cohesion: 0.06
+Nodes (45): formatPersonalAddress(), PATCH(), formatReviewDate(), OnboardingWizard(), parsePersonalAddress(), AdminOnboardingWizard(), parsePersonalAddress(), useCreateOnboardingProfile() (+37 more)
 
 ### Community 97 - "MonthlySelfEvaluationAdminReview.tsx"
-Cohesion: 0.07
-Nodes (37): MonthlySelfEvaluationsAdminPageProps, EvaluationSummaryView(), EvaluationSummaryViewProps, formatDateTime(), AdminListResponse, FivePercentReflectionAdminReview(), formatDateTime(), formatMonthKey() (+29 more)
+Cohesion: 0.04
+Nodes (72): MonthlySelfEvaluationsAdminPageProps, EvaluationSummaryView(), EvaluationSummaryViewProps, formatDateTime(), AdminListResponse, FivePercentReflectionAdminReview(), formatDateTime(), formatMonthKey() (+64 more)
 
 ### Community 98 - "20260923000002_create_uhp_workspace.sql"
 Cohesion: 0.15
@@ -1063,28 +1029,28 @@ Cohesion: 0.07
 Nodes (31): audit_logs table, get_knowledge_source_versions() function, knowledge_embeddings table (pgvector), knowledge_sources table, match_knowledge_embeddings() function, notifications table, onboarding-new-employee Edge Function, probation-check Edge Function (+23 more)
 
 ### Community 101 - "getAuthedOnboardingContext"
-Cohesion: 0.17
-Nodes (15): GET(), DELETE(), ALLOWED_MIME, GET(), POST(), getAuthedOnboardingContext(), maskPaymentAccount(), ONBOARDING_ADMIN_ROLES (+7 more)
+Cohesion: 0.10
+Nodes (36): GET(), DELETE(), ALLOWED_MIME, GET(), POST(), DELETE(), deleteTaskSchema, GET() (+28 more)
 
 ### Community 102 - "monthly-report-pdf.ts"
 Cohesion: 0.07
 Nodes (52): ADMIN_ROLES, GET(), hasInteractiveAccess(), isAuthorizedServiceRequest(), parseReferenceDate(), runtime, addMonthsUtc(), amountOf() (+44 more)
 
 ### Community 103 - "audit-logs/route.ts"
-Cohesion: 0.12
-Nodes (30): ACTION_LABELS, ActivityScope, ADMIN_ROLES, AdminRole, asRecord(), buildChangeSummary(), buildFallbackDescription(), buildSubject() (+22 more)
+Cohesion: 0.13
+Nodes (28): ACTION_LABELS, ActivityScope, ADMIN_ROLES, AdminRole, asRecord(), buildChangeSummary(), buildFallbackDescription(), buildSubject() (+20 more)
 
-### Community 104 - "isOnboardingAdmin"
-Cohesion: 0.17
-Nodes (19): DELETE(), deleteTaskSchema, GET(), normalizeTaskInput(), onboardingTaskInputSchema, PATCH(), POST(), PUT() (+11 more)
+### Community 104 - "ProjectDetailPage"
+Cohesion: 0.21
+Nodes (7): ProjectDetailPage(), jsonFetch(), useCreateProjectDocumentation(), useDeleteProject(), useDeleteProjectDocumentation(), useProject(), useProjectDocumentation()
 
 ### Community 105 - "Quick Start: Role-Based Access Control"
-Cohesion: 0.11
-Nodes (18): 404 on Route, Best Practices, Check if User is Authenticated, Common Patterns, Conditional Rendering by Role, Creating a New Role-Specific Layout, Migration Notes, Next Steps (+10 more)
+Cohesion: 0.12
+Nodes (17): 404 on Route, Check if User is Authenticated, Common Patterns, Conditional Rendering by Role, Creating a New Role-Specific Layout, Migration Notes, Next Steps, Quick Start: Role-Based Access Control (+9 more)
 
-### Community 106 - "ref_next_server"
-Cohesion: 0.03
-Nodes (112): DELETE(), GET(), POST(), RouteContext, DELETE(), GET(), PATCH(), RouteContext (+104 more)
+### Community 106 - "getAuthedSupabase"
+Cohesion: 0.04
+Nodes (94): DELETE(), GET(), POST(), RouteContext, DELETE(), GET(), PATCH(), RouteContext (+86 more)
 
 ### Community 107 - "design_system.py"
 Cohesion: 0.19
@@ -1102,25 +1068,25 @@ Nodes (26): public.job_postings, idx_business_units_active, idx_business_units_s
 Cohesion: 0.12
 Nodes (21): FILES_WATCH_MAX_HOURS, getDriveClient(), getWebhookAddress(), loadWebEnv(), parseWatchFileIds(), registerFileWatch(), resolveExpirationHours(), args (+13 more)
 
-### Community 111 - "PerformanceWorkspace"
-Cohesion: 0.25
-Nodes (6): formatDate(), formatRatingLabel(), getProgressBarColor(), getProgressColor(), getQuarterLabel(), PerformanceWorkspace()
+### Community 111 - "PerformanceWorkspace.tsx"
+Cohesion: 0.06
+Nodes (47): ASSOCIATE_STAGE_LABELS, AssociateEvaluationCard(), formatEvaluationDate(), getAssociateStage(), InternDashboardPage(), renderStars(), ASSOCIATE_STAGE_LABELS, AssociateStage (+39 more)
 
 ### Community 112 - "20260507000001_create_project_tables.sql"
 Cohesion: 0.14
 Nodes (26): idx_project_checklist_items_milestone, idx_project_checklist_items_status, idx_project_contributors_user_id, idx_project_milestones_due_date, idx_project_milestones_parent, idx_project_milestones_project_id, idx_project_milestones_status, idx_projects_dates (+18 more)
 
-### Community 113 - "work-tracker/page.tsx"
-Cohesion: 0.42
-Nodes (7): formatLabel(), formatLastActive(), SummaryCards(), TaskWorkItemCard(), TeamTable(), withWorkTrackerReturn(), WorkItemCard()
+### Community 113 - "CrmPageContent.tsx"
+Cohesion: 0.15
+Nodes (12): CrmAccessManagerButton(), PipelineContext, audNumberFormatter, createdAtFormatter, CrmTab, customerTypeBadgeClassMap, emptySfoEditFormState, emptyTechEditFormState (+4 more)
 
-### Community 114 - "probation/route.ts"
-Cohesion: 0.43
-Nodes (7): addDaysToDateOnly(), daysBetweenToday(), GET(), getStage(), isMissingColumnError(), parseIsoDateOnly(), probationActionSchema
+### Community 114 - "getAuthedPerformanceContext"
+Cohesion: 0.10
+Nodes (32): DELETE(), DELETE(), GET(), PUT(), GET(), POST(), DELETE(), GET() (+24 more)
 
 ### Community 115 - "SettingsPage.tsx"
 Cohesion: 0.09
-Nodes (34): ADMIN_ROLES, authorizeTargetUser(), GET(), getUserRole(), PUT(), copyTextToClipboard(), createTelegramWebLinkIntent(), NotificationPreferenceOption (+26 more)
+Nodes (33): ADMIN_ROLES, authorizeTargetUser(), GET(), getUserRole(), PUT(), copyTextToClipboard(), createTelegramWebLinkIntent(), NotificationPreferenceOption (+25 more)
 
 ### Community 116 - "Vercel Setup - Interactive Steps"
 Cohesion: 0.06
@@ -1142,33 +1108,33 @@ Nodes (19): LookupName, LookupResponse, readJson(), useCreatePaTaskCategory(), u
 Cohesion: 0.08
 Nodes (25): dependencies, @supabase/supabase-js, zod, devDependencies, supabase, tsx, typescript, exports (+17 more)
 
-### Community 121 - "Card"
-Cohesion: 0.03
-Nodes (124): AdminActivityPage(), CATEGORY_BADGE_CLASSES, formatRelativeTime(), getActionIcon(), getCategoryIcon(), NewCollectionPage(), CATEGORY_BADGE_CLASSES, formatRelativeTime() (+116 more)
+### Community 121 - "ref_react"
+Cohesion: 0.02
+Nodes (140): AdminActivityPage(), CATEGORY_BADGE_CLASSES, formatRelativeTime(), getActionIcon(), getCategoryIcon(), ExpenseAnalyticsDashboardPage(), formatCurrencyAud(), normalizeCategoryLabel() (+132 more)
 
 ### Community 122 - "useProjects.ts"
-Cohesion: 0.06
-Nodes (37): ProjectDetailPage(), ProjectsListPage(), ManageContributorsDialog(), ManageContributorsDialogProps, AddProjectContributorInput, ChecklistItemRecord, ChecklistItemStatus, CreateChecklistItemInput (+29 more)
+Cohesion: 0.10
+Nodes (21): AddProjectContributorInput, ChecklistItemRecord, ChecklistItemStatus, CreateChecklistItemInput, CreateMilestoneInput, CreateProjectInput, MilestonePeriodType, MilestoneStatus (+13 more)
 
 ### Community 123 - "Resources Components Documentation"
-Cohesion: 0.08
-Nodes (24): Accessibility, Data Source, Design Notes, Design Notes, Design System Compliance, Form Fields, Layout, Props (+16 more)
+Cohesion: 0.10
+Nodes (20): Accessibility, Data Source, Design Notes, Design System Compliance, Form Fields, Layout, Props, Props (+12 more)
 
-### Community 124 - "files/page.tsx"
-Cohesion: 0.06
-Nodes (42): GET(), POST(), FilesPage(), formatDate(), formatFileSize(), getDocColorScheme(), getDocIcon(), getFileExtension() (+34 more)
+### Community 124 - "useDepartments.test.tsx"
+Cohesion: 0.33
+Nodes (4): packages_database_src_index_department, ref_hooks_usedepartments, mockDepartment, mockDepartmentListResponse
 
 ### Community 125 - "InquiryForm.tsx"
-Cohesion: 0.12
-Nodes (14): InquiryFormProps, ContactForm(), InquiryPhoneInput(), InquiryPhoneInputProps, InquiryFormData, inquirySchema, normalizeInquiry(), optionalPhoneSchema (+6 more)
+Cohesion: 0.10
+Nodes (18): InquiryFormProps, ContactForm(), contactLinks, ease, fade, MessageSection(), InquiryPhoneInput(), InquiryPhoneInputProps (+10 more)
 
 ### Community 126 - "example-usage.ts"
 Cohesion: 0.08
 Nodes (12): packages_database_src_database_types_brandemployeeid, packages_database_src_database_types_branduserid, packages_database_src_database_types_documenttype, packages_database_src_database_types_employee, packages_database_src_database_types_employeeinsert, packages_database_src_database_types_employeeupdate, packages_database_src_database_types_employmenttype, packages_database_src_database_types_user (+4 more)
 
 ### Community 127 - "Common Tasks"
-Cohesion: 0.12
-Nodes (17): Approve/Reject an Invoice (Super Admin), Associate, Common Tasks, Complete an Onboarding Task, Getting Help, HR Administrator, Login, Manager (+9 more)
+Cohesion: 0.09
+Nodes (23): Approve/Reject an Invoice (Super Admin), Associate, Common Tasks, Complete an Onboarding Task, Getting Help, HR Administrator, Login, Manager (+15 more)
 
 ### Community 128 - "public.pa_tasks"
 Cohesion: 0.11
@@ -1187,16 +1153,16 @@ Cohesion: 0.18
 Nodes (13): extractCitedTextsFromResponse(), generateMessageId(), Message, parseSSELine(), SourceCitation, StreamChunk, StreamChunkContent, StreamChunkDone (+5 more)
 
 ### Community 132 - "chat/route.ts"
-Cohesion: 0.15
-Nodes (19): buildContextPrompt(), buildLangWatchRagContexts(), Citation, classifyComplexity(), ComplexityResult, detectsPIIRequest(), EmbeddingMatch, extractSourceCitations() (+11 more)
+Cohesion: 0.14
+Nodes (20): buildContextPrompt(), buildLangWatchRagContexts(), Citation, classifyComplexity(), ComplexityResult, detectsPIIRequest(), EmbeddingMatch, extractSourceCitations() (+12 more)
 
 ### Community 133 - "interns/page.tsx"
 Cohesion: 0.03
-Nodes (118): AnnouncementDetailPage(), categoryLabel, priorityVariant, statusLabel, ViewMode, EmployeeManagementPage(), EmployeeManagementTab, formatDate() (+110 more)
+Nodes (134): EmployeeManagementPage(), EmployeeManagementTab, formatDate(), formatDateTime(), getInitials(), ItHandlersManagementTab(), PerformanceRating, ProbationStage (+126 more)
 
-### Community 134 - "useUpdateTask.ts"
-Cohesion: 0.10
-Nodes (24): useToggleResourceFeatured(), applyOptimisticTaskUpdate(), invalidateTaskQueries(), rollbackOptimisticTaskUpdate(), TaskMutationContext, useUpdateTask(), useUpdateTaskStatus(), taskCategorySchema (+16 more)
+### Community 134 - "Optimistic UI Rollout"
+Cohesion: 0.29
+Nodes (7): Decision, Maintenance rule, Optimistic UI Rollout, Remaining rollout candidates, Standard mutation contract, When not to use it, When to use it
 
 ### Community 136 - "components.json"
 Cohesion: 0.09
@@ -1204,31 +1170,31 @@ Nodes (21): aliases, components, hooks, lib, ui, utils, iconLibrary, menuAccent 
 
 ### Community 137 - "www/src/app/layout.tsx"
 Cohesion: 0.13
-Nodes (13): aspekta, robotoMono, apps_www_src_app_globals, jsonLd, metadata, Providers(), PageTransition(), PageTransitionContext (+5 more)
+Nodes (14): aspekta, robotoMono, apps_www_src_app_globals, jsonLd, metadata, Providers(), PageTransition(), PageTransitionContext (+6 more)
 
 ### Community 138 - "getAuthedInternshipContext"
-Cohesion: 0.12
-Nodes (27): associateEvaluationListQuerySchema, GET(), POST(), upsertAssociateEvaluationSchema, addDaysToDateOnly(), EmployeeRecord, InternshipRecord, nowIso() (+19 more)
+Cohesion: 0.17
+Nodes (19): associateEvaluationListQuerySchema, GET(), POST(), upsertAssociateEvaluationSchema, GET(), PATCH(), canAccessInternship(), getAuthedInternshipContext() (+11 more)
 
 ### Community 139 - "Control Hub HR Portal"
 Cohesion: 0.14
 Nodes (22): Navy & Gold Design System, CI/CD Pipelines (GitHub Actions), Control Hub HR Portal, Database Conventions (RLS, soft delete, naming), Three-Tier Architecture (Interface/Orchestration/Data/AI layers), Titanium & Indigo Design System, Zero-Trust Security Principles, Zero-Trust Security principle (AI orchestrator) (+14 more)
 
-### Community 140 - "MonthlySelfEvaluationAdminReview"
-Cohesion: 0.12
-Nodes (14): formatDateTime(), formatMonthKey(), formatSectionTitle(), getCurrentMonthKey(), getProductivityTone(), getSectionsForTab(), initials(), isLowSignalAnswer() (+6 more)
+### Community 140 - "usePaTasks.ts"
+Cohesion: 0.24
+Nodes (12): buildTaskParams(), PaTaskDetailResponse, PaTaskListResponse, readJson(), useCreatePaTask(), useDeletePaTask(), usePaTask(), usePaTasks() (+4 more)
 
-### Community 141 - "InternDetailPage"
-Cohesion: 0.15
-Nodes (15): getInitials(), InternDetailPage(), InternDashboardPage(), EvaluationHistoryCard(), formatDate(), getAssociateStage(), InternEvaluationsPage(), renderStars() (+7 more)
+### Community 141 - "process-drive-doc.ts"
+Cohesion: 0.27
+Nodes (7): buildDriveMetadata(), isRecord(), processDriveDoc, chunkText(), ChunkTextOptions, TextChunk, googleapis
 
-### Community 142 - "CompanyPulseWidget.tsx"
-Cohesion: 0.17
-Nodes (16): AdminCompanyPulsePage(), DayEventPill(), CompanyPulseWidget(), CompanyPulseWidgetProps, dateBadge(), MONTHS, PulseItem(), fetchCompanyCalendarEvents() (+8 more)
+### Community 142 - "super-admin/dashboard/page.tsx"
+Cohesion: 0.11
+Nodes (24): AdminDashboardPage(), formatRelativeTime(), getActionIcon(), getGreeting(), formatRelativeTime(), getActionIcon(), getGreeting(), SuperAdminDashboardPage() (+16 more)
 
 ### Community 143 - "internships/[id]/route.ts"
-Cohesion: 0.18
-Nodes (20): DailyLogRow, DELETE(), GET(), getWeekRange(), signDailyLogAttachments(), toInternshipStatusBadge(), EODReportDetailModalProps, dailyLogPayloadSchema (+12 more)
+Cohesion: 0.19
+Nodes (19): DailyLogRow, DELETE(), GET(), getWeekRange(), signDailyLogAttachments(), toInternshipStatusBadge(), EODReportDetailModalProps, dailyLogPayloadSchema (+11 more)
 
 ### Community 144 - "internship.schema.ts"
 Cohesion: 0.10
@@ -1266,17 +1232,17 @@ Nodes (20): idx_invoice_line_items_invoice_id, idx_invoices_deleted_at, idx_invo
 Cohesion: 0.10
 Nodes (19): compilerOptions, baseUrl, incremental, jsx, lib, module, moduleResolution, noEmit (+11 more)
 
-### Community 153 - "getAuthedSupabase"
-Cohesion: 0.13
-Nodes (30): GET(), DELETE(), PATCH(), renameSchema, createConversationSchema, GET(), POST(), AI_ADMIN_ROLES (+22 more)
+### Community 153 - "getAdminClient"
+Cohesion: 0.22
+Nodes (16): getAdminClient(), isAiAdmin(), DELETE(), GET(), PATCH(), RouteContext, toKnowledgeSource(), GET() (+8 more)
 
 ### Community 154 - "RevenueForecastPageContent"
-Cohesion: 0.13
-Nodes (10): RevenueForecastPageContent(), mapEntries(), RevenueForecastEntriesResponse, RevenueForecastEntry, UpdateEntryPayload, UpsertEntryPayload, useDeleteRevenueForecastEntry(), useRevenueForecastEntries() (+2 more)
+Cohesion: 0.11
+Nodes (13): RevenueForecastPageContent(), mapEntries(), useDeleteRevenueForecastEntry(), useRevenueForecastEntries(), useUpdateRevenueForecastEntry(), useUpsertRevenueForecastEntry(), CreateGoalPayload, mapGoals() (+5 more)
 
-### Community 155 - "phone.ts"
-Cohesion: 0.21
-Nodes (16): formatReviewDate(), OnboardingWizard(), parsePersonalAddress(), AdminOnboardingWizard(), parsePersonalAddress(), useCreateOnboardingProfile(), useUpdateOnboardingProfile(), formatPhoneNumber() (+8 more)
+### Community 155 - "contact.ts"
+Cohesion: 0.25
+Nodes (9): cleanText(), CONTACT_RESPONSE_JSON_SCHEMA, ContactExtractionConfig, ContactExtractionResult, extractContactFromImage(), extractJsonFromImage(), getClient(), VisionExtractionRequest (+1 more)
 
 ### Community 156 - "compilerOptions"
 Cohesion: 0.10
@@ -1299,12 +1265,12 @@ Cohesion: 0.19
 Nodes (17): AVAILABLE_ICONS, CategoryFormData, CategoryFormModal(), CategoryTreeRow(), getIconComponent(), ICON_MAP, ResourceCategoriesPage(), slugify() (+9 more)
 
 ### Community 161 - "pa-task.types.ts"
-Cohesion: 0.15
-Nodes (15): PaTaskAttachmentsResponse, readJson(), useCreatePaTaskAttachment(), useDeletePaTaskAttachment(), usePaTaskAttachments(), PaTaskAccessGrantRecord, PaTaskAssignableUser, PaTaskAttachment (+7 more)
+Cohesion: 0.22
+Nodes (9): PaTaskAccessGrantRecord, PaTaskAssignableUser, PaTaskCategory, PaTaskDueStatusFilter, PaTaskFilters, PaTaskLookupColor, PaTaskLookupItem, PaTaskPriority (+1 more)
 
 ### Community 162 - "suggestions/route.ts"
-Cohesion: 0.18
-Nodes (19): getAllowedKnowledgeAccessLevels(), KnowledgeAccessLevel, buildFallbackSuggestions(), buildGenericPrompt(), buildLiveSyncPayload(), CandidateSource, dedupeSuggestions(), generateSuggestionsWithAI() (+11 more)
+Cohesion: 0.19
+Nodes (18): KnowledgeAccessLevel, buildFallbackSuggestions(), buildGenericPrompt(), buildLiveSyncPayload(), CandidateSource, dedupeSuggestions(), generateSuggestionsWithAI(), GET() (+10 more)
 
 ### Community 163 - "buildWellnessBingoSnapshot"
 Cohesion: 0.27
@@ -1314,13 +1280,13 @@ Nodes (14): GET(), PATCH(), GET(), buildWellnessBingoSnapshot(), fetchPartnerOpt
 Cohesion: 0.15
 Nodes (12): BankSelector, CurrencySelector, Form, Form Components Reference, FormField, FormInput, FormSelect, FormTextarea (+4 more)
 
-### Community 165 - "useConversations.ts"
-Cohesion: 0.20
-Nodes (14): AppShellAIChatbot(), useAIChatSuggestions(), ConversationsResponse, ConversationSummary, createConversation(), CreateConversationResponse, deleteConversation(), fetchConversations() (+6 more)
+### Community 165 - "20260930000001_create_uhp_client_attachments_and_outreach_digest.sql"
+Cohesion: 0.24
+Nodes (10): public.uhp_client_activities, public.uhp_clients, idx_uhp_client_attachments_activity, idx_uhp_client_attachments_client, idx_uhp_outreach_digest_runs_interval, public.uhp_client_attachments, public.uhp_outreach_digest_runs, set_updated_at (+2 more)
 
 ### Community 166 - "ProjectDescriptionFields.tsx"
-Cohesion: 0.13
-Nodes (18): EditProjectDialog(), handleSubmit(), NewProjectPage(), handleSubmit(), EditProjectDialog(), handleSubmit(), ProjectDescriptionFields(), ProjectDescriptionFieldsProps (+10 more)
+Cohesion: 0.19
+Nodes (9): ProjectDescriptionFields(), ProjectDescriptionFieldsProps, SECTION_CONFIGS, SectionConfig, DEFAULT_SECTIONS, normalizeLines(), parseProjectDescription(), ProjectDescriptionSections (+1 more)
 
 ### Community 167 - "www/src/app/api/applications/route.ts"
 Cohesion: 0.18
@@ -1338,25 +1304,25 @@ Nodes (18): dependencies, @hr-portal/database, jose, devDependencies, typescript
 Cohesion: 0.23
 Nodes (18): buildContext(), getEmployeeName(), getUserIdentity(), buildDisplayName(), buildHeaders(), buildReplacement(), fetchByIds(), fetchNotifications() (+10 more)
 
-### Community 171 - "uhp/_lib.ts"
-Cohesion: 0.17
-Nodes (19): DELETE(), GET(), listGrants(), parseModule(), POST(), GET(), getUhpAuthedContext(), hasUhpModuleAccess() (+11 more)
+### Community 171 - "drive-doc-sync/route.ts"
+Cohesion: 0.36
+Nodes (9): createDriveClient(), GET(), getSearchParam(), getStoredModifiedTime(), isAuthorizedCronRequest(), isRecord(), isTruthy(), parseWatchFileIds() (+1 more)
 
 ### Community 172 - "okr-targets/[id]/evidence/route.ts"
-Cohesion: 0.20
-Nodes (16): ALLOWED_MIME_TYPES, canCreateTargetEvidence(), createBaseInsertPayload(), createEvidencePayload(), CreateEvidencePayloadResult, createJsonEvidencePayload(), createMultipartEvidencePayload(), DELETE() (+8 more)
+Cohesion: 0.18
+Nodes (18): ALLOWED_MIME_TYPES, canCreateTargetEvidence(), canReadTargetEvidence(), createBaseInsertPayload(), createEvidencePayload(), CreateEvidencePayloadResult, createJsonEvidencePayload(), createMultipartEvidencePayload() (+10 more)
 
-### Community 173 - "components/README.md"
-Cohesion: 0.11
-Nodes (14): OKRCard / OKRList, OKRStatusBadge, Performance Components Reference, ProgressStatusBadge, ReviewStatusBadge, Status Badges, Status Configs, Type Definitions (+6 more)
+### Community 173 - "AI Knowledge Components Reference"
+Cohesion: 0.03
+Nodes (54): AccessToggle, AI Knowledge Components Reference, AIKnowledgeManager, ChatInterface, ChatMessage, DebugPanel, KnowledgeBasePanel, PlaygroundPanel (+46 more)
 
-### Community 174 - "toast.tsx"
-Cohesion: 0.25
-Nodes (10): clearToastTimer(), scheduleToastDismiss(), ToastContext, ToastContextValue, ToastProps, ToastProvider(), ToastState, toastTimers (+2 more)
+### Community 174 - "composeProjectDescription"
+Cohesion: 0.29
+Nodes (10): EditProjectDialog(), handleSubmit(), getProjectDateRangeError(), NewProjectPage(), handleSubmit(), EditProjectDialog(), handleSubmit(), useCreateProject() (+2 more)
 
 ### Community 175 - "ref_tanstack_react_query"
-Cohesion: 0.03
-Nodes (93): NewAnnouncementPage(), parseCsvList(), ManagerTeamPerformancePage(), progressTone(), GroupedReportRowProps, ReportActionsMenuProps, OnboardingData, TaskKanbanCardProps (+85 more)
+Cohesion: 0.02
+Nodes (118): AnnouncementDetailPage(), categoryLabel, priorityVariant, statusLabel, ViewMode, categoryOptions, NewAnnouncementPage(), parseCsvList() (+110 more)
 
 ### Community 176 - "setup-playwright-auth.js"
 Cohesion: 0.08
@@ -1387,8 +1353,8 @@ Cohesion: 0.12
 Nodes (16): compilerOptions, incremental, jsx, lib, module, moduleResolution, noEmit, paths (+8 more)
 
 ### Community 183 - "ADR-002: Resources / Information Hub Architecture"
-Cohesion: 0.10
-Nodes (25): ADR-001: Role Mapping Between DB and UI, Role Mapping Option A, Role Mapping Option B, Trigger-Based Resource Analytics Counters, ADR-002: Resources / Information Hub Architecture, Supabase Storage for Resources, Resources RLS Policy Design, PostgreSQL Full-Text Search for Resources (+17 more)
+Cohesion: 0.07
+Nodes (36): ADR-001: Role Mapping Between DB and UI, Role Mapping Option A, Role Mapping Option B, Trigger-Based Resource Analytics Counters, ADR-002: Resources / Information Hub Architecture, Supabase Storage for Resources, Resources RLS Policy Design, PostgreSQL Full-Text Search for Resources (+28 more)
 
 ### Community 184 - "DesignSystemGenerator"
 Cohesion: 0.16
@@ -1406,21 +1372,21 @@ Nodes (16): dependencies, zod, devDependencies, typescript, exports, typescript,
 Cohesion: 0.19
 Nodes (16): chunkText(), corsHeaders, EmbeddingChunk, estimateTokenCount(), extractContent(), extractFromFile(), extractFromUrl(), extractTextFromPdfBytes() (+8 more)
 
-### Community 188 - "useAISources.ts"
-Cohesion: 0.21
-Nodes (11): AISourcesResponse, UpdateSourcePayload, UploadSourceResponse, AISourceFilters, AccessToggleProps, KnowledgeBasePanelProps, mockSources, SourceRowProps (+3 more)
+### Community 188 - "actions/route.ts"
+Cohesion: 0.33
+Nodes (8): addDaysToDateOnly(), EmployeeRecord, InternshipRecord, nowIso(), POST(), todayInPhDate(), toInternshipRecord(), internshipActionSchema
 
-### Community 189 - "pa-tasks/page.tsx"
-Cohesion: 0.09
-Nodes (29): ALLOWED_ATTACHMENT_EXTENSIONS, ALLOWED_ATTACHMENT_MIME_TYPES, colorClass(), formatDate(), formatRole(), getDueStatusBadgeClass(), getDueStatusLabel(), getTaskDueStatus() (+21 more)
+### Community 189 - "PaTasksPage"
+Cohesion: 0.12
+Nodes (14): colorClass(), formatDate(), formatRole(), getDueStatusBadgeClass(), getDueStatusLabel(), getTaskDueStatus(), getTaskTitleTextClass(), PaTasksPage() (+6 more)
 
-### Community 190 - "expense-parser.ts"
-Cohesion: 0.25
-Nodes (12): loadWorkbook(), mapWorksheetRowToRecord(), normalizeCellToString(), parseDecimalValue(), ParsedExpenseImport, parseExpenseImportFile(), parseHeaders(), ExpenseImportBatch (+4 more)
+### Community 190 - "EODAttachmentGallery.tsx"
+Cohesion: 0.42
+Nodes (8): AttachmentFileRow(), EODAttachmentGallery(), EODAttachmentGalleryProps, formatFileSize(), isImageAttachment(), isLinkAttachment(), isPdfAttachment(), useDailyLogAttachments()
 
-### Community 191 - "useUpdateTaskStatus.test.tsx"
-Cohesion: 0.10
-Nodes (8): ref_hooks_useprojects, ref_hooks_useresources, ref_hooks_usetaskcomments, ref_hooks_usetasks, ref_hooks_useupdatetask, ref_lib_query_keys, mockResourceResponse, task
+### Community 191 - "@testing-library/react"
+Cohesion: 0.07
+Nodes (14): ref_components_data_display_serverpagination, ref_hooks_useannouncementfeed, ref_hooks_usebacknavigation, ref_hooks_usecreateannouncement, ref_hooks_useprojects, ref_hooks_useresources, ref_hooks_usetaskcomments, ref_hooks_usetasks (+6 more)
 
 ### Community 192 - "create-sample-accounts.mjs"
 Cohesion: 0.28
@@ -1438,17 +1404,17 @@ Nodes (15): idx_divisions_deleted_at, idx_divisions_name, idx_employees_division
 Cohesion: 0.25
 Nodes (14): ACCOUNTING_ELIGIBLE_ROLES, addMonthsUtc(), addWeeksUtc(), ADMIN_ROLES, ExpenseAnalyticsRow, GET(), getEmployeeDepartment(), parseDateParam() (+6 more)
 
-### Community 196 - "ai-expenses/_lib.ts"
-Cohesion: 0.32
-Nodes (12): createGrantSchema, DELETE(), GET(), POST(), GET(), AI_SPENDING_ADMIN_ROLES, AI_SPENDING_GRANTABLE_ROLES, getAiSpendingAuth() (+4 more)
+### Community 196 - "ExecutivePortraits.tsx"
+Cohesion: 0.25
+Nodes (5): Executive, ExecutiveCard(), ExecutivePortraitsProps, getInitials(), slideVariants
 
-### Community 197 - "DataTable.tsx"
-Cohesion: 0.20
-Nodes (13): DataTable(), DataTableSkeleton(), DataTableColumnHeaderProps, DataTablePaginationProps, DataTableProps, DataTableSkeletonProps, DataTableColumnHeader(), DataTableColumnHeaderProps (+5 more)
+### Community 197 - "revenue-forecast/access-grants/route.ts"
+Cohesion: 0.50
+Nodes (7): DELETE(), dynamic, GET(), isMarketingOrFinanceDepartment(), POST(), isRevenueForecastAdmin(), listRevenueForecastAccessGrants()
 
 ### Community 198 - "MonthlyCallFeedbackForm.tsx"
-Cohesion: 0.05
-Nodes (73): FivePercentReflectionAdminListEntry, FivePercentReflectionDetailField, FivePercentReflectionDetailSection, fivePercentReflectionDetailSections, FivePercentReflectionRecord, getFivePercentAverageRank(), buildDefaultValues(), CurrentReflectionResponse (+65 more)
+Cohesion: 0.06
+Nodes (60): buildDefaultValues(), callLengthOptions, clarityOptions, CurrentMonthlyCallFeedbackResponse, engagementOptions, formatDateTime(), formatMonthKey(), getCurrentMonthKey() (+52 more)
 
 ### Community 199 - "www/src/lib/email.ts"
 Cohesion: 0.30
@@ -1483,16 +1449,16 @@ Cohesion: 0.23
 Nodes (14): idx_pa_task_categories_label_active, idx_pa_task_categories_sort_order, idx_pa_task_priorities_label_active, idx_pa_task_priorities_sort_order, idx_pa_task_statuses_label_active, idx_pa_task_statuses_sort_order, public.pa_task_categories, public.pa_task_priorities (+6 more)
 
 ### Community 207 - "monthlyCallFeedbackDetailConfig.ts"
-Cohesion: 0.10
-Nodes (17): formatDateTime(), formatMonthKey(), getCurrentMonthKey(), initials(), MonthlyCallFeedbackAdminReview(), renderDetailField(), CALL_LENGTH_LABELS, CLARITY_LABELS (+9 more)
+Cohesion: 0.17
+Nodes (9): CALL_LENGTH_LABELS, CLARITY_LABELS, ENGAGEMENT_LABELS, MonthlyCallFeedbackAdminListEntry, MonthlyCallFeedbackDetailField, MonthlyCallFeedbackDetailSection, monthlyCallFeedbackDetailSections, MonthlyCallFeedbackRecord (+1 more)
 
-### Community 208 - "useInvoices.ts"
+### Community 208 - "admin/invoice/page.tsx"
 Cohesion: 0.08
-Nodes (35): AdminInvoiceDetailDialog(), AdminInvoicePage(), extractUserNotes(), formatCurrency(), getAvatarUrl(), getInitials(), PaymentDetailsDialog(), InvoicePage() (+27 more)
+Nodes (45): AdminInvoiceDetailDialog(), AdminInvoicePage(), DetailDialogRow, extractUserNotes(), formatCurrency(), getAvatarUrl(), getInitials(), PaymentDetailsDialog() (+37 more)
 
 ### Community 209 - "Control Hub HR Portal Implementation Checklist (V1)"
-Cohesion: 0.07
-Nodes (38): Route Group Layout System (auth/employee/admin), Wise Production Credentials Collection Form, Wise Production Credential Values (API key, Profile ID, Webhook key, Environment), Wise Production Setup Instructions (Non-Technical), Wise API Token & Webhook Key Generation Procedure, Wise Webhook Setup for Local Testing, Wise Sandbox Webhook Simulation Procedure, Control Hub Sprint Implementation Checklist (8-Sprint Plan) (+30 more)
+Cohesion: 0.08
+Nodes (32): Meta/Facebook Ad Campaign Objective-to-Metric Mapping, RLS as Final Gatekeeper (zero-trust: never trust client-side data; FORCE ROW LEVEL SECURITY so even table owners cannot bypass policies), Environment-Guarded Seed Data Imports (moved out of migrations so `supabase db push` cannot write real business data into the wrong database; each import aborts unless the expected environment-specific user exists), Soft Delete Pattern (deleted_at column instead of hard deletes, preserves history and audit trail), Control Hub HR Portal User Testing Guide, Known Limitations (Not Yet Implemented) rationale, Wise Production Credentials Collection Form, Wise Production Credential Values (API key, Profile ID, Webhook key, Environment) (+24 more)
 
 ### Community 210 - "20260329000006_create_ticketing_tables.sql"
 Cohesion: 0.26
@@ -1503,24 +1469,24 @@ Cohesion: 0.18
 Nodes (13): idx_associate_evaluations_employee_id, idx_associate_evaluations_evaluated_at, idx_associate_evaluations_internship_id, public.associate_evaluations, auth, auth.users, public, public.employees (+5 more)
 
 ### Community 212 - "Recruitment (Admin)"
-Cohesion: 0.33
-Nodes (10): Jobs Management, Job Application Pipeline, Recruitment (Admin), ATS Access Control, Applications API, ATS API, Departments API, job_postings table (+2 more)
+Cohesion: 0.21
+Nodes (14): Jobs Management, Job Application Pipeline, Recruitment (Admin), ATS Access Control, Ticket Status Flow, AI API, Knowledge Sources, RAG Pipeline (+6 more)
 
-### Community 213 - "useAtsAccess.ts"
-Cohesion: 0.22
-Nodes (10): AtsAccessManagerDialog(), formatRole(), AtsAccessEnvelope, AtsAccessGrantRecord, AtsAccessGrantsResponse, AtsAccessResponse, readJson(), useAtsAccessGrants() (+2 more)
+### Community 213 - "PerformancePage"
+Cohesion: 0.25
+Nodes (8): formatDate(), formatRatingLabel(), getProgressBarColor(), getProgressColor(), PerformancePage(), mapReviewStatus(), usePerformanceReviews(), fromPercentageToFivePoint()
 
 ### Community 214 - "abuse-controls.ts"
 Cohesion: 0.22
 Nodes (14): buildInquiryFingerprint(), consumeInquiryEmailLimits(), consumeInquiryIpLimits(), consumeLimit(), consumeLimits(), EMAIL_DAILY_LIMIT, EMAIL_SHORT_LIMIT, getAbuseSecret() (+6 more)
 
-### Community 215 - "useCrmAccess.ts"
-Cohesion: 0.18
-Nodes (12): CrmAccessManagerDialog(), CrmAccessManagerDialogProps, formatRole(), isMarketingDepartment(), CrmAccessGrantRecord, CrmAccessGrantsResponse, CrmAccessResponse, CrmTrackerKey (+4 more)
+### Community 215 - "AtsAccessManagerDialog.tsx"
+Cohesion: 0.07
+Nodes (39): AiSpendingAccessManagerDialogProps, AiSpendingAccessManagerPanel(), formatRole(), AtsAccessManagerDialog(), AtsAccessManagerDialogProps, formatRole(), CrmAccessManagerDialog(), CrmAccessManagerDialogProps (+31 more)
 
-### Community 216 - "crm/access-grants/route.ts"
-Cohesion: 0.50
-Nodes (7): DELETE(), GET(), getTrackerQueryParam(), grantSchema, POST(), isCrmAdmin(), listCrmAccessGrants()
+### Community 216 - "sources/upload/route.ts"
+Cohesion: 0.43
+Nodes (6): ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES, getFileExtension(), getKnowledgeSourceType(), POST(), runtime
 
 ### Community 217 - "leadership-profile-setup.spec.ts"
 Cohesion: 0.21
@@ -1575,8 +1541,8 @@ Cohesion: 0.15
 Nodes (12): compilerOptions, baseUrl, paths, exclude, extends, include, ./tsconfig.base.json, @hr-portal/ai (+4 more)
 
 ### Community 230 - "apps/www Hidden Sections Log"
-Cohesion: 0.14
-Nodes (11): apps/www Hidden Sections Log, Direct-Access Blocking Strategy, Hidden Public Surfaces, Hidden Routes, Reason For Hide, Restore Checklist, Forms Summary, Known Limitations (+3 more)
+Cohesion: 0.33
+Nodes (6): apps/www Hidden Sections Log, Direct-Access Blocking Strategy, Hidden Public Surfaces, Hidden Routes, Reason For Hide, Restore Checklist
 
 ### Community 231 - "Deployment Documentation"
 Cohesion: 0.12
@@ -1586,17 +1552,17 @@ Nodes (11): Automated Setup, Configuration Files, Deployment Documentation, Depl
 Cohesion: 0.14
 Nodes (12): config, config, Navy & Gold Rebrand (replaced Titanium & Indigo across HR Portal and public website for a more polished, professional brand identity), PA Voice-to-Action Pipeline (Telegram voice note -> Whisper transcription -> GPT-4o extraction -> Notion task -> GC notification), Titanium & Indigo Design System (original, later superseded), PA Workflow & Productivity System Proposal, SN Internal Website Progress Report - Ceferino (PDF), Control Hub HR Portal Progress Report (+4 more)
 
-### Community 233 - "useOffboardingSummary.ts"
-Cohesion: 0.43
-Nodes (6): OffboardingTaskRecord, useOffboarding(), formatDueLabel(), OffboardingChecklistItemSummary, toChecklistItem(), useOffboardingSummary()
+### Community 233 - "ResourceCard"
+Cohesion: 0.29
+Nodes (7): ResourceListResponse, Design Notes, Props, ResourceCard, Usage, Variants, Resource
 
-### Community 234 - "useUhpAccess.ts"
-Cohesion: 0.31
-Nodes (9): Props, UhpAccessManagerDialog(), readJson(), UhpAccessGrant, UhpAccessResponse, useGrantUhpAccess(), useRevokeUhpAccess(), useUhpAccessGrants() (+1 more)
+### Community 234 - "UhpClientTrackerPage.tsx"
+Cohesion: 0.07
+Nodes (43): Props, UhpAccessManagerButton(), UhpAccessManagerDialog(), UhpClientDetailDialog(), selectActivityScreenshot(), Client, CreateClientPayload, emptyMetrics (+35 more)
 
 ### Community 235 - "onboarding-new-employee/index.ts"
-Cohesion: 0.18
-Nodes (8): CANONICAL_APP_URL, DEFAULT_TASKS, DefaultTask, inputSchema, OnboardingInput, sendEmail(), SendEmailParams, SendEmailResult
+Cohesion: 0.12
+Nodes (12): CANONICAL_APP_URL, DEFAULT_TASKS, DefaultTask, inputSchema, OnboardingInput, EmployeeProbation, MilestoneConfig, MILESTONES (+4 more)
 
 ### Community 236 - "public.employees"
 Cohesion: 0.29
@@ -1627,20 +1593,20 @@ Cohesion: 0.31
 Nodes (10): normalizePartnershipUsers(), AdminClient, clearExistingPartnership(), ExistingPartnership, getPartnerIdForUser(), notifySelectedPartner(), parsePartnerRequest(), PUT() (+2 more)
 
 ### Community 243 - "ai.schema.ts"
-Cohesion: 0.15
-Nodes (12): AISuggestionClickInput, aiSuggestionClickSchema, chatHistoryMessageSchema, ChatMessageInput, chatMessageSchema, chatRoleSchema, CreateKnowledgeSourceInput, createKnowledgeSourceSchema (+4 more)
+Cohesion: 0.18
+Nodes (10): AISuggestionClickInput, chatHistoryMessageSchema, ChatMessageInput, chatMessageSchema, chatRoleSchema, CreateKnowledgeSourceInput, createKnowledgeSourceSchema, KnowledgeSourceFilters (+2 more)
 
-### Community 244 - "file-drop-zone.tsx"
-Cohesion: 0.16
-Nodes (4): FileDropZone(), FileDropZoneProps, formatFileSize(), getFileTypeIcon()
+### Community 244 - "PerformanceRating"
+Cohesion: 0.33
+Nodes (6): EvaluationFormState, TargetEvaluation, EvaluationFormState, TargetEvaluation, OkrRow, PerformanceRating
 
 ### Community 245 - "ref_framer_motion"
-Cohesion: 0.05
-Nodes (27): PORTRAITS, splitQuote(), Testimonial, TestimonialCarousel(), TestimonialCarouselProps, contactLinks, ease, fade (+19 more)
+Cohesion: 0.04
+Nodes (37): ease, fade, line, orbitNodes, stagger(), visionNotes, VisionSection(), PORTRAITS (+29 more)
 
-### Community 246 - "Apps/Web Audit - 2026-03-29"
-Cohesion: 0.18
-Nodes (11): Clean Code Standards, Agent Guidelines — Control Hub HR Portal, Scope Discipline Rules, Security First Principles, Self-Feedback Iteration Loop, Apps/Web Audit - 2026-03-29, EmptyState Implementation Drift, Offer-Letter Placeholder Surface (+3 more)
+### Community 246 - "renderSfoContent"
+Cohesion: 0.33
+Nodes (6): handleSfoStatusUpdate(), renderSfoContent(), formatAudAmount(), formatCreatedAt(), formatCreatorName(), formatStatusLabel()
 
 ### Community 247 - "src/database.types.ts"
 Cohesion: 0.17
@@ -1650,13 +1616,13 @@ Nodes (11): @hr-portal/database Package README, CompositeTypes, Constants, Datab
 Cohesion: 0.18
 Nodes (11): next, @next/swc-darwin-arm64, @next/swc-darwin-x64, @next/swc-linux-arm64-gnu, @next/swc-linux-arm64-musl, @next/swc-linux-x64-gnu, @next/swc-linux-x64-musl, @next/swc-win32-arm64-msvc (+3 more)
 
-### Community 249 - "war-room/pool/page.tsx"
-Cohesion: 0.15
-Nodes (23): AdminProjectPoolPage(), buildEditFormState(), EditFormState, formatCsv(), parseCsv(), PRIORITY_OPTIONS, PRIORITY_TONE, ProjectPoolGridProps (+15 more)
+### Community 249 - "useDocuments.test.tsx"
+Cohesion: 0.33
+Nodes (4): packages_database_src_index_document, ref_hooks_usedocuments, mockDocument, mockDocumentListResponse
 
 ### Community 250 - "useWeeklyCommitments.ts"
-Cohesion: 0.20
-Nodes (15): getIsoWeekAndYear(), MondayCommitmentModal(), MondayCommitmentModalProps, isCompletedStatus(), WeeklyFocusCard(), buildQuery(), MilestoneItem, normalizeCommitment() (+7 more)
+Cohesion: 0.27
+Nodes (12): MondayCommitmentModalProps, isCompletedStatus(), WeeklyFocusCard(), buildQuery(), MilestoneItem, normalizeCommitment(), normalizeCommitments(), useMyWeeklyCommitment() (+4 more)
 
 ### Community 251 - "public.christmas_ornaments"
 Cohesion: 0.24
@@ -1702,33 +1668,33 @@ Nodes (10): idx_weekly_commitment_items_commitment_id, idx_weekly_commitment_ite
 Cohesion: 0.31
 Nodes (10): idx_revenue_forecast_access_grants_user_active, idx_sfo_revenue_entries_year_month_active, idx_sfo_revenue_goals_year_active, public.revenue_forecast_access_grants, public.sfo_revenue_entries, public.sfo_revenue_goals, public.user_has_revenue_forecast_access(), auth (+2 more)
 
-### Community 262 - "useRevenueForecastAccess.ts"
+### Community 262 - "RevenueForecastAccessManagerDialog.tsx"
 Cohesion: 0.20
-Nodes (11): formatRole(), isMarketingOrFinanceDepartment(), RevenueForecastAccessManagerDialog(), readJson(), RevenueForecastAccessEnvelope, RevenueForecastAccessGrantRecord, RevenueForecastAccessGrantsResponse, RevenueForecastAccessResponse (+3 more)
+Nodes (13): formatRole(), isMarketingOrFinanceDepartment(), RevenueForecastAccessManagerButton(), RevenueForecastAccessManagerDialog(), RevenueForecastAccessManagerDialogProps, readJson(), RevenueForecastAccessEnvelope, RevenueForecastAccessGrantRecord (+5 more)
 
-### Community 263 - "useGamification.ts"
-Cohesion: 0.10
-Nodes (29): AdminProjectsPage(), AchievementsPage(), LeaderboardUserDrawer(), LeaderboardUserDrawerProps, LeaderboardPage(), AdminProjectsDeptRow, AdminProjectsInternRow, AdminProjectsOverview (+21 more)
+### Community 263 - "achievements/page.tsx"
+Cohesion: 0.05
+Nodes (56): AchievementsPage(), LeaderboardUserDrawer(), LeaderboardUserDrawerProps, LeaderboardPage(), LeagueFilter, XpTierPill(), AdminProjectsDeptRow, AdminProjectsInternRow (+48 more)
 
 ### Community 264 - "dashboard-analytics-route.test.ts"
 Cohesion: 0.12
 Nodes (9): ref_app_api_audit_logs_route, ref_app_api_cron_drive_doc_sync_route, ref_app_api_dashboard_analytics_route, ref_app_api_expenses_id_verify_route, ref_lib_supabase_server, QueryResult, { getMock, sendMock }, ExpenseRow (+1 more)
 
-### Community 265 - "ai-knowledge/index.ts"
-Cohesion: 0.16
-Nodes (19): AI Knowledge (15), AIKnowledgeManager(), PanelState, ChatInterface(), ChatInterfaceMessage, ChatInterfaceProps, ChatMessage(), DebugPanelProps (+11 more)
+### Community 265 - "cn.ts"
+Cohesion: 0.05
+Nodes (78): AdminAIKnowledgePage(), UploadingFile, SuperAdminAIKnowledgePage(), UploadingFile, AISourcesResponse, UpdateSourcePayload, UploadSourceResponse, useAISources() (+70 more)
 
 ### Community 266 - "collections-route.test.ts"
-Cohesion: 0.14
-Nodes (6): json(), UhpClientDetailDialog(), ref_app_api_collections_id_resources_route, ref_app_api_collections_route, ref_app_api_resources_lib, QueryBuilderResult
+Cohesion: 0.18
+Nodes (5): json(), ref_app_api_collections_id_resources_route, ref_app_api_collections_route, ref_app_api_resources_lib, QueryBuilderResult
 
 ### Community 267 - "Core Components"
 Cohesion: 0.12
 Nodes (16): Admin Components, Core Components, Dashboard Components, InsightsSummary / InsightsSummaryList, MetricInput / MetricInputGroup, MetricKPICard / MetricKPICardGrid, Report Components Reference, ReportCard / ReportList (+8 more)
 
-### Community 268 - "businesses/[slug]/page.tsx"
-Cohesion: 0.05
-Nodes (39): nextConfig, metadata, metadata, BusinessDetailPage(), PageProps, deriveHighlights(), generateMetadata(), generateStaticParams() (+31 more)
+### Community 268 - "cn"
+Cohesion: 0.09
+Nodes (21): metadata, BusinessPortfolio(), ViewMode, allTestimonials, firstColumn, secondColumn, thirdColumn, AnimatedHeadline() (+13 more)
 
 ### Community 269 - "onboarding-validation.spec.ts"
 Cohesion: 0.24
@@ -1779,24 +1745,24 @@ Cohesion: 0.22
 Nodes (9): scripts, build, changelog:check, clean, dev, prebuild, predev, start (+1 more)
 
 ### Community 281 - "useRequireAuth"
-Cohesion: 0.19
-Nodes (10): JobsLayout(), AdminReportsLayout(), AdminLayout(), SuperAdminLayout(), useRequireAuth(), 1. Get User Information, 2. Protect a Route, 3. Check User Role (+2 more)
+Cohesion: 0.17
+Nodes (11): JobsLayout(), AdminReportsLayout(), AdminLayout(), SuperAdminLayout(), useRequireAuth(), 1. Get User Information, 2. Protect a Route, 3. Check User Role (+3 more)
 
 ### Community 282 - "site-config.ts"
-Cohesion: 0.08
-Nodes (35): ContactPage(), metadata, apps_www_src_assets_sn_logo, formatDaysAgo(), HeroSection(), WhatsNewMarquee(), AnnouncementBanner(), formatDaysAgo() (+27 more)
+Cohesion: 0.06
+Nodes (42): ContactPage(), metadata, apps_www_src_assets_sn_logo, formatDaysAgo(), HeroSection(), WhatsNewMarquee(), AnnouncementBanner(), formatDaysAgo() (+34 more)
 
-### Community 283 - "AI Knowledge Components Reference"
-Cohesion: 0.14
-Nodes (14): AccessToggle, AI Knowledge Components Reference, AIKnowledgeManager, ChatInterface, ChatMessage, DebugPanel, KnowledgeBasePanel, PlaygroundPanel (+6 more)
+### Community 283 - "ai-suggestions-route.test.ts"
+Cohesion: 0.33
+Nodes (3): ref_app_api_ai_lib, ref_app_api_ai_suggestions_click_route, ref_app_api_ai_suggestions_route
 
-### Community 284 - "uhp.schema.ts"
-Cohesion: 0.10
-Nodes (30): findExistingDuplicates(), logInitialOutreach(), POST(), isValidN8nCallback(), POST(), GET(), POST(), GET() (+22 more)
+### Community 284 - "uhp.ts"
+Cohesion: 0.04
+Nodes (87): DELETE(), GET(), listGrants(), parseModule(), POST(), GET(), GET(), POST() (+79 more)
 
-### Community 285 - "ref_supabase_supabase_js"
-Cohesion: 0.13
-Nodes (21): CurrencyConversionResult, CurrencyConversionService, CurrencyRateResolution, fetchWisePublicPhpAudRate(), roundFxRate(), roundToCents(), WisePublicRateCacheEntry, assertRatesFresh() (+13 more)
+### Community 285 - "import/route.ts"
+Cohesion: 0.07
+Nodes (41): GET(), runtime, ALLOWED_ROLES, ALLOWED_TYPES, createImportDocument(), POST(), resolveEmployeeId(), resolveRole() (+33 more)
 
 ### Community 286 - "Performance Reviews"
 Cohesion: 0.13
@@ -1835,12 +1801,12 @@ Cohesion: 0.22
 Nodes (8): public.divisions, public.employee_directory, auth.users, public.departments, public.employees, public.internships, public.profile_change_requests, public.users
 
 ### Community 295 - "AppShell.tsx"
-Cohesion: 0.09
-Nodes (24): AiSpendingLayout(), AtsLayout(), ApplicationUpdateHeaderAction(), useApplicationUpdate(), AIChatbot, APP_SHELL_ROLES, AppShell(), AppShellInner() (+16 more)
+Cohesion: 0.10
+Nodes (26): AIChatbot, APP_SHELL_ROLES, AppShell(), AppShellAIChatbot(), AppShellInner(), AppShellProps, useTour(), UserRoleType (+18 more)
 
-### Community 296 - "transcribe-recording/index.ts"
-Cohesion: 0.36
-Nodes (7): corsHeaders, generateSummary(), getSupabaseAdmin(), processRecording(), StandupRecording, transcribeAudio(), WebhookPayload
+### Community 296 - "ref_supabase_supabase_js"
+Cohesion: 0.31
+Nodes (8): ref_supabase_supabase_js, corsHeaders, generateSummary(), getSupabaseAdmin(), processRecording(), StandupRecording, transcribeAudio(), WebhookPayload
 
 ### Community 297 - "vercel-setup.sh"
 Cohesion: 0.42
@@ -1882,25 +1848,9 @@ Nodes (10): ResourceId, UserId, resourceBaseSchema, ResourceCreateInput, resourc
 Cohesion: 0.15
 Nodes (11): fetchJob(), generateMetadata(), JobDetailPage(), PageProps, ApplicationForm(), ApplicationFormProps, JobOption, STEPS (+3 more)
 
-### Community 307 - "useAiSpendingAccess.ts"
-Cohesion: 0.22
-Nodes (10): AiSpendingAccessManagerPanel(), formatRole(), AiSpendingAccessEnvelope, AiSpendingAccessGrantRecord, AiSpendingAccessGrantsResponse, AiSpendingAccessResponse, readJson(), useAiSpendingAccessGrants() (+2 more)
-
-### Community 308 - "ServicesAccordion.tsx"
-Cohesion: 0.29
-Nodes (6): ease, fade, line, services, ServicesAccordion(), stagger()
-
-### Community 309 - "admin/ai-knowledge/page.tsx"
-Cohesion: 0.33
-Nodes (11): AdminAIKnowledgePage(), UploadingFile, SuperAdminAIKnowledgePage(), UploadingFile, useAISources(), useDeleteSource(), useUpdateSource(), useUploadSource() (+3 more)
-
 ### Community 310 - "LeadershipSection.tsx"
 Cohesion: 0.29
 Nodes (6): ease, fade, leaders, LeadershipSection(), line, stagger()
-
-### Community 311 - "VisionSection.tsx"
-Cohesion: 0.29
-Nodes (7): ease, fade, line, orbitNodes, stagger(), visionNotes, VisionSection()
 
 ### Community 312 - "tasks-id-route.test.ts"
 Cohesion: 0.13
@@ -1912,11 +1862,7 @@ Nodes (11): GET(), getAuthorizedSecret(), getConfiguredFileIds(), getDriveClient
 
 ### Community 314 - "public.project_documentations"
 Cohesion: 0.32
-Nodes (7): public.update_updated_at_column, idx_project_documentations_project_id, idx_project_documentations_submitted_by, public.project_documentations, set_updated_at, auth.users, public.projects
-
-### Community 315 - "embeddings.ts"
-Cohesion: 0.27
-Nodes (12): BatchEmbeddingResult, cosineSimilarity(), createClient(), DEFAULT_CONFIG, delay(), EmbeddingConfig, EmbeddingResult, estimateTokenCount() (+4 more)
+Nodes (7): idx_project_documentations_project_id, idx_project_documentations_submitted_by, public.project_documentations, set_updated_at, auth.users, public.projects, public.update_updated_at_column
 
 ### Community 316 - "20260217000004_add_evaluation_fields_to_performance.sql"
 Cohesion: 0.36
@@ -1959,12 +1905,8 @@ Cohesion: 0.14
 Nodes (14): Associate Dashboard (`/associate/dashboard`), Associate Guide, Associate Setup, Daily EOD Reports, Hours Progress, Profile Card, Recent Reports, Shared Features (+6 more)
 
 ### Community 326 - "Admin Guides Index"
-Cohesion: 0.07
-Nodes (47): Role/Department/Employee Targeting Arrays, AI Knowledge Base Management, generate-embeddings Edge Function, Retrieval-Augmented Generation (RAG) for AI Assistant, Announcement Analytics Dashboard, Announcements Management, Announcement Targeting Selector, Associate Management (+39 more)
-
-### Community 327 - "uhp-reminders.ts"
-Cohesion: 0.32
-Nodes (9): GET(), getNextMonday(), getUhpReminderOccurrences(), getWeekendAdjustedReminderDate(), isoDate(), localDate(), UhpReminderOccurrence, UHP_REMINDER_LABELS (+1 more)
+Cohesion: 0.09
+Nodes (37): Role/Department/Employee Targeting Arrays, AI Knowledge Base Management, generate-embeddings Edge Function, Retrieval-Augmented Generation (RAG) for AI Assistant, Announcement Analytics Dashboard, Announcements Management, Announcement Targeting Selector, Checklist Management (+29 more)
 
 ### Community 328 - "mutation-helpers.ts"
 Cohesion: 0.33
@@ -1979,8 +1921,8 @@ Cohesion: 0.30
 Nodes (11): PaTaskAccessEnvelope, PaTaskAccessGrantsEnvelope, PaTaskAssignableUsersEnvelope, PaTaskBootstrapEnvelope, readJson(), useGrantPaTaskAccess(), usePaTaskAccessGrants(), usePaTaskAssignableUsers() (+3 more)
 
 ### Community 331 - "marketing-report-config.ts"
-Cohesion: 0.27
-Nodes (11): getMarketingCampaignTypeAvailability(), getMarketingObjectiveAvailability(), getMarketingReportTypeBehavior(), MARKETING_REPORT_TYPE_BEHAVIOR, MarketingFieldAvailability, MarketingReportTypeBehavior, requiresMarketingCampaignType(), requiresMarketingObjective() (+3 more)
+Cohesion: 0.26
+Nodes (12): getMarketingCampaignTypeAvailability(), getMarketingObjectiveAvailability(), getMarketingReportTypeBehavior(), MARKETING_REPORT_TYPE_BEHAVIOR, MarketingFieldAvailability, MarketingReportTypeBehavior, requiresMarketingCampaignType(), requiresMarketingObjective() (+4 more)
 
 ### Community 332 - "seed-expense-report-prod.mjs"
 Cohesion: 0.18
@@ -1998,21 +1940,17 @@ Nodes (6): public.tickets, idx_ticket_attachments_ticket_id, idx_tickets_categor
 Cohesion: 0.29
 Nodes (4): public.trigger_update_okr_progress_from_targets, okr_targets_progress_update, public.calculate_okr_progress_from_targets(), public.okr_targets
 
-### Community 336 - "CyclesPage"
-Cohesion: 0.33
-Nodes (7): createDefaultFormData(), CyclesPage(), formatDate(), getQuarterDateRange(), getQuarterFromDate(), getQuarterFromMonth(), useDeletePerformanceCycle()
-
 ### Community 337 - "ensure-test-accounts.mjs"
 Cohesion: 0.48
 Nodes (6): ACCOUNTS, fetchJson(), getEnv(), loadEnvFile(), main(), parseEnvLine()
 
 ### Community 338 - "web/src/app/providers.tsx"
-Cohesion: 0.33
-Nodes (6): Providers(), ProvidersProps, ApplicationUpdateProvider(), createQueryClient(), next-themes, @tanstack/react-query-devtools
+Cohesion: 0.29
+Nodes (7): Providers(), ProvidersProps, ApplicationUpdateProvider(), createQueryClient(), LinkProvider(), next-themes, @tanstack/react-query-devtools
 
 ### Community 339 - "Pages to Test"
-Cohesion: 0.13
-Nodes (15): About (`/about`), Application Form, Business Detail Pages (`/businesses/[slug]`), Careers (`/careers`), Contact (`/contact`), Home (`/`), Job Detail Page (`/careers/[id]`), Life at SN (`/life-at-sn`) (+7 more)
+Cohesion: 0.10
+Nodes (20): About (`/about`), Application Form, Business Detail Pages (`/businesses/[slug]`), Careers (`/careers`), Contact (`/contact`), Forms Summary, Home (`/`), Job Detail Page (`/careers/[id]`) (+12 more)
 
 ### Community 340 - "compilerOptions"
 Cohesion: 0.29
@@ -2066,9 +2004,9 @@ Nodes (11): Auth Methods (either works), Authentication, Deployed Functions (16)
 Cohesion: 0.20
 Nodes (6): chapters, ease, fade, OurStorySection(), stagger(), StoryChapter
 
-### Community 353 - "EODReportForm.tsx"
-Cohesion: 0.05
-Nodes (58): DailyLogRow, ViewMode, DailyReportCard / DailyReportList / DailyReportSummary, HoursProgressCard / HoursProgressMini, InternshipSummaryCards / InternPersonalStats, Internship (8), DailyReportCard(), DailyReportCardProps (+50 more)
+### Community 353 - "interns/[id]/page.tsx"
+Cohesion: 0.04
+Nodes (82): getInitials(), InternDetailPage(), InternProjectsPanel(), DailyLogRow, ViewMode, useExtendInternship(), useEndInternship(), useHireInternAsEmployee() (+74 more)
 
 ### Community 354 - "Virtual Christmas Tree Implementation Checklist"
 Cohesion: 0.33
@@ -2135,8 +2073,8 @@ Cohesion: 0.53
 Nodes (5): idx_ai_spending_access_grants_user_active, public.ai_spending_access_grants, public.user_has_ai_spending_access(), auth.users, public.users
 
 ### Community 370 - "drive-watch-renew/route.ts"
-Cohesion: 0.33
-Nodes (9): createDriveClient(), GET(), isAuthorizedCronRequest(), parseWatchFileIds(), registerFileWatch(), resolveExpirationHours(), resolveWebhookBaseUrl(), runtime (+1 more)
+Cohesion: 0.39
+Nodes (8): createDriveClient(), GET(), isAuthorizedCronRequest(), parseWatchFileIds(), registerFileWatch(), resolveExpirationHours(), resolveWebhookBaseUrl(), runtime
 
 ### Community 371 - "vercel.json"
 Cohesion: 0.33
@@ -2147,8 +2085,8 @@ Cohesion: 0.18
 Nodes (11): Associate Setup, Browser Support, First-Time Onboarding, Forgot Password, Getting Started, Signing In, Signing Out, Step 1 — Personal Information (+3 more)
 
 ### Community 373 - "usePerformance.ts"
-Cohesion: 0.09
-Nodes (28): formatDate(), formatRatingLabel(), getProgressBarColor(), getProgressColor(), PerformancePage(), TargetFormState, calculateTargetProgress(), KpiRow (+20 more)
+Cohesion: 0.12
+Nodes (19): TargetCardProps, TargetFormState, calculateTargetProgress(), KpiRow, mapCycleStatus(), OkrTargetRow, ReviewCycleRow, ReviewRow (+11 more)
 
 ### Community 374 - "Route Map (Employee and Associate)"
 Cohesion: 0.18
@@ -2187,16 +2125,16 @@ Cohesion: 0.60
 Nodes (4): idx_expense_entries_department_processing_status, idx_expense_entries_total_amount_aud, idx_expense_entries_transaction_date, public.expense_entries
 
 ### Community 383 - "(employee)/projects/[id]/page.tsx"
-Cohesion: 0.06
-Nodes (40): ComplexityTierOption(), CreateMilestoneDialog(), handleSubmit(), EditMilestoneDialog(), handleSubmit(), getMilestoneDateWindowError(), getProjectDateRangeError(), isIsoAfter() (+32 more)
+Cohesion: 0.13
+Nodes (15): ComplexityTierOption(), CreateMilestoneDialog(), handleSubmit(), EditChecklistItemDialog(), EditMilestoneDialog(), handleSubmit(), getMilestoneDateWindowError(), isIsoAfter() (+7 more)
 
 ### Community 384 - "employee/[id]/page.tsx"
-Cohesion: 0.11
-Nodes (36): AssessmentEvidenceItem, buildStandaloneKpiDetailItem(), buildTargetDetailItem(), computeKpiProgress(), computeOverallWeightedMean(), computeTargetProgress(), computeWeightedMean(), EmployeePerformanceDetailPage() (+28 more)
+Cohesion: 0.10
+Nodes (38): AssessmentEvidenceItem, buildStandaloneKpiDetailItem(), buildTargetDetailItem(), computeKpiProgress(), computeOverallWeightedMean(), computeTargetProgress(), computeWeightedMean(), EmployeePerformanceDetailPage() (+30 more)
 
-### Community 385 - "hasRevenueForecastAccess"
-Cohesion: 0.16
-Nodes (15): DELETE(), PATCH(), GET(), POST(), yearQuerySchema, GET(), POST(), yearQuerySchema (+7 more)
+### Community 385 - "revenue-forecast.schema.ts"
+Cohesion: 0.29
+Nodes (6): DELETE(), PATCH(), revenueForecastEntryUpdateSchema, revenueForecastGrantSchema, revenueForecastMonthSchema, revenueForecastYearSchema
 
 ### Community 386 - "Login Page Screenshot"
 Cohesion: 0.50
@@ -2295,8 +2233,8 @@ Cohesion: 0.67
 Nodes (3): ADR-004 n8n Removal in Favor of Edge Functions, n8n Workflow Conventions (To Be Implemented), Workflow-as-Code Architectural Shift
 
 ### Community 413 - "performance/evaluations/page.tsx"
-Cohesion: 0.12
-Nodes (24): EvaluationFormState, TargetEvaluation, emptyEvaluation, EvaluationFormState, EvaluationsPage(), formatDate(), getProgressAwareStatus(), getProgressBarColor() (+16 more)
+Cohesion: 0.16
+Nodes (19): emptyEvaluation, EvaluationsPage(), formatDate(), getProgressAwareStatus(), getProgressBarColor(), getStatusLabel(), getStatusVariant(), METRIC_ICONS (+11 more)
 
 ### Community 414 - "AI Knowledge Base Full Page Screenshot"
 Cohesion: 0.67
@@ -2310,37 +2248,17 @@ Nodes (3): Mobile Login Page Screenshot, Login Page Mobile Viewport Screenshot, 
 Cohesion: 0.67
 Nodes (3): Admin Create Job Posting Slide Panel Screenshot, Admin Job Postings Page Screenshot, Admin Job Applications Page Screenshot
 
-### Community 439 - "useUserManagement.ts"
-Cohesion: 0.20
-Nodes (9): InviteUserModalProps, ApproveOnboardingPayload, ApproveOnboardingResponse, DeleteRejectedOnboardingSubmissionPayload, DeleteRejectedOnboardingSubmissionResponse, InviteUserPayload, InviteUserResponse, InviteUserRole (+1 more)
-
-### Community 569 - "Announcement Components Reference"
-Cohesion: 0.20
-Nodes (9): Announcement Components Reference, AnnouncementAnalytics, AnnouncementCard, AnnouncementDetailDialog, AnnouncementEditor, AnnouncementFilters, AnnouncementPreview, AttachmentUploader (+1 more)
-
-### Community 673 - "Task Components Reference"
-Cohesion: 0.20
-Nodes (10): Task Components Reference, TaskAssigneeSelect, TaskCard, TaskDetailView, TaskFilters, TaskForm, TaskList, TaskPriorityBadge (+2 more)
-
 ### Community 674 - "ref_next_navigation"
 Cohesion: 0.03
-Nodes (35): ExpenseAnalyticsDashboardPage(), formatCurrencyAud(), normalizeCategoryLabel(), normalizeStatusLabel(), PIE_COLORS, renderPieLabel(), STATUS_OPTIONS, toTitleCaseFromSnake() (+27 more)
-
-### Community 675 - "Supabase Migrations README (HR Portal Phase 1)"
-Cohesion: 0.24
-Nodes (10): Meta/Facebook Ad Campaign Objective-to-Metric Mapping, RLS as Final Gatekeeper (zero-trust: never trust client-side data; FORCE ROW LEVEL SECURITY so even table owners cannot bypass policies), Environment-Guarded Seed Data Imports (moved out of migrations so `supabase db push` cannot write real business data into the wrong database; each import aborts unless the expected environment-specific user exists), Soft Delete Pattern (deleted_at column instead of hard deletes, preserves history and audit trail), SFO Meta Ad Campaign Report Template, Supabase Migrations README (HR Portal Phase 1), HR Portal Database Quick Reference Guide, Control Hub HR Portal Schema Summary (+2 more)
+Nodes (82): AdminExpensesDashboard(), AdminProjectPoolPage(), buildEditFormState(), EditFormState, formatCsv(), parseCsv(), PRIORITY_OPTIONS, PRIORITY_TONE (+74 more)
 
 ### Community 676 - "CardSwap.jsx"
 Cohesion: 0.60
 Nodes (4): Card, CardSwap(), makeSlot(), placeNow()
 
 ### Community 677 - "getRevenueForecastAuthedContext"
-Cohesion: 0.23
-Nodes (15): DELETE(), dynamic, GET(), isMarketingOrFinanceDepartment(), POST(), GET(), DELETE(), getRevenueForecastAuthedContext() (+7 more)
-
-### Community 678 - "UhpVolumePointsPage"
-Cohesion: 0.40
-Nodes (4): UhpVolumePointsPage(), addEntry(), deleteEntry(), updateSummaryEntries()
+Cohesion: 0.16
+Nodes (18): GET(), GET(), POST(), yearQuerySchema, DELETE(), GET(), POST(), yearQuerySchema (+10 more)
 
 ### Community 679 - "Employee Dashboard (`/dashboard`)"
 Cohesion: 0.20
@@ -2354,17 +2272,13 @@ Nodes (10): Document Categories, Document Overview, Document Statuses, Documents
 Cohesion: 0.20
 Nodes (10): Filtering and Searching, How to Submit Proof, Route Map, Submitting Task Proof, Supported Formats, Task Cards, Tasks, Updating Task Status (+2 more)
 
-### Community 682 - "receipt.ts"
-Cohesion: 0.25
-Nodes (8): CURRENCY_SYMBOL_TO_CODE, normalizeExtractedCurrency(), parseReceiptResponse(), RECEIPT_RESPONSE_JSON_SCHEMA, ReceiptExtractionConfig, ReceiptExtractionFieldConfidence, ReceiptExtractionResult, SUPPORTED_CURRENCY_CODES
+### Community 682 - "extract/route.ts"
+Cohesion: 0.09
+Nodes (35): ALLOWED_MIME_TYPES, DraftAccountSuggestion, extractFromPdf(), getErrorStatusCode(), inferExpenseType(), parseExpenseUploadFormData(), persistReceiptDocument(), POST() (+27 more)
 
 ### Community 683 - "CompanyTimeline.tsx"
 Cohesion: 0.22
 Nodes (6): COUNTER_STATS, TIMELINE_DATA, CountUp(), CountUpProps, Timeline(), TimelineEntry
-
-### Community 684 - "Frontend–Backend Integration Audit — 2026-09-18"
-Cohesion: 0.20
-Nodes (9): Areas Substantially Connected, Frontend–Backend Integration Audit — 2026-09-18, Guidance for Follow-up Agents, Prioritized Findings, Purpose, Recommended Implementation Order, Scope, Summary (+1 more)
 
 ### Community 685 - "useExpenseImport.test.tsx"
 Cohesion: 0.29
@@ -2379,8 +2293,8 @@ Cohesion: 0.25
 Nodes (7): pageSizeSchema, ResourceFilterInput, resourceFilterSchema, ResourceSortField, resourceSortFieldSchema, sortDirectionSchema, resourceStatusSchema
 
 ### Community 688 - "JobListings.tsx"
-Cohesion: 0.33
-Nodes (7): DbJob, EMPLOYMENT_TYPES, getRelativeTime(), JobListings(), normalizeDbJob(), NormalizedJob, createSupabaseBrowserClient()
+Cohesion: 0.10
+Nodes (19): config, isPublicRoute(), middleware(), PUBLIC_PREFIXES, PUBLIC_ROUTES, IMPORTANT: Middleware runs at the Edge and cannot perform heavy authorization, IMPORTANT: getUser() makes a round-trip to Supabase Auth servers to validate, metadata (+11 more)
 
 ### Community 689 - "AI HR Assistant"
 Cohesion: 0.22
@@ -2394,25 +2308,13 @@ Nodes (9): Actions, Bulk Actions, Filtering, Mark as Read, Notification Types, N
 Cohesion: 0.20
 Nodes (10): apps/www — Documentation Hub, Data Sources, Documents, Environment Variables, Key File Locations, Overview, Planning & Migration, Restoring Hidden Routes (+2 more)
 
-### Community 692 - "BadgeIcon.tsx"
-Cohesion: 0.22
-Nodes (9): BadgeIcon(), BadgeIconProps, BadgeRarity, ICON_MAP, RARITY_CLASSES, RARITY_LABEL, SIZE_CLASSES, getDomainRarityClasses() (+1 more)
-
 ### Community 694 - "ADR-007: Ownership of Backend Surfaces With No Frontend"
 Cohesion: 0.20
 Nodes (9): 1. Standups — undecided, needs a product owner, 2. Certificate generation for associates — no backend, control disabled honestly, 3. HR notes on associates and probationary employees — no backend, controls disabled honestly, ADR-007: Ownership of Backend Surfaces With No Frontend, Consequences, Context, Decision, Related (+1 more)
 
-### Community 695 - "MasteryTrackCard.tsx"
-Cohesion: 0.29
-Nodes (8): DEPT_CONFIG, getNextLevelXp(), MasteryTrackCard(), MasteryTrackCardProps, formatMasteryTitle(), MASTERY_LEVEL_THRESHOLDS, MASTERY_TITLE_STEM, MASTERY_TITLE_STEM_FALLBACK
-
 ### Community 696 - "internship-log-attachments-route.test.ts"
 Cohesion: 0.33
 Nodes (3): ref_app_api_internships_id_logs_logid_attachments_route, ref_app_api_internships_lib, createSignedUrl
-
-### Community 697 - "useRevenueForecastGoals.ts"
-Cohesion: 0.28
-Nodes (7): CreateGoalPayload, mapGoals(), RevenueForecastGoal, RevenueForecastGoalsResponse, useCreateRevenueForecastGoal(), useDeleteRevenueForecastGoal(), useRevenueForecastGoals()
 
 ### Community 698 - "search.py"
 Cohesion: 0.25
@@ -2421,10 +2323,6 @@ Nodes (7): argparse, format_output(), UI/UX Pro Max Search - BM25 search engine 
 ### Community 699 - "auth.schema.ts"
 Cohesion: 0.22
 Nodes (8): emailSchema, ForgotPasswordInput, forgotPasswordSchema, LoginInput, loginSchema, passwordSchema, ResetPasswordInput, resetPasswordSchema
-
-### Community 700 - "middleware.ts"
-Cohesion: 0.22
-Nodes (9): config, isPublicRoute(), middleware(), PUBLIC_PREFIXES, PUBLIC_ROUTES, IMPORTANT: Middleware runs at the Edge and cannot perform heavy authorization, IMPORTANT: getUser() makes a round-trip to Supabase Auth servers to validate, @hr-portal/auth Package README (+1 more)
 
 ### Community 701 - "onboarding-view.schema.ts"
 Cohesion: 0.25
@@ -2466,25 +2364,9 @@ Nodes (9): 1. Start the Development Server, 2. Access the Login Page, 3. Test Cr
 Cohesion: 0.08
 Nodes (25): Add Environment Variables, Build Fails, Deployment Timeout, Environment Variable Scopes, Environment Variables Missing, Get Project IDs, Get Vercel Token, GitHub Actions Workflow (+17 more)
 
-### Community 714 - "Data Display Components Reference"
-Cohesion: 0.25
-Nodes (7): BentoGrid, Data Display Components Reference, DataTable, EmptyState, Key Features, StatCard, Usage
-
 ### Community 715 - "announcement-comments-route.test.ts"
 Cohesion: 0.29
 Nodes (6): ref_app_api_announcements_id_comments_route, ref_app_api_announcements_lib, AnnouncementRow, createClient(), mockAuth(), PARAMS
-
-### Community 716 - "events/route.ts"
-Cohesion: 0.39
-Nodes (7): GET(), mapGoogleEvent(), parseDateParam(), syncCalendarNotifications(), SyncStateRow, createCompanyCalendarNotifications(), google-auth-library
-
-### Community 717 - "cycles/route.ts"
-Cohesion: 0.43
-Nodes (7): GET(), getDeadlineValidationError(), getNextQuarter(), getQuarterFromStartDate(), PATCH(), getReviewCycleName(), getReviewCycleQuarterBounds()
-
-### Community 718 - "EmployeeSpotlight.tsx"
-Cohesion: 0.40
-Nodes (5): AVATAR_COLORS, EmployeeSpotlight(), EmployeeSpotlightProps, getInitials(), Spotlight
 
 ### Community 719 - "public.marketing_deliverables_reminder_recipients"
 Cohesion: 0.50
@@ -2494,17 +2376,9 @@ Nodes (3): public.marketing_deliverables_reminder_recipients, public.employees, 
 Cohesion: 0.40
 Nodes (5): Available Guides, Help Center, How to Use It, Routes, When to Use Help vs AI Assistant
 
-### Community 722 - "WhatWeDo.tsx"
-Cohesion: 0.33
-Nodes (6): c01(), TextReveal(), TextRevealProps, WhatWeDo(), WhatWeDoProps, WORD_REVEAL_RANGE
-
 ### Community 723 - "public.ats_access_grants"
 Cohesion: 0.53
 Nodes (5): idx_ats_access_grants_user_active, public.ats_access_grants, public.user_has_ats_access(), auth.users, public.users
-
-### Community 724 - "UhpClientTrackerPage"
-Cohesion: 0.47
-Nodes (5): getPeriodStart(), UhpClientTrackerPage(), closeForm(), createClient(), submitClient()
 
 ### Community 725 - "Local Supabase Workflow"
 Cohesion: 0.50
@@ -2530,65 +2404,41 @@ Nodes (3): createSupabaseServerClient, redirect, RedirectSignal
 Cohesion: 0.29
 Nodes (6): apiError(), ApiErrorBody, ErrorCode, ErrorCodeValue, getDefaultAction(), normalizeAuthError()
 
-### Community 731 - "useOnboardingWizard.ts"
-Cohesion: 0.47
-Nodes (4): defaultDraft, OnboardingWizardDraft, useOnboardingWizard(), OnboardingStep
-
 ### Community 732 - "ref_vitest"
 Cohesion: 0.07
-Nodes (15): ref_app_api_ai_lib, ref_app_api_ai_suggestions_click_route, ref_app_api_ai_suggestions_route, ref_app_api_internal_renew_drive_watches_route, ref_lib_daily_log_attachments, ref_lib_expenses_image_quality, ref_lib_mutation_helpers, ref_lib_report_utils (+7 more)
+Nodes (14): ref_app_api_internal_renew_drive_watches_route, ref_components_recruitment_recruitmentsectionnav, ref_hooks_useannouncements, ref_lib_daily_log_attachments, ref_lib_expenses_image_quality, ref_lib_report_utils, ref_lib_schemas_christmas_tree_schema, ref_lib_schemas_resource_schema (+6 more)
 
-### Community 733 - "ref_lucide_react"
-Cohesion: 0.03
-Nodes (170): categoryOptions, priorityOptions, toolbarButtons, InternProjectsPanel(), getInitials(), getRoleBadgeVariant(), IndividualPerformancePage(), AssigneeInfo (+162 more)
+### Community 733 - "super-admin/tasks/page.tsx"
+Cohesion: 0.06
+Nodes (54): AdminCreateInvoicePage(), AdminCollectionsPage(), ApiTaskPayload, TaskDetailPage(), TaskDetailPageProps, toApiTaskStatus(), toTaskDetailViewModel(), AssigneeInfo (+46 more)
 
 ### Community 735 - "Work Tracker"
 Cohesion: 0.33
 Nodes (5): Access, My Work, Task and Project Links, Team Visibility, Work Tracker
 
-### Community 736 - "Toast"
-Cohesion: 0.50
-Nodes (4): API, Setup, Toast, Variants
-
 ### Community 737 - "ReportsCompareTab.tsx"
-Cohesion: 0.13
-Nodes (38): aggregateReportMetrics(), buildCampaignSummaryItems(), buildCampaignSummaryKey(), buildWeekPeriodFromReport(), CampaignSummaryAccumulator, dedupeReportsByWindow(), extractDateString(), findNextComparableWeek() (+30 more)
+Cohesion: 0.20
+Nodes (22): ForecastRequirementsCard(), hasPlanningFields(), aggregateReportMetrics(), buildCampaignSummaryItems(), buildCampaignSummaryKey(), buildWeekPeriodFromReport(), CampaignSummaryAccumulator, dedupeReportsByWindow() (+14 more)
 
 ### Community 738 - "Ultimate Health Project workspace"
 Cohesion: 0.33
 Nodes (5): Access, Deployment, Routes, Source migration rules, Ultimate Health Project workspace
 
-### Community 739 - "_department.ts"
-Cohesion: 0.43
-Nodes (6): DepartmentRecord, findDepartmentByName(), normalizeDepartmentName(), resolveOrCreateDepartment(), restoreDepartment(), SupabaseAdminClient
-
 ### Community 740 - "ResourceDetailPanel"
 Cohesion: 0.50
 Nodes (4): Behavior, Props, ResourceDetailPanel, Usage
 
-### Community 741 - "TeamGrid.tsx"
-Cohesion: 0.29
-Nodes (5): getInitials(), MemberCell(), TeamGridProps, TeamMember, ref_react_dom
-
-### Community 742 - "ui/button.tsx"
-Cohesion: 0.32
-Nodes (5): Button, ButtonProps, buttonVariants, shineHoverClass, radix-ui
-
-### Community 744 - "Internship Components Reference"
-Cohesion: 0.25
-Nodes (7): EODReportForm, InternHoursProgressBar, Internship Components Reference, InternStatusBadge / InternReportStatusBadge / HoursProgressBadge, Status Config, Type Definitions, Utility Functions
+### Community 743 - "auth.ts"
+Cohesion: 0.28
+Nodes (7): ref_https_esm_sh_supabase_supabase_js_2_47_0, AuthResult, timingSafeEqual(), validateAdminAuth(), validateAdminAuthExact(), validateServiceRoleBearer(), OXRResponse
 
 ### Community 745 - "admin/performance/self-evaluation/page.tsx"
 Cohesion: 0.29
 Nodes (3): AdminSelfEvaluationPageProps, SelfEvaluationPageProps, SelfEvaluationWorkspace()
 
-### Community 746 - "crm/_lib.ts"
-Cohesion: 0.20
-Nodes (19): assertCrmTrackerAccess(), canAccessCrm(), canAccessCrmTracker(), CRM_TRACKER_VALUES, CrmAccessGrantTrackerRow, CrmTrackerKey, getCrmAuthedContext(), getSfoTrackerKey() (+11 more)
-
-### Community 749 - "VersionHistory.tsx"
-Cohesion: 0.38
-Nodes (5): computeSimpleDiff(), formatRelativeTime(), VersionHistoryProps, VersionItem(), VersionRecord
+### Community 746 - "logActivity"
+Cohesion: 0.06
+Nodes (58): DELETE(), GET(), getTrackerQueryParam(), grantSchema, POST(), GET(), assertCrmTrackerAccess(), canAccessCrm() (+50 more)
 
 ### Community 750 - "create-admin-test-accounts.mjs"
 Cohesion: 0.48
@@ -2598,33 +2448,9 @@ Nodes (6): ADMIN_ACCOUNTS, fetchJson(), getEnv(), loadEnvFile(), main(), parseEn
 Cohesion: 0.48
 Nodes (6): fetchJson(), getEnv(), loadEnvFile(), main(), parseEnvLine(), SAMPLE_ACCOUNTS
 
-### Community 752 - "9. GLOBAL / LAYOUT"
-Cohesion: 0.33
-Nodes (6): 9.1 Header 🟢, 9.2 Footer 🟡, 9.3 Accessibility 🟡, 9.4 Performance & SEO 🟢, 9.5 Micro-interactions & Polish 🟢, 9. GLOBAL / LAYOUT
-
-### Community 754 - "image-quality.ts"
-Cohesion: 0.60
-Nodes (4): computeContrast(), computeSharpness(), ImageQualityReport, validateReceiptImageQuality()
-
 ### Community 755 - "Feedback Components Reference"
 Cohesion: 0.40
 Nodes (4): EmptyState, Feedback Components Reference, SkeletonCard, SkeletonTable
-
-### Community 756 - "7. TEAM PAGE (`/team`)"
-Cohesion: 0.40
-Nodes (5): 7.1 Executive Portraits 🔴, 7.2 Team Grid 🟡, 7.3 Team Stats 🟢, 7.4 Heading Hierarchy Fix 🟡, 7. TEAM PAGE (`/team`)
-
-### Community 757 - "1. HOMEPAGE (`/`)"
-Cohesion: 0.50
-Nodes (4): 1.1 Hero Section 🔴, 1.2 What's New Marquee 🟢, 1.3 Business Cards Carousel 🟡, 1. HOMEPAGE (`/`)
-
-### Community 758 - "4. CAREERS PAGE (`/careers`)"
-Cohesion: 0.50
-Nodes (4): 4.1 Why Join Us Carousel 🟢, 4.2 Job Listings 🟡, 4.3 Application Form 🔴, 4. CAREERS PAGE (`/careers`)
-
-### Community 759 - "5. CONTACT PAGE (`/contact`)"
-Cohesion: 0.50
-Nodes (4): 5.1 Contact Form 🟢, 5.2 Contact Cards 🟢, 5.3 Google Maps 🟢, 5. CONTACT PAGE (`/contact`)
 
 ## Ambiguous Edges - Review These
 - `notifications table` → `milestone-announcements Edge Function (invoked)`  [AMBIGUOUS]
@@ -2641,9 +2467,9 @@ Nodes (4): 5.1 Contact Form 🟢, 5.2 Contact Cards 🟢, 5.3 Google Maps 🟢, 
   e2e/screenshots/web-audit/60-intern-dashboard.png · relation: semantically_similar_to
 
 ## Knowledge Gaps
-- **3374 isolated node(s):** `config`, `nextConfig`, `name`, `version`, `private` (+3369 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 4618 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **270 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **3386 isolated node(s):** `config`, `nextConfig`, `name`, `version`, `private` (+3381 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 4635 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **276 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
@@ -2660,5 +2486,5 @@ _Questions this graph is uniquely positioned to answer:_
   _Edge tagged AMBIGUOUS (relation: semantically_similar_to) - confidence is low._
 - **What is the exact relationship between `Intern Dashboard Page (Loading State)` and `Onboarding Flow (Loading State)`?**
   _Edge tagged AMBIGUOUS (relation: semantically_similar_to) - confidence is low._
-- **Why does `Control Hub — Documentation Hub` connect `Control Hub — Documentation Hub` to `Database Schema Reference`, `SN International Group Public Website — Technical Documentation`, `Supabase Migrations README (HR Portal Phase 1)`, `Admin Guides Index`, `apps/www Hidden Sections Log`, `Deployment Documentation`, `PA Workflow & Productivity System Proposal`, `components/README.md`, `Control Hub HR Portal Implementation Checklist (V1)`, `Recruitment (Admin)`, `ai/src/index.ts`, `Apps/Web Audit - 2026-03-29`, `ADR-002: Resources / Information Hub Architecture`, `src/database.types.ts`, `middleware.ts`, `Priority Roadmap`?**
-  _High betweenness centrality (0.099) - this node is a cross-community bridge._
+- **Why does `Control Hub — Documentation Hub` connect `Control Hub — Documentation Hub` to `Database Schema Reference`, `Control Hub HR Portal V2 Implementation Checklist`, `SN International Group Public Website — Technical Documentation`, `Admin Guides Index`, `Deployment Documentation`, `PA Workflow & Productivity System Proposal`, `AI Knowledge Components Reference`, `Control Hub HR Portal Implementation Checklist (V1)`, `Recruitment (Admin)`, `ai/src/index.ts`, `ADR-002: Resources / Information Hub Architecture`, `src/database.types.ts`, `Priority Roadmap`, `Common Tasks`?**
+  _High betweenness centrality (0.133) - this node is a cross-community bridge._
