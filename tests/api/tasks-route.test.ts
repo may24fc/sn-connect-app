@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/app/api/tasks/_lib', () => ({
   TASK_ASSIGNER_ROLE: 'super_admin',
@@ -19,8 +19,8 @@ vi.mock('@/lib/notifications/create-notification', () => ({
   getUserDisplayName: vi.fn(),
 }));
 
-import { GET } from '@/app/api/tasks/route';
 import { getTaskAuthedContext } from '@/app/api/tasks/_lib';
+import { GET } from '@/app/api/tasks/route';
 
 type TaskListAuthContext = {
   supabaseAdmin: {
@@ -45,6 +45,7 @@ function createTaskListAdminClient() {
     or: vi.fn(() => query),
     overlaps: vi.fn(() => query),
     range: vi.fn(() => query),
+    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are awaitable.
     then: (
       onFulfilled?: (value: typeof result) => unknown,
       onRejected?: (reason: unknown) => unknown
@@ -67,7 +68,7 @@ describe('/api/tasks GET route', () => {
     vi.clearAllMocks();
   });
 
-  it('scopes super-admin task management to tasks assigned by the current super-admin', async () => {
+  it('lets super-admin task management oversee all tasks', async () => {
     const { client, eqCalls } = createTaskListAdminClient();
 
     vi.mocked(getTaskAuthedContext).mockResolvedValue({
@@ -91,8 +92,29 @@ describe('/api/tasks GET route', () => {
         totalPages: 0,
       },
     });
-    expect(eqCalls).toContainEqual(['assigned_by', 'super-admin-1']);
+    expect(eqCalls).not.toContainEqual(['assigned_by', 'super-admin-1']);
     expect(eqCalls).not.toContainEqual(['assigned_to', 'super-admin-1']);
+  });
+
+  it('applies project context filters, including the ad-hoc bucket', async () => {
+    const { client, eqCalls } = createTaskListAdminClient();
+    vi.mocked(getTaskAuthedContext).mockResolvedValue({
+      ok: true,
+      context: {
+        supabaseAdmin: client,
+        user: { id: 'super-admin-1' },
+        role: 'super_admin',
+      } satisfies TaskListAuthContext,
+    });
+
+    await GET(
+      new NextRequest(
+        'http://localhost/api/tasks?page=1&pageSize=100&projectId=project-1&milestoneId=milestone-1'
+      )
+    );
+
+    expect(eqCalls).toContainEqual(['project_id', 'project-1']);
+    expect(eqCalls).toContainEqual(['milestone_id', 'milestone-1']);
   });
 
   it('scopes non-super-admin users to tasks assigned to themselves', async () => {

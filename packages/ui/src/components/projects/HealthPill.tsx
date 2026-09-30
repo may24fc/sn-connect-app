@@ -3,12 +3,13 @@
 import type * as React from 'react';
 import { Badge } from '../../primitives/badge';
 
-export type ProjectHealth = 'on_track' | 'at_risk' | 'overdue';
+export type ProjectHealth = 'on_track' | 'at_risk' | 'overdue' | 'blocked';
 
 const HEALTH_LABEL: Record<ProjectHealth, string> = {
   on_track: 'On track',
   at_risk: 'At risk',
   overdue: 'Overdue',
+  blocked: 'Blocked',
 };
 
 const HEALTH_CLASSES: Record<ProjectHealth, string> = {
@@ -17,6 +18,7 @@ const HEALTH_CLASSES: Record<ProjectHealth, string> = {
   at_risk:
     'bg-amber-100 text-amber-700 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400',
   overdue: 'bg-red-100 text-red-700 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400',
+  blocked: 'bg-rose-100 text-rose-700 hover:bg-rose-100 dark:bg-rose-900/20 dark:text-rose-400',
 };
 
 export interface HealthPillProps {

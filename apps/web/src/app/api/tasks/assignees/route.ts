@@ -30,7 +30,7 @@ export async function GET() {
 
     const { supabase, role } = auth.context;
 
-    if (role !== TASK_ASSIGNER_ROLE) {
+    if (role !== TASK_ASSIGNER_ROLE && role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

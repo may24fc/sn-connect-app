@@ -5921,6 +5921,7 @@ export type Database = {
         Row: {
           assigned_by: string;
           assigned_to: string | null;
+          blocked_reason: string | null;
           category: string | null;
           completed_at: string | null;
           created_at: string;
@@ -5929,7 +5930,11 @@ export type Database = {
           description: string | null;
           due_date: string | null;
           id: string;
+          legacy_checklist_item_id: string | null;
+          milestone_id: string | null;
+          position: number;
           priority: Database['public']['Enums']['task_priority'];
+          project_id: string | null;
           status: Database['public']['Enums']['task_status'];
           tags: string[] | null;
           title: string;
@@ -5938,6 +5943,7 @@ export type Database = {
         Insert: {
           assigned_by: string;
           assigned_to?: string | null;
+          blocked_reason?: string | null;
           category?: string | null;
           completed_at?: string | null;
           created_at?: string;
@@ -5946,7 +5952,11 @@ export type Database = {
           description?: string | null;
           due_date?: string | null;
           id?: string;
+          legacy_checklist_item_id?: string | null;
+          milestone_id?: string | null;
+          position?: number;
           priority?: Database['public']['Enums']['task_priority'];
+          project_id?: string | null;
           status?: Database['public']['Enums']['task_status'];
           tags?: string[] | null;
           title: string;
@@ -5955,6 +5965,7 @@ export type Database = {
         Update: {
           assigned_by?: string;
           assigned_to?: string | null;
+          blocked_reason?: string | null;
           category?: string | null;
           completed_at?: string | null;
           created_at?: string;
@@ -5963,7 +5974,11 @@ export type Database = {
           description?: string | null;
           due_date?: string | null;
           id?: string;
+          legacy_checklist_item_id?: string | null;
+          milestone_id?: string | null;
+          position?: number;
           priority?: Database['public']['Enums']['task_priority'];
+          project_id?: string | null;
           status?: Database['public']['Enums']['task_status'];
           tags?: string[] | null;
           title?: string;
@@ -7646,7 +7661,7 @@ export type Database = {
       payment_status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
       profile_change_status: 'pending' | 'approved' | 'rejected';
       project_contributor_role: 'lead' | 'contributor';
-      project_health: 'on_track' | 'at_risk' | 'overdue';
+      project_health: 'on_track' | 'at_risk' | 'overdue' | 'blocked';
       project_status: 'planning' | 'active' | 'on_hold' | 'completed' | 'archived';
       resource_access_level: 'full' | 'view_only';
       resource_category:
@@ -7666,7 +7681,7 @@ export type Database = {
       review_status: 'pending' | 'self_review' | 'manager_review' | 'completed';
       target_metric_type: 'number' | 'boolean' | 'currency' | 'tasks' | 'scale';
       task_priority: 'low' | 'medium' | 'high' | 'urgent';
-      task_status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+      task_status: 'pending' | 'in_progress' | 'blocked' | 'completed' | 'cancelled';
       ticket_category:
         | 'payroll_benefits'
         | 'leave_attendance'
@@ -7929,7 +7944,7 @@ export const Constants = {
       payment_status: ['pending', 'processing', 'completed', 'failed', 'cancelled'],
       profile_change_status: ['pending', 'approved', 'rejected'],
       project_contributor_role: ['lead', 'contributor'],
-      project_health: ['on_track', 'at_risk', 'overdue'],
+      project_health: ['on_track', 'at_risk', 'overdue', 'blocked'],
       project_status: ['planning', 'active', 'on_hold', 'completed', 'archived'],
       resource_access_level: ['full', 'view_only'],
       resource_category: [
@@ -7950,7 +7965,7 @@ export const Constants = {
       review_status: ['pending', 'self_review', 'manager_review', 'completed'],
       target_metric_type: ['number', 'boolean', 'currency', 'tasks', 'scale'],
       task_priority: ['low', 'medium', 'high', 'urgent'],
-      task_status: ['pending', 'in_progress', 'completed', 'cancelled'],
+      task_status: ['pending', 'in_progress', 'blocked', 'completed', 'cancelled'],
       ticket_category: [
         'payroll_benefits',
         'leave_attendance',

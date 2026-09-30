@@ -9,6 +9,7 @@ import {
   useUpdateInternDailyLog,
   useUpdateInternship,
 } from '@/hooks/useInternships';
+import { useProjects } from '@/hooks/useProjects';
 import { exportToCsv, formatDateForCsv, formatPercentageForCsv } from '@/lib/csv';
 import {
   Avatar,
@@ -22,7 +23,6 @@ import {
   CardHeader,
   CardTitle,
   ComingSoonDialog,
-  EmptyState,
   type DailyReport,
   type DailyReportId,
   DailyReportList,
@@ -36,6 +36,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  EmptyState,
   HoursProgressCard,
   Input,
   InternHoursProgressBar,
@@ -53,6 +54,7 @@ import {
   getDaysRemaining,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
+import { HealthPill, ProgressRing } from '@hr-portal/ui';
 import {
   ArrowLeft,
   Award,
@@ -69,8 +71,6 @@ import {
   Phone,
   User,
 } from 'lucide-react';
-import { useProjects } from '@/hooks/useProjects';
-import { ProgressRing, HealthPill } from '@hr-portal/ui';
 import Link from 'next/link';
 import { type ReactNode, use, useCallback, useState } from 'react';
 
@@ -167,7 +167,10 @@ export default function InternDetailPage({
   }
 
   const daysRemaining = getDaysRemaining(associate.endDate);
-  const progressPercentage = calculateHoursProgress(associate.completedHours, associate.requiredHours);
+  const progressPercentage = calculateHoursProgress(
+    associate.completedHours,
+    associate.requiredHours
+  );
 
   const handleProvideFeedback = (report: DailyReport): void => {
     setSelectedReport(report);
@@ -276,9 +279,7 @@ export default function InternDetailPage({
           </div>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setReviewDialogOpen(true)}>
-            Review & Evaluate
-          </Button>
+          <Button onClick={() => setReviewDialogOpen(true)}>Review & Evaluate</Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">
@@ -381,9 +382,7 @@ export default function InternDetailPage({
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="reports">
-            Daily Reports
-          </TabsTrigger>
+          <TabsTrigger value="reports">Daily Reports</TabsTrigger>
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
           <TabsTrigger value="projects">Projects</TabsTrigger>
         </TabsList>
@@ -479,11 +478,7 @@ export default function InternDetailPage({
               />
             </CardContent>
             <CardFooter>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setComingSoonFeature('HR notes')}
-              >
+              <Button variant="outline" size="sm" onClick={() => setComingSoonFeature('HR notes')}>
                 <Edit2 className="mr-2 h-4 w-4" />
                 Edit Notes
               </Button>
@@ -760,7 +755,6 @@ export default function InternDetailPage({
   );
 }
 
-
 function InternProjectsPanel({ userId }: { userId: string }): ReactNode {
   const { data, isLoading } = useProjects({ leadUserId: userId, pageSize: 50 });
   const projects = data?.data ?? [];
@@ -789,7 +783,13 @@ function InternProjectsPanel({ userId }: { userId: string }): ReactNode {
 function ProjectRow({
   project,
 }: {
-  project: { id: string; name: string; progress_pct: number; health: 'on_track' | 'at_risk' | 'overdue'; points_total: number };
+  project: {
+    id: string;
+    name: string;
+    progress_pct: number;
+    health: 'on_track' | 'at_risk' | 'overdue' | 'blocked';
+    points_total: number;
+  };
 }): ReactNode {
   return (
     <Card>

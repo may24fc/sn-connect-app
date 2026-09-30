@@ -12,6 +12,7 @@ interface InternRow {
   on_track: number;
   at_risk: number;
   overdue: number;
+  blocked: number;
   total_points: number;
   current_tier: string;
   current_streak: number;
@@ -94,10 +95,12 @@ export async function GET() {
       let on_track = 0;
       let at_risk = 0;
       let overdue = 0;
+      let blocked = 0;
       for (const project of myProjects) {
         if (project.health === 'on_track') on_track++;
         else if (project.health === 'at_risk') at_risk++;
         else if (project.health === 'overdue') overdue++;
+        else if (project.health === 'blocked') blocked++;
       }
 
       const gamificationRow = gamMap.get(associate.user_id);
@@ -111,6 +114,7 @@ export async function GET() {
           on_track,
           at_risk,
           overdue,
+          blocked,
           total_points: gamificationRow?.points_total ?? 0,
           current_tier: gamificationRow?.current_tier ?? 'bronze',
           current_streak: gamificationRow?.current_streak ?? 0,
@@ -121,7 +125,7 @@ export async function GET() {
 
   const byDept = new Map<
     string,
-    { department: string; on_track: number; at_risk: number; overdue: number; intern_count: number }
+    { department: string; on_track: number; at_risk: number; overdue: number; blocked: number; intern_count: number }
   >();
 
   for (const row of rows) {
@@ -131,12 +135,14 @@ export async function GET() {
       on_track: 0,
       at_risk: 0,
       overdue: 0,
+      blocked: 0,
       intern_count: 0,
     };
 
     current.on_track += row.on_track;
     current.at_risk += row.at_risk;
     current.overdue += row.overdue;
+    current.blocked += row.blocked;
     current.intern_count += 1;
     byDept.set(key, current);
   }
@@ -147,10 +153,11 @@ export async function GET() {
       acc.on_track += row.on_track;
       acc.at_risk += row.at_risk;
       acc.overdue += row.overdue;
+      acc.blocked += row.blocked;
       acc.points += row.total_points;
       return acc;
     },
-    { projects: 0, on_track: 0, at_risk: 0, overdue: 0, points: 0 }
+    { projects: 0, on_track: 0, at_risk: 0, overdue: 0, blocked: 0, points: 0 }
   );
 
   return NextResponse.json({

@@ -11,6 +11,7 @@ export interface AdminProjectsInternRow {
   on_track: number;
   at_risk: number;
   overdue: number;
+  blocked: number;
   total_points: number;
   current_tier: 'bronze' | 'silver' | 'gold' | 'production_ready';
   current_streak: number;
@@ -21,6 +22,7 @@ export interface AdminProjectsDeptRow {
   on_track: number;
   at_risk: number;
   overdue: number;
+  blocked: number;
   intern_count: number;
 }
 
@@ -29,6 +31,7 @@ export interface AdminProjectsTotals {
   on_track: number;
   at_risk: number;
   overdue: number;
+  blocked: number;
   points: number;
 }
 
@@ -154,7 +157,9 @@ export function useFeaturedMasteryPreference(userId: string | null | undefined) 
   return useQuery({
     queryKey: queryKeys.gamification.featuredMastery(userId ?? ''),
     queryFn: () =>
-      fetchJson<{ data: FeaturedMasteryPreference }>(`/api/users/${userId}/leaderboard-preferences`),
+      fetchJson<{ data: FeaturedMasteryPreference }>(
+        `/api/users/${userId}/leaderboard-preferences`
+      ),
     enabled: Boolean(userId),
     staleTime: STALE_TIMES.dynamic,
     select: (r) => r.data,
@@ -183,7 +188,9 @@ export function useUpdateFeaturedMasteryPreference(userId: string | null | undef
     },
     onSuccess: () => {
       if (!userId) return;
-      void queryClient.invalidateQueries({ queryKey: queryKeys.gamification.featuredMastery(userId) });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.gamification.featuredMastery(userId),
+      });
       void queryClient.invalidateQueries({ queryKey: queryKeys.leaderboard.all });
     },
   });

@@ -26,7 +26,7 @@ interface TaskRow {
     | 'administrative'
     | 'other'
     | null;
-  tags: string[] | null;
+  tags: Array<string> | null;
   due_date: string | null;
   completed_at: string | null;
   created_at: string;
@@ -35,6 +35,7 @@ interface TaskRow {
   deleted_at: string | null;
   project_id: string | null;
   milestone_id: string | null;
+  blocked_reason: string | null;
 }
 
 interface EmployeeNameRow {
@@ -67,6 +68,8 @@ export async function GET(request: NextRequest) {
       .map((tag) => tag.trim())
       .filter(Boolean);
     const assigneeId = searchParams.get('assigneeId') || '';
+    const projectId = searchParams.get('projectId') || '';
+    const milestoneId = searchParams.get('milestoneId') || '';
     const page = Number.parseInt(searchParams.get('page') || '1', 10);
     const pageSize = Number.parseInt(searchParams.get('pageSize') || '10', 10);
 
@@ -80,7 +83,7 @@ export async function GET(request: NextRequest) {
 
     // The admin client bypasses RLS, so visibility must be enforced here.
     // Super-admins oversee all staff tasks. Everyone else sees tasks assigned to them.
-    if (role !== TASK_ASSIGNER_ROLE) {
+    if (role !== TASK_ASSIGNER_ROLE && role !== 'admin') {
       query = query.eq('assigned_to', user.id);
     }
 
@@ -108,6 +111,16 @@ export async function GET(request: NextRequest) {
       query = query.eq('assigned_to', assigneeId);
     }
 
+    if (projectId === 'adhoc') {
+      query = query.is('project_id', null);
+    } else if (projectId) {
+      query = query.eq('project_id', projectId);
+    }
+
+    if (milestoneId) {
+      query = query.eq('milestone_id', milestoneId);
+    }
+
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
     query = query.range(from, to);
@@ -130,6 +143,8 @@ export async function GET(request: NextRequest) {
     );
 
     const namesByUserId = new Map<string, { first_name: string; last_name: string }>();
+    const projectNames = new Map<string, string>();
+    const milestoneNames = new Map<string, string>();
 
     if (userIds.length > 0) {
       const { data: employees } = await supabaseAdmin
@@ -138,12 +153,33 @@ export async function GET(request: NextRequest) {
         .in('user_id', userIds)
         .is('deleted_at', null);
 
-      ((employees || []) as Array<EmployeeNameRow>).forEach((employee) => {
+      for (const employee of (employees || []) as Array<EmployeeNameRow>) {
         namesByUserId.set(employee.user_id, {
           first_name: employee.first_name,
           last_name: employee.last_name,
         });
-      });
+      }
+    }
+
+    const projectIds = Array.from(
+      new Set(taskRows.map((task) => task.project_id).filter((value): value is string => !!value))
+    );
+    const milestoneIds = Array.from(
+      new Set(taskRows.map((task) => task.milestone_id).filter((value): value is string => !!value))
+    );
+    if (projectIds.length > 0) {
+      const { data: projects } = await supabaseAdmin
+        .from('projects')
+        .select('id, name')
+        .in('id', projectIds);
+      for (const project of projects ?? []) projectNames.set(project.id, project.name);
+    }
+    if (milestoneIds.length > 0) {
+      const { data: milestones } = await supabaseAdmin
+        .from('project_milestones')
+        .select('id, title')
+        .in('id', milestoneIds);
+      for (const milestone of milestones ?? []) milestoneNames.set(milestone.id, milestone.title);
     }
 
     const data = taskRows.map((task) => {
@@ -154,6 +190,8 @@ export async function GET(request: NextRequest) {
         ...task,
         assignee_name: assigneeName ? `${assigneeName.first_name} ${assigneeName.last_name}` : null,
         assigner_name: assignerName ? `${assignerName.first_name} ${assignerName.last_name}` : null,
+        project_name: task.project_id ? (projectNames.get(task.project_id) ?? null) : null,
+        milestone_name: task.milestone_id ? (milestoneNames.get(task.milestone_id) ?? null) : null,
       };
     });
 
@@ -186,7 +224,7 @@ export async function POST(request: NextRequest) {
 
     const { supabaseAdmin, user, role } = auth.context;
 
-    const isAssigner = role === TASK_ASSIGNER_ROLE;
+    const isAssigner = role === TASK_ASSIGNER_ROLE || role === 'admin';
 
     const body = await request.json();
     const parsed = taskCreateSchema.safeParse(body);
@@ -246,6 +284,7 @@ export async function POST(request: NextRequest) {
         due_date: parsed.data.dueDate || null,
         project_id: parsed.data.projectId ?? null,
         milestone_id: parsed.data.milestoneId ?? null,
+        blocked_reason: parsed.data.blockedReason ?? null,
         created_by: user.id,
       })
       .select('*')
@@ -264,7 +303,7 @@ export async function POST(request: NextRequest) {
         type: 'task_assigned',
         title: 'New Task Assigned',
         message: `${assignerName} assigned you a task: "${data.title}"`,
-        link: `/tasks`,
+        link: '/tasks',
         metadata: { taskId: data.id, assignedBy: user.id },
       });
     }

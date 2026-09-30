@@ -33,6 +33,7 @@ async function applyOptimisticTaskUpdate(
     ...(payload.dueDate !== undefined ? { due_date: payload.dueDate } : {}),
     ...(payload.projectId !== undefined ? { project_id: payload.projectId } : {}),
     ...(payload.milestoneId !== undefined ? { milestone_id: payload.milestoneId } : {}),
+    ...(payload.blockedReason !== undefined ? { blocked_reason: payload.blockedReason } : {}),
   };
 
   queryClient.setQueryData(queryKeys.tasks.detail(taskId), (old: any) => {
@@ -64,6 +65,9 @@ async function applyOptimisticTaskUpdate(
               ...(payload.priority !== undefined ? { priority: payload.priority } : {}),
               ...(payload.dueDate !== undefined ? { dueDate: payload.dueDate } : {}),
               ...(payload.projectId !== undefined ? { projectId: payload.projectId } : {}),
+              ...(payload.blockedReason !== undefined
+                ? { blockedReason: payload.blockedReason }
+                : {}),
               updatedAt,
             }
           : item
@@ -108,6 +112,9 @@ function invalidateTaskQueries(queryClient: QueryClient, taskId: string): void {
   void queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
   void queryClient.invalidateQueries({ queryKey: queryKeys.workTracker.all });
   void queryClient.invalidateQueries({ queryKey: queryKeys.tasks.detail(taskId) });
+  // Project progress and health are server-computed from all child tasks.
+  void queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.adminProjects.all });
 }
 
 export function useUpdateTask(taskId: string) {
@@ -145,14 +152,16 @@ export function useUpdateTaskStatus() {
     mutationFn: async ({
       taskId,
       status,
+      blockedReason,
     }: {
       taskId: string;
       status: TaskRecord['status'];
+      blockedReason?: string | null;
     }): Promise<{ data: TaskRecord }> => {
       const response = await fetch(`/api/tasks/${taskId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, blockedReason }),
       });
 
       if (!response.ok) {
@@ -162,7 +171,8 @@ export function useUpdateTaskStatus() {
 
       return response.json();
     },
-    onMutate: ({ taskId, status }) => applyOptimisticTaskUpdate(queryClient, taskId, { status }),
+    onMutate: ({ taskId, status, blockedReason }) =>
+      applyOptimisticTaskUpdate(queryClient, taskId, { status, blockedReason }),
     onError: (_error, { taskId }, context) => {
       rollbackOptimisticTaskUpdate(queryClient, taskId, context);
     },

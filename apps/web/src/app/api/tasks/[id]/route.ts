@@ -55,9 +55,9 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
         .is('deleted_at', null);
 
       const namesByUserId = new Map<string, string>();
-      ((employees || []) as Array<EmployeeNameRow>).forEach((employee) => {
+      for (const employee of (employees || []) as Array<EmployeeNameRow>) {
         namesByUserId.set(employee.user_id, `${employee.first_name} ${employee.last_name}`);
-      });
+      }
 
       assigneeName = task.assigned_to ? namesByUserId.get(task.assigned_to) || null : null;
       assignerName = namesByUserId.get(task.assigned_by) || null;
@@ -103,7 +103,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const { data: authorizationTask } = await supabaseAdmin
       .from('tasks')
-      .select('assigned_to, assigned_by')
+      .select('assigned_to, assigned_by, blocked_reason')
       .eq('id', id)
       .is('deleted_at', null)
       .maybeSingle();
@@ -112,20 +112,21 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
     if (
       role !== TASK_ASSIGNER_ROLE &&
+      role !== 'admin' &&
       authorizationTask.assigned_to !== user.id &&
       authorizationTask.assigned_by !== user.id
     ) {
       return NextResponse.json({ error: 'Task update access denied' }, { status: 403 });
     }
 
-    const updates: Record<string, string | string[] | null> = {};
+    const updates: Record<string, string | Array<string> | null> = {};
 
     if (parsed.data.title !== undefined) updates.title = parsed.data.title;
     if (parsed.data.description !== undefined) {
       updates.description = parsed.data.description || null;
     }
     if (parsed.data.assignedTo !== undefined) {
-      if (role !== TASK_ASSIGNER_ROLE) {
+      if (role !== TASK_ASSIGNER_ROLE && role !== 'admin') {
         return NextResponse.json(
           { error: 'Only super-admin can re-assign tasks' },
           { status: 403 }
@@ -147,6 +148,20 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
     if (parsed.data.priority !== undefined) updates.priority = parsed.data.priority;
     if (parsed.data.status !== undefined) updates.status = parsed.data.status;
+    if (parsed.data.blockedReason !== undefined) {
+      updates.blocked_reason = parsed.data.blockedReason || null;
+    }
+    if (
+      parsed.data.status === 'blocked' &&
+      !parsed.data.blockedReason?.trim() &&
+      !authorizationTask.blocked_reason
+    ) {
+      return NextResponse.json(
+        { error: 'Add a short reason when blocking a task' },
+        { status: 400 }
+      );
+    }
+    if (parsed.data.status && parsed.data.status !== 'blocked') updates.blocked_reason = null;
     if (parsed.data.category !== undefined) updates.category = parsed.data.category || null;
     if (parsed.data.tags !== undefined) updates.tags = parsed.data.tags;
     if (parsed.data.dueDate !== undefined) {
@@ -222,7 +237,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         type: 'task_assigned',
         title: 'Task Assigned to You',
         message: `${updaterName} assigned you a task: "${taskTitle}"`,
-        link: `/tasks`,
+        link: '/tasks',
         metadata: { taskId: id, assignedBy: user.id },
       });
     }
@@ -239,7 +254,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       const statusLabel = statusLabels[parsed.data.status] ?? parsed.data.status;
 
       // If an employee/associate updated the status, notify the assigner (admin)
-      if (role !== TASK_ASSIGNER_ROLE && data.assigned_by) {
+      if (role !== TASK_ASSIGNER_ROLE && role !== 'admin' && data.assigned_by) {
         createNotification({
           userId: data.assigned_by,
           type: parsed.data.status === 'completed' ? 'system' : 'system',
@@ -251,13 +266,17 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }
 
       // If admin updated the status, notify the assignee
-      if (role === TASK_ASSIGNER_ROLE && data.assigned_to && data.assigned_to !== user.id) {
+      if (
+        (role === TASK_ASSIGNER_ROLE || role === 'admin') &&
+        data.assigned_to &&
+        data.assigned_to !== user.id
+      ) {
         createNotification({
           userId: data.assigned_to,
           type: 'system',
           title: 'Task Status Updated',
           message: `${updaterName} updated "${taskTitle}" to ${statusLabel}`,
-          link: `/tasks`,
+          link: '/tasks',
           metadata: { taskId: id, newStatus: parsed.data.status },
         });
       }

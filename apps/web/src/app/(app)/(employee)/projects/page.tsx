@@ -2,7 +2,10 @@
 
 import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
 import { ProjectDescriptionFields } from '@/components/projects/ProjectDescriptionFields';
+import { WeeklyFocusCard } from '@/components/weekly-focus/WeeklyFocusCard';
+import { WorkTrackerSectionNav } from '@/components/work-tracker/WorkTrackerSectionNav';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProjectPoolCount } from '@/hooks/useProjectPool';
 import {
   type ProjectHealth,
   type ProjectRecord,
@@ -11,7 +14,6 @@ import {
   useProjects,
   useUpdateProject,
 } from '@/hooks/useProjects';
-import { useProjectPoolCount } from '@/hooks/useProjectPool';
 import {
   type ProjectDescriptionSections,
   composeProjectDescription,
@@ -41,9 +43,7 @@ import {
 import { FolderKanban, Inbox, Plus, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useMemo, useState, type FormEvent, useEffect } from 'react';
-import { WeeklyFocusCard } from '@/components/weekly-focus/WeeklyFocusCard';
-import { WorkTrackerSectionNav } from '@/components/work-tracker/WorkTrackerSectionNav';
+import { type FormEvent, useEffect, useMemo, useState } from 'react';
 
 export default function ProjectsListPage() {
   const router = useRouter();
@@ -58,7 +58,6 @@ export default function ProjectsListPage() {
   const [mineOnly, setMineOnly] = useState<boolean>(!isAdmin);
   const [editingProject, setEditingProject] = useState<ProjectRecord | null>(null);
   const [deletingProject, setDeletingProject] = useState<ProjectRecord | null>(null);
-
 
   const deleteProject = useDeleteProject();
 
@@ -120,9 +119,7 @@ export default function ProjectsListPage() {
             Achievements
           </Button>
           <Button
-            onClick={() =>
-              router.push(`/projects/new?returnTo=${encodeURIComponent('/projects')}`)
-            }
+            onClick={() => router.push(`/projects/new?returnTo=${encodeURIComponent('/projects')}`)}
           >
             <Plus className="mr-2 h-4 w-4" />
             New Project
@@ -153,6 +150,7 @@ export default function ProjectsListPage() {
             <SelectItem value="on_track">On track</SelectItem>
             <SelectItem value="at_risk">At risk</SelectItem>
             <SelectItem value="overdue">Overdue</SelectItem>
+            <SelectItem value="blocked">Blocked</SelectItem>
           </SelectContent>
         </Select>
         {isAdmin ? (
@@ -310,7 +308,9 @@ function EditProjectDialog({
       <DialogContent className="sm:max-w-[640px] max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Edit Project</DialogTitle>
-          <DialogDescription>Update the project name, description, status, and dates.</DialogDescription>
+          <DialogDescription>
+            Update the project name, description, status, and dates.
+          </DialogDescription>
         </DialogHeader>
 
         <form id={formId} onSubmit={handleSubmit} className="space-y-4 overflow-y-auto flex-1 pr-1">
@@ -323,10 +323,7 @@ function EditProjectDialog({
               required
             />
           </div>
-          <ProjectDescriptionFields
-            value={descriptionSections}
-            onChange={setDescriptionSections}
-          />
+          <ProjectDescriptionFields value={descriptionSections} onChange={setDescriptionSections} />
           <div className="space-y-2">
             <Label htmlFor="edit-proj-status">Status</Label>
             <Select value={status} onValueChange={(v) => setStatus(v as ProjectStatus)}>

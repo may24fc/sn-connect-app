@@ -18,7 +18,7 @@ export interface TaskRecord {
     | 'administrative'
     | 'other'
     | null;
-  tags: string[] | null;
+  tags: Array<string> | null;
   due_date: string | null;
   completed_at: string | null;
   created_at: string;
@@ -27,6 +27,9 @@ export interface TaskRecord {
   deleted_at: string | null;
   project_id: string | null;
   milestone_id: string | null;
+  blocked_reason: string | null;
+  project_name?: string | null;
+  milestone_name?: string | null;
   assignee_name?: string | null;
   assigner_name?: string | null;
 }
@@ -57,6 +60,8 @@ export function useTasks(filters: TaskFilters = {}, options: UseTasksOptions = {
       if (filters.category) params.append('category', filters.category);
       if (filters.tags && filters.tags.length > 0) params.append('tags', filters.tags.join(','));
       if (filters.assigneeId) params.append('assigneeId', filters.assigneeId);
+      if (filters.projectId) params.append('projectId', filters.projectId);
+      if (filters.milestoneId) params.append('milestoneId', filters.milestoneId);
       if (filters.page) params.append('page', String(filters.page));
       if (filters.pageSize) params.append('pageSize', String(filters.pageSize));
 

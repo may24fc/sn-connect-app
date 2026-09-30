@@ -218,8 +218,9 @@ const formatDate = (value: string | null | undefined): string => {
 
 export default function TaskManagementPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [search, setSearch] = useState('');
-  const [createOpen, setCreateOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(searchParams.get('create') === '1');
   const [assignmentError, setAssignmentError] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<ViewMode>('board');
   const [activeManagementTab, setActiveManagementTab] = useState<'tasks' | 'tickets'>(
@@ -307,9 +308,9 @@ export default function TaskManagementPage() {
 
   // Handler for drag-and-drop status change in Kanban board
   const handleStatusChange = useCallback(
-    async (taskId: string, newStatus: TaskStatusDB) => {
+    async (taskId: string, newStatus: TaskStatusDB, blockedReason?: string | null) => {
       try {
-        await updateTaskStatus.mutateAsync({ taskId, status: newStatus });
+        await updateTaskStatus.mutateAsync({ taskId, status: newStatus, blockedReason });
         addToast({
           title: 'Task status updated',
           description: `Changed to ${newStatus.replace('_', ' ')}`,
@@ -360,6 +361,8 @@ export default function TaskManagementPage() {
       setDueDate('');
       setProjectId('');
       setMilestoneId('');
+      const returnTo = searchParams.get('returnTo');
+      if (returnTo?.startsWith('/')) router.push(returnTo);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create task';
       setAssignmentError(message);

@@ -2,7 +2,7 @@
 
 import type { TaskRecord } from '@/hooks/useTasks';
 import { getTaskDetailPath } from '@/lib/task-navigation';
-import { Card, CardContent, CountBadge, TaskPriorityBadge } from '@hr-portal/ui';
+import { Badge, Card, CardContent, CountBadge, TaskPriorityBadge } from '@hr-portal/ui';
 import type { TaskPriority } from '@hr-portal/ui';
 import { GripVertical } from 'lucide-react';
 import Link from 'next/link';
@@ -58,10 +58,15 @@ const STATUS_COLUMNS: Array<{
 
 interface TaskKanbanBoardProps {
   tasks: Array<TaskRecord>;
-  onStatusChange: (taskId: string, newStatus: TaskStatusDB) => Promise<void>;
+  onStatusChange: (
+    taskId: string,
+    newStatus: TaskStatusDB,
+    blockedReason?: string | null
+  ) => Promise<void>;
   linkPrefix?: string;
   returnTo?: string;
   isUpdating?: boolean;
+  includeCancelled?: boolean;
 }
 
 const formatDate = (value: string | null | undefined): string => {
@@ -83,6 +88,7 @@ export function TaskKanbanBoard({
   onStatusChange,
   linkPrefix = '/tasks',
   returnTo = linkPrefix,
+  includeCancelled = true,
 }: TaskKanbanBoardProps) {
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatusDB | null>(null);
@@ -149,7 +155,15 @@ export function TaskKanbanBoard({
         return;
       }
 
-      await onStatusChange(taskId, newStatus);
+      let blockedReason: string | null | undefined;
+      if (newStatus === 'blocked') {
+        blockedReason = window.prompt('What is blocking this task?')?.trim() || null;
+        if (!blockedReason) {
+          setDraggedTaskId(null);
+          return;
+        }
+      }
+      await onStatusChange(taskId, newStatus, blockedReason);
 
       setDraggedTaskId(null);
     },
@@ -158,56 +172,58 @@ export function TaskKanbanBoard({
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {STATUS_COLUMNS.map((column) => {
-        const columnTasks = tasksByStatus[column.value] || [];
-        const isDropTarget = dragOverColumn === column.value;
+      {STATUS_COLUMNS.filter((column) => includeCancelled || column.value !== 'cancelled').map(
+        (column) => {
+          const columnTasks = tasksByStatus[column.value] || [];
+          const isDropTarget = dragOverColumn === column.value;
 
-        return (
-          <div key={column.value} className="flex flex-col">
-            {/* Column Header */}
-            <div
-              className={`mb-3 flex items-center justify-between rounded-md px-3 py-2 ${column.headerColor}`}
-            >
-              <span className="text-sm font-medium">{column.label}</span>
-              <CountBadge
-                variant={COUNT_BADGE_VARIANT_BY_STATUS[column.value]}
-                size="md"
-                count={columnTasks.length}
-              />
-            </div>
+          return (
+            <div key={column.value} className="flex flex-col">
+              {/* Column Header */}
+              <div
+                className={`mb-3 flex items-center justify-between rounded-md px-3 py-2 ${column.headerColor}`}
+              >
+                <span className="text-sm font-medium">{column.label}</span>
+                <CountBadge
+                  variant={COUNT_BADGE_VARIANT_BY_STATUS[column.value]}
+                  size="md"
+                  count={columnTasks.length}
+                />
+              </div>
 
-            {/* Drop Zone */}
-            <div
-              className={`flex flex-1 flex-col gap-2 rounded-md border-2 p-2 transition-colors min-h-[200px] ${
-                isDropTarget
-                  ? 'border-zinc-400 bg-zinc-50/50 dark:border-zinc-600 dark:bg-zinc-950/30'
-                  : `border-zinc-200 dark:border-zinc-800 ${column.dropZoneColor}`
-              }`}
-              onDragOver={(e) => handleDragOver(e, column.value)}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, column.value)}
-            >
-              {columnTasks.length === 0 ? (
-                <div className="flex h-full min-h-[120px] items-center justify-center text-xs text-muted-foreground">
-                  {isDropTarget ? 'Drop here' : 'No tasks'}
-                </div>
-              ) : (
-                columnTasks.map((task) => (
-                  <TaskKanbanCard
-                    key={task.id}
-                    task={task}
-                    linkPrefix={linkPrefix}
-                    returnTo={returnTo}
-                    isDragging={draggedTaskId === task.id}
-                    onDragStart={handleDragStart}
-                    onDragEnd={handleDragEnd}
-                  />
-                ))
-              )}
+              {/* Drop Zone */}
+              <div
+                className={`flex flex-1 flex-col gap-2 rounded-md border-2 p-2 transition-colors min-h-[200px] ${
+                  isDropTarget
+                    ? 'border-zinc-400 bg-zinc-50/50 dark:border-zinc-600 dark:bg-zinc-950/30'
+                    : `border-zinc-200 dark:border-zinc-800 ${column.dropZoneColor}`
+                }`}
+                onDragOver={(e) => handleDragOver(e, column.value)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, column.value)}
+              >
+                {columnTasks.length === 0 ? (
+                  <div className="flex h-full min-h-[120px] items-center justify-center text-xs text-muted-foreground">
+                    {isDropTarget ? 'Drop here' : 'No tasks'}
+                  </div>
+                ) : (
+                  columnTasks.map((task) => (
+                    <TaskKanbanCard
+                      key={task.id}
+                      task={task}
+                      linkPrefix={linkPrefix}
+                      returnTo={returnTo}
+                      isDragging={draggedTaskId === task.id}
+                      onDragStart={handleDragStart}
+                      onDragEnd={handleDragEnd}
+                    />
+                  ))
+                )}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        }
+      )}
     </div>
   );
 }
@@ -255,6 +271,14 @@ function TaskKanbanCard({
                   {task.description}
                 </p>
               )}
+              <Badge variant="outline" className="mt-2 max-w-full truncate text-[11px]">
+                {task.project_name || 'Ad-hoc / Internal Ops'}
+              </Badge>
+              {task.milestone_name ? (
+                <p className="mt-1 truncate text-[11px] text-muted-foreground">
+                  Milestone: {task.milestone_name}
+                </p>
+              ) : null}
               <div className="mt-2 flex items-center justify-between gap-2">
                 <TaskPriorityBadge priority={task.priority as TaskPriority} size="sm" />
                 {task.due_date && (

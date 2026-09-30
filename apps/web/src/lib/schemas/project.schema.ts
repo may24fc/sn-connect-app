@@ -8,7 +8,7 @@ export const projectStatusSchema = z.enum([
   'archived',
 ]);
 
-export const projectHealthSchema = z.enum(['on_track', 'at_risk', 'overdue']);
+export const projectHealthSchema = z.enum(['on_track', 'at_risk', 'overdue', 'blocked']);
 
 export const milestonePeriodTypeSchema = z.enum(['month', 'week']);
 

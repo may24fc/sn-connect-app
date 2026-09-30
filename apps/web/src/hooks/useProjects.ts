@@ -4,7 +4,7 @@ import { type ProjectFilters, queryKeys } from '@/lib/query-keys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export type ProjectStatus = 'planning' | 'active' | 'on_hold' | 'completed' | 'archived';
-export type ProjectHealth = 'on_track' | 'at_risk' | 'overdue';
+export type ProjectHealth = 'on_track' | 'at_risk' | 'overdue' | 'blocked';
 export type MilestonePeriodType = 'month' | 'week';
 export type MilestoneStatus = 'not_started' | 'in_progress' | 'submitted' | 'approved' | 'overdue';
 export type ChecklistItemStatus = 'todo' | 'done';
