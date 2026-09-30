@@ -29,6 +29,9 @@ type WorkItem =
       href: string;
       projectId: string | null;
       projectName: string | null;
+      milestoneId: string | null;
+      milestoneName: string | null;
+      blockedReason: string | null;
     };
 
 interface StaffRow {
@@ -62,6 +65,8 @@ interface TaskRow {
   created_at: string;
   updated_at: string;
   project_id: string | null;
+  milestone_id: string | null;
+  blocked_reason: string | null;
 }
 
 interface UsageRow {
@@ -101,39 +106,68 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const [staffResult, projectsResult, contributorsResult, tasksResult, usageResult] =
-    await Promise.all([
-      supabaseAdmin
-        .from('employee_directory')
-        .select('user_id, full_name, department_name, role, status')
-        .in('role', ['employee', 'associate'])
-        .in('status', ['active', 'on_leave', 'probation'])
-        .not('user_id', 'is', null),
-      supabaseAdmin
-        .from('projects')
-        .select(
-          'id, name, description, lead_user_id, status, health, progress_pct, target_end_date, updated_at'
-        )
-        .is('deleted_at', null),
-      supabaseAdmin.from('project_contributors').select('project_id, user_id, role'),
-      supabaseAdmin
-        .from('tasks')
-        .select(
-          'id, title, description, assigned_to, status, priority, due_date, created_at, updated_at, project_id'
-        )
-        .is('deleted_at', null),
-      supabaseAdmin
-        .from('hub_usage_daily')
-        .select('user_id, activity_date, last_seen_at, session_count')
-        .gte('activity_date', rangeStart(days)),
-    ]);
+  const [
+    staffResult,
+    projectsResult,
+    contributorsResult,
+    milestonesResult,
+    initialTasksResult,
+    usageResult,
+  ] = await Promise.all([
+    supabaseAdmin
+      .from('employee_directory')
+      .select('user_id, full_name, department_name, role, status')
+      .in('role', ['employee', 'associate'])
+      .in('status', ['active', 'on_leave', 'probation'])
+      .not('user_id', 'is', null),
+    supabaseAdmin
+      .from('projects')
+      .select(
+        'id, name, description, lead_user_id, status, health, progress_pct, target_end_date, updated_at'
+      )
+      .is('deleted_at', null),
+    supabaseAdmin.from('project_contributors').select('project_id, user_id, role'),
+    supabaseAdmin.from('project_milestones').select('id, title').is('deleted_at', null),
+    supabaseAdmin
+      .from('tasks')
+      .select(
+        'id, title, description, assigned_to, status, priority, due_date, created_at, updated_at, project_id, milestone_id, blocked_reason'
+      )
+      .is('deleted_at', null),
+    supabaseAdmin
+      .from('hub_usage_daily')
+      .select('user_id, activity_date, last_seen_at, session_count')
+      .gte('activity_date', rangeStart(days)),
+  ]);
+
+  let tasksError = initialTasksResult.error;
+  let taskRows = initialTasksResult.data as Array<Partial<TaskRow>> | null;
+  let taskProjectLinksAvailable = true;
+
+  // Keep the core tracker available during a staggered schema rollout. The project-link columns
+  // were added after the tasks table, so an older database can still provide useful task data.
+  if (tasksError) {
+    const legacyTasksResult = await supabaseAdmin
+      .from('tasks')
+      .select(
+        'id, title, description, assigned_to, status, priority, due_date, created_at, updated_at'
+      )
+      .is('deleted_at', null);
+
+    if (!legacyTasksResult.error) {
+      console.warn('GET /api/work-tracker: task project links are unavailable:', tasksError);
+      taskRows = legacyTasksResult.data as Array<Partial<TaskRow>> | null;
+      tasksError = null;
+      taskProjectLinksAvailable = false;
+    }
+  }
 
   const firstError = [
     staffResult.error,
     projectsResult.error,
     contributorsResult.error,
-    tasksResult.error,
-    usageResult.error,
+    milestonesResult.error,
+    tasksError,
   ].find(Boolean);
   if (firstError) {
     console.error('GET /api/work-tracker failed:', firstError);
@@ -142,9 +176,22 @@ export async function GET(request: NextRequest) {
 
   const staff = (staffResult.data ?? []) as Array<StaffRow>;
   const projects = (projectsResult.data ?? []) as Array<ProjectRow>;
-  const tasks = (tasksResult.data ?? []) as Array<TaskRow>;
-  const usage = (usageResult.data ?? []) as Array<UsageRow>;
+  if (usageResult.error) {
+    console.warn('GET /api/work-tracker: hub usage analytics are unavailable:', usageResult.error);
+  }
+
+  const tasks = (taskRows ?? []).map((task) => ({
+    ...(task as Omit<TaskRow, 'project_id'>),
+    project_id: taskProjectLinksAvailable
+      ? ((task as { project_id?: string | null }).project_id ?? null)
+      : null,
+  }));
+  const usage = (usageResult.error ? [] : (usageResult.data ?? [])) as Array<UsageRow>;
+  const usageAvailable = !usageResult.error;
   const projectById = new Map(projects.map((project) => [project.id, project]));
+  const milestoneById = new Map(
+    (milestonesResult.data ?? []).map((milestone) => [milestone.id, milestone.title])
+  );
   const projectMembers = new Map<string, Map<string, 'lead' | 'contributor'>>();
 
   for (const project of projects) {
@@ -191,6 +238,9 @@ export async function GET(request: NextRequest) {
         href: `/tasks/${task.id}`,
         projectId: task.project_id,
         projectName: task.project_id ? (projectById.get(task.project_id)?.name ?? null) : null,
+        milestoneId: task.milestone_id ?? null,
+        milestoneName: task.milestone_id ? (milestoneById.get(task.milestone_id) ?? null) : null,
+        blockedReason: task.blocked_reason ?? null,
       }));
 
     return [...projectItems, ...taskItems].sort((left, right) =>
@@ -252,6 +302,33 @@ export async function GET(request: NextRequest) {
     };
   };
 
+  const staffNameById = new Map(staff.map((member) => [member.user_id, member.full_name]));
+  const buildProjectSummary = (project: ProjectRow) => {
+    const projectTasks = tasks.filter(
+      (task) => task.project_id === project.id && task.status !== 'cancelled'
+    );
+    return {
+      id: project.id,
+      name: project.name,
+      description: project.description,
+      status: project.status,
+      health: project.health,
+      progressPct: Number(project.progress_pct ?? 0),
+      dueDate: project.target_end_date,
+      leadUserId: project.lead_user_id,
+      leadName: staffNameById.get(project.lead_user_id) ?? null,
+      totalTasks: projectTasks.length,
+      completedTasks: projectTasks.filter((task) => task.status === 'completed').length,
+      blockedTasks: projectTasks.filter((task) => task.status === 'blocked').length,
+      overdueTasks: projectTasks.filter(
+        (task) =>
+          !!task.due_date &&
+          task.due_date < new Date().toISOString() &&
+          !['completed', 'cancelled'].includes(task.status)
+      ).length,
+    };
+  };
+
   if (scope === 'mine') {
     const matchingStaff = staff.find((entry) => entry.user_id === user.id) ?? {
       user_id: user.id,
@@ -263,8 +340,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       scope,
       days,
-      canAssignTasks: role === 'super_admin',
+      canAssignTasks: role === 'super_admin' || role === 'admin',
+      usageAvailable,
       person: buildSummary(matchingStaff),
+      projects: projects
+        .filter((project) => projectMembers.get(project.id)?.has(user.id))
+        .map(buildProjectSummary),
     });
   }
 
@@ -280,8 +361,10 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     scope,
     days,
-    canAssignTasks: role === 'super_admin',
+    canAssignTasks: role === 'super_admin' || role === 'admin',
+    usageAvailable,
     people,
+    projects: projects.map(buildProjectSummary),
     unassignedTaskCount: tasks.filter((task) => !task.assigned_to).length,
   });
 }

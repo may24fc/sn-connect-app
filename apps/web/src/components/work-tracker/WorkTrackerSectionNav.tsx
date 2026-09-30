@@ -1,8 +1,7 @@
 'use client';
 
-import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, FolderKanban, LayoutDashboard, ListTodo } from 'lucide-react';
+import { FolderKanban, LayoutDashboard, ListTodo } from 'lucide-react';
 import Link from 'next/link';
 
 type WorkTrackerSection = 'overview' | 'projects' | 'tasks';
@@ -13,28 +12,23 @@ interface WorkTrackerSectionNavProps {
 }
 
 export function WorkTrackerSectionNav({ current, className }: WorkTrackerSectionNavProps) {
-  const { user } = useAuth();
-  const projectsHref =
-    user?.role === 'admin' || user?.role === 'super_admin' ? '/admin/war-room' : '/projects';
-  const tasksHref = user?.role === 'super_admin' ? '/super-admin/tasks' : '/tasks';
-
   const sections = [
     {
       id: 'overview' as const,
-      label: current === 'overview' ? 'Overview' : 'Back to overview',
-      href: '/work-tracker',
-      icon: current === 'overview' ? LayoutDashboard : ArrowLeft,
+      label: 'Team Workload',
+      href: '/work-tracker?view=team',
+      icon: LayoutDashboard,
     },
     {
       id: 'projects' as const,
-      label: 'Projects',
-      href: projectsHref,
+      label: 'Project Roadmap',
+      href: '/work-tracker?view=roadmap',
       icon: FolderKanban,
     },
     {
       id: 'tasks' as const,
-      label: 'Tasks',
-      href: tasksHref,
+      label: 'Execution Board',
+      href: '/work-tracker?view=execution',
       icon: ListTodo,
     },
   ];

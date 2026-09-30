@@ -31,6 +31,9 @@ export type WorkItem =
       href: string;
       projectId: string | null;
       projectName: string | null;
+      milestoneId: string | null;
+      milestoneName: string | null;
+      blockedReason: string | null;
     };
 
 export interface PersonWorkSummary {
@@ -51,12 +54,30 @@ export interface PersonWorkSummary {
   items: Array<WorkItem>;
 }
 
+export interface ProjectWorkSummary {
+  id: string;
+  name: string;
+  description: string | null;
+  status: string;
+  health: string;
+  progressPct: number;
+  dueDate: string | null;
+  leadUserId: string;
+  leadName: string | null;
+  totalTasks: number;
+  completedTasks: number;
+  blockedTasks: number;
+  overdueTasks: number;
+}
+
 export interface WorkTrackerResponse {
   scope: WorkTrackerScope;
   days: WorkTrackerRange;
   canAssignTasks: boolean;
+  usageAvailable: boolean;
   person?: PersonWorkSummary;
   people?: Array<PersonWorkSummary>;
+  projects?: Array<ProjectWorkSummary>;
   unassignedTaskCount?: number;
 }
 

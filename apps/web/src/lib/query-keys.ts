@@ -40,6 +40,8 @@ export interface TaskFilters {
   search?: string;
   status?: 'pending' | 'in_progress' | 'blocked' | 'completed' | 'cancelled';
   assigneeId?: string;
+  projectId?: string;
+  milestoneId?: string;
   priority?: 'low' | 'medium' | 'high' | 'urgent';
   category?: string;
   tags?: string[];
@@ -69,7 +71,7 @@ export interface PaTaskFilters {
 
 export interface ProjectFilters {
   status?: 'planning' | 'active' | 'on_hold' | 'completed' | 'archived';
-  health?: 'on_track' | 'at_risk' | 'overdue';
+  health?: 'on_track' | 'at_risk' | 'overdue' | 'blocked';
   leadUserId?: string;
   mineOnly?: boolean;
   page?: number;
