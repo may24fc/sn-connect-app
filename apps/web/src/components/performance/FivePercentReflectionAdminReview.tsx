@@ -2,6 +2,7 @@
 
 import { monthlySelfEvaluationDepartmentRoleOptions } from '@/lib/schemas/performance.schema';
 import { EvaluationSummaryView } from './EvaluationSummaryView';
+import { FivePercentSummaryEmailButton } from './FivePercentSummaryEmailButton';
 import {
   Avatar,
   AvatarFallback,
@@ -243,7 +244,7 @@ export function FivePercentReflectionAdminReview() {
               />
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-start gap-2">
             <Button
               onClick={summaryState.isViewingSummary ? summaryState.hideSummary : summaryState.handlePrimaryAction}
               disabled={
@@ -268,6 +269,10 @@ export function FivePercentReflectionAdminReview() {
                 {summaryState.isGenerating ? 'Regenerating...' : 'Regenerate Summary'}
               </Button>
             ) : null}
+            <FivePercentSummaryEmailButton
+              monthKey={monthKey}
+              monthLabel={formatMonthKey(monthKey)}
+            />
           </div>
         </CardContent>
       </Card>

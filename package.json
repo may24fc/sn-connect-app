@@ -9,6 +9,7 @@
     "inngest:dev": "npx inngest-cli@latest dev -u http://localhost:3001/api/inngest",
     "inngest:status": "node scripts/inngest/inngest-dev-status.mjs",
     "inngest:stop": "node scripts/inngest/stop-inngest-dev.mjs",
+    "performance:preview-five-percent-email": "cd apps/web && tsx --tsconfig tsconfig.json --env-file=.env.local ../../scripts/performance/preview-five-percent-summary-email.ts",
     "dev:web:e2e": "node scripts/playwright/start-playwright-web.js",
     "dev:all": "pnpm --filter @sn-group/www --filter @hr-portal/web dev",
     "dev:mobile": "pnpm --filter @hr-portal/mobile dev",

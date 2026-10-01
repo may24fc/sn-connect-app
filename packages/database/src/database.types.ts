@@ -3984,6 +3984,10 @@ export type Database = {
           created_at: string;
           created_by: string | null;
           deleted_at: string | null;
+          email_recipient_count: number | null;
+          email_trigger: string | null;
+          emailed_at: string | null;
+          emailed_by: string | null;
           evaluation_kind: string;
           generated_at: string;
           generated_by: string | null;
@@ -3999,6 +4003,10 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           deleted_at?: string | null;
+          email_recipient_count?: number | null;
+          email_trigger?: string | null;
+          emailed_at?: string | null;
+          emailed_by?: string | null;
           evaluation_kind: string;
           generated_at?: string;
           generated_by?: string | null;
@@ -4014,6 +4022,10 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           deleted_at?: string | null;
+          email_recipient_count?: number | null;
+          email_trigger?: string | null;
+          emailed_at?: string | null;
+          emailed_by?: string | null;
           evaluation_kind?: string;
           generated_at?: string;
           generated_by?: string | null;

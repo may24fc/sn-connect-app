@@ -45,6 +45,14 @@ type Events = {
       voiceMimeType?: string;
     };
   };
+  'performance/five-percent.submitted': {
+    data: {
+      /** UUID of the newly inserted five_percent_reflections row. */
+      submissionId: string;
+      /** Reflection month (YYYY-MM). */
+      monthKey: string;
+    };
+  };
   'expenses/receipt.uploaded': {
     data: {
       expenseEntryId: string;

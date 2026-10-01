@@ -497,6 +497,16 @@ export const generatePerformanceEvaluationSummarySchema =
     })
   );
 
+export const fivePercentSummaryEmailQuerySchema = z.object({
+  monthKey: monthKeySchema,
+});
+
+export const sendFivePercentSummaryEmailSchema = z.object({
+  monthKey: monthKeySchema,
+  /** Required to send again after the month's summary was already emailed. */
+  resend: z.boolean().optional().default(false),
+});
+
 export const upsertPerformanceEvaluationDraftSchema = z.discriminatedUnion('evaluationKind', [
   z.object({
     evaluationKind: z.literal('monthly'),

@@ -108,6 +108,7 @@ Shared service-account credentials drive both the knowledge-base Drive sync and 
 | `OPEN_EXCHANGE_RATES_API_KEY` | Read by the `update-fx-rates` Edge Function. The function returns an error without it. | For FX rates |
 | `EXPENSE_OCR_INLINE_FALLBACK` | Set `true` to run expense OCR inline instead of via Inngest. Already implied outside production. | No |
 | `ALLOWED_ORIGINS` | CORS allow-list for Edge Functions. | No |
+| `FIVE_PERCENT_SUMMARY_RECIPIENTS` | Comma-separated emails that receive the monthly 5% Reflection AI summary (Inngest `performance-five-percent-summary-email`). Sent once everyone has submitted, or on the month's last working day otherwise. Skipped with a warning when unset. Portal only. | For the 5% summary email |
 
 ---
 

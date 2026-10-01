@@ -159,8 +159,31 @@ function getDepartmentRoleLabel(record: Record<string, unknown>): string {
   return typeof departmentRole === 'string' ? departmentRole : 'Unspecified';
 }
 
+const INTERN_DB_ROLES = new Set(['associate', 'intern']);
+
+/**
+ * Interns are identified by the submitter's account role. `department_role` holds the
+ * department name (e.g. "Marketing"), so it only says "Associate" when no department or
+ * position is set; it is used as a fallback when the role is unknown.
+ */
+export function resolveSubmissionCohort(
+  dbRole: string | null | undefined,
+  record: Record<string, unknown>
+): SummaryCohort {
+  if (dbRole) {
+    return INTERN_DB_ROLES.has(dbRole) ? 'interns' : 'employees';
+  }
+
+  return /associate|intern/i.test(getDepartmentRoleLabel(record)) ? 'interns' : 'employees';
+}
+
 function getSummaryCohort(record: Record<string, unknown>): SummaryCohort {
-  return /associate/i.test(getDepartmentRoleLabel(record)) ? 'interns' : 'employees';
+  const cohort = record['cohort'];
+  if (cohort === 'interns' || cohort === 'employees') {
+    return cohort;
+  }
+
+  return resolveSubmissionCohort(null, record);
 }
 
 function buildRoleDistribution(records: Array<Record<string, unknown>>): Record<string, number> {
@@ -222,6 +245,28 @@ function extractSentimentDistribution(summaryMarkdown: string): Record<string, n
   };
 }
 
+async function loadSubmitterRoles(
+  supabaseAdmin: SupabaseClientLike,
+  userIds: string[]
+): Promise<Map<string, string>> {
+  const uniqueIds = [...new Set(userIds)];
+  if (uniqueIds.length === 0) {
+    return new Map();
+  }
+
+  const { data, error } = await supabaseAdmin.from('users').select('id, role').in('id', uniqueIds);
+
+  if (error) {
+    throw new Error(`Failed to load submitter roles: ${error.message}`);
+  }
+
+  return new Map(
+    ((data as Array<{ id: string; role: string | null }> | null) ?? [])
+      .filter((row) => typeof row.role === 'string')
+      .map((row) => [row.id, row.role as string])
+  );
+}
+
 async function loadSummarySource(
   supabaseAdmin: SupabaseClientLike,
   evaluationKind: PerformanceEvaluationDraftKind,
@@ -230,7 +275,7 @@ async function loadSummarySource(
   const config = SUMMARY_SOURCE_CONFIG[evaluationKind];
   const { data, error } = await supabaseAdmin
     .from(config.table)
-    .select(config.selectColumns)
+    .select(`user_id, ${config.selectColumns}`)
     .eq(config.periodColumn, periodKey)
     .is('deleted_at', null)
     .order('submitted_at', { ascending: false });
@@ -239,9 +284,22 @@ async function loadSummarySource(
     throw new Error(`Failed to load ${SUMMARY_KIND_LABELS[evaluationKind]} source data: ${error.message}`);
   }
 
+  const rows = (data as Array<Record<string, unknown>> | null) ?? [];
+  const roleByUserId = await loadSubmitterRoles(
+    supabaseAdmin,
+    rows.map((row) => row['user_id']).filter((value): value is string => typeof value === 'string')
+  );
+
+  // Drop user_id so identities never reach the model; keep only the derived cohort.
   const normalizedRecords = normalizeRecords(
     evaluationKind,
-    ((data as Array<Record<string, unknown>> | null) ?? []).map((record) => ({ ...record }))
+    rows.map(({ user_id: userId, ...record }) => ({
+      cohort: resolveSubmissionCohort(
+        typeof userId === 'string' ? roleByUserId.get(userId) : null,
+        record
+      ),
+      ...record,
+    }))
   );
 
   return {
@@ -303,7 +361,7 @@ function buildSummaryPrompt(
     `Total submissions analyzed: ${records.length}.`,
     'All source data is anonymized. Do not infer identities or add data that is not present.',
     'Your job is to extract the significant operational details, recurring risks, wins, and actionable signals from a large batch of submissions.',
-    'Analyze employees and interns separately first, then synthesize the cross-cohort picture.',
+    'Analyze employees and associates separately first, then synthesize the cross-cohort picture.',
     'Use the dataset overview to ground your summary before reading the detailed submissions.',
     'Header customization note: Lines beginning with "###" or "####" indicate Markdown header levels and their labels are customizable. Render them as proper Markdown headers in the output (for example: "#### Employees") — do not treat the hash characters as literal inline text. You may adjust header labels for clarity but preserve the header hierarchy and structure.',
     'You must follow this markdown schema exactly:',
@@ -313,26 +371,26 @@ function buildSummaryPrompt(
     '#### Employees',
     '* **Volume & Representation:** Explain how many employee submissions were analyzed and what role mix stands out.',
     '* **Most Material Signals:** Summarize the strongest recurring themes, wins, or blockers for employees.',
-    '#### Interns',
+    '#### Associates',
     '* **Volume & Representation:** Explain how many associate submissions were analyzed and what role mix stands out.',
-    '* **Most Material Signals:** Summarize the strongest recurring themes, wins, or blockers for interns.',
+    '* **Most Material Signals:** Summarize the strongest recurring themes, wins, or blockers for associates.',
     '',
     '### 2. Key Takeaways & Recurring Themes',
     '#### Employees',
     '* **[Theme 1 Title]:** Brief explanation of what employees are saying, backed by a generalized synthesis of quotes or data.',
     '* **[Theme 2 Title]:** Brief explanation of the second most common employee pattern.',
-    '#### Interns',
-    '* **[Theme 1 Title]:** Brief explanation of what interns are saying, backed by a generalized synthesis of quotes or data.',
+    '#### Associates',
+    '* **[Theme 1 Title]:** Brief explanation of what associates are saying, backed by a generalized synthesis of quotes or data.',
     '* **[Theme 2 Title]:** Brief explanation of the second most common associate pattern.',
     '#### Cross-Cohort Alignment',
-    '* **Shared Signal:** Call out the most important overlap or divergence between employees and interns.',
+    '* **Shared Signal:** Call out the most important overlap or divergence between employees and associates.',
     '',
     '### 3. Sentiment Analytics',
     '#### Employees',
     '* 🟢 **Positive (X%):** Summary of positive employee feedback highlights.',
     '* 🟡 **Neutral (Y%):** Summary of passive or neutral employee feedback.',
     '* 🔴 **Negative (Z%):** Critical employee issues or blockers raised.',
-    '#### Interns',
+    '#### Associates',
     '* 🟢 **Positive (X%):** Summary of positive associate feedback highlights.',
     '* 🟡 **Neutral (Y%):** Summary of passive or neutral associate feedback.',
     '* 🔴 **Negative (Z%):** Critical associate issues or blockers raised.',
@@ -344,7 +402,7 @@ function buildSummaryPrompt(
     '### 4. Critical Outliers & Edge Cases',
     '#### Employees',
     '> **Notable Feedback:** "[Insert a synthesized or directly quoted high-impact employee signal]" — *Context/Impact*',
-    '#### Interns',
+    '#### Associates',
     '> **Notable Feedback:** "[Insert a synthesized or directly quoted high-impact associate signal]" — *Context/Impact*',
     '',
     '### 5. Recommended Actions',
@@ -367,7 +425,7 @@ function buildSummaryPrompt(
     'Employees submissions JSON:',
     JSON.stringify(promptContext.employeeRecords),
     '',
-    'Interns submissions JSON:',
+    'Associates submissions JSON:',
     JSON.stringify(promptContext.internRecords),
   ].join('\n');
 }
@@ -421,9 +479,25 @@ export async function getPerformanceEvaluationSummary(
   };
 }
 
+/**
+ * Generates summary markdown for ad-hoc records without touching the database.
+ * Used to preview the summary format (e.g. sample emails) against fixture data.
+ */
+export async function previewPerformanceEvaluationSummaryMarkdown(
+  evaluationKind: PerformanceEvaluationDraftKind,
+  periodKey: string,
+  records: Array<Record<string, unknown>>
+): Promise<string> {
+  return generateSummaryMarkdown(evaluationKind, periodKey, normalizeRecords(evaluationKind, records));
+}
+
+/**
+ * Generates (or reuses a fresh) summary for a period and stores it.
+ * Pass `userId: null` when a background job generates the summary.
+ */
 export async function generatePerformanceEvaluationSummary(
   supabaseAdmin: SupabaseClientLike,
-  userId: string,
+  userId: string | null,
   input: GeneratePerformanceEvaluationSummaryInput
 ): Promise<PerformanceEvaluationSummaryRecord> {
   const source = await loadSummarySource(supabaseAdmin, input.evaluationKind, input.periodKey);
@@ -462,7 +536,7 @@ export async function generatePerformanceEvaluationSummary(
         source_snapshot_hash: source.snapshotHash,
         generated_at: timestamp,
         generated_by: userId,
-        created_by: userId,
+        ...(userId ? { created_by: userId } : {}),
         updated_at: timestamp,
       },
       {

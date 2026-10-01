@@ -1,4 +1,5 @@
 import { logActivity } from '@/lib/audit';
+import { inngest } from '@/lib/inngest/client';
 import { getSubmissionEditStatus } from '@/lib/performance/submission-edit-status';
 import {
   fivePercentReflectionFiltersSchema,
@@ -395,6 +396,19 @@ export async function POST(request: NextRequest) {
         submitted_at: data.submitted_at,
       },
     });
+
+    // Lets the summary job email the supervisor once everyone for the month has submitted.
+    try {
+      await inngest.send({
+        name: 'performance/five-percent.submitted',
+        data: { submissionId: data.id, monthKey: data.month_key },
+      });
+    } catch (sendError) {
+      console.error(
+        'POST /api/performance/five-percent-reflections summary event error:',
+        sendError
+      );
+    }
 
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {
