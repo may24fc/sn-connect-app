@@ -156,7 +156,7 @@ export function useUpdateTaskStatus() {
     }: {
       taskId: string;
       status: TaskRecord['status'];
-      blockedReason?: string | null;
+      blockedReason?: string | null | undefined;
     }): Promise<{ data: TaskRecord }> => {
       const response = await fetch(`/api/tasks/${taskId}`, {
         method: 'PATCH',

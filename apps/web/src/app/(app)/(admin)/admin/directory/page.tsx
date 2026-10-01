@@ -333,9 +333,16 @@ export default function AdminDirectoryPage(): ReactNode {
       setEmployeeToEdit(null);
       addToast({ title: 'Employee updated', variant: 'success' });
     },
-    onError: (_error, _variables, context) => {
+    onError: (error, _variables, context) => {
       context?.previousDirectory.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
-      addToast({ title: 'Failed to update employee', variant: 'error' });
+      addToast({
+        title: 'Failed to update employee',
+        ...(error instanceof Error ? { description: error.message } : {}),
+        variant: 'error',
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['directory'] });
     },
   });
 
@@ -558,7 +565,7 @@ export default function AdminDirectoryPage(): ReactNode {
             Company Directory
           </h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            Master directory of all employees and interns
+            Master directory of all employees and associates
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -593,7 +600,7 @@ export default function AdminDirectoryPage(): ReactNode {
             icon={<UserCheck className="h-4 w-4" strokeWidth={1.5} />}
           />
           <StatCard
-            label="Interns"
+            label="Associates"
             value={metadata.interns}
             icon={<BookOpen className="h-4 w-4" strokeWidth={1.5} />}
           />

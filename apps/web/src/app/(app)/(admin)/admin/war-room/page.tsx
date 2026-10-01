@@ -210,7 +210,7 @@ export default function AdminProjectsPage() {
                       <thead className="border-b border-border bg-muted/55 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                         <tr>
                           <th className="px-4 py-2">Department</th>
-                          <th className="px-4 py-2 text-center">Interns</th>
+                          <th className="px-4 py-2 text-center">Associates</th>
                           <th className="px-4 py-2 text-center">On track</th>
                           <th className="px-4 py-2 text-center">At risk</th>
                           <th className="px-4 py-2 text-center">Overdue</th>
@@ -255,7 +255,7 @@ export default function AdminProjectsPage() {
                 <section>
                   <div className="mb-3 flex items-center justify-between">
                     <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-                      Interns
+                      Associates
                     </h2>
                     <Button asChild variant="outline" size="sm">
                       <Link href="/leaderboard">
@@ -272,14 +272,16 @@ export default function AdminProjectsPage() {
                     </div>
                   ) : interns.length === 0 ? (
                     <p className="rounded-lg border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700">
-                      No interns with active projects yet.
+                      No associates with active projects yet.
                     </p>
                   ) : (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                       {interns.map((i) => (
                         <Link
                           key={i.user_id}
-                          href={`/admin/interns/${i.user_id}`}
+                          href={`/admin/interns/${i.user_id}?tab=projects&returnTo=${encodeURIComponent(
+                            '/admin/interns'
+                          )}`}
                           className="group rounded-lg border border-zinc-200 bg-white p-4 transition-colors hover:border-zinc-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"
                         >
                           <div className="flex items-start justify-between gap-3">
@@ -302,12 +304,9 @@ export default function AdminProjectsPage() {
                             <ProgressRing value={i.avg_progress} size={64} strokeWidth={6} />
                           </div>
                           <div className="mt-3 flex items-center justify-between text-xs">
-                            <Link
-                              href={`/admin/projects?leadUserId=${i.user_id}`}
-                              className="text-zinc-500 transition-colors hover:text-zinc-700 dark:hover:text-zinc-300"
-                            >
+                            <span className="text-zinc-500">
                               {i.project_count} project{i.project_count === 1 ? '' : 's'}
-                            </Link>
+                            </span>
                             <div className="flex items-center gap-1">
                               {i.on_track > 0 ? <HealthPill health="on_track" /> : null}
                               {i.at_risk > 0 ? <HealthPill health="at_risk" /> : null}

@@ -1,6 +1,7 @@
 'use client';
 
 import { EditInternshipDialog } from '@/components/admin/EditInternshipDialog';
+import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { useExtendInternship } from '@/hooks/useIndividualPerformance';
 import {
   useEndInternship,
@@ -72,7 +73,14 @@ import {
   User,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { type ReactNode, use, useCallback, useState } from 'react';
+
+type AssociateProfileTab = 'overview' | 'reports' | 'timeline' | 'projects';
+
+function getAssociateProfileTab(tab: string | null): AssociateProfileTab {
+  return tab === 'reports' || tab === 'timeline' || tab === 'projects' ? tab : 'overview';
+}
 
 function getInitials(name: string): string {
   return name
@@ -87,6 +95,9 @@ export default function InternDetailPage({
   params,
 }: { params: Promise<{ id: string }> }): ReactNode {
   const { id } = use(params);
+  const searchParams = useSearchParams();
+  const activeTab = getAssociateProfileTab(searchParams.get('tab'));
+  const navigateBack = useBackNavigation({ fallbackPath: '/admin/interns' });
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null);
   const [feedback, setFeedback] = useState('');
@@ -268,10 +279,13 @@ export default function InternDetailPage({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button asChild variant="ghost" size="icon">
-            <Link href="/admin/interns" aria-label="Back to associates">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={navigateBack}
+            aria-label="Back to associates"
+          >
+            <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Associate Profile</h1>
@@ -379,7 +393,7 @@ export default function InternDetailPage({
       </Card>
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="overview" className="space-y-4">
+      <Tabs key={activeTab} defaultValue={activeTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="reports">Daily Reports</TabsTrigger>
@@ -808,7 +822,7 @@ function ProjectRow({
               <Badge variant="outline">{project.points_total} pts</Badge>
             </div>
             <p className="mt-2 text-xs text-zinc-500">
-              Interns can complete their own milestones directly from the project board.
+              Associates can complete their own milestones directly from the project board.
             </p>
           </div>
         </div>

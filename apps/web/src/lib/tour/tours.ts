@@ -121,13 +121,13 @@ export const adminDashboardTourSteps: ModalTourStep[] = [
   {
     title: 'Admin Dashboard',
     description:
-      "Welcome to the Admin Dashboard! This is your command center for all HR operations. Get a bird's-eye view of employees, interns, departmental metrics, and organizational health.",
+      "Welcome to the Admin Dashboard! This is your command center for all HR operations. Get a bird's-eye view of employees, associates, departmental metrics, and organizational health.",
     imageUrl: '/tour/admin-dashboard-overview.png',
   },
   {
     title: 'Workforce Overview',
     description:
-      'These stat cards provide at-a-glance metrics for workforce size, active interns, and review load. Use the dashboard attention banner for urgent follow-ups like overdue reports, onboarding approvals, and late associate EODs.',
+      'These stat cards provide at-a-glance metrics for workforce size, active associates, and review load. Use the dashboard attention banner for urgent follow-ups like overdue reports, onboarding approvals, and late associate EODs.',
     imageUrl: '/tour/admin-stats.png',
   },
   {

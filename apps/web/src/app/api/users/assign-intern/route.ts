@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     const allowedRoles = ['admin', 'super_admin'];
     if (!allowedRoles.includes(userRecord.role)) {
       return NextResponse.json(
-        { error: 'Forbidden: Only admins can assign interns' },
+        { error: 'Forbidden: Only admins can assign associates' },
         { status: 403 }
       );
     }

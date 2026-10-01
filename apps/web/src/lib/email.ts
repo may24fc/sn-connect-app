@@ -243,6 +243,45 @@ export async function sendPortalNotificationEmail({
   }
 }
 
+/** Sends an already-rendered HTML report (e.g. an evaluation summary digest) from HR Operations. */
+export async function sendHrReportEmail({
+  to,
+  subject,
+  html,
+}: {
+  to: string[];
+  subject: string;
+  html: string;
+}): Promise<{ sent: boolean; error?: string }> {
+  const resend = getResendClient();
+  if (!resend) {
+    return { sent: false, error: 'RESEND_API_KEY is not configured' };
+  }
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: getFromEmail('hrOperations'),
+      to,
+      subject,
+      html,
+    });
+
+    if (error) {
+      console.error('[Email] Resend API error for HR report email:', error);
+      return { sent: false, error: error.message };
+    }
+
+    console.log('[Email] HR report email sent successfully, id:', data?.id);
+    return { sent: true };
+  } catch (error) {
+    console.error('[Email] Failed to send HR report email:', error);
+    return {
+      sent: false,
+      error: error instanceof Error ? error.message : 'Unknown send error',
+    };
+  }
+}
+
 export async function sendUserInviteEmail({
   to,
   firstName,

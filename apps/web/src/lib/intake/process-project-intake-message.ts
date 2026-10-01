@@ -111,7 +111,7 @@ export function buildProjectIntakeConfirmation({
     return `Project "${extraction.title}" was assigned${extraction.assigned_name_hint ? ` to ${extraction.assigned_name_hint}` : ''}.`;
   }
 
-  return `Project "${extraction.title}" added to the Project Pool — interns will be notified.`;
+  return `Project "${extraction.title}" added to the Project Pool — associates will be notified.`;
 }
 
 export async function confirmProjectIntakeOnTelegram({

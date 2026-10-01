@@ -196,6 +196,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       updates.division = body.division;
     }
 
+    // Snapshot so a failed users sync below can undo the employees write.
+    const updateKeys = Object.keys(updates);
+    const { data: previousRow } = await adminClient
+      .from('employees')
+      .select(updateKeys.length > 0 ? updateKeys.join(',') : 'id')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .maybeSingle();
+
     // Update employee (use admin client to bypass RLS)
     const { data, error } = await adminClient
       .from('employees')
@@ -233,7 +242,22 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
         if (syncUserError) {
           console.error('Error syncing employee org placement:', syncUserError);
-          return NextResponse.json({ error: 'Failed to sync employee organization data' }, { status: 500 });
+
+          if (previousRow) {
+            const { error: revertError } = await adminClient
+              .from('employees')
+              .update(previousRow as unknown as typeof updates)
+              .eq('id', id);
+
+            if (revertError) {
+              console.error('Error reverting employee update after sync failure:', revertError);
+            }
+          }
+
+          return NextResponse.json(
+            { error: 'Failed to sync employee organization data. No changes were saved.' },
+            { status: 500 }
+          );
         }
       }
     }

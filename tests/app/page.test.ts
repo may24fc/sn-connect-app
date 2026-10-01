@@ -17,6 +17,7 @@ const redirect = vi.fn((destination: string) => {
 
 vi.mock('@/lib/supabase/server', () => ({
   createSupabaseServerClient,
+  hasSupabaseAuthEnv: vi.fn(() => true),
 }));
 
 vi.mock('next/navigation', () => ({

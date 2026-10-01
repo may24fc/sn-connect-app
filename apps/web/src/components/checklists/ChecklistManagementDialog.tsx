@@ -56,7 +56,7 @@ export function ChecklistManagementDialog({
         >
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="employees">Employees</TabsTrigger>
-            <TabsTrigger value="interns">Interns</TabsTrigger>
+            <TabsTrigger value="interns">Associates</TabsTrigger>
             <TabsTrigger value="offboarding">Offboarding</TabsTrigger>
           </TabsList>
 

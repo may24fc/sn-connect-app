@@ -138,7 +138,7 @@ function ChecklistRoleSection({
           <EmptyState
             icon={Users}
             title="No onboarding profiles found"
-            description="Profiles will appear here after onboarding is initiated for employees or interns."
+            description="Profiles will appear here after onboarding is initiated for employees or associates."
             size="sm"
           />
         ) : null}
@@ -445,7 +445,7 @@ export function ChecklistsDashboardPage(): ReactNode {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="employee">Employees</SelectItem>
-                  <SelectItem value="associate">Interns</SelectItem>
+                  <SelectItem value="associate">Associates</SelectItem>
                 </SelectContent>
               </Select>
             }

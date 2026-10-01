@@ -5,10 +5,18 @@ import { parseResume } from '@/lib/inngest/functions/parse-resume';
 import { evaluateResume } from '@/lib/inngest/functions/evaluate-resume';
 import { processProjectIntake } from '@/lib/inngest/functions/process-project-intake';
 import { processExpenseReceipt } from '@/lib/inngest/functions/process-expense-receipt';
+import { deliverFivePercentSummary } from '@/lib/inngest/functions/deliver-five-percent-summary';
 
 export const runtime = 'nodejs';
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
-  functions: [processDriveDoc, parseResume, evaluateResume, processProjectIntake, processExpenseReceipt],
+  functions: [
+    processDriveDoc,
+    parseResume,
+    evaluateResume,
+    processProjectIntake,
+    processExpenseReceipt,
+    deliverFivePercentSummary,
+  ],
 });

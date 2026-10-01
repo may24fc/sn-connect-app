@@ -253,7 +253,7 @@ export function ReportsPlansTab({ department }: ReportsPlansTabProps) {
           <EmptyState
             icon={FileText}
             title="No weekly plans yet"
-            description="Weekly plan submissions will appear here once marketing staff or interns submit them."
+            description="Weekly plan submissions will appear here once marketing staff or associates submit them."
             size="sm"
           />
         </CardContent>
@@ -286,7 +286,7 @@ export function ReportsPlansTab({ department }: ReportsPlansTabProps) {
           </CardHeader>
           <CardContent className="space-y-6">
             <PlansSection title="Staff" rows={group.staff} />
-            <PlansSection title="Interns" rows={group.interns} />
+            <PlansSection title="Associates" rows={group.interns} />
           </CardContent>
         </Card>
       ))}

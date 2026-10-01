@@ -364,7 +364,7 @@ export default function AdminProjectPoolPage() {
               Project Pool
             </h1>
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              Admins can review the backlog here. Super-admins can curate active items and restore archived ones before interns claim them.
+              Admins can review the backlog here. Super-admins can curate active items and restore archived ones before associates claim them.
             </p>
           </div>
         </div>

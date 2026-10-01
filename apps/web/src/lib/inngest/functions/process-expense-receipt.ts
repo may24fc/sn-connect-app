@@ -136,7 +136,7 @@ export const processExpenseReceipt = inngest.createFunction(
   {
     id: 'expenses-process-receipt',
     retries: 3,
-    concurrency: { limit: 8 },
+    concurrency: { limit: 5 },
   },
   { event: 'expenses/receipt.uploaded' },
   async ({ event, step }) => {

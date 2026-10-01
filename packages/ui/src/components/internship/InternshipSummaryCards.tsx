@@ -84,7 +84,7 @@ export function InternshipSummaryCards({
   return (
     <div className={cn('grid gap-4 sm:grid-cols-2 lg:grid-cols-4', className)}>
       <StatCard
-        title="Active Interns"
+        title="Active Associates"
         value={stats.activeInterns}
         subtitle={`${stats.completedInterns} completed`}
         icon={GraduationCap}
@@ -107,7 +107,7 @@ export function InternshipSummaryCards({
         iconColor="text-warning"
       />
       <StatCard
-        title="Total Interns"
+        title="Total Associates"
         value={stats.totalInterns}
         icon={CheckCircle2}
         iconBgColor="bg-secondary/20"

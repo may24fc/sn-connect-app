@@ -56,9 +56,9 @@ const faqs: FAQItem[] = [
       'Open the rejected invoice to read the reviewer\'s notes. Common rejection reasons include incorrect amounts, missing details, or wrong pay period. Create a new invoice with the corrected information and submit again.',
   },
   {
-    question: 'Do interns have access to invoices?',
+    question: 'Do associates have access to invoices?',
     answer:
-      'No. The Invoice feature is available to employees only. Interns do not have access to the invoices page.',
+      'No. The Invoice feature is available to employees only. Associates do not have access to the invoices page.',
   },
 ];
 

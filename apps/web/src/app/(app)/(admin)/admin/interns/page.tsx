@@ -606,7 +606,7 @@ export default function AdminInternsPage(): ReactNode {
     setExporting(true);
     try {
       exportToCsv(filteredInterns, {
-        filename: 'interns-report',
+        filename: 'associates-report',
         headers: [
           'Name',
           'Email',
@@ -813,7 +813,7 @@ export default function AdminInternsPage(): ReactNode {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Associate Management</h1>
           <p className="text-muted-foreground">
-            Monitor interns and view their onboarding submissions
+            Monitor associates and view their onboarding submissions
           </p>
         </div>
         <div className="flex gap-2">
@@ -854,7 +854,7 @@ export default function AdminInternsPage(): ReactNode {
           {/* Summary Cards */}
           <StatCardGrid columns={4}>
             <StatCard
-              label="Active Interns"
+              label="Active Associates"
               value={stats.activeInterns}
               trend={{ direction: 'stable', value: `${stats.completedInterns} completed` }}
               icon={<GraduationCap className="h-4 w-4" strokeWidth={1.5} />}
@@ -871,7 +871,7 @@ export default function AdminInternsPage(): ReactNode {
               icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
             />
             <StatCard
-              label="Total Interns"
+              label="Total Associates"
               value={stats.totalInterns}
               icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
             />
@@ -961,7 +961,7 @@ export default function AdminInternsPage(): ReactNode {
             searchQuery) && (
             <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
               <p className="text-sm text-muted-foreground">
-                Showing {filteredInterns.length} of {interns.length} interns
+                Showing {filteredInterns.length} of {interns.length} associates
               </p>
               <Button
                 variant="ghost"
@@ -1022,8 +1022,8 @@ export default function AdminInternsPage(): ReactNode {
                 statusFilter !== 'all' ||
                 schoolFilter !== 'all' ||
                 supervisorFilter !== 'all'
-                  ? 'No interns match the selected filters'
-                  : 'No interns found'
+                  ? 'No associates match the selected filters'
+                  : 'No associates found'
               }
             />
           ) : (
@@ -1041,8 +1041,8 @@ export default function AdminInternsPage(): ReactNode {
                       statusFilter !== 'all' ||
                       schoolFilter !== 'all' ||
                       supervisorFilter !== 'all'
-                        ? 'No interns match the selected filters'
-                        : 'No interns found'
+                        ? 'No associates match the selected filters'
+                        : 'No associates found'
                     }
                     description={
                       searchQuery ||
@@ -1062,7 +1062,7 @@ export default function AdminInternsPage(): ReactNode {
           {internshipsQuery.isLoading && (
             <Card>
               <CardContent className="p-6 text-sm text-muted-foreground">
-                Loading interns...
+                Loading associates...
               </CardContent>
             </Card>
           )}
@@ -1070,7 +1070,7 @@ export default function AdminInternsPage(): ReactNode {
           {internshipsQuery.error && (
             <Card className="border-destructive/50 bg-destructive/5">
               <CardContent className="p-6 text-sm text-destructive">
-                Failed to load interns.
+                Failed to load associates.
               </CardContent>
             </Card>
           )}
@@ -1386,7 +1386,7 @@ export default function AdminInternsPage(): ReactNode {
             <CardHeader>
               <CardTitle className="text-base">Pending Approvals</CardTitle>
               <CardDescription>
-                Interns who have completed onboarding and are waiting for approval
+                Associates who have completed onboarding and are waiting for approval
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
@@ -1830,7 +1830,7 @@ export default function AdminInternsPage(): ReactNode {
                           <EmptyState
                             icon={FileText}
                             title="No daily reports found"
-                            description="Reports will appear here when interns submit their EOD forms."
+                            description="Reports will appear here when associates submit their EOD forms."
                             size="sm"
                           />
                         </TableCell>

@@ -198,7 +198,7 @@ export function InternList({
   onViewReports,
   onContact,
   onDelete,
-  emptyMessage = 'No interns found',
+  emptyMessage = 'No associates found',
   layout = 'grid',
   className,
 }: InternListProps): React.ReactNode {

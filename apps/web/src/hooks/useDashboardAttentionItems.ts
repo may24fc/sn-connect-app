@@ -63,13 +63,13 @@ export function useDashboardAttentionItems(role: DashboardAttentionRole) {
     items.push({
       id: 'late-associate-eods',
       title: 'Late Associate EODs',
-      description: 'Active interns still need yesterday\'s end-of-day report reviewed or chased.',
+      description: 'Active associates still need yesterday\'s end-of-day report reviewed or chased.',
       count: pendingData?.lateEodReports.count ?? 0,
       href: '/admin/interns',
       icon: Users,
       severity: 'critical',
       meta: `${pendingData?.lateEodReports.count ?? 0} overdue`,
-      actionLabel: 'Open interns',
+      actionLabel: 'Open associates',
     });
   }
 
@@ -95,7 +95,7 @@ export function useDashboardAttentionItems(role: DashboardAttentionRole) {
       href: '/admin/interns',
       icon: GraduationCap,
       severity: 'warning',
-      actionLabel: 'Review interns',
+      actionLabel: 'Review associates',
     });
   }
 

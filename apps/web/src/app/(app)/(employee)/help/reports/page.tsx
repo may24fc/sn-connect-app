@@ -28,7 +28,7 @@ const employeeFaqs: FAQItem[] = [
   {
     question: 'What report types are available?',
     answer:
-      'The self-service reports workflow is currently focused on Marketing reports. The page is available to employees and interns assigned to the Marketing department.',
+      'The self-service reports workflow is currently focused on Marketing reports. The page is available to employees and associates assigned to the Marketing department.',
   },
   {
     question: 'What should I include in the Accomplishments section?',
@@ -56,7 +56,7 @@ const internFaqs: FAQItem[] = [
   {
     question: 'How often do I need to submit reports?',
     answer:
-      'Interns submit an End-of-Day (EOD) report every working day. Your dashboard clearly shows whether you\'ve submitted today\'s report with a green (done) or yellow (pending) status indicator.',
+      'Associates submit an End-of-Day (EOD) report every working day. Your dashboard clearly shows whether you\'ve submitted today\'s report with a green (done) or yellow (pending) status indicator.',
   },
   {
     question: 'What should I include in my daily report?',
@@ -149,12 +149,12 @@ export default function ReportsHelpPage(): ReactNode {
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
             <GraduationCap className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-            <CardTitle className="text-base">Daily EOD Reports (Interns)</CardTitle>
+            <CardTitle className="text-base">Daily EOD Reports (Associates)</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
-            Interns submit a daily End-of-Day report instead of weekly reports. Your dashboard shows today's status and your reports page shows your full history.
+            Associates submit a daily End-of-Day report instead of weekly reports. Your dashboard shows today's status and your reports page shows your full history.
           </p>
           <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 p-4 space-y-2">
             <p className="text-sm font-medium text-foreground">Required fields:</p>

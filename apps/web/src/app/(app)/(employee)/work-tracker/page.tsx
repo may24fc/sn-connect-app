@@ -199,9 +199,7 @@ export default function WorkTrackerPage() {
           <section className="space-y-3">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-lg font-semibold">
-                  {scope === 'team' ? `${selectedPerson.name}'s work` : 'Current work'}
-                </h2>
+                <h2 className="text-lg font-semibold">Current work</h2>
                 <p className="text-sm text-muted-foreground">
                   Projects contain the tasks that drive their progress and health.
                 </p>

@@ -88,7 +88,7 @@ export function TaskAssigneeSelect({
           <User className="h-5 w-5" />
           Assign To
         </CardTitle>
-        <CardDescription>Select employees or interns to assign this task to</CardDescription>
+        <CardDescription>Select employees or associates to assign this task to</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Search and Filters */}
@@ -121,7 +121,7 @@ export function TaskAssigneeSelect({
                 <SelectContent>
                   <SelectItem value="all">All Roles</SelectItem>
                   <SelectItem value="employee">Employees</SelectItem>
-                  <SelectItem value="associate">Interns</SelectItem>
+                  <SelectItem value="associate">Associates</SelectItem>
                 </SelectContent>
               </Select>
             </div>
