@@ -16,7 +16,7 @@ interface QueryResult {
 function query(result: QueryResult) {
   const builder = {
     select: vi.fn(() => builder),
-    in: vi.fn(() => builder),
+    in: vi.fn((_column: string, _values: Array<string>) => builder),
     not: vi.fn(() => builder),
     is: vi.fn(() => builder),
     gte: vi.fn(() => builder),
@@ -110,5 +110,41 @@ describe('/api/work-tracker GET route', () => {
       expect.objectContaining({ id: 'task-1', source: 'task', projectId: null }),
     ]);
     expect(taskQueryCount).toBe(2);
+  });
+
+  it('queries only valid user_status values so production can load team and roadmap data', async () => {
+    const directoryResult: QueryResult = { data: [], error: null };
+    const directoryQuery = query(directoryResult);
+    directoryQuery.in.mockImplementation((column: string, values: Array<string>) => {
+      if (
+        column === 'status' &&
+        values.some((value) => !['active', 'on_leave', 'terminated'].includes(value))
+      ) {
+        directoryResult.error = {
+          code: '22P02',
+          message: 'invalid input value for enum user_status',
+        };
+      }
+      return directoryQuery;
+    });
+    const from = vi.fn((table: string) =>
+      table === 'employee_directory' ? directoryQuery : query({ data: [], error: null })
+    );
+
+    vi.mocked(getProjectAuthedContext).mockResolvedValue({
+      ok: true,
+      context: {
+        supabaseAdmin: { from },
+        user: { id: 'admin-1' },
+        role: 'admin',
+      } as never,
+    });
+
+    const response = await GET(
+      new NextRequest('http://localhost/api/work-tracker?scope=team&days=30')
+    );
+
+    expect(response.status).toBe(200);
+    expect((await response.json()).projects).toEqual([]);
   });
 });

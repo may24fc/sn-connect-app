@@ -118,7 +118,8 @@ export async function GET(request: NextRequest) {
       .from('employee_directory')
       .select('user_id, full_name, department_name, role, status')
       .in('role', ['employee', 'associate'])
-      .in('status', ['active', 'on_leave', 'probation'])
+      // Probation is an employment_type; active probationary staff are included here.
+      .in('status', ['active', 'on_leave'])
       .not('user_id', 'is', null),
     supabaseAdmin
       .from('projects')
