@@ -139,7 +139,7 @@ Repair/`ensure_*` migrations recreate earlier objects, so grep-derived counts ov
 | Mechanism | Where | Use |
 |-----------|-------|-----|
 | Supabase Edge Functions (17) | `supabase/functions/` | Scheduled HR jobs: `onboarding-new-employee`, `probation-check`, `offboarding-exit-process`, `check-late-reports`, `evaluation-cadence-reminders`, `intern-eod-reminder`, `intern-weekly-summary`, `payroll-reminder`, `milestone-announcements`, `announcements-lifecycle`, `resources-lifecycle`, `cleanup-old-notifications`, `cleanup-soft-deleted`, `update-fx-rates`, `generate-embeddings`, `transcribe-recording` |
-| Inngest (5) | `apps/web/src/lib/inngest/functions/` | Event-driven: `parse-resume`, `evaluate-resume`, `process-drive-doc`, `process-expense-receipt`, `process-project-intake`. Typed event schemas in `lib/inngest/client.ts`; handler at `/api/inngest`. Local: `pnpm inngest:dev` |
+| Inngest (6) | `apps/web/src/lib/inngest/functions/` | Event-driven: `parse-resume`, `evaluate-resume`, `process-drive-doc`, `process-expense-receipt`, `process-project-intake`; event + daily cron: `deliver-five-percent-summary` (emails the 5% Reflection AI summary). Typed event schemas in `lib/inngest/client.ts`; handler at `/api/inngest`. Local: `pnpm inngest:dev` |
 | Vercel Cron | `vercel.json` → `/api/cron/*` | `drive-watch-renew` (01:00), `drive-doc-sync` (02:00) |
 | GitHub Actions | `.github/workflows/` | `daily-milestones.yml`, `evaluation-cadence-reminders.yml`, `maintenance.yml` |
 | n8n (13) | `n8n/workflows/` | Telegram/email digests, reminders, escalations (ADR-004 explains why core cron lives in Edge Functions) |
