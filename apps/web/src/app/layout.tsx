@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
-import { AuthProvider } from '@/contexts/AuthContext';
 import { getApplicationVersionPayload } from '@/lib/application-version';
 import { aspekta } from './fonts';
 import { Providers } from './providers';
@@ -16,15 +15,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({ children }: { children: ReactNode }): Promise<ReactNode> {
+export default async function RootLayout({
+  children,
+}: { children: ReactNode }): Promise<ReactNode> {
   const applicationVersion = await getApplicationVersionPayload();
 
   return (
     <html lang="en" className={`${aspekta.variable} font-sans`} suppressHydrationWarning>
       <body className="h-dvh overflow-hidden font-sans antialiased">
-        <Providers initialVersion={applicationVersion.version}>
-          <AuthProvider>{children}</AuthProvider>
-        </Providers>
+        <Providers initialVersion={applicationVersion.version}>{children}</Providers>
       </body>
     </html>
   );

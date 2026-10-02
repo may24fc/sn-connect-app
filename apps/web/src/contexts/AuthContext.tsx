@@ -1,34 +1,22 @@
 'use client';
 
 import { getAuthenticatedHomeRedirect } from '@/lib/auth/redirect-config';
-import { getNormalizedMetadataRole, normalizeDbRoleClaim } from '@/lib/auth/role';
+import {
+  type AuthUserLike,
+  type AuthenticatedUser,
+  type UserRoleType,
+  resolveAuthenticatedUser,
+} from '@/lib/auth/user-bootstrap';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { normalizeAuthError } from '@/lib/errors';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { resolveUserDisplayName } from '@/lib/user-display';
 import { useQueryClient } from '@tanstack/react-query';
 
-// Type definitions
-export type UserRoleType = 'employee' | 'associate' | 'admin' | 'super_admin';
-export type UserStatusType =
-  | 'active'
-  | 'inactive'
-  | 'on_leave'
-  | 'terminated'
-  | 'pending_onboarding'
-  | 'awaiting_approval';
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRoleType;
-  status?: UserStatusType;
-  avatarUrl?: string;
-  isOnboardingComplete?: boolean;
-}
+export type User = AuthenticatedUser;
+export type { UserRoleType, UserStatusType } from '@/lib/auth/user-bootstrap';
 
 interface AuthContextValue {
   user: User | null;
@@ -38,28 +26,6 @@ interface AuthContextValue {
   refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
 }
-
-// Role mapping is now 1:1 since we simplified the DB roles
-// DB roles: employee, associate, admin, super_admin
-// UI roles: employee, associate, admin, super_admin
-const resolveUiRole = (role: string | null | undefined): UserRoleType => {
-  const normalizedRole = normalizeDbRoleClaim(role);
-
-  switch (normalizedRole) {
-    case 'super_admin':
-      return 'super_admin';
-    case 'admin':
-    case 'hr':
-    case 'cos':
-    case 'ceo':
-      return 'admin';
-    case 'associate':
-      return 'associate';
-    case 'employee':
-    default:
-      return 'employee';
-  }
-};
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined);
 
@@ -85,16 +51,23 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, message: string):
   }
 }
 
-export function AuthProvider({ children }: { children: React.ReactNode }): React.ReactElement {
-  const [user, setUser] = React.useState<User | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const userRef = React.useRef<User | null>(null);
+export function AuthProvider({
+  children,
+  initialUser,
+}: {
+  children: React.ReactNode;
+  initialUser?: User | null;
+}): React.ReactElement {
+  const hasInitialUser = initialUser !== undefined;
+  const [user, setUser] = React.useState<User | null>(initialUser ?? null);
+  const [isLoading, setIsLoading] = React.useState(!hasInitialUser);
+  const userRef = React.useRef<User | null>(initialUser ?? null);
+  const loginInProgressRef = React.useRef(false);
   const router = useRouter();
   const queryClient = useQueryClient();
   const supabase = React.useMemo(() => createSupabaseBrowserClient(), []);
   const enableMockAuth =
-    process.env.NEXT_PUBLIC_ENABLE_MOCK_AUTH === 'true' &&
-    process.env.NODE_ENV !== 'production';
+    process.env.NEXT_PUBLIC_ENABLE_MOCK_AUTH === 'true' && process.env.NODE_ENV !== 'production';
   const useMock = enableMockAuth || !supabase;
 
   // Mock users for local/dev mode when Supabase is not configured.
@@ -196,14 +169,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   );
 
   const buildUserFromSession = React.useCallback(
-    async (
-      authUser: {
-        id: string;
-        email?: string | null;
-        user_metadata?: Record<string, unknown>;
-        app_metadata?: Record<string, unknown>;
-      } | null
-    ): Promise<User | null> => {
+    async (authUser: AuthUserLike | null): Promise<User | null> => {
       if (!authUser) {
         return null;
       }
@@ -220,9 +186,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
                 ? authUser.user_metadata.full_name
                 : null,
             metadataName:
-              typeof authUser.user_metadata?.name === 'string'
-                ? authUser.user_metadata.name
-                : null,
+              typeof authUser.user_metadata?.name === 'string' ? authUser.user_metadata.name : null,
             metadataFirstName:
               typeof authUser.user_metadata?.first_name === 'string'
                 ? authUser.user_metadata.first_name
@@ -238,115 +202,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         } as User;
       }
 
-      // Primary: read role from app_metadata (embedded in JWT, no DB call)
-      let dbRole: string | null = getNormalizedMetadataRole(authUser.app_metadata);
-
-      // Fallback: query public.users directly (RLS allows own-row reads)
-      let userStatus: UserStatusType | null = null;
-      if (!dbRole) {
-        const { data, error } = await supabase
-          .from('users')
-          .select('role, status')
-          .eq('id', authUser.id)
-          .maybeSingle();
-
-        if (error) {
-          console.error('Failed to fetch user role:', error.message);
-        } else {
-          dbRole = normalizeDbRoleClaim(data?.role ?? null);
-          userStatus = (data?.status as UserStatusType) ?? null;
-        }
-      } else {
-        // If we have role from app_metadata, still need to fetch status
-        const { data, error } = await supabase
-          .from('users')
-          .select('status')
-          .eq('id', authUser.id)
-          .maybeSingle();
-
-        if (!error && data) {
-          userStatus = (data.status as UserStatusType) ?? null;
-        }
+      if (!supabase) {
+        return null;
       }
 
-      const avatarUrlFromMetadata =
-        typeof authUser.user_metadata?.avatar_url === 'string'
-          ? authUser.user_metadata.avatar_url
-          : undefined;
-
-      const resolvedRole = resolveUiRole(dbRole);
-
-      let onboardingProfile:
-        | {
-            is_completed: boolean | null;
-            first_name: string | null;
-            last_name: string | null;
-          }
-        | null = null;
-      let isOnboardingComplete = true;
-
-      if (resolvedRole === 'employee' || resolvedRole === 'associate') {
-        const { data: onboardingData, error: onboardingError } = await supabase
-          .from('onboarding_profiles')
-          .select('is_completed, first_name, last_name')
-          .eq('user_id', authUser.id)
-          .is('deleted_at', null)
-          .maybeSingle();
-
-        if (onboardingError) {
-          console.warn(
-            'Failed to fetch onboarding status; treating onboarding as non-blocking:',
-            onboardingError.message
-          );
-          isOnboardingComplete = true;
-        } else {
-          onboardingProfile = onboardingData;
-          isOnboardingComplete = onboardingData?.is_completed ?? false;
-        }
-      }
-
-      const resolvedName = resolveUserDisplayName({
-        metadataFullName:
-          typeof authUser.user_metadata?.full_name === 'string'
-            ? authUser.user_metadata.full_name
-            : null,
-        metadataName:
-          typeof authUser.user_metadata?.name === 'string' ? authUser.user_metadata.name : null,
-        metadataFirstName:
-          typeof authUser.user_metadata?.first_name === 'string'
-            ? authUser.user_metadata.first_name
-            : null,
-        metadataLastName:
-          typeof authUser.user_metadata?.last_name === 'string'
-            ? authUser.user_metadata.last_name
-            : null,
-        onboardingFirstName: onboardingProfile?.first_name ?? null,
-        onboardingLastName: onboardingProfile?.last_name ?? null,
-        fallbackEmail: authUser.email ?? null,
-      });
-
-      return {
-        id: authUser.id,
-        name: resolvedName,
-        email: authUser.email ?? '',
-        role: resolvedRole,
-        status: userStatus ?? 'active',
-        isOnboardingComplete,
-        ...(avatarUrlFromMetadata ? { avatarUrl: avatarUrlFromMetadata } : {}),
-      } satisfies User;
+      return resolveAuthenticatedUser(supabase, authUser);
     },
     [MOCK_USERS, supabase, useMock]
   );
 
   const syncAuthState = React.useCallback(
-    async (
-      authUser: {
-        id: string;
-        email?: string | null;
-        user_metadata?: Record<string, unknown>;
-        app_metadata?: Record<string, unknown>;
-      } | null
-    ): Promise<User | null> => {
+    async (authUser: AuthUserLike | null): Promise<User | null> => {
       try {
         const nextUser = await withTimeout(
           buildUserFromSession(authUser),
@@ -421,7 +287,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
                 // middleware. Clearing user here causes a redirect chain
                 // (current page → /login → dashboard) on transient errors.
                 // The real security boundary is RLS + middleware.
-                console.warn('Background session validation failed — keeping current session:', getUserError?.message);
+                console.warn(
+                  'Background session validation failed — keeping current session:',
+                  getUserError?.message
+                );
               } else {
                 // Sync any updated metadata from the validated session
                 await syncAuthState(data.user);
@@ -463,7 +332,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
       }
     };
 
-    void loadUser();
+    if (!hasInitialUser) {
+      void loadUser();
+    }
 
     let subscription: { subscription: { unsubscribe: () => void } } | null = null;
     if (!useMock) {
@@ -495,6 +366,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
               return;
             }
 
+            // signInWithPassword is followed by the explicit sync below. Ignore
+            // its SIGNED_IN callback so profile queries only run once.
+            if (event === 'SIGNED_IN' && loginInProgressRef.current) {
+              return;
+            }
+
             // For SIGNED_IN, TOKEN_REFRESHED, etc.
             // only update if the session has a valid user
             if (session?.user) {
@@ -521,7 +398,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         }
       }
     };
-  }, [supabase, syncAuthState, useMock, queryClient]);
+  }, [hasInitialUser, supabase, syncAuthState, useMock, queryClient]);
 
   // keep the ref updated whenever `user` state changes
   React.useEffect(() => {
@@ -531,6 +408,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   const login = React.useCallback(
     async (email: string, password: string): Promise<void> => {
       setIsLoading(true);
+      loginInProgressRef.current = true;
       try {
         if (useMock) {
           await new Promise((r) => setTimeout(r, 500));
@@ -572,14 +450,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           throw new Error('Unable to load user profile.');
         }
 
-        // Invalidate all stale queries after login to ensure fresh data
-        await queryClient.invalidateQueries();
-        // Refresh router to clear Next.js server-side cache (fixes stale
-        // state after signup → email confirmation → login flow)
-        router.refresh();
-
-        router.push(getHomeRedirectPath(nextUser));
+        // Remove previous-session data without waiting for a global refetch.
+        queryClient.clear();
+        // Destination queries mount with a clean cache for the authenticated user.
+        router.replace(getHomeRedirectPath(nextUser));
       } finally {
+        loginInProgressRef.current = false;
         setIsLoading(false);
       }
     },
@@ -671,8 +547,7 @@ export function useRequireAuth(allowedRoles?: Array<UserRoleType>): User | null 
   }, [user]);
 
   React.useEffect(() => {
-    const currentPath =
-      typeof window !== 'undefined' ? window.location.pathname : '';
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
     const isAccountDisabledRoute = currentPath === '/account-disabled';
     const isOnboardingRoute = currentPath.startsWith('/onboarding/');
     const isDisabledAccount = user?.status === 'terminated' || user?.status === 'inactive';
@@ -696,7 +571,10 @@ export function useRequireAuth(allowedRoles?: Array<UserRoleType>): User | null 
       }
       // Preserve the current URL so the user returns here after login
       const currentPathWithSearch = window.location.pathname + window.location.search;
-      const returnTo = currentPathWithSearch && currentPathWithSearch !== '/' ? `?returnTo=${encodeURIComponent(currentPathWithSearch)}` : '';
+      const returnTo =
+        currentPathWithSearch && currentPathWithSearch !== '/'
+          ? `?returnTo=${encodeURIComponent(currentPathWithSearch)}`
+          : '';
       router.replace(`/login${returnTo}`);
     } else if (
       user &&

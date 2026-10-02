@@ -2,6 +2,7 @@
 
 import { ApplicationUpdateHeaderAction } from '@/components/ApplicationUpdateProvider';
 import { TourProvider, useTour } from '@/components/TourProvider';
+import { AppShellSkeleton } from '@/components/layout/AppShellSkeleton';
 import { type UserRoleType, useAuth, useRequireAuth } from '@/contexts/AuthContext';
 import { useAIChat } from '@/hooks/useAIChat';
 import { useAIChatSuggestions } from '@/hooks/useAIChatSuggestions';
@@ -76,11 +77,7 @@ export function AppShell({ children }: AppShellProps): ReactNode {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   if (!user) {
-    return (
-      <div className="flex h-dvh items-center justify-center bg-muted/30">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
-      </div>
-    );
+    return <AppShellSkeleton />;
   }
 
   const handleNavigate = (href: string): void => {

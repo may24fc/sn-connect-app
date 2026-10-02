@@ -1,10 +1,7 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
-import {
-  getAuthenticatedHomeRedirect,
-  validateRedirectTarget,
-} from '@/lib/auth/redirect-config';
+import { getAuthenticatedHomeRedirect, validateRedirectTarget } from '@/lib/auth/redirect-config';
 import {
   Button,
   Card,
@@ -17,6 +14,7 @@ import {
   Input,
   Label,
   PasswordInput,
+  Skeleton,
 } from '@hr-portal/ui';
 import { AlertCircle, Lock, Mail } from 'lucide-react';
 import Image from 'next/image';
@@ -26,6 +24,57 @@ import { type FormEvent, type ReactNode, useEffect, useState } from 'react';
 
 interface LoginFormProps {
   waitForClientAuth?: boolean;
+}
+
+function LoginFormSkeleton(): ReactNode {
+  return (
+    <div className="flex h-screen items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md rounded-xl border border-border bg-card shadow-card">
+        <output className="block" aria-label="Checking your session" aria-busy="true">
+          <CardHeader className="space-y-1 pb-2 text-center">
+            <div className="mb-6 flex flex-col items-center">
+              <Skeleton className="mb-4 h-6 w-16" />
+              <Skeleton className="h-7 w-36" />
+              <Skeleton className="mt-2 h-4 w-48" />
+              <Skeleton className="mt-3 h-7 w-72 max-w-full rounded-md" />
+            </div>
+
+            <Skeleton className="mx-auto h-6 w-44" />
+            <Skeleton className="mx-auto mt-2 h-4 w-64 max-w-full" />
+          </CardHeader>
+
+          <CardContent className="space-y-5 pt-4">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-10 w-full rounded-md" />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+              <Skeleton className="h-10 w-full rounded-md" />
+            </div>
+
+            <div className="flex items-center gap-2.5 py-1">
+              <Skeleton className="h-4 w-4 rounded" />
+              <Skeleton className="h-4 w-36" />
+            </div>
+
+            <Skeleton className="h-11 w-full rounded-md" />
+
+            <div className="flex flex-col items-center gap-2 pt-1">
+              <Skeleton className="h-3 w-64 max-w-full" />
+              <Skeleton className="h-3 w-40" />
+            </div>
+
+            <span className="sr-only">Checking your session...</span>
+          </CardContent>
+        </output>
+      </Card>
+    </div>
+  );
 }
 
 export default function LoginForm({ waitForClientAuth = false }: LoginFormProps): ReactNode {
@@ -69,11 +118,7 @@ export default function LoginForm({ waitForClientAuth = false }: LoginFormProps)
   };
 
   if (waitForClientAuth && (authLoading || user)) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
-      </div>
-    );
+    return <LoginFormSkeleton />;
   }
 
   return (

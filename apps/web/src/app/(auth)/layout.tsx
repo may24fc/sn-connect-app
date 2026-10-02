@@ -1,3 +1,4 @@
+import { AuthProvider } from '@/contexts/AuthContext';
 import type { ReactNode } from 'react';
 
 export default function AuthLayout({
@@ -6,8 +7,8 @@ export default function AuthLayout({
   children: ReactNode;
 }): ReactNode {
   return (
-    <div className="h-screen flex items-center justify-center bg-background">
-      {children}
-    </div>
+    <AuthProvider>
+      <div className="h-screen flex items-center justify-center bg-background">{children}</div>
+    </AuthProvider>
   );
 }
