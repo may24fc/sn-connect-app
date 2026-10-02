@@ -28,3 +28,54 @@ For now, treat **local** and **production** as the only active Supabase targets.
 
 - Before adding or changing client mutation/cache behavior, read `docs/apps/web/architecture/optimistic-ui.md`.
 - Classify every user-initiated mutation as optimistic or server-confirmed using that document. Keep its implementation-status table current whenever a rollout area changes.
+
+## Feature Task Tracking
+
+For every session that implements, investigates, or defers work for a feature, create or update its durable tracker at `docs/features/<feature-slug>/task-tracker.md` before ending the session.
+
+- Treat a feature as a coherent product or technical area, such as `pa-task-tracker` or `marketing-reporting`; reuse its existing tracker instead of creating a second one.
+- Record every task with exactly one status: `Done`, `In Progress`, `Deferred`, `Skipped`, or `Blocked`.
+- For `Deferred`, `Skipped`, and `Blocked` tasks, record the reason, relevant evidence or dependency, and the next condition that would allow work to resume.
+- For completed work, record the date, changed paths, and validation performed. Do not claim a task is done until its focused validation has passed.
+- Add a dated session-history entry summarizing decisions, remaining work, and known risks. Keep the tracker factual and update it as implementation changes.
+- At the beginning of a later session about that feature, read its tracker before planning or editing so completed and deferred work is not rediscovered or duplicated.
+
+Use this structure:
+
+```markdown
+# <Feature Name> Task Tracker
+
+## Current Status
+
+## Tasks
+
+### Done
+- [x] Task - date; changed paths; validation
+
+### In Progress
+- [ ] Task - current state and next action
+
+### Deferred
+- [ ] Task - reason; resume condition
+
+### Skipped
+- [ ] Task - reason; reconsider when
+
+### Blocked
+- [ ] Task - blocker; owner or dependency
+
+## Session History
+- YYYY-MM-DD: decision, completed work, validation, and remaining risk
+```
+
+## Feature Optimization Records
+
+For any feature where performance, perceived latency, reliability, complexity, bundle size, database cost, or user-flow friction is audited, planned, or changed, create or update `docs/features/<feature-slug>/optimization.md` alongside its task tracker.
+
+- Reuse the feature's existing optimization record; do not create separate optimization documents for the same feature.
+- Read the record before continuing optimization work and update it before ending the session.
+- Record both implemented and non-implemented work. Each entry must state its status (`Implemented`, `Planned`, `Audited`, or `Deferred`), the problem/evidence, the proposed or delivered solution, relevant code paths, and validation or a resume condition.
+- Maintain a **Relevant Code Map** with Markdown links to the source files and tests affected by each optimization area.
+- Include a concise **Visual Guide** using Mermaid whenever a flow spans three or more stages, crosses application layers, or involves a material security/performance tradeoff. Do not add decorative visuals for one-step changes.
+- Keep a dated change log so readers can distinguish what was measured, reviewed, implemented, and still pending.
+- Link the optimization record from the feature's `task-tracker.md`, and keep the tracker and optimization record factually consistent.
