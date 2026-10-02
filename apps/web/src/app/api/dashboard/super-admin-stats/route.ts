@@ -1,3 +1,4 @@
+import { recordAuthTiming, startAuthTiming } from '@/lib/auth/timing';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
@@ -13,10 +14,17 @@ export async function GET(): Promise<NextResponse> {
   try {
     const supabase = await createSupabaseServerClient();
 
+    const authStartedAt = startAuthTiming();
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
+    recordAuthTiming({
+      layer: 'api-handler',
+      operation: 'getUser',
+      route: '/api/dashboard/super-admin-stats',
+      startedAt: authStartedAt,
+    });
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -38,7 +46,7 @@ export async function GET(): Promise<NextResponse> {
       role = roleData?.role ?? null;
     }
 
-    if (!role || !['admin', 'super_admin'].includes(role)) {
+    if (!(role && ['admin', 'super_admin'].includes(role))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -47,47 +55,42 @@ export async function GET(): Promise<NextResponse> {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
     // Run queries in parallel
-    const [
-      totalUsersResult,
-      activeUsersResult,
-      auditLogsResult,
-      roleDistResult,
-      recentLogsResult,
-    ] = await Promise.all([
-      // Total users (non-deleted, non-terminated)
-      supabase
-        .from('users')
-        .select('id', { count: 'exact', head: true })
-        .is('deleted_at', null)
-        .neq('status', 'terminated'),
+    const [totalUsersResult, activeUsersResult, auditLogsResult, roleDistResult, recentLogsResult] =
+      await Promise.all([
+        // Total users (non-deleted, non-terminated)
+        supabase
+          .from('users')
+          .select('id', { count: 'exact', head: true })
+          .is('deleted_at', null)
+          .neq('status', 'terminated'),
 
-      // Active users (status = 'active')
-      supabase
-        .from('users')
-        .select('id', { count: 'exact', head: true })
-        .is('deleted_at', null)
-        .eq('status', 'active'),
+        // Active users (status = 'active')
+        supabase
+          .from('users')
+          .select('id', { count: 'exact', head: true })
+          .is('deleted_at', null)
+          .eq('status', 'active'),
 
-      // Audit logs this month
-      supabase
-        .from('audit_logs')
-        .select('id', { count: 'exact', head: true })
-        .gte('created_at', startOfMonth),
+        // Audit logs this month
+        supabase
+          .from('audit_logs')
+          .select('id', { count: 'exact', head: true })
+          .gte('created_at', startOfMonth),
 
-      // User role distribution (exclude terminated)
-      supabase
-        .from('users')
-        .select('role')
-        .is('deleted_at', null)
-        .neq('status', 'terminated'),
+        // User role distribution (exclude terminated)
+        supabase
+          .from('users')
+          .select('role')
+          .is('deleted_at', null)
+          .neq('status', 'terminated'),
 
-      // Recent audit logs (last 10)
-      supabase
-        .from('audit_logs')
-        .select('id, user_id, action, metadata, created_at')
-        .order('created_at', { ascending: false })
-        .limit(10),
-    ]);
+        // Recent audit logs (last 10)
+        supabase
+          .from('audit_logs')
+          .select('id, user_id, action, metadata, created_at')
+          .order('created_at', { ascending: false })
+          .limit(10),
+      ]);
 
     const totalUsers = totalUsersResult.count ?? 0;
     const activeUsers = activeUsersResult.count ?? 0;
@@ -112,7 +115,13 @@ export async function GET(): Promise<NextResponse> {
 
     // Format recent audit logs
     const recentAuditLogs = (recentLogsResult.data ?? []).map(
-      (log: { id: string; user_id: string | null; action: string; metadata: Record<string, unknown> | null; created_at: string }) => {
+      (log: {
+        id: string;
+        user_id: string | null;
+        action: string;
+        metadata: Record<string, unknown> | null;
+        created_at: string;
+      }) => {
         const meta = log.metadata as Record<string, unknown> | null;
         return {
           id: log.id,

@@ -1,7 +1,13 @@
 import { AppShell } from '@/components/layout/AppShell';
 import { AuthProvider } from '@/contexts/AuthContext';
+import {
+  VERIFIED_AUTH_SNAPSHOT_HEADER,
+  parseVerifiedAuthSnapshot,
+} from '@/lib/auth/request-snapshot';
+import { recordAuthTiming, startAuthTiming } from '@/lib/auth/timing';
 import { resolveAuthenticatedUser } from '@/lib/auth/user-bootstrap';
 import { createSupabaseServerClient, hasSupabaseAuthEnv } from '@/lib/supabase/server';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 
@@ -27,16 +33,39 @@ export default async function AppLayout({
   }
 
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  const requestHeaders = await headers();
+  let user = parseVerifiedAuthSnapshot(requestHeaders.get(VERIFIED_AUTH_SNAPSHOT_HEADER));
 
-  if (error || !user) {
+  // Middleware normally supplies a snapshot from its verified getUser() result.
+  // Fall back to direct verification for non-standard runtimes or requests that
+  // did not pass through middleware.
+  if (!user) {
+    const authStartedAt = startAuthTiming();
+    const { data, error } = await supabase.auth.getUser();
+    recordAuthTiming({
+      layer: 'server-layout',
+      operation: 'getUser-fallback',
+      route: '(app)',
+      startedAt: authStartedAt,
+    });
+    if (error || !data.user) {
+      redirect('/login');
+    }
+    user = data.user;
+  }
+
+  if (!user) {
     redirect('/login');
   }
 
+  const bootstrapStartedAt = startAuthTiming();
   const initialUser = await resolveAuthenticatedUser(supabase, user);
+  recordAuthTiming({
+    layer: 'server-layout',
+    operation: 'resolveAuthenticatedUser',
+    route: '(app)',
+    startedAt: bootstrapStartedAt,
+  });
 
   return (
     <AuthProvider initialUser={initialUser}>

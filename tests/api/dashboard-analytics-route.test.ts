@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/supabase/server', () => ({
   createSupabaseServerClient: vi.fn(),
@@ -18,7 +18,7 @@ type ExpenseRow = {
   employee: { department: string | null } | Array<{ department: string | null }> | null;
 };
 
-function createExpenseEntriesQuery(rows: ExpenseRow[]) {
+function createExpenseEntriesQuery(rows: Array<ExpenseRow>) {
   const eqCalls: Array<[string, string]> = [];
   const gteCalls: Array<[string, string]> = [];
   const lteCalls: Array<[string, string]> = [];
@@ -40,6 +40,7 @@ function createExpenseEntriesQuery(rows: ExpenseRow[]) {
       eqCalls.push([column, value]);
       return query;
     }),
+    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally thenable.
     then: (
       onFulfilled?: (value: typeof result) => unknown,
       onRejected?: (reason: unknown) => unknown
@@ -82,7 +83,7 @@ describe('/api/dashboard/analytics GET route', () => {
       auth: {
         getUser: vi.fn(async () => ({
           data: {
-            user: { id: 'user-1', app_metadata: { db_role: 'employee' } },
+            user: { id: 'user-1', app_metadata: { db_role: 'viewer' } },
           },
           error: null,
         })),
@@ -185,8 +186,18 @@ describe('/api/dashboard/analytics GET route', () => {
 
     expect(json.data.departmentBreakdown).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ departmentId: 'dep-1', departmentName: 'Accounting', count: 2, totalSpendAud: 350 }),
-        expect.objectContaining({ departmentId: 'unassigned', departmentName: 'Unassigned', count: 1, totalSpendAud: 100 }),
+        expect.objectContaining({
+          departmentId: 'dep-1',
+          departmentName: 'Accounting',
+          count: 2,
+          totalSpendAud: 350,
+        }),
+        expect.objectContaining({
+          departmentId: 'unassigned',
+          departmentName: 'Unassigned',
+          count: 1,
+          totalSpendAud: 100,
+        }),
       ])
     );
   });

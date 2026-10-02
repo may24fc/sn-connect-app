@@ -42,7 +42,7 @@ sequenceDiagram
 
     Browser->>Server: Open protected route
     Server->>Auth: Middleware getUser
-    Server->>Auth: Route or page getUser
+    Server-->>Server: Forward verified snapshot to app layout
     par Account lookup
         Server->>DB: Role and status lookup
     and Onboarding lookup for employee/associate JWT
@@ -50,11 +50,14 @@ sequenceDiagram
     end
     Server-->>Browser: Signed-in route + initial user
     Browser->>Server: Dashboard API requests
-    Server->>Auth: Middleware verification per API request
-    Server->>Auth: Route-handler verification per API request
+    alt Exact allowlisted dashboard API
+        Server->>Auth: Route-handler getUser only
+    else Other protected API
+        Server->>Auth: Middleware and route-handler verification
+    end
 ```
 
-Serial browser profile hydration has been removed from normal signed-in routes. Repeated Auth validation in middleware, the app layout, and protected APIs is the remaining application-level hotspot; region distance may amplify every remote call.
+Serial browser profile hydration and middleware/layout double verification have been removed from normal signed-in routes. Four dashboard APIs also avoid middleware/handler duplication. The remaining API inventory is still mixed and must be expanded only with handler-level security coverage; region distance may amplify every remaining remote call.
 
 ### Planned optimization direction
 
@@ -62,9 +65,11 @@ Serial browser profile hydration has been removed from normal signed-in routes. 
 flowchart TB
     A[Done: single login navigation] --> B[Done: parallel profile bootstrap]
     B --> C[Done: server snapshot to client shell]
-    C --> D[Next: measure p50 and p95]
-    D --> E[Audit middleware and API verification overlap]
-    E --> F[Evaluate getClaims and infrastructure region alignment]
+    C --> D[Done: middleware snapshot reuse]
+    D --> E[Done: dashboard API bypass pilot]
+    E --> F[Next: collect production p50 and p95]
+    F --> G[Expand audited API bypass]
+    G --> H[Evaluate getClaims and region alignment]
 ```
 
 Each stage requires its stated validation before the next optimization is treated as complete.
@@ -81,7 +86,9 @@ Use this map to jump from an optimization entry to the implementation area it af
 | Signed-in server bootstrap | [`apps/web/src/app/(app)/layout.tsx`](../../../apps/web/src/app/(app)/layout.tsx) | Authenticates the request, resolves the minimal user snapshot, and initializes AuthProvider before the signed-in shell renders. |
 | Shared user bootstrap resolver | [`apps/web/src/lib/auth/user-bootstrap.ts`](../../../apps/web/src/lib/auth/user-bootstrap.ts) | Keeps server and browser user resolution consistent and starts eligible account/onboarding reads concurrently. |
 | Auth provider boundaries | [`apps/web/src/app/layout.tsx`](../../../apps/web/src/app/layout.tsx), [`apps/web/src/app/(auth)/layout.tsx`](../../../apps/web/src/app/(auth)/layout.tsx), [`apps/web/src/app/onboarding/awaiting-approval/layout.tsx`](../../../apps/web/src/app/onboarding/awaiting-approval/layout.tsx) | Limits client auth bootstrap to route groups that need it and preserves coverage for the standalone approval route. |
-| Request middleware verification | [`apps/web/middleware.ts`](../../../apps/web/middleware.ts) | Refreshes/verifies request sessions and currently runs `getUser()` for matched protected requests. |
+| Request middleware verification | [`apps/web/middleware.ts`](../../../apps/web/middleware.ts) | Refreshes/verifies protected page sessions, forwards the verified snapshot upstream, and holds the exact dashboard API bypass allowlist. |
+| Verified request snapshot | [`apps/web/src/lib/auth/request-snapshot.ts`](../../../apps/web/src/lib/auth/request-snapshot.ts) | Serializes only the identity fields needed by the layout and validates the forwarded snapshot before reuse. |
+| Auth timing instrumentation | [`apps/web/src/lib/auth/timing.ts`](../../../apps/web/src/lib/auth/timing.ts) | Emits optional structured PII-free timing events and formats middleware `Server-Timing` metrics. |
 | Server Supabase client | [`apps/web/src/lib/supabase/server.ts`](../../../apps/web/src/lib/supabase/server.ts) | Builds the cookie-backed server client used by pages and route handlers. |
 | Browser Supabase client | [`apps/web/src/lib/supabase/client.ts`](../../../apps/web/src/lib/supabase/client.ts) | Builds the browser client used by AuthContext session hydration. |
 | Signed-in shell and dashboard loading state | [`apps/web/src/components/layout/AppShell.tsx`](../../../apps/web/src/components/layout/AppShell.tsx) | Waits for the authenticated user before rendering signed-in navigation and dashboard content. |
@@ -101,6 +108,10 @@ Use this map to jump from an optimization entry to the implementation area it af
 | Redirect safety rules | [`tests/lib/auth/redirect-config.test.ts`](../../../tests/lib/auth/redirect-config.test.ts) |
 | Server-preloaded provider and login navigation | [`tests/contexts/AuthContext.test.tsx`](../../../tests/contexts/AuthContext.test.tsx) |
 | Parallel user bootstrap | [`tests/lib/auth/user-bootstrap.test.ts`](../../../tests/lib/auth/user-bootstrap.test.ts) |
+| Middleware snapshot and API bypass policy | [`tests/middleware-auth.test.ts`](../../../tests/middleware-auth.test.ts), [`tests/lib/auth/request-snapshot.test.ts`](../../../tests/lib/auth/request-snapshot.test.ts) |
+| Signed-in layout snapshot reuse | [`tests/app/app-layout-auth.test.tsx`](../../../tests/app/app-layout-auth.test.tsx) |
+| Dashboard handler security boundary | [`tests/api/dashboard-auth-boundary.test.ts`](../../../tests/api/dashboard-auth-boundary.test.ts) |
+| Auth timing output | [`tests/lib/auth/timing.test.ts`](../../../tests/lib/auth/timing.test.ts) |
 
 ## Implemented Optimizations
 
@@ -173,6 +184,52 @@ Use this map to jump from an optimization entry to the implementation area it af
   - `tests/contexts/AuthContext.test.tsx`
 - **Validation:** A regression test verifies `queryClient.clear()` is used, global invalidation is not called, and the correct dashboard route is replaced once.
 
+### Reuse middleware verification in the signed-in layout
+
+- **Status:** Implemented — 2026-10-02
+- **Problem:** Middleware called `getUser()` to validate and refresh the request, then the signed-in layout immediately called `getUser()` again before resolving the user bootstrap.
+- **Solution:** After middleware verifies the user, it forwards a compact URL-encoded snapshot through an upstream-only request header. Incoming values for that internal header are deleted and replaced, only required string metadata fields are forwarded, and the layout validates the snapshot structure before reuse. If middleware did not provide a valid snapshot, the layout retains its direct `getUser()` fallback.
+- **Changed paths:**
+  - `apps/web/middleware.ts`
+  - `apps/web/src/app/(app)/layout.tsx`
+  - `apps/web/src/lib/auth/request-snapshot.ts`
+  - `tests/middleware-auth.test.ts`
+  - `tests/app/app-layout-auth.test.tsx`
+  - `tests/lib/auth/request-snapshot.test.ts`
+- **Validation:** Tests prove the layout avoids its second Auth request, invalid/missing snapshots fall back safely, client-supplied snapshot headers are overwritten, and refreshed cookies are preserved.
+
+### Exact dashboard API middleware bypass pilot
+
+- **Status:** Implemented — 2026-10-02
+- **Problem:** Dashboard API calls were verified once in middleware and again in their route handlers, adding one Auth-server round trip per request.
+- **Solution:** Bypass middleware authentication for exactly four audited paths: analytics, pending approvals, admin stats, and super-admin stats. Each handler remains responsible for authentication and role/access checks close to its data access. The allowlist uses exact paths, so newly added dashboard APIs remain middleware-protected by default.
+- **Changed paths:**
+  - `apps/web/middleware.ts`
+  - `apps/web/src/app/api/dashboard/analytics/route.ts`
+  - `apps/web/src/app/api/dashboard/pending/route.ts`
+  - `apps/web/src/app/api/dashboard/stats/route.ts`
+  - `apps/web/src/app/api/dashboard/super-admin-stats/route.ts`
+  - `tests/api/dashboard-auth-boundary.test.ts`
+  - `tests/middleware-auth.test.ts`
+- **Validation:** All four handlers return 401 without an authenticated user; unlisted API paths still invoke middleware authentication; the expanded focused suite passed 72 tests.
+
+### Production-capable Auth phase timing
+
+- **Status:** Implemented — 2026-10-02
+- **Problem:** Optimization decisions lacked phase-level evidence for middleware verification, layout fallback/bootstrap, and dashboard handler authentication.
+- **Solution:** Add structured, PII-free events gated by `AUTH_TIMING_ENABLED=true`. Middleware also returns an `auth_middleware` `Server-Timing` metric for browser/network inspection. Instrument the signed-in bootstrap and the four dashboard handler boundaries.
+- **Changed paths:**
+  - `apps/web/src/lib/auth/timing.ts`
+  - `apps/web/middleware.ts`
+  - `apps/web/src/app/(app)/layout.tsx`
+  - `apps/web/src/app/api/dashboard/analytics/route.ts`
+  - `apps/web/src/app/api/dashboard/pending/route.ts`
+  - `apps/web/src/app/api/dashboard/stats/route.ts`
+  - `apps/web/src/app/api/dashboard/super-admin-stats/route.ts`
+  - `tests/lib/auth/timing.test.ts`
+- **Validation:** Tests verify structured output is gated and contains no user identifier, and verify the middleware response contains the expected `Server-Timing` metric.
+- **Next measurement condition:** Deploy with `AUTH_TIMING_ENABLED=true`, collect a representative sample, and record p50/p95 before widening the API bypass or changing JWT verification semantics.
+
 ## Audited Optimization Opportunities
 
 ### Measure the current baseline first
@@ -184,11 +241,11 @@ Use this map to jump from an optimization entry to the implementation area it af
 
 ### Reduce repeated Auth verification in middleware and dashboard APIs
 
-- **Status:** Audited
-- **Evidence:** Middleware validates most protected requests with `getUser()`, while protected route handlers generally validate again. Dashboard pages may make several API requests concurrently.
-- **Planned solution:** Audit every protected API route. After proving each handler validates authorization near its data source, avoid middleware-plus-handler duplicate verification for API requests.
-- **Expected effect:** Reduce Auth-server round trips per dashboard panel.
-- **Safety checks:** Complete route inventory and authorization regression tests before changing middleware coverage.
+- **Status:** Audited — pilot implemented; wider rollout deferred
+- **Evidence:** The four audited dashboard APIs now authenticate only in their handlers. The repository contains 280 API route files with a mix of direct `getUser()`, shared authenticated contexts, public callbacks, cron/webhook secrets, and some routes that still depend on middleware.
+- **Planned solution:** Expand exact-path bypasses module by module after each route has explicit unauthenticated and unauthorized regression coverage. Do not replace the exact allowlist with a broad `/api/*` exclusion.
+- **Expected effect:** Remove one Auth-server request from each safely migrated API call.
+- **Safety checks:** Handler-level 401/403 tests, role/access tests, cookie-refresh behavior, and exact-path middleware tests for every rollout group.
 
 ### Evaluate `getClaims()` for eligible middleware checks
 
@@ -217,6 +274,7 @@ Use this map to jump from an optimization entry to the implementation area it af
 - [Supabase SSR client guidance](https://supabase.com/docs/guides/auth/server-side/creating-a-client)
 - [Supabase advanced SSR guidance](https://supabase.com/docs/guides/auth/server-side/advanced-guide)
 - [Next.js authentication guidance](https://nextjs.org/docs/app/guides/authentication)
+- [Next.js upstream request-header guidance](https://nextjs.org/docs/app/guides/backend-for-frontend#security)
 
 ## Change Log
 
@@ -226,3 +284,4 @@ Use this map to jump from an optimization entry to the implementation area it af
 - 2026-10-02: Added preview-friendly Mermaid diagrams and a visual-documentation rule for future optimization entries.
 - 2026-10-02: Added a file-by-file code map and validation-file map for optimization review and implementation navigation.
 - 2026-10-02: Implemented server-preloaded signed-in auth state, concurrent employee/associate bootstrap reads, and a single post-login cache/navigation transition. Added regression coverage for the shared resolver and AuthProvider behavior; retained server/RLS authorization boundaries and deferred middleware/API verification changes.
+- 2026-10-02: Removed middleware/layout double verification with a sanitized upstream-only user snapshot and safe layout fallback. Added an exact-path middleware bypass for four independently authenticated dashboard APIs, plus 401 boundary tests, spoofed-header coverage, cookie-preservation coverage, structured timing events, and a middleware `Server-Timing` metric. Wider API rollout awaits module-level security tests and production p50/p95 data.

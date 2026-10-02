@@ -19,7 +19,12 @@
  * project. Auth is handled client-side by the AuthContext mock path instead.
  */
 
-import { createServerClient } from '@supabase/ssr';
+import {
+  VERIFIED_AUTH_SNAPSHOT_HEADER,
+  serializeVerifiedAuthSnapshot,
+} from '@/lib/auth/request-snapshot';
+import { appendServerTiming, recordAuthTiming, startAuthTiming } from '@/lib/auth/timing';
+import { type CookieOptions, createServerClient } from '@supabase/ssr';
 import { type NextRequest, NextResponse } from 'next/server';
 
 // Routes that do NOT require authentication.
@@ -44,9 +49,37 @@ const PUBLIC_PREFIXES = [
   '/api/calendar/callback',
 ];
 
+// These API handlers perform their own authenticated-user and role checks close
+// to their data access. Exact paths prevent future dashboard APIs from silently
+// inheriting this middleware bypass without security coverage.
+export const HANDLER_AUTHENTICATED_API_ROUTES = new Set([
+  '/api/dashboard/analytics',
+  '/api/dashboard/pending',
+  '/api/dashboard/stats',
+  '/api/dashboard/super-admin-stats',
+]);
+
 function isPublicRoute(pathname: string): boolean {
   if (PUBLIC_ROUTES.has(pathname)) return true;
   return PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
+export function isHandlerAuthenticatedApiRoute(pathname: string): boolean {
+  return HANDLER_AUTHENTICATED_API_ROUTES.has(pathname);
+}
+
+type PendingCookie = {
+  name: string;
+  value: string;
+  options: CookieOptions;
+};
+
+function createForwardedResponse(headers: Headers, cookies: Array<PendingCookie>): NextResponse {
+  const response = NextResponse.next({ request: { headers } });
+  for (const { name, value, options } of cookies) {
+    response.cookies.set(name, value, options);
+  }
+  return response;
 }
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
@@ -55,6 +88,12 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   // Skip middleware for public routes entirely -- no Supabase call needed.
   if (isPublicRoute(pathname)) {
     return NextResponse.next();
+  }
+
+  if (isHandlerAuthenticatedApiRoute(pathname)) {
+    const forwardedHeaders = new Headers(request.headers);
+    forwardedHeaders.delete(VERIFIED_AUTH_SNAPSHOT_HEADER);
+    return NextResponse.next({ request: { headers: forwardedHeaders } });
   }
 
   // When mock auth is enabled, skip all server-side session checks.
@@ -72,11 +111,11 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     return NextResponse.next();
   }
 
-  // Create a SINGLE response object and accumulate all cookie changes on it.
-  // Previous implementation re-created NextResponse.next() on every set/remove
-  // call, which discarded cookies from earlier calls — causing session loss on
-  // chunked JWTs (Supabase splits large tokens across multiple cookies).
-  const response = NextResponse.next({ request });
+  const forwardedHeaders = new Headers(request.headers);
+  // Never trust a client-provided internal snapshot. It is set only after the
+  // Auth server validates this request below.
+  forwardedHeaders.delete(VERIFIED_AUTH_SNAPSHOT_HEADER);
+  const pendingCookies: Array<PendingCookie> = [];
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
@@ -88,10 +127,8 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
         for (const { name, value } of cookiesToSet) {
           request.cookies.set(name, value);
         }
-        // Persist cookies on the response so the browser receives them.
-        for (const { name, value, options } of cookiesToSet) {
-          response.cookies.set(name, value, options);
-        }
+        forwardedHeaders.set('cookie', request.cookies.toString());
+        pendingCookies.push(...cookiesToSet);
       },
     },
   });
@@ -100,17 +137,32 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   // the JWT. This is intentional -- it ensures the token has not been revoked and
   // refreshes the session cookie if it is near expiry. We do NOT use getSession()
   // here because it only reads the local cookie and can be spoofed.
+  const authStartedAt = startAuthTiming();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const authDuration = recordAuthTiming({
+    layer: 'middleware',
+    operation: 'getUser',
+    route: pathname,
+    startedAt: authStartedAt,
+  });
 
   if (!user) {
     // No valid session -- redirect to login with a return-to parameter.
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('returnTo', pathname);
-    return NextResponse.redirect(loginUrl);
+    const response = NextResponse.redirect(loginUrl);
+    for (const { name, value, options } of pendingCookies) {
+      response.cookies.set(name, value, options);
+    }
+    appendServerTiming(response.headers, 'auth_middleware', authDuration, 'Supabase Auth getUser');
+    return response;
   }
 
+  forwardedHeaders.set(VERIFIED_AUTH_SNAPSHOT_HEADER, serializeVerifiedAuthSnapshot(user));
+  const response = createForwardedResponse(forwardedHeaders, pendingCookies);
+  appendServerTiming(response.headers, 'auth_middleware', authDuration, 'Supabase Auth getUser');
   return response;
 }
 

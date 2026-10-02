@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { recordAuthTiming, startAuthTiming } from '@/lib/auth/timing';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { NextResponse } from 'next/server';
 import { getAuthedSupabase, isNotificationAdmin } from '../../notifications/_lib';
 
 /**
@@ -11,7 +12,14 @@ import { getAuthedSupabase, isNotificationAdmin } from '../../notifications/_lib
  */
 export async function GET(): Promise<NextResponse> {
   try {
+    const authStartedAt = startAuthTiming();
     const { user, role, error } = await getAuthedSupabase();
+    recordAuthTiming({
+      layer: 'api-handler',
+      operation: 'getAuthedSupabase',
+      route: '/api/dashboard/pending',
+      startedAt: authStartedAt,
+    });
     const supabaseAdmin = createSupabaseAdminClient();
 
     if (error || !user) {
@@ -23,7 +31,11 @@ export async function GET(): Promise<NextResponse> {
     }
 
     // Pending report submissions (status = 'submitted', awaiting review)
-    const { count: pendingReportsCount, data: pendingReports, error: pendingReportsError } = await supabaseAdmin
+    const {
+      count: pendingReportsCount,
+      data: pendingReports,
+      error: pendingReportsError,
+    } = await supabaseAdmin
       .from('reports')
       .select('id, employee_id, report_type, period_start, period_end, submitted_at, created_at', {
         count: 'exact',
@@ -35,7 +47,10 @@ export async function GET(): Promise<NextResponse> {
 
     if (pendingReportsError) {
       console.error('Failed to fetch pending report approvals:', pendingReportsError);
-      return NextResponse.json({ error: 'Failed to fetch pending report approvals' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Failed to fetch pending report approvals' },
+        { status: 500 }
+      );
     }
 
     // Pending invoice approvals (status = 'submitted')

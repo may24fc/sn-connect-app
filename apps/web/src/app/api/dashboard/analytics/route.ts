@@ -1,3 +1,4 @@
+import { recordAuthTiming, startAuthTiming } from '@/lib/auth/timing';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -92,10 +93,17 @@ function getEmployeeDepartment(employee: ExpenseAnalyticsRow['employee']): strin
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
+    const authStartedAt = startAuthTiming();
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
+    recordAuthTiming({
+      layer: 'api-handler',
+      operation: 'getUser',
+      route: '/api/dashboard/analytics',
+      startedAt: authStartedAt,
+    });
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -147,13 +155,14 @@ export async function GET(request: NextRequest) {
 
           const departmentName = departmentData?.name?.trim().toLowerCase();
           hasAccountingAccess = Boolean(
-            departmentName && (departmentName.includes('accounting') || departmentName === 'finance')
+            departmentName &&
+              (departmentName.includes('accounting') || departmentName === 'finance')
           );
         }
       }
     }
 
-    if (!hasAdminAccess && !hasAccountingAccess) {
+    if (!(hasAdminAccess || hasAccountingAccess)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -197,12 +206,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to load analytics data' }, { status: 500 });
     }
 
-    const rows = (data || []) as ExpenseAnalyticsRow[];
+    const rows = (data || []) as Array<ExpenseAnalyticsRow>;
 
-    const periodMap = new Map<string, { periodStart: string; label: string; totalSpendAud: number; entryCount: number }>();
+    const periodMap = new Map<
+      string,
+      { periodStart: string; label: string; totalSpendAud: number; entryCount: number }
+    >();
     const statusMap = new Map<string, { status: string; count: number; totalSpendAud: number }>();
-    const categoryMap = new Map<string, { category: string; totalSpendAud: number; count: number }>();
-    const departmentMap = new Map<string, { departmentId: string; departmentName: string; totalSpendAud: number; count: number }>();
+    const categoryMap = new Map<
+      string,
+      { category: string; totalSpendAud: number; count: number }
+    >();
+    const departmentMap = new Map<
+      string,
+      { departmentId: string; departmentName: string; totalSpendAud: number; count: number }
+    >();
 
     let totalSpendAud = 0;
 
@@ -297,7 +315,8 @@ export async function GET(request: NextRequest) {
         endDate: parsedEndDate,
         totalEntries: rows.length,
         totalSpendAud: Number(totalSpendAud.toFixed(2)),
-        averageSpendAudPerEntry: rows.length > 0 ? Number((totalSpendAud / rows.length).toFixed(2)) : 0,
+        averageSpendAudPerEntry:
+          rows.length > 0 ? Number((totalSpendAud / rows.length).toFixed(2)) : 0,
         trend,
         statusBreakdown,
         categoryBreakdown,
