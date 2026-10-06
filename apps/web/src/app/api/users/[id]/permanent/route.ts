@@ -4,12 +4,18 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 const MANAGEABLE_DIRECTORY_ROLES = ['employee', 'associate', 'admin', 'super_admin'] as const;
 
+// ~100 years: effectively permanent without relying on a provider-specific "forever" value.
+const PERMANENT_BAN_DURATION = '876000h';
+
 /**
  * DELETE /api/users/[id]/permanent
- * Permanently remove a terminated directory account (auth user and cascaded profile rows).
- * Irreversible. Only terminated accounts can be removed; active accounts must be terminated first.
- * Accounts that still own records referenced without ON DELETE CASCADE are rejected by the
- * database and left untouched (the whole delete rolls back).
+ * Permanently delete a terminated directory account, whatever records are linked to it.
+ * 1. Disables the login: bans the auth user and replaces its email with a placeholder,
+ *    which also frees the real address for a future invite.
+ * 2. Calls public.purge_directory_user: deletes personal data, keeps shared work (tickets,
+ *    invoices, payments, expenses, reports, tasks, projects, announcements) attributed by
+ *    name, hides the name-only stub from the directory, and strips audit-log snapshots.
+ * Irreversible. Only terminated accounts qualify; active accounts must be terminated first.
  * Permissions: Admin and Super Admin; deleting an admin or super-admin account requires Super Admin.
  */
 export async function DELETE(
@@ -53,6 +59,7 @@ export async function DELETE(
       .from('users')
       .select('id, role, status')
       .eq('id', id)
+      .is('deleted_at', null)
       .maybeSingle();
 
     if (targetError || !target) {
@@ -80,16 +87,30 @@ export async function DELETE(
       );
     }
 
-    const { error: deleteError } = await adminClient.auth.admin.deleteUser(id);
+    // Login goes first: if the purge then fails, the account is locked but intact, and the
+    // request can simply be retried (both steps are idempotent).
+    const { error: loginDisableError } = await adminClient.auth.admin.updateUserById(id, {
+      email: `deleted-${id}@deleted.invalid`,
+      email_confirm: true,
+      ban_duration: PERMANENT_BAN_DURATION,
+      user_metadata: {},
+    });
 
-    if (deleteError) {
-      console.error('Error permanently deleting user:', deleteError);
+    if (loginDisableError) {
+      console.error('Error disabling login before permanent delete:', loginDisableError.message);
+      return NextResponse.json({ error: 'Failed to disable the account login. Nothing was deleted.' }, { status: 500 });
+    }
+
+    const { error: purgeError } = await adminClient.rpc('purge_directory_user', { p_user_id: id });
+
+    if (purgeError) {
+      console.error('Error purging directory user:', purgeError.code, purgeError.message);
       return NextResponse.json(
         {
           error:
-            'This account still has linked records (e.g. tasks, reports or reviews) and cannot be permanently deleted. It remains in Former Employees.',
+            'The login was disabled, but deleting the account data failed. No data was removed; try again.',
         },
-        { status: 409 }
+        { status: 500 }
       );
     }
 
