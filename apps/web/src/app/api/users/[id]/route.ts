@@ -6,9 +6,10 @@ import { z } from 'zod';
 const ADMIN_ROLES = ['admin', 'super_admin'] as const;
 const MANAGEABLE_DIRECTORY_ROLES = ['employee', 'associate', 'admin', 'super_admin'] as const;
 
-const patchUserSchema = z.object({
-  status: z.enum(['inactive', 'active']),
-});
+const patchUserSchema = z.union([
+  z.object({ status: z.enum(['inactive', 'active']) }).strict(),
+  z.object({ date_terminated: z.string().date() }).strict(),
+]);
 
 function isManageableDirectoryRole(role: string): boolean {
   return MANAGEABLE_DIRECTORY_ROLES.includes(role as (typeof MANAGEABLE_DIRECTORY_ROLES)[number]);
@@ -51,7 +52,8 @@ async function getManagedTargetUser(
 
 /**
  * PATCH /api/users/[id]
- * Deactivate (status=inactive) or restore (status=active) a directory account.
+ * Deactivate (status=inactive) or restore (status=active) a directory account,
+ * or correct the termination date (date_terminated=YYYY-MM-DD) of a terminated one.
  * Restoring also clears the date_terminated field on the linked employee record.
  * Permissions: Admin and Super Admin only
  */
@@ -84,7 +86,7 @@ export async function PATCH(
       );
     }
 
-    const { status: newStatus } = parsedBody.data;
+    const body = parsedBody.data;
 
     const requesterRole = await getRequesterRole(user.id, supabase);
     if (!requesterRole) {
@@ -108,6 +110,73 @@ export async function PATCH(
         { status: 403 }
       );
     }
+
+    if ('date_terminated' in body) {
+      if (targetUser.status !== 'terminated') {
+        return NextResponse.json(
+          { error: 'Termination date can only be edited for terminated accounts' },
+          { status: 409 }
+        );
+      }
+
+      const { data: employee, error: employeeError } = await adminClient
+        .from('employees')
+        .select('id, date_hired, date_terminated')
+        .eq('user_id', id)
+        .is('deleted_at', null)
+        .maybeSingle();
+
+      if (employeeError) {
+        console.error('Error loading employee for termination date update:', employeeError);
+        return NextResponse.json({ error: 'Failed to update termination date' }, { status: 500 });
+      }
+
+      if (!employee) {
+        return NextResponse.json({ error: 'Employee record not found' }, { status: 404 });
+      }
+
+      if (body.date_terminated > new Date().toISOString().slice(0, 10)) {
+        return NextResponse.json(
+          { error: 'Termination date cannot be in the future' },
+          { status: 400 }
+        );
+      }
+
+      if (employee.date_hired && body.date_terminated < employee.date_hired.slice(0, 10)) {
+        return NextResponse.json(
+          { error: 'Termination date cannot be before the start date' },
+          { status: 400 }
+        );
+      }
+
+      // Midday UTC keeps the calendar day stable when rendered in any timezone.
+      const dateTerminated = `${body.date_terminated}T12:00:00.000Z`;
+
+      const { error: dateError } = await adminClient
+        .from('employees')
+        .update({ date_terminated: dateTerminated })
+        .eq('id', employee.id);
+
+      if (dateError) {
+        console.error('Error updating termination date:', dateError);
+        return NextResponse.json({ error: 'Failed to update termination date' }, { status: 500 });
+      }
+
+      logActivity(supabase, {
+        userId: user.id,
+        action: 'update_termination_date',
+        tableName: 'employees',
+        recordId: employee.id,
+        metadata: {
+          previous_date_terminated: employee.date_terminated,
+          date_terminated: dateTerminated,
+        },
+      });
+
+      return NextResponse.json({ success: true, data: { date_terminated: dateTerminated } });
+    }
+
+    const newStatus = body.status;
 
     // Idempotency: already in the target state
     if (targetUser.status === newStatus) {

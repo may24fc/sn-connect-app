@@ -54,6 +54,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
   BookOpen,
+  CalendarClock,
   ChevronLeft,
   ChevronRight,
   Clock,
@@ -65,6 +66,7 @@ import {
   Save,
   Search,
   Target,
+  Trash2,
   UserMinus,
   Users,
   UserCheck,
@@ -151,6 +153,16 @@ export default function AdminDirectoryPage(): ReactNode {
   // Restore employee state
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [employeeToRestore, setEmployeeToRestore] = useState<DirectoryEntry | null>(null);
+
+  // Edit termination date state
+  const [terminationDateDialogOpen, setTerminationDateDialogOpen] = useState(false);
+  const [employeeToEditTermination, setEmployeeToEditTermination] = useState<DirectoryEntry | null>(null);
+  const [editTerminationDate, setEditTerminationDate] = useState('');
+
+  // Permanent delete state
+  const [permanentDeleteDialogOpen, setPermanentDeleteDialogOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<DirectoryEntry | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   // Edit employee state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -245,6 +257,74 @@ export default function AdminDirectoryPage(): ReactNode {
     onError: (_error, _entry, context) => {
       context?.previousDirectory.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
       addToast({ title: 'Failed to restore account', variant: 'error' });
+    },
+  });
+
+  const updateTerminationDateMutation = useMutation({
+    mutationFn: async ({ entry, date }: { entry: DirectoryEntry; date: string }) => {
+      const response = await fetch(`/api/users/${entry.user_id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date_terminated: date }),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to update termination date' }));
+        throw new Error(error.error || 'Failed to update termination date');
+      }
+      return response.json();
+    },
+    onMutate: async ({ entry, date }) => {
+      await queryClient.cancelQueries({ queryKey: ['directory'] });
+      const previousDirectory = queryClient.getQueriesData<DirectoryResponse>({ queryKey: ['directory'] });
+      updateDirectoryEntries((current) =>
+        current.user_id === entry.user_id
+          ? { ...current, date_terminated: `${date}T12:00:00.000Z` }
+          : current
+      );
+      closeTerminationDateDialog();
+      return { previousDirectory };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      addToast({ title: 'Termination date updated', variant: 'success' });
+    },
+    onError: (error, _variables, context) => {
+      context?.previousDirectory.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
+      addToast({
+        title: 'Failed to update termination date',
+        ...(error instanceof Error ? { description: error.message } : {}),
+        variant: 'error',
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['directory'] });
+    },
+  });
+
+  // Irreversible and the database may reject it, so this stays server-confirmed.
+  const permanentDeleteMutation = useMutation({
+    mutationFn: async (entry: DirectoryEntry) => {
+      const response = await fetch(`/api/users/${entry.user_id}/permanent`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to delete account' }));
+        throw new Error(error.error || 'Failed to delete account');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['directory'] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      closePermanentDeleteDialog();
+      addToast({ title: 'Account permanently deleted', variant: 'success' });
+    },
+    onError: (error) => {
+      addToast({
+        title: 'Failed to delete account',
+        ...(error instanceof Error ? { description: error.message } : {}),
+        variant: 'error',
+      });
     },
   });
 
@@ -354,6 +434,38 @@ export default function AdminDirectoryPage(): ReactNode {
   const handleRestoreClick = (entry: DirectoryEntry) => {
     setEmployeeToRestore(entry);
     setRestoreDialogOpen(true);
+  };
+
+  const handleEditTerminationDateClick = (entry: DirectoryEntry) => {
+    setEmployeeToEditTermination(entry);
+    setEditTerminationDate(entry.date_terminated?.slice(0, 10) ?? '');
+    setTerminationDateDialogOpen(true);
+  };
+
+  const closeTerminationDateDialog = () => {
+    setTerminationDateDialogOpen(false);
+    setEmployeeToEditTermination(null);
+    setEditTerminationDate('');
+  };
+
+  const handleTerminationDateSubmit = () => {
+    if (!employeeToEditTermination || !editTerminationDate) return;
+    updateTerminationDateMutation.mutate({
+      entry: employeeToEditTermination,
+      date: editTerminationDate,
+    });
+  };
+
+  const handlePermanentDeleteClick = (entry: DirectoryEntry) => {
+    setEmployeeToDelete(entry);
+    setDeleteConfirmText('');
+    setPermanentDeleteDialogOpen(true);
+  };
+
+  const closePermanentDeleteDialog = () => {
+    setPermanentDeleteDialogOpen(false);
+    setEmployeeToDelete(null);
+    setDeleteConfirmText('');
   };
 
   const handleDeactivateClick = (entry: DirectoryEntry) => {
@@ -640,6 +752,7 @@ export default function AdminDirectoryPage(): ReactNode {
               <Input
                 placeholder="Search by name, email, or position..."
                 value={search}
+                maxLength={200}
                 onChange={(e) => {
                   setSearch(e.target.value);
                   setPage(1);
@@ -923,10 +1036,30 @@ export default function AdminDirectoryPage(): ReactNode {
                                 isAdminOrSuperAdmin && (
                                   <>
                                     <DropdownMenuSeparator />
+                                    {entry.employee_id && (
+                                      <DropdownMenuItem onClick={() => handleEditTerminationDateClick(entry)}>
+                                        <CalendarClock className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                                        Edit Termination Date
+                                      </DropdownMenuItem>
+                                    )}
                                     <DropdownMenuItem onClick={() => handleRestoreClick(entry)}>
                                       <RotateCcw className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
                                       Restore to Active
                                     </DropdownMenuItem>
+                                    {isManageableDirectoryEntry(entry) &&
+                                      (isSuperAdmin ||
+                                        (entry.role !== 'admin' && entry.role !== 'super_admin')) && (
+                                        <>
+                                          <DropdownMenuSeparator />
+                                          <DropdownMenuItem
+                                            className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
+                                            onClick={() => handlePermanentDeleteClick(entry)}
+                                          >
+                                            <Trash2 className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                                            Delete Permanently
+                                          </DropdownMenuItem>
+                                        </>
+                                      )}
                                   </>
                                 )
                               ) : (
@@ -1014,6 +1147,116 @@ export default function AdminDirectoryPage(): ReactNode {
               disabled={terminateEmployeeMutation.isPending}
             >
               {terminateEmployeeMutation.isPending ? 'Terminating...' : 'Terminate'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Termination Date Dialog */}
+      <Dialog
+        open={terminationDateDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) closeTerminationDateDialog();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarClock className="h-5 w-5" />
+              Edit Termination Date
+            </DialogTitle>
+            <DialogDescription>
+              Correct the termination date for{' '}
+              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                {employeeToEditTermination?.full_name}
+              </span>
+              .
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="edit-termination-date">Termination Date</Label>
+            <Input
+              id="edit-termination-date"
+              type="date"
+              value={editTerminationDate}
+              min={employeeToEditTermination?.start_date?.slice(0, 10)}
+              max={new Date().toISOString().slice(0, 10)}
+              onChange={(event) => setEditTerminationDate(event.target.value)}
+            />
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Must be on or after the start date and not in the future.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={closeTerminationDateDialog}
+              disabled={updateTerminationDateMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleTerminationDateSubmit}
+              disabled={!editTerminationDate || updateTerminationDateMutation.isPending}
+            >
+              {updateTerminationDateMutation.isPending ? 'Saving...' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Permanent Delete Confirmation Dialog */}
+      <Dialog
+        open={permanentDeleteDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && !permanentDeleteMutation.isPending) closePermanentDeleteDialog();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
+              <Trash2 className="h-5 w-5" />
+              Delete Permanently
+            </DialogTitle>
+            <DialogDescription>
+              This permanently deletes{' '}
+              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                {employeeToDelete?.full_name || employeeToDelete?.email}
+              </span>
+              &apos;s account, profile, and the records linked to it. <strong>This cannot be undone</strong> and
+              they cannot be restored afterwards. If you only need to hide them, leave them in Former Employees.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="confirm-permanent-delete">
+              Type <span className="font-mono font-semibold">DELETE</span> to confirm
+            </Label>
+            <Input
+              id="confirm-permanent-delete"
+                maxLength={120}
+              value={deleteConfirmText}
+              autoComplete="off"
+              onChange={(event) => setDeleteConfirmText(event.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={closePermanentDeleteDialog}
+              disabled={permanentDeleteMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (employeeToDelete) {
+                  permanentDeleteMutation.mutate(employeeToDelete);
+                }
+              }}
+              disabled={deleteConfirmText !== 'DELETE' || permanentDeleteMutation.isPending}
+            >
+              {permanentDeleteMutation.isPending ? 'Deleting...' : 'Delete Permanently'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1133,6 +1376,7 @@ export default function AdminDirectoryPage(): ReactNode {
               <Label htmlFor="edit-first-name">First Name</Label>
               <Input
                 id="edit-first-name"
+                maxLength={120}
                 value={editFirstName}
                 onChange={(event) => setEditFirstName(event.target.value)}
                 placeholder="Enter first name"
@@ -1142,6 +1386,7 @@ export default function AdminDirectoryPage(): ReactNode {
               <Label htmlFor="edit-last-name">Surname</Label>
               <Input
                 id="edit-last-name"
+                maxLength={120}
                 value={editLastName}
                 onChange={(event) => setEditLastName(event.target.value)}
                 placeholder="Enter surname"
@@ -1194,6 +1439,7 @@ export default function AdminDirectoryPage(): ReactNode {
                       <Label htmlFor="new-department-name">New department name</Label>
                       <Input
                         id="new-department-name"
+                maxLength={150}
                         value={newDepartmentName}
                         onChange={(event) => setNewDepartmentName(event.target.value)}
                         placeholder="Enter department name"
@@ -1279,6 +1525,7 @@ export default function AdminDirectoryPage(): ReactNode {
                       <Label htmlFor="new-division-name">New division name</Label>
                       <Input
                         id="new-division-name"
+                maxLength={150}
                         value={newDivisionName}
                         onChange={(event) => setNewDivisionName(event.target.value)}
                         placeholder="Enter division name"
@@ -1321,6 +1568,7 @@ export default function AdminDirectoryPage(): ReactNode {
               <Label htmlFor="edit-position">Position</Label>
               <Input
                 id="edit-position"
+                maxLength={150}
                 value={editPosition}
                 onChange={(e) => setEditPosition(e.target.value)}
                 placeholder="Enter position title"
