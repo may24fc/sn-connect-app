@@ -1223,8 +1223,9 @@ export default function AdminDirectoryPage(): ReactNode {
               <span className="font-semibold text-zinc-900 dark:text-zinc-100">
                 {employeeToDelete?.full_name || employeeToDelete?.email}
               </span>
-              &apos;s account, profile, and the records linked to it. <strong>This cannot be undone</strong> and
-              they cannot be restored afterwards. If you only need to hide them, leave them in Former Employees.
+              &apos;s login and personal data (contact, bank and payroll details, documents, self-evaluations,
+              access). Shared work such as tasks, tickets, reports, invoices and payments stays, still showing
+              their name. <strong>This cannot be undone</strong> and they cannot be restored afterwards.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
