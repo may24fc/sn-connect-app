@@ -232,6 +232,14 @@ Use this map to jump from an optimization entry to the implementation area it af
 
 ## Audited Optimization Opportunities
 
+### Restore local Supabase availability before auth reliability testing
+
+- **Status:** Implemented — 2026-10-06
+- **Problem/evidence:** Browser Auth requests to the configured local API at `http://127.0.0.1:55321` fail with `ECONNREFUSED`, which Supabase surfaces as `AuthRetryableFetchError`. The port has no listening process, and `pnpm supabase:status` reports that Docker Desktop's Linux engine pipe is unavailable.
+- **Resolution:** Start Docker Desktop, wait for its Linux engine to be ready, then use the explicit local command `pnpm supabase:start` and confirm the stack with `pnpm supabase:status` before restarting the portal or retrying sign-in.
+- **Relevant paths:** `apps/web/.env.local`, `supabase/config.toml`, and `docs/guides/supabase-workflows.md`.
+- **Validation:** `pnpm supabase:status` reports the local API URL, port `55321` is listening, and `GET /auth/v1/health` returns HTTP 200. Retry the failed authentication flow with the existing local configuration.
+
 ### Measure the current baseline first
 
 - **Status:** Audited — 2026-10-02
@@ -285,3 +293,4 @@ Use this map to jump from an optimization entry to the implementation area it af
 - 2026-10-02: Added a file-by-file code map and validation-file map for optimization review and implementation navigation.
 - 2026-10-02: Implemented server-preloaded signed-in auth state, concurrent employee/associate bootstrap reads, and a single post-login cache/navigation transition. Added regression coverage for the shared resolver and AuthProvider behavior; retained server/RLS authorization boundaries and deferred middleware/API verification changes.
 - 2026-10-02: Removed middleware/layout double verification with a sanitized upstream-only user snapshot and safe layout fallback. Added an exact-path middleware bypass for four independently authenticated dashboard APIs, plus 401 boundary tests, spoofed-header coverage, cookie-preservation coverage, structured timing events, and a middleware `Server-Timing` metric. Wider API rollout awaits module-level security tests and production p50/p95 data.
+- 2026-10-06: Restored the local Auth service after a connection refusal caused by Docker Desktop's unavailable Linux engine. Started Docker Desktop and confirmed the configured API endpoint with Supabase status, port-listener, and Auth health checks; no source behavior changed.
