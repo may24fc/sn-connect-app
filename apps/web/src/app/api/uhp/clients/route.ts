@@ -113,6 +113,7 @@ export async function POST(request: NextRequest) {
       status: input.status,
       client_type: input.clientType ?? null,
       interest_state: input.interestState,
+      replied: input.replied,
       lead_owner: input.leadOwner ?? null,
       source_name: input.sourceName ?? null,
       email: input.email ?? null,

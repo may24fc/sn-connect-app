@@ -8,8 +8,9 @@ import {
 } from '@/lib/uhp';
 import { z } from 'zod';
 
-const optionalText = z.string().trim().min(1).nullable().optional();
-const optionalUrl = z.string().trim().url().nullable().optional();
+const optionalText = z.string().trim().min(1).max(300).nullable().optional();
+const optionalLongText = z.string().trim().min(1).max(5000).nullable().optional();
+const optionalUrl = z.string().trim().url().max(2048).nullable().optional();
 const optionalDate = z.string().date().nullable().optional();
 
 export const uhpAccessGrantSchema = z.object({
@@ -22,13 +23,14 @@ export const uhpClientSchema = z.object({
   status: z.enum(UHP_CLIENT_STATUS_VALUES).default('Prospect'),
   clientType: z.enum(UHP_CLIENT_TYPE_VALUES).nullable().optional(),
   interestState: z.enum(['unknown', 'interested', 'declined']).default('unknown'),
+  replied: z.boolean().default(false),
   leadOwner: optionalText,
   sourceName: optionalText,
-  email: z.string().trim().email().nullable().optional(),
-  phone: optionalText,
-  alternatePhone: optionalText,
+  email: z.string().trim().email().max(320).nullable().optional(),
+  phone: z.string().trim().min(1).max(30).nullable().optional(),
+  alternatePhone: z.string().trim().min(1).max(30).nullable().optional(),
   instagramUrl: optionalUrl,
-  website: optionalText,
+  website: z.string().trim().min(1).max(2048).nullable().optional(),
   jobTitle: optionalText,
   officeAddress: optionalText,
   chatgptUrl: optionalUrl,
@@ -46,7 +48,7 @@ export const uhpClientActivitySchema = z.object({
   direction: z.enum(['inbound', 'outbound']).nullable().optional(),
   channel: optionalText,
   title: z.string().trim().min(1).max(300),
-  notes: optionalText,
+  notes: optionalLongText,
   status: z.enum(['To Do', 'Complete']).default('Complete'),
   occurredAt: z.string().datetime().optional(),
   followUpAt: z.string().datetime().nullable().optional(),
@@ -58,7 +60,7 @@ export const uhpClientActivitySchema = z.object({
 
 export const uhpClientNoteSchema = z.object({
   title: z.string().trim().min(1).max(300),
-  body: optionalText,
+  body: optionalLongText,
 });
 
 export const uhpReminderRunSchema = z.object({
@@ -70,7 +72,7 @@ export const uhpReminderRunSchema = z.object({
   status: z.enum(['pending', 'sent', 'failed', 'skipped']),
   n8nExecutionId: optionalText,
   telegramMessageId: optionalText,
-  errorMessage: optionalText,
+  errorMessage: optionalLongText,
   metadata: z.record(z.unknown()).default({}),
   sentAt: z.string().datetime().nullable().optional(),
 });
@@ -113,7 +115,7 @@ export const uhpOutreachDigestRunSchema = z.object({
   summary: z.record(z.unknown()),
   n8nExecutionId: optionalText,
   telegramMessageId: optionalText,
-  errorMessage: optionalText,
+  errorMessage: optionalLongText,
   sentAt: z.string().datetime().nullable().optional(),
 });
 
@@ -127,6 +129,6 @@ export const uhpVpDigestRunSchema = z.object({
   summary: z.record(z.unknown()),
   n8nExecutionId: optionalText,
   telegramMessageId: optionalText,
-  errorMessage: optionalText,
+  errorMessage: optionalLongText,
   sentAt: z.string().datetime().nullable().optional(),
 });

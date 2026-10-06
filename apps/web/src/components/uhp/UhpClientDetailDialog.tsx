@@ -413,7 +413,7 @@ export function UhpClientDetailDialog({
                 </div>
                 <div className="space-y-1">
                   <Label>Title</Label>
-                  <Input name="title" required />
+                  <Input name="title" maxLength={300} required />
                 </div>
                 <div className="space-y-1">
                   <Label>Direction</Label>
@@ -429,7 +429,7 @@ export function UhpClientDetailDialog({
                 </div>
                 <div className="space-y-1">
                   <Label>Channel</Label>
-                  <Input name="channel" placeholder="Telegram, phone, email..." />
+                  <Input name="channel" maxLength={300} placeholder="Telegram, phone, email..." />
                 </div>
                 <div className="space-y-1">
                   <Label>Outcome</Label>
@@ -463,7 +463,7 @@ export function UhpClientDetailDialog({
                 </div>
                 <div className="space-y-1 sm:col-span-2">
                   <Label>Notes</Label>
-                  <Textarea name="notes" />
+                  <Textarea name="notes" maxLength={5000} />
                 </div>
                 <div className="space-y-1 sm:col-span-2">
                   <Label htmlFor="uhp-activity-screenshot">Conversation screenshot</Label>
@@ -493,11 +493,11 @@ export function UhpClientDetailDialog({
               <form className="space-y-3 rounded-md border p-4" onSubmit={submitNote}>
                 <div className="space-y-1">
                   <Label>Title</Label>
-                  <Input name="title" required />
+                  <Input name="title" maxLength={300} required />
                 </div>
                 <div className="space-y-1">
                   <Label>Note</Label>
-                  <Textarea name="body" />
+                  <Textarea name="body" maxLength={5000} />
                 </div>
                 <Button type="submit" disabled={addNote.isPending}>
                   Save note

@@ -28,6 +28,7 @@ type Client = {
   client_type: string | null;
   status: string;
   interest_state: string;
+  replied: boolean;
   lead_owner: string | null;
   email: string | null;
   phone: string | null;
@@ -211,6 +212,7 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
       client_type: payload.clientType,
       status: 'Prospect',
       interest_state: 'unknown',
+      replied: false,
       lead_owner: payload.leadOwner ?? null,
       email: payload.email ?? null,
       phone: payload.phone ?? null,
@@ -258,6 +260,34 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
       });
     } finally {
       setSaving(false);
+    }
+  }
+
+  // Optimistic: a single-field toggle on the row being viewed. Not reloaded afterwards,
+  // since the list is ordered by updated_at and the row would jump while being clicked.
+  async function toggleReplied(clientId: string, replied: boolean) {
+    const setReplied = (value: boolean) =>
+      setClients((current) =>
+        current.map((client) => (client.id === clientId ? { ...client, replied: value } : client))
+      );
+    setReplied(replied);
+    try {
+      const response = await fetch(`/api/uhp/clients/${clientId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ replied }),
+      });
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error ?? 'Failed to update client');
+      }
+    } catch (error) {
+      setReplied(!replied);
+      addToast({
+        variant: 'error',
+        title: 'Could not update Replied',
+        description: error instanceof Error ? error.message : 'Please try again.',
+      });
     }
   }
 
@@ -378,7 +408,7 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
               </div>
               <div className="space-y-1">
                 <Label htmlFor="uhp-name">Name</Label>
-                <Input id="uhp-name" name="name" required />
+                <Input id="uhp-name" name="name" maxLength={300} required />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="uhp-type">Client type</Label>
@@ -397,21 +427,22 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
               </div>
               <div className="space-y-1">
                 <Label htmlFor="uhp-owner">Lead owner</Label>
-                <Input id="uhp-owner" name="leadOwner" />
+                <Input id="uhp-owner" name="leadOwner" maxLength={300} />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="uhp-email">Email</Label>
-                <Input id="uhp-email" name="email" type="email" />
+                <Input id="uhp-email" name="email" type="email" maxLength={320} />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="uhp-phone">Phone</Label>
-                <Input id="uhp-phone" name="phone" />
+                <Input id="uhp-phone" name="phone" maxLength={30} />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="uhp-outreach-channel">Outreach channel</Label>
                 <Input
                   id="uhp-outreach-channel"
                   name="outreachChannel"
+                  maxLength={300}
                   placeholder="Telegram, phone, email..."
                 />
               </div>
@@ -479,6 +510,7 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
               aria-label="Search clients"
               placeholder="Search name, email, or phone"
               value={search}
+            maxLength={200}
               onChange={(event) => setSearch(event.target.value)}
               className="max-w-md"
             />
@@ -495,20 +527,21 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Owner</th>
                   <th className="px-4 py-3">Contact</th>
+                  <th className="px-4 py-3">Replied</th>
                   <th className="px-4 py-3">Updated</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                    <td colSpan={7} className="p-8 text-center text-muted-foreground">
                       <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
                       Loading clients...
                     </td>
                   </tr>
                 ) : clients.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                    <td colSpan={7} className="p-8 text-center text-muted-foreground">
                       No UHP clients match this view.
                     </td>
                   </tr>
@@ -545,6 +578,20 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
                       <td className="px-4 py-3">{client.lead_owner ?? '—'}</td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {client.email ?? client.phone ?? '—'}
+                      </td>
+                      <td
+                        className="px-4 py-3"
+                        onClick={(event) => event.stopPropagation()}
+                        onKeyDown={(event) => event.stopPropagation()}
+                      >
+                        <Checkbox
+                          aria-label={`Replied: ${client.name}`}
+                          checked={client.replied}
+                          disabled={client.id.startsWith('optimistic-client-')}
+                          onCheckedChange={(checked) =>
+                            void toggleReplied(client.id, checked === true)
+                          }
+                        />
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {new Date(client.updated_at).toLocaleDateString()}

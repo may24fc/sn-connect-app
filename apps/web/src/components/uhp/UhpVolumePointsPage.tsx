@@ -289,6 +289,7 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
                 <Input
                   id="vp-member"
                   name="memberName"
+                  maxLength={300}
                   defaultValue={editingEntry?.member_name}
                   required
                 />
@@ -320,7 +321,7 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
               </div>
               <div className="space-y-1">
                 <Label htmlFor="vp-order">Order ID</Label>
-                <Input id="vp-order" name="orderId" defaultValue={editingEntry?.order_id ?? ''} />
+                <Input id="vp-order" name="orderId" maxLength={300} defaultValue={editingEntry?.order_id ?? ''} />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="vp-points">Volume points</Label>

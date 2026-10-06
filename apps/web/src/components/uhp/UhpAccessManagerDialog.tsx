@@ -112,6 +112,7 @@ export function UhpAccessManagerDialog({ open, onOpenChange, module, label }: Pr
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
               value={search}
+              maxLength={200}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search employees and associates"
               className="pl-9"
