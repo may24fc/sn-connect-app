@@ -247,6 +247,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               <textarea
                 ref={textareaRef}
                 value={message}
+                maxLength={4000}
                 onChange={(e) => setMessage(e.target.value)}
                 onPaste={handlePaste}
                 onKeyDown={handleKeyDown}

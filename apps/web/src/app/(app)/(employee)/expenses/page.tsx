@@ -389,6 +389,7 @@ export default function EmployeeExpensesPage() {
                   <Label htmlFor="request-vendor">Vendor / Service</Label>
                   <Input
                     id="request-vendor"
+                    maxLength={255}
                     value={requestVendor}
                     onChange={(e) => setRequestVendor(e.target.value)}
                     placeholder="e.g. OpenAI, Canva, Grab"
@@ -452,6 +453,7 @@ export default function EmployeeExpensesPage() {
                   <Label htmlFor="request-justification">Notes (optional)</Label>
                   <Textarea
                     id="request-justification"
+                    maxLength={2000}
                     value={requestJustification}
                     onChange={(e) => setRequestJustification(e.target.value)}
                     placeholder="What is this spend for?"
@@ -530,6 +532,7 @@ export default function EmployeeExpensesPage() {
                     <Label htmlFor="justification">Business Justification / Submitter Notes</Label>
                     <Textarea
                       id="justification"
+                      maxLength={2000}
                       placeholder="e.g. Monthly cloud subscription renewal, or client meeting dinner details."
                       value={justification}
                       onChange={(e) => setBusinessJustification(e.target.value)}

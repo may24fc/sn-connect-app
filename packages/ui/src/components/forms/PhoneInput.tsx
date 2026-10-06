@@ -186,6 +186,7 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           ref={ref}
           id={id}
           type="tel"
+          maxLength={30}
           value={displayValue}
           onChange={handleInputChange}
           onBlur={handleBlur}

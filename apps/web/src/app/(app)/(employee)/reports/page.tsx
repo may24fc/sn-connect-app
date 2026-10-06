@@ -299,6 +299,7 @@ export default function ReportsPage() {
             className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
             placeholder="Search campaigns or report notes"
             value={search}
+            maxLength={200}
             onChange={(event) => setSearch(event.target.value)}
           />
         </div>

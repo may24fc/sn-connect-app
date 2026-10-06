@@ -13,7 +13,7 @@ import { z } from 'zod';
 const approveOnboardingSchema = z.object({
   userId: z.string().uuid('Invalid user ID'),
   approved: z.boolean(),
-  notes: z.string().optional(),
+  notes: z.string().max(5000).optional(),
 });
 
 function isMissingOnboardingReviewColumnError(error: unknown): boolean {

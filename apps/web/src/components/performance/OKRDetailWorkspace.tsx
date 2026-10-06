@@ -788,6 +788,7 @@ export function OKRDetailWorkspace({
                 </Label>
                 <Input
                   id="objective-name"
+                        maxLength={300}
                   value={objectiveFormState.objective}
                   onChange={(event) =>
                     setObjectiveFormState((previous) => ({
@@ -807,6 +808,7 @@ export function OKRDetailWorkspace({
                 </Label>
                 <Textarea
                   id="objective-description"
+                        maxLength={3000}
                   value={objectiveFormState.description}
                   onChange={(event) =>
                     setObjectiveFormState((previous) => ({
@@ -990,6 +992,7 @@ export function OKRDetailWorkspace({
                 </Label>
                 <Input
                   id="target-name"
+                        maxLength={300}
                   placeholder={
                     formState.metricType === 'number'
                       ? 'e.g., Monthly VP points earned'
@@ -1012,6 +1015,7 @@ export function OKRDetailWorkspace({
                 </Label>
                 <Textarea
                   id="target-desc"
+                        maxLength={3000}
                   placeholder="Add context about how this target should be tracked or why it matters..."
                   value={formState.description}
                   onChange={(event) =>
@@ -1328,6 +1332,7 @@ export function OKRDetailWorkspace({
                       <div className="flex gap-2">
                         <Input
                           id="evidence-link"
+                        maxLength={5000}
                           value={evidenceLink}
                           onChange={(event) => setEvidenceLink(event.target.value)}
                           placeholder="https://example.com/supporting-proof"

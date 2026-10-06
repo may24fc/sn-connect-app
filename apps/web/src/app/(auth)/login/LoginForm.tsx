@@ -173,6 +173,7 @@ export default function LoginForm({ waitForClientAuth = false }: LoginFormProps)
             >
               <Input
                 id="email"
+              maxLength={320}
                 type="email"
                 placeholder="you@company.com"
                 value={email}

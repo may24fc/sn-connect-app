@@ -82,6 +82,7 @@ export function ReportSubmissionList({
           <Input
             placeholder="Search by name or department..."
             value={searchQuery}
+            maxLength={200}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
           />

@@ -2,23 +2,24 @@ import { z } from 'zod';
 
 const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 const nonEmptyTrimmedStringSchema = z.string().trim().min(1);
-const stringListSchema = z.array(nonEmptyTrimmedStringSchema).max(20);
+const dailyLogListItemSchema = nonEmptyTrimmedStringSchema.max(1000);
+const stringListSchema = z.array(dailyLogListItemSchema).max(20);
 
 export const dailyLogProjectEntrySchema = z.object({
   id: z.string().uuid().optional(),
-  projectFocus: nonEmptyTrimmedStringSchema,
-  challenge: nonEmptyTrimmedStringSchema,
-  actionTaken: nonEmptyTrimmedStringSchema,
-  outcome: nonEmptyTrimmedStringSchema,
+  projectFocus: nonEmptyTrimmedStringSchema.max(500),
+  challenge: nonEmptyTrimmedStringSchema.max(3000),
+  actionTaken: nonEmptyTrimmedStringSchema.max(3000),
+  outcome: nonEmptyTrimmedStringSchema.max(3000),
 });
 
 export const dailyLogAttachmentSchema = z.object({
   id: z.string().uuid(),
-  fileName: nonEmptyTrimmedStringSchema,
-  filePath: nonEmptyTrimmedStringSchema,
+  fileName: nonEmptyTrimmedStringSchema.max(255),
+  filePath: nonEmptyTrimmedStringSchema.max(1000),
   fileSize: z.coerce.number().int().min(0),
-  mimeType: nonEmptyTrimmedStringSchema,
-  signedUrl: z.string().url().nullable().optional(),
+  mimeType: nonEmptyTrimmedStringSchema.max(100),
+  signedUrl: z.string().url().max(2048).nullable().optional(),
 });
 
 export const dailyLogAttachmentPersistedSchema = dailyLogAttachmentSchema.omit({ signedUrl: true });
@@ -26,9 +27,9 @@ export const dailyLogAttachmentPersistedSchema = dailyLogAttachmentSchema.omit({
 export const internshipStatusSchema = z.enum(['active', 'completed', 'terminated', 'converted']);
 
 export const internshipFiltersSchema = z.object({
-  search: z.string().trim().min(1).optional(),
+  search: z.string().trim().min(1).max(200).optional(),
   status: internshipStatusSchema.optional(),
-  school: z.string().trim().min(1).optional(),
+  school: z.string().trim().min(1).max(200).optional(),
   supervisorId: z.string().uuid().optional(),
   employeeId: z.string().uuid().optional(),
   page: z.coerce.number().int().min(1).default(1),
@@ -43,9 +44,9 @@ export const createInternshipSchema = z.object({
   completedHours: z.coerce.number().min(0).max(20000).default(0),
   status: internshipStatusSchema.default('active'),
   supervisorId: z.string().uuid().nullable().optional(),
-  department: z.string().trim().min(1),
-  school: z.string().trim().min(1).nullable().optional(),
-  program: z.string().trim().min(1).nullable().optional(),
+  department: z.string().trim().min(1).max(150),
+  school: z.string().trim().min(1).max(200).nullable().optional(),
+  program: z.string().trim().min(1).max(200).nullable().optional(),
 });
 
 export const updateInternshipSchema = createInternshipSchema
@@ -72,7 +73,7 @@ export const createInternDailyLogSchema = z.object({
   projectEntries: z.array(dailyLogProjectEntrySchema).min(1).max(20),
   blockers: stringListSchema.optional(),
   nextSteps: stringListSchema.optional(),
-  attachmentLinks: z.array(z.string().trim().url()).max(20).optional(),
+  attachmentLinks: z.array(z.string().trim().url().max(2048)).max(20).optional(),
   retainedAttachments: z.array(dailyLogAttachmentPersistedSchema).optional(),
   status: internDailyLogStatusSchema.default('submitted'),
 });
@@ -85,7 +86,7 @@ export const updateInternDraftLogSchema = z.object({
   projectEntries: z.array(dailyLogProjectEntrySchema).min(1).max(20).optional(),
   blockers: stringListSchema.optional(),
   nextSteps: stringListSchema.optional(),
-  attachmentLinks: z.array(z.string().trim().url()).max(20).optional(),
+  attachmentLinks: z.array(z.string().trim().url().max(2048)).max(20).optional(),
   retainedAttachments: z.array(dailyLogAttachmentPersistedSchema).optional(),
   status: internDailyLogStatusSchema.optional(),
 });
@@ -93,7 +94,7 @@ export const updateInternDraftLogSchema = z.object({
 export const updateInternDailyLogSchema = z
   .object({
     logId: z.string().uuid(),
-    supervisorNotes: z.string().trim().nullable().optional(),
+    supervisorNotes: z.string().trim().max(5000).nullable().optional(),
     isApproved: z.boolean().optional(),
   })
   .refine((payload) => payload.supervisorNotes !== undefined || payload.isApproved !== undefined, {
@@ -114,9 +115,9 @@ export type UpdateInternDailyLogInput = z.infer<typeof updateInternDailyLogSchem
 export const initializeInternshipSchema = z.object({
   startDate: isoDateSchema,
   endDate: isoDateSchema,
-  department: z.string().trim().min(1, 'Department is required'),
-  school: z.string().trim().min(1, 'School is required'),
-  program: z.string().trim().min(1, 'Program is required'),
+  department: z.string().trim().min(1, 'Department is required').max(150),
+  school: z.string().trim().min(1, 'School is required').max(200),
+  program: z.string().trim().min(1, 'Program is required').max(200),
   requiredHours: z.coerce.number().int().min(1).max(20000).default(480),
 });
 

@@ -190,6 +190,7 @@ export function ManageContributorsDialog({
             <div className="flex gap-2">
               <Input
                 value={search}
+              maxLength={200}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search the directory by name..."
                 className="flex-1"

@@ -205,6 +205,7 @@ export const BankSelector = React.forwardRef<HTMLDivElement, BankSelectorProps>(
                   ref={inputRef}
                   type="text"
                   value={searchTerm}
+                  maxLength={200}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={handleSearchKeyDown}
                   placeholder="Search banks..."
@@ -292,6 +293,7 @@ export const BankSelector = React.forwardRef<HTMLDivElement, BankSelectorProps>(
           <input
             type="text"
             value={customBankName}
+            maxLength={150}
             onChange={(e) => onCustomBankNameChange?.(e.target.value)}
             placeholder="Enter bank name"
             className={cn(

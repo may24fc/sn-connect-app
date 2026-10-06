@@ -208,9 +208,9 @@ export default function ResourcesPage() {
               </DialogHeader>
               <div className="space-y-3 mt-2">
                 <Label className="text-xs">Name</Label>
-                <Input id="folder-name" value={folderName} onChange={(e) => setFolderName(e.target.value)} />
+                <Input id="folder-name" value={folderName} maxLength={120} onChange={(e) => setFolderName(e.target.value)} />
                 <Label className="text-xs">Description</Label>
-                <Input id="folder-desc" value={folderDesc} onChange={(e) => setFolderDesc(e.target.value)} />
+                <Input id="folder-desc" value={folderDesc} maxLength={500} onChange={(e) => setFolderDesc(e.target.value)} />
               </div>
               <DialogFooter>
                 <DialogClose asChild>
@@ -310,6 +310,7 @@ export default function ResourcesPage() {
           className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
           placeholder="Search resources"
           value={search}
+          maxLength={200}
           onChange={(event) => {
             setSearch(event.target.value);
             setResourcePage(1);

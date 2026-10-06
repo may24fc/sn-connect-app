@@ -316,7 +316,7 @@ export function MonthlyCallFeedbackForm() {
     return (
       <div className="space-y-2">
         {renderRequiredLabel(label, name)}
-        <Textarea id={name} rows={rows} {...register(name)} />
+        <Textarea id={name} rows={rows} maxLength={8000} {...register(name)} />
         {fieldError ? <p className="text-sm text-destructive">{fieldError.message}</p> : null}
       </div>
     );

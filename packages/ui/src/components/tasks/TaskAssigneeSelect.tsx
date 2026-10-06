@@ -100,6 +100,7 @@ export function TaskAssigneeSelect({
               type="text"
               placeholder="Search by name or email..."
               value={searchQuery}
+              maxLength={200}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
             />

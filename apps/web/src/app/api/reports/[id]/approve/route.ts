@@ -9,7 +9,7 @@ import { z } from 'zod';
 
 const approveBodySchema = z.object({
   action: z.enum(['approved', 'rejected']).default('approved'),
-  notes: z.string().optional().nullable(),
+  notes: z.string().max(5000).optional().nullable(),
 });
 
 /**

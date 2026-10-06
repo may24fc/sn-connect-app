@@ -171,6 +171,7 @@ export function BulkRecordActionDialog({
             <>
               <Input
                 value={search}
+              maxLength={200}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Filter by name..."
                 disabled={isRunning}

@@ -8,7 +8,7 @@ const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
   isRead: z.enum(['true', 'false', 'all']).default('all'),
-  type: z.string().optional(),
+  type: z.string().max(100).optional(),
 });
 
 const markReadSchema = z.object({

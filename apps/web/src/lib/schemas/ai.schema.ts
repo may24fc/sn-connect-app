@@ -11,7 +11,7 @@ export const chatMessageSchema = z.object({
   /** Single message string (legacy / simple mode) */
   message: z.string().min(1, 'Message is required').max(4000, 'Message too long').optional(),
   /** Full conversation history (preferred) */
-  messages: z.array(chatHistoryMessageSchema).min(1).optional(),
+  messages: z.array(chatHistoryMessageSchema).min(1).max(100).optional(),
   conversationId: z.string().uuid().optional(),
   includeSourceCitations: z.boolean().optional().default(true),
 }).refine(
@@ -23,10 +23,10 @@ export const createKnowledgeSourceSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255),
   description: z.string().max(1000).optional(),
   sourceType: z.enum(['pdf', 'docx', 'txt', 'url', 'manual']),
-  content: z.string().min(1, 'Content is required').optional(),
-  filePath: z.string().optional(),
-  url: z.string().url().optional(),
-  tags: z.array(z.string()).optional().default([]),
+  content: z.string().min(1, 'Content is required').max(200000).optional(),
+  filePath: z.string().max(1000).optional(),
+  url: z.string().url().max(2048).optional(),
+  tags: z.array(z.string().max(50)).max(50).optional().default([]),
   isActive: z.boolean().optional().default(true),
 });
 
@@ -34,14 +34,14 @@ export const updateKnowledgeSourceSchema = z.object({
   title: z.string().min(1).max(255).optional(),
   description: z.string().max(1000).optional(),
   sourceType: z.enum(['pdf', 'docx', 'txt', 'url', 'manual']).optional(),
-  content: z.string().min(1).optional(),
-  tags: z.array(z.string()).optional(),
+  content: z.string().min(1).max(200000).optional(),
+  tags: z.array(z.string().max(50)).max(50).optional(),
   isActive: z.boolean().optional(),
   accessLevel: z.enum(['all', 'admin']).optional(),
 });
 
 export const knowledgeSourceFiltersSchema = z.object({
-  search: z.string().optional(),
+  search: z.string().max(200).optional(),
   sourceType: z.enum(['pdf', 'docx', 'txt', 'url', 'manual']).optional(),
   isActive: z
     .string()

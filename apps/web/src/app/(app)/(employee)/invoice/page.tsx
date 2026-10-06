@@ -907,6 +907,7 @@ export default function InvoicePage() {
               </label>
               <Textarea
                 id="invoice-create-notes"
+                maxLength={5000}
                 value={createNotes}
                 onChange={(event) => setCreateNotes(event.target.value)}
                 placeholder="Add optional notes for this invoice"

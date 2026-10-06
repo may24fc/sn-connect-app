@@ -657,6 +657,7 @@ export function CrmPageContent({
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
             <Input
               value={sfoSearch}
+                    maxLength={200}
               onChange={(event) => setSfoSearch(event.target.value)}
               placeholder="Search customer, invoice, source, remarks"
               className="md:max-w-md"
@@ -687,6 +688,7 @@ export function CrmPageContent({
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
             <Input
               value={sfoSearch}
+                        maxLength={200}
               onChange={(event) => setSfoSearch(event.target.value)}
               placeholder="Search customer, invoice, source, remarks"
               className="md:max-w-md"
@@ -717,6 +719,7 @@ export function CrmPageContent({
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
             <Input
               value={techSearch}
+                        maxLength={200}
               onChange={(event) => setTechSearch(event.target.value)}
               placeholder="Search company, contact, summary"
               className="md:max-w-md"
@@ -1032,6 +1035,7 @@ function EditSfoLeadDialog({
             <Label htmlFor="edit-sfo-customer-name">Customer Name</Label>
             <Input
               id="edit-sfo-customer-name"
+                  maxLength={300}
               value={form.customerName}
               onChange={(event) => patchField('customerName', event.target.value)}
               required
@@ -1043,6 +1047,7 @@ function EditSfoLeadDialog({
               <Label htmlFor="edit-sfo-social-link">Facebook/Social Link</Label>
               <Input
                 id="edit-sfo-social-link"
+                  maxLength={2048}
                 value={form.socialLink}
                 onChange={(event) => patchField('socialLink', event.target.value)}
               />
@@ -1052,6 +1057,7 @@ function EditSfoLeadDialog({
               <Label htmlFor="edit-sfo-message-source">Message/Comment Source</Label>
               <Input
                 id="edit-sfo-message-source"
+                  maxLength={300}
                 value={form.messageSource}
                 onChange={(event) => patchField('messageSource', event.target.value)}
               />
@@ -1099,6 +1105,7 @@ function EditSfoLeadDialog({
               <Label htmlFor="edit-sfo-products">Products (comma-separated)</Label>
               <Input
                 id="edit-sfo-products"
+                  maxLength={20000}
                 value={form.productsInput}
                 onChange={(event) => patchField('productsInput', event.target.value)}
               />
@@ -1171,6 +1178,7 @@ function EditSfoLeadDialog({
               <Label htmlFor="edit-sfo-invoice-number">Invoice Number</Label>
               <Input
                 id="edit-sfo-invoice-number"
+                  maxLength={300}
                 value={form.invoiceNumber}
                 onChange={(event) => patchField('invoiceNumber', event.target.value)}
               />
@@ -1180,6 +1188,7 @@ function EditSfoLeadDialog({
               <Label htmlFor="edit-sfo-contact-number">Contact Number</Label>
               <Input
                 id="edit-sfo-contact-number"
+                  maxLength={30}
                 value={form.contactNumber}
                 onChange={(event) => patchField('contactNumber', event.target.value)}
               />
@@ -1190,6 +1199,7 @@ function EditSfoLeadDialog({
             <Label htmlFor="edit-sfo-reason">Reason for Reaching Out</Label>
             <Input
               id="edit-sfo-reason"
+                  maxLength={300}
               value={form.reasonForReachingOut}
               onChange={(event) => patchField('reasonForReachingOut', event.target.value)}
             />
@@ -1199,6 +1209,7 @@ function EditSfoLeadDialog({
             <Label htmlFor="edit-sfo-action-plan">Action Plan</Label>
             <Textarea
               id="edit-sfo-action-plan"
+                  maxLength={5000}
               value={form.actionPlan}
               onChange={(event) => patchField('actionPlan', event.target.value)}
               rows={3}
@@ -1209,6 +1220,7 @@ function EditSfoLeadDialog({
             <Label htmlFor="edit-sfo-action-taken">Action Taken</Label>
             <Textarea
               id="edit-sfo-action-taken"
+                  maxLength={5000}
               value={form.actionTaken}
               onChange={(event) => patchField('actionTaken', event.target.value)}
               rows={2}
@@ -1219,6 +1231,7 @@ function EditSfoLeadDialog({
             <Label htmlFor="edit-sfo-address">Address</Label>
             <Input
               id="edit-sfo-address"
+                  maxLength={500}
               value={form.address}
               onChange={(event) => patchField('address', event.target.value)}
             />
@@ -1228,6 +1241,7 @@ function EditSfoLeadDialog({
             <Label htmlFor="edit-sfo-remarks">Other Remarks</Label>
             <Textarea
               id="edit-sfo-remarks"
+                  maxLength={5000}
               value={form.remarks}
               onChange={(event) => patchField('remarks', event.target.value)}
               rows={3}
@@ -1313,6 +1327,7 @@ function EditTechInquiryDialog({
               <Label htmlFor="edit-tech-company-name">Company Name</Label>
               <Input
                 id="edit-tech-company-name"
+                  maxLength={300}
                 value={form.companyName}
                 onChange={(event) => patchField('companyName', event.target.value)}
                 required
@@ -1323,6 +1338,7 @@ function EditTechInquiryDialog({
               <Label htmlFor="edit-tech-contact-person">Contact Person</Label>
               <Input
                 id="edit-tech-contact-person"
+                  maxLength={300}
                 value={form.contactPerson}
                 onChange={(event) => patchField('contactPerson', event.target.value)}
                 required
@@ -1334,6 +1350,7 @@ function EditTechInquiryDialog({
             <Label htmlFor="edit-tech-company-background">Company Background</Label>
             <Textarea
               id="edit-tech-company-background"
+                  maxLength={5000}
               value={form.companyBackground}
               onChange={(event) => patchField('companyBackground', event.target.value)}
               rows={3}
@@ -1344,6 +1361,7 @@ function EditTechInquiryDialog({
             <Label htmlFor="edit-tech-requirements-summary">Requirements Summary</Label>
             <Textarea
               id="edit-tech-requirements-summary"
+                  maxLength={5000}
               value={form.requirementsSummary}
               onChange={(event) => patchField('requirementsSummary', event.target.value)}
               rows={4}
@@ -1355,6 +1373,7 @@ function EditTechInquiryDialog({
             <Label htmlFor="edit-tech-requirements-checklist">Requirements Checklist (comma-separated)</Label>
             <Input
               id="edit-tech-requirements-checklist"
+                  maxLength={50000}
               value={form.requirementsChecklistInput}
               onChange={(event) => patchField('requirementsChecklistInput', event.target.value)}
             />
@@ -1391,6 +1410,7 @@ function EditTechInquiryDialog({
               <Label htmlFor="edit-tech-assigned-rep">Assigned Rep</Label>
               <Input
                 id="edit-tech-assigned-rep"
+                  maxLength={300}
                 value={form.assignedRep}
                 onChange={(event) => patchField('assignedRep', event.target.value)}
               />
@@ -1401,6 +1421,7 @@ function EditTechInquiryDialog({
             <Label htmlFor="edit-tech-long-form-remarks">Long-form Remarks</Label>
             <Textarea
               id="edit-tech-long-form-remarks"
+                  maxLength={5000}
               value={form.longFormRemarks}
               onChange={(event) => patchField('longFormRemarks', event.target.value)}
               rows={5}

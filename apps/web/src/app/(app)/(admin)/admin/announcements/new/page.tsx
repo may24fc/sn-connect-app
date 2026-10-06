@@ -272,6 +272,7 @@ export default function NewAnnouncementPage() {
               <Input
                 placeholder="Announcement title..."
                 value={title}
+                maxLength={200}
                 onChange={(e) => setTitle(e.target.value)}
                 className="text-2xl font-heading font-bold border-0 bg-transparent px-0 h-auto py-2 focus-visible:ring-0 placeholder:text-zinc-300 dark:placeholder:text-zinc-600 tracking-tight"
               />
@@ -309,6 +310,7 @@ export default function NewAnnouncementPage() {
               <Textarea
                 ref={editorRef}
                 value={content}
+                maxLength={10000}
                 onChange={(e) => setContent(e.target.value)}
                 onFocus={handleEditorFocus}
                 onBlur={handleEditorBlur}

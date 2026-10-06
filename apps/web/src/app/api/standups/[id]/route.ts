@@ -14,8 +14,8 @@ const updateStandupSchema = z.object({
     .optional(),
   duration_seconds: z.number().int().positive().optional(),
   attendees: z.array(z.string().uuid()).optional(),
-  transcript: z.string().optional(),
-  summary: z.string().optional(),
+  transcript: z.string().max(100000).optional(),
+  summary: z.string().max(20000).optional(),
 });
 
 export async function GET(_: NextRequest, context: RouteContext): Promise<NextResponse> {

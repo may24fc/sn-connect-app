@@ -261,6 +261,7 @@ export function CRMInteractionPanel({
               <Label htmlFor="sfo-customer-name">Customer Name</Label>
               <Input
                 id="sfo-customer-name"
+                maxLength={300}
                 value={sfoForm.customerName}
                 onChange={(event) => patchSfoForm('customerName', event.target.value)}
                 required
@@ -272,6 +273,7 @@ export function CRMInteractionPanel({
                 <Label htmlFor="sfo-social-link">Facebook/Social Link</Label>
                 <Input
                   id="sfo-social-link"
+                  maxLength={2048}
                   value={sfoForm.socialLink}
                   onChange={(event) => patchSfoForm('socialLink', event.target.value)}
                 />
@@ -281,6 +283,7 @@ export function CRMInteractionPanel({
                 <Label htmlFor="sfo-message-source">Message/Comment Source</Label>
                 <Input
                   id="sfo-message-source"
+                  maxLength={300}
                   value={sfoForm.messageSource}
                   onChange={(event) => patchSfoForm('messageSource', event.target.value)}
                 />
@@ -292,6 +295,7 @@ export function CRMInteractionPanel({
                 <Label htmlFor="sfo-platform">Platform</Label>
                 <Input
                   id="sfo-platform"
+                maxLength={300}
                   value={isGoogleAds ? 'Google Ads' : 'Meta'}
                   readOnly
                   disabled
@@ -325,6 +329,7 @@ export function CRMInteractionPanel({
                 <Label htmlFor="sfo-products">Products (comma-separated)</Label>
                 <Input
                   id="sfo-products"
+                  maxLength={20000}
                   value={sfoForm.productsInput}
                   onChange={(event) => patchSfoForm('productsInput', event.target.value)}
                   placeholder="Product A, Product B"
@@ -411,6 +416,7 @@ export function CRMInteractionPanel({
                 <Label htmlFor="sfo-invoice-number">Invoice Number</Label>
                 <Input
                   id="sfo-invoice-number"
+                  maxLength={300}
                   value={sfoForm.invoiceNumber}
                   onChange={(event) => patchSfoForm('invoiceNumber', event.target.value)}
                 />
@@ -420,6 +426,7 @@ export function CRMInteractionPanel({
                 <Label htmlFor="sfo-contact-number">Contact Number</Label>
                 <Input
                   id="sfo-contact-number"
+                  maxLength={30}
                   value={sfoForm.contactNumber}
                   onChange={(event) => patchSfoForm('contactNumber', event.target.value)}
                 />
@@ -430,6 +437,7 @@ export function CRMInteractionPanel({
               <Label htmlFor="sfo-reason">Reason for Reaching Out</Label>
               <Input
                 id="sfo-reason"
+                maxLength={300}
                 value={sfoForm.reasonForReachingOut}
                 onChange={(event) => patchSfoForm('reasonForReachingOut', event.target.value)}
               />
@@ -439,6 +447,7 @@ export function CRMInteractionPanel({
               <Label htmlFor="sfo-action-plan">Action Plan</Label>
               <Textarea
                 id="sfo-action-plan"
+                maxLength={5000}
                 value={sfoForm.actionPlan}
                 onChange={(event) => patchSfoForm('actionPlan', event.target.value)}
                 rows={3}
@@ -449,6 +458,7 @@ export function CRMInteractionPanel({
               <Label htmlFor="sfo-action-taken">Action Taken</Label>
               <Textarea
                 id="sfo-action-taken"
+                maxLength={5000}
                 value={sfoForm.actionTaken}
                 onChange={(event) => patchSfoForm('actionTaken', event.target.value)}
                 rows={2}
@@ -459,6 +469,7 @@ export function CRMInteractionPanel({
               <Label htmlFor="sfo-address">Address</Label>
               <Input
                 id="sfo-address"
+                maxLength={500}
                 value={sfoForm.address}
                 onChange={(event) => patchSfoForm('address', event.target.value)}
               />
@@ -468,6 +479,7 @@ export function CRMInteractionPanel({
               <Label htmlFor="sfo-remarks">Other Remarks</Label>
               <Textarea
                 id="sfo-remarks"
+                maxLength={5000}
                 value={sfoForm.remarks}
                 onChange={(event) => patchSfoForm('remarks', event.target.value)}
                 rows={3}
@@ -521,6 +533,7 @@ export function CRMInteractionPanel({
               <Label htmlFor="tech-company-name">Company Name</Label>
               <Input
                 id="tech-company-name"
+                maxLength={300}
                 value={techForm.companyName}
                 onChange={(event) => patchTechForm('companyName', event.target.value)}
                 required
@@ -531,6 +544,7 @@ export function CRMInteractionPanel({
               <Label htmlFor="tech-contact-person">Contact Person</Label>
               <Input
                 id="tech-contact-person"
+                maxLength={300}
                 value={techForm.contactPerson}
                 onChange={(event) => patchTechForm('contactPerson', event.target.value)}
                 required
@@ -542,6 +556,7 @@ export function CRMInteractionPanel({
             <Label htmlFor="tech-company-background">Company Background</Label>
             <Textarea
               id="tech-company-background"
+              maxLength={5000}
               value={techForm.companyBackground}
               onChange={(event) => patchTechForm('companyBackground', event.target.value)}
               rows={3}
@@ -552,6 +567,7 @@ export function CRMInteractionPanel({
             <Label htmlFor="tech-requirements-summary">Requirements Summary</Label>
             <Textarea
               id="tech-requirements-summary"
+              maxLength={5000}
               value={techForm.requirementsSummary}
               onChange={(event) => patchTechForm('requirementsSummary', event.target.value)}
               rows={4}
@@ -563,6 +579,7 @@ export function CRMInteractionPanel({
             <Label htmlFor="tech-requirements-checklist">Requirements Checklist (comma-separated)</Label>
             <Input
               id="tech-requirements-checklist"
+              maxLength={50000}
               value={techForm.requirementsChecklistInput}
               onChange={(event) => patchTechForm('requirementsChecklistInput', event.target.value)}
               placeholder="Integration, Dashboard, Automation"
@@ -615,6 +632,7 @@ export function CRMInteractionPanel({
               <Label htmlFor="tech-assigned-rep">Assigned Rep</Label>
               <Input
                 id="tech-assigned-rep"
+                maxLength={300}
                 value={techForm.assignedRep}
                 onChange={(event) => patchTechForm('assignedRep', event.target.value)}
                 placeholder="Rep name"
@@ -626,6 +644,7 @@ export function CRMInteractionPanel({
             <Label htmlFor="tech-long-form-remarks">Long-form Remarks</Label>
             <Textarea
               id="tech-long-form-remarks"
+              maxLength={5000}
               value={techForm.longFormRemarks}
               onChange={(event) => patchTechForm('longFormRemarks', event.target.value)}
               rows={5}

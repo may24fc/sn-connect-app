@@ -636,6 +636,7 @@ export default function PerformancePage(): ReactNode {
                 </Label>
                 <Input
                   id="objective"
+                maxLength={300}
                   placeholder="e.g., Increase monthly VP points to 2,000"
                   value={formState.objective}
                   onChange={(e) => setFormState({ ...formState, objective: e.target.value })}
@@ -653,6 +654,7 @@ export default function PerformancePage(): ReactNode {
                 </Label>
                 <Textarea
                   id="description"
+                maxLength={3000}
                   placeholder="Add context so your team understands the purpose behind this goal..."
                   value={formState.description}
                   onChange={(e) => setFormState({ ...formState, description: e.target.value })}

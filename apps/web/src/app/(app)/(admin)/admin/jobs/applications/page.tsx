@@ -531,6 +531,7 @@ export default function ApplicationsPage(): ReactNode {
             <Input
               placeholder="Search by name or email..."
               value={search}
+              maxLength={200}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
             />
@@ -1073,6 +1074,7 @@ export default function ApplicationsPage(): ReactNode {
                   <SlidePanelSection label="Internal Notes">
                     <Textarea
                       value={notes}
+                      maxLength={5000}
                       onChange={(e) => setNotes(e.target.value)}
                       rows={3}
                       placeholder="Add notes about this candidate..."

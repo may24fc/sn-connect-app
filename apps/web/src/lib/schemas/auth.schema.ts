@@ -1,6 +1,10 @@
 import { z } from 'zod';
 
-const emailSchema = z.string().trim().email('Enter a valid email address');
+const emailSchema = z
+  .string()
+  .trim()
+  .email('Enter a valid email address')
+  .max(320, 'Email address must be 320 characters or fewer');
 const passwordSchema = z
   .string()
   .min(8, 'Password must be at least 8 characters')

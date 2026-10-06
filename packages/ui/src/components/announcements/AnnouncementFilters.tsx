@@ -63,6 +63,7 @@ export function AnnouncementFilters({
         <Input
           placeholder="Search announcements"
           value={value.search}
+          maxLength={200}
           onChange={(event) => onChange({ ...value, search: event.target.value })}
           className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
         />

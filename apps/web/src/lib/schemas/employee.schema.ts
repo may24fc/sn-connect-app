@@ -5,19 +5,20 @@ import { z } from 'zod';
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 
 export const employeeBaseSchema = z.object({
-  firstName: z.string().min(1, 'First name is required'),
-  middleName: z.string().optional().nullable(),
-  lastName: z.string().min(1, 'Last name is required'),
+  firstName: z.string().min(1, 'First name is required').max(120),
+  middleName: z.string().max(120).optional().nullable(),
+  lastName: z.string().min(1, 'Last name is required').max(120),
   birthday: dateSchema.optional().nullable(),
   dateHired: dateSchema,
   employmentType: z.nativeEnum(EmploymentType),
   workArrangement: z.nativeEnum(WorkArrangement),
   status: z.nativeEnum(UserStatus).optional(),
-  position: z.string().min(1, 'Position is required'),
-  department: z.string().min(1, 'Department is required'),
+  position: z.string().min(1, 'Position is required').max(150),
+  department: z.string().min(1, 'Department is required').max(150),
   probationEndDate: dateSchema.optional().nullable(),
   phone: z
     .string()
+    .max(30)
     .optional()
     .nullable()
     .refine(
@@ -27,15 +28,16 @@ export const employeeBaseSchema = z.object({
       },
       { message: 'Invalid phone number. Include country code (e.g., +63)' }
     ),
-  personalEmail: z.string().email().optional().nullable(),
-  companyEmail: z.string().email().optional().nullable(),
-  address: z.string().optional().nullable(),
-  city: z.string().optional().nullable(),
-  province: z.string().optional().nullable(),
-  postalCode: z.string().optional().nullable(),
-  emergencyContactName: z.string().optional().nullable(),
+  personalEmail: z.string().email().max(320).optional().nullable(),
+  companyEmail: z.string().email().max(320).optional().nullable(),
+  address: z.string().max(500).optional().nullable(),
+  city: z.string().max(100).optional().nullable(),
+  province: z.string().max(100).optional().nullable(),
+  postalCode: z.string().max(20).optional().nullable(),
+  emergencyContactName: z.string().max(120).optional().nullable(),
   emergencyContactNumber: z
     .string()
+    .max(30)
     .optional()
     .nullable()
     .refine(

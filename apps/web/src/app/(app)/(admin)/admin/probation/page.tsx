@@ -550,6 +550,7 @@ export default function ProbationPage(): ReactNode {
                   <Input
                     placeholder="Search employees..."
                     value={searchQuery}
+              maxLength={200}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
                   />
@@ -946,6 +947,7 @@ export default function ProbationPage(): ReactNode {
                                 : 'submitted objectives'
                             }, provide specific feedback on their progress, areas of strength, and areas for improvement...`}
                             value={feedback}
+                            maxLength={3000}
                             onChange={(e) => setFeedback(e.target.value)}
                             className="min-h-[150px]"
                           />

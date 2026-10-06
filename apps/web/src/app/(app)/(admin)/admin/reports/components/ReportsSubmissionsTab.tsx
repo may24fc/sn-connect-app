@@ -315,6 +315,7 @@ export function ReportsSubmissionsTab({
           <Input
             placeholder="Search employee, campaign, channel, audience, or notes"
             value={search}
+                maxLength={200}
             onChange={(event) => setSearch(event.target.value)}
             className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
           />

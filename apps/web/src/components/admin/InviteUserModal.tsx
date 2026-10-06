@@ -265,6 +265,7 @@ export function InviteUserModal({
               >
                 <Input
                   id="email"
+                maxLength={320}
                   type="email"
                   placeholder="employee@example.com"
                   {...register('email')}
@@ -285,6 +286,7 @@ export function InviteUserModal({
                 >
                   <Input
                     id="firstName"
+                maxLength={120}
                     placeholder="John"
                     {...register('firstName')}
                     disabled={inviteUser.isPending}
@@ -302,6 +304,7 @@ export function InviteUserModal({
                 >
                   <Input
                     id="lastName"
+                maxLength={120}
                     placeholder="Doe"
                     {...register('lastName')}
                     disabled={inviteUser.isPending}
@@ -418,6 +421,7 @@ export function InviteUserModal({
               >
                 <Input
                   id="position"
+                maxLength={150}
                   placeholder="Software Engineer"
                   {...register('position')}
                   disabled={inviteUser.isPending}

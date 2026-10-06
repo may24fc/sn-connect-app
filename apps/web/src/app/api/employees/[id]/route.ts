@@ -6,15 +6,15 @@ import { z } from 'zod';
 import { resolveDepartmentById, resolveDivisionById } from '@/app/api/users/_organization';
 
 const employeePatchSchema = z.object({
-  first_name: z.string().trim().min(1).nullable().optional(),
-  last_name: z.string().trim().min(1).nullable().optional(),
+  first_name: z.string().trim().min(1).max(120).nullable().optional(),
+  last_name: z.string().trim().min(1).max(120).nullable().optional(),
   departmentId: z.string().uuid().nullable().optional(),
   divisionId: z.string().uuid().nullable().optional(),
-  department: z.string().optional(),
-  division: z.string().nullable().optional(),
-  position: z.string().optional(),
+  department: z.string().max(150).optional(),
+  division: z.string().max(150).nullable().optional(),
+  position: z.string().max(150).optional(),
   date_hired: z.union([z.string().date(), z.null()]).optional(),
-  employment_type: z.string().optional(),
+  employment_type: z.string().max(50).optional(),
   immediate_head: z.string().uuid().nullable().optional(),
 });
 

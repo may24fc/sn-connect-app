@@ -11,8 +11,8 @@ const assignInternSchema = z.object({
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid end date format'),
   requiredHours: z.number().min(1, 'Required hours must be at least 1'),
   weeklyRequiredHours: z.number().min(1, 'Weekly required hours must be at least 1').default(20),
-  school: z.string().optional(),
-  program: z.string().optional(),
+  school: z.string().max(200).optional(),
+  program: z.string().max(200).optional(),
 });
 
 export async function POST(request: NextRequest) {

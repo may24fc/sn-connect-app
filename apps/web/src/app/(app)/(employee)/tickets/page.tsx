@@ -363,6 +363,7 @@ export default function TicketsPage(): ReactNode {
               <Label htmlFor="ticket-title">Title</Label>
               <Input
                 id="ticket-title"
+                maxLength={200}
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 placeholder="Brief summary of the issue"
@@ -441,6 +442,7 @@ export default function TicketsPage(): ReactNode {
               <Label htmlFor="ticket-description">Description</Label>
               <Textarea
                 id="ticket-description"
+                maxLength={5000}
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
                 placeholder="Describe the issue, impact, and anything already attempted."
@@ -453,6 +455,7 @@ export default function TicketsPage(): ReactNode {
                 <Label htmlFor="ticket-steps">Steps to Reproduce</Label>
                 <Textarea
                   id="ticket-steps"
+                  maxLength={4000}
                   value={stepsToReproduce}
                   onChange={(event) => setStepsToReproduce(event.target.value)}
                   placeholder="What did you click or do before the issue happened?"
@@ -463,6 +466,7 @@ export default function TicketsPage(): ReactNode {
                 <Label htmlFor="ticket-expected">Expected Behavior</Label>
                 <Textarea
                   id="ticket-expected"
+                  maxLength={4000}
                   value={expectedBehavior}
                   onChange={(event) => setExpectedBehavior(event.target.value)}
                   placeholder="What should have happened instead?"

@@ -136,6 +136,7 @@ function EditField({
         <Input
           type={field.inputType ?? 'text'}
           value={value}
+          maxLength={field.inputType === 'url' ? 2048 : 300}
           onChange={(e) => onChange(field.key, e.target.value)}
           placeholder={field.placeholder ?? field.label}
           className="h-8 text-sm"

@@ -305,6 +305,7 @@ function OrganizationSelectField({
               <Input
                 id={createId}
                 value={newValue}
+                maxLength={150}
                 onChange={(event) => onNewValueChange(event.target.value)}
                 placeholder={`Enter ${labelLower} name`}
                 disabled={isCreating}
@@ -1186,6 +1187,7 @@ export function AssignEmployeeModal({
                   <Label htmlFor="school">School (Optional)</Label>
                   <Input
                     id="school"
+                  maxLength={200}
                     placeholder="e.g., University of XYZ"
                     autoComplete="organization"
                     {...registerIntern('school')}
@@ -1197,6 +1199,7 @@ export function AssignEmployeeModal({
                   <Label htmlFor="program">Program (Optional)</Label>
                   <Input
                     id="program"
+                  maxLength={200}
                     placeholder="e.g., BS Computer Science"
                     autoComplete="off"
                     {...registerIntern('program')}

@@ -460,6 +460,7 @@ export default function PayrollApprovalsPage() {
                       <p className="text-sm font-medium text-foreground">Notes</p>
                       <Textarea
                         rows={4}
+                        maxLength={5000}
                         value={notesById[selectedInvoice.id] || ''}
                         onChange={(event) => {
                           if (selectedInvoice.status !== 'submitted') {

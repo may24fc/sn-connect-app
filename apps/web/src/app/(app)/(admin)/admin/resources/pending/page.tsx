@@ -237,7 +237,7 @@ export default function AdminPendingResourcesPage() {
               <div className="bg-card border border-border rounded-lg p-4">
                 <h3 className="text-lg font-semibold">Reject Request</h3>
                 <p className="text-sm text-zinc-600 mb-3">Provide a note for the author explaining why this was rejected.</p>
-                <Textarea value={notes} onChange={(e: any) => setNotes(e.target.value)} />
+                <Textarea value={notes} maxLength={5000} onChange={(e: any) => setNotes(e.target.value)} />
                 <div className="flex justify-end gap-2 mt-3">
                   <Button
                     variant="ghost"

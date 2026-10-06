@@ -9,9 +9,9 @@ export const documentMetaSchema = z.object({
 });
 
 export const documentUploadSchema = documentMetaSchema.extend({
-  fileName: z.string().min(1, 'File name is required'),
+  fileName: z.string().min(1, 'File name is required').max(255),
   fileSize: z.number().nonnegative('File size must be positive'),
-  mimeType: z.string().min(1, 'MIME type is required'),
+  mimeType: z.string().min(1, 'MIME type is required').max(100),
 });
 
 export type DocumentMetaInput = z.infer<typeof documentMetaSchema>;

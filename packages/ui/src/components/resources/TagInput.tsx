@@ -70,6 +70,7 @@ export function TagInput({
       </div>
       <Input
         value={input}
+        maxLength={50}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={value.length >= maxTags ? `Max ${maxTags} tags` : placeholder}

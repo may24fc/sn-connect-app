@@ -621,6 +621,7 @@ export function RevenueForecastPageContent({
                 <Label htmlFor="log-notes">Notes (optional)</Label>
                 <Textarea
                   id="log-notes"
+                maxLength={2000}
                   value={formNotes}
                   onChange={(event) => setFormNotes(event.target.value)}
                   placeholder="Optional context for this month (campaign spike, seasonality, etc.)"
@@ -681,6 +682,7 @@ export function RevenueForecastPageContent({
                   />
                   <Input
                     value={goalLabel}
+                maxLength={120}
                     onChange={(event) => setGoalLabel(event.target.value)}
                     placeholder="Label (optional)"
                   />

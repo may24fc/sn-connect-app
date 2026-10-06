@@ -583,6 +583,7 @@ export default function InternDetailPage({
             <Textarea
               placeholder="Enter your feedback for the associate..."
               value={feedback}
+              maxLength={5000}
               onChange={(e) => setFeedback(e.target.value)}
               className="min-h-[150px]"
             />
@@ -697,6 +698,7 @@ export default function InternDetailPage({
               <Label htmlFor="extend-reason">Reason for Extension</Label>
               <Textarea
                 id="extend-reason"
+                maxLength={500}
                 placeholder="Explain why the internship is being extended..."
                 value={extendReason}
                 onChange={(e) => setExtendReason(e.target.value)}

@@ -37,21 +37,21 @@ const resourceBaseSchema = z.object({
   // Legacy compatibility while dynamic categories migrate fully.
   resourceType: resourceTypeSchema.optional(),
   category: resourceCategorySchema.optional(),
-  tags: z.array(z.string()).optional(),
+  tags: z.array(z.string().max(50)).max(20).default([]),
   subcategory: z.string().max(100).optional().nullable(),
   folderId: z.string().uuid().optional().nullable(),
-  filePath: z.string().optional().nullable(),
-  externalUrl: z.string().url('Invalid URL').optional().nullable(),
-  thumbnailPath: z.string().optional().nullable(),
+  filePath: z.string().max(1000).optional().nullable(),
+  externalUrl: z.string().url('Invalid URL').max(2048).optional().nullable(),
+  thumbnailPath: z.string().max(1000).optional().nullable(),
   fileSize: z.number().int().positive().optional().nullable(),
   mimeType: z.string().max(100).optional().nullable(),
   durationSeconds: z.number().int().positive().optional().nullable(),
   publishedAt: z.string().datetime().optional().nullable(),
   expiresAt: z.string().datetime().optional().nullable(),
   isPublic: z.boolean().default(false),
-  targetRoles: z.array(z.string()).default([]),
-  targetDepartments: z.array(z.string().uuid()).default([]),
-  targetEmployees: z.array(z.string().uuid()).default([]),
+  targetRoles: z.array(z.string()).max(20).default([]),
+  targetDepartments: z.array(z.string().uuid()).max(500).default([]),
+  targetEmployees: z.array(z.string().uuid()).max(500).default([]),
   isFeatured: z.boolean().default(false),
   isPinned: z.boolean().default(false),
   displayOrder: z.number().int().default(0),
@@ -78,11 +78,11 @@ export const updateResourceSchema = z
     excerpt: z.string().max(300).optional().nullable(),
     resourceType: resourceTypeSchema.optional(),
     category: resourceCategorySchema.optional(),
-    tags: z.array(z.string()).optional(),
+    tags: z.array(z.string().max(50)).max(20).optional(),
     subcategory: z.string().max(100).optional().nullable(),
-    filePath: z.string().optional().nullable(),
-    externalUrl: z.string().url('Invalid URL').optional().nullable(),
-    thumbnailPath: z.string().optional().nullable(),
+    filePath: z.string().max(1000).optional().nullable(),
+    externalUrl: z.string().url('Invalid URL').max(2048).optional().nullable(),
+    thumbnailPath: z.string().max(1000).optional().nullable(),
     fileSize: z.number().int().positive().optional().nullable(),
     mimeType: z.string().max(100).optional().nullable(),
     durationSeconds: z.number().int().positive().optional().nullable(),
@@ -90,9 +90,9 @@ export const updateResourceSchema = z
     publishedAt: z.string().datetime().optional().nullable(),
     expiresAt: z.string().datetime().optional().nullable(),
     isPublic: z.boolean().optional(),
-    targetRoles: z.array(z.string()).optional(),
-    targetDepartments: z.array(z.string().uuid()).optional(),
-    targetEmployees: z.array(z.string().uuid()).optional(),
+    targetRoles: z.array(z.string()).max(20).optional(),
+    targetDepartments: z.array(z.string().uuid()).max(500).optional(),
+    targetEmployees: z.array(z.string().uuid()).max(500).optional(),
     isFeatured: z.boolean().optional(),
     isPinned: z.boolean().optional(),
     displayOrder: z.number().int().optional(),
@@ -107,7 +107,7 @@ export const updateResourceSchema = z
 // ============================================
 
 export const resourceFiltersSchema = z.object({
-  search: z.string().optional(),
+  search: z.string().max(200).optional(),
   status: resourceStatusSchema.optional(),
   folderId: z.string().uuid().optional(),
   // Note: `category`, `resourceType`, and `tags` were removed
@@ -123,13 +123,13 @@ export const resourceFiltersSchema = z.object({
 });
 
 export const resourceFeedFiltersSchema = z.object({
-  search: z.string().optional(),
+  search: z.string().max(200).optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(50).default(20),
 });
 
 export const resourceSearchSchema = z.object({
-  query: z.string().min(2, 'Search query must be at least 2 characters'),
+  query: z.string().min(2, 'Search query must be at least 2 characters').max(200),
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
 
@@ -139,20 +139,20 @@ export const resourceSearchSchema = z.object({
 
 export const createCollectionSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
-  description: z.string().max(5000).optional().nullable(),
-  thumbnailPath: z.string().optional().nullable(),
+  description: z.string().max(2000).optional().nullable(),
+  thumbnailPath: z.string().max(1000).optional().nullable(),
   isPublic: z.boolean().default(false),
-  targetRoles: z.array(z.string()).default([]),
-  targetDepartments: z.array(z.string().uuid()).default([]),
+  targetRoles: z.array(z.string()).max(20).default([]),
+  targetDepartments: z.array(z.string().uuid()).max(500).default([]),
 });
 
 export const updateCollectionSchema = z.object({
   title: z.string().min(1).max(200).optional(),
-  description: z.string().max(3000).optional().nullable(),
-  thumbnailPath: z.string().optional().nullable(),
+  description: z.string().max(2000).optional().nullable(),
+  thumbnailPath: z.string().max(1000).optional().nullable(),
   isPublic: z.boolean().optional(),
-  targetRoles: z.array(z.string()).optional(),
-  targetDepartments: z.array(z.string().uuid()).optional(),
+  targetRoles: z.array(z.string()).max(20).optional(),
+  targetDepartments: z.array(z.string().uuid()).max(500).optional(),
 });
 
 export const addResourceToCollectionSchema = z.object({
@@ -182,7 +182,7 @@ export const trackViewSchema = z.object({
 // ============================================
 
 export const resourceUploadSchema = z.object({
-  fileName: z.string().min(1),
+  fileName: z.string().min(1).max(255),
 });
 
 export const bulkUploadSchema = z.object({

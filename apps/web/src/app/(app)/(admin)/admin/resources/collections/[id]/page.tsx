@@ -133,11 +133,13 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
         <CardContent className="space-y-4">
           <Input
             value={title}
+            maxLength={200}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Title"
           />
           <Textarea
             value={description}
+            maxLength={2000}
             onChange={(event) => setDescription(event.target.value)}
             placeholder="Description"
           />
@@ -151,12 +153,14 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
           </label>
           <Input
             value={rolesCsv}
+            maxLength={1000}
             onChange={(event) => setRolesCsv(event.target.value)}
             placeholder="Target roles (comma-separated)"
             disabled={isPublic}
           />
           <Textarea
             rows={2}
+            maxLength={20000}
             value={departmentsCsv}
             onChange={(event) => setDepartmentsCsv(event.target.value)}
             placeholder="Target departments UUIDs (comma-separated)"

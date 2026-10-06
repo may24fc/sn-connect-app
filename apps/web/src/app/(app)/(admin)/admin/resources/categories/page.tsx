@@ -150,6 +150,7 @@ function CategoryFormModal({
             <Label htmlFor="name">Name *</Label>
             <Input
               id="name"
+              maxLength={100}
               value={name}
               onChange={(e) => handleNameChange(e.target.value)}
               placeholder="e.g., Training Materials"
@@ -162,6 +163,7 @@ function CategoryFormModal({
             <div className="flex gap-2">
               <Input
                 id="slug"
+                maxLength={100}
                 value={slug}
                 onChange={(e) => {
                   setSlug(e.target.value);
@@ -192,6 +194,7 @@ function CategoryFormModal({
             <Label htmlFor="description">Description</Label>
             <Input
               id="description"
+              maxLength={500}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Brief description of this category"

@@ -789,6 +789,7 @@ function ExecutionView({
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
+                maxLength={200}
             onChange={(event) => {
               setSearch(event.target.value);
               replaceExecutionUrl(projectId, assigneeId, event.target.value);
@@ -878,6 +879,7 @@ function ExecutionView({
               <Label htmlFor="work-task-title">Title</Label>
               <Input
                 id="work-task-title"
+                maxLength={200}
                 required
                 value={newTitle}
                 onChange={(event) => setNewTitle(event.target.value)}
@@ -887,6 +889,7 @@ function ExecutionView({
               <Label htmlFor="work-task-description">Description</Label>
               <Textarea
                 id="work-task-description"
+                maxLength={5000}
                 value={newDescription}
                 onChange={(event) => setNewDescription(event.target.value)}
               />

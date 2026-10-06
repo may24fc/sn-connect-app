@@ -56,6 +56,23 @@ type TextareaFieldName = Exclude<
   'monthKey' | 'fullName' | 'departmentRole' | RankFieldName
 >;
 
+const reflectionTextLimits: Record<TextareaFieldName, number> = {
+  workFeelings: 250,
+  workHeadline: 500,
+  workSignificance: 3000,
+  workAction: 3000,
+  familyFeelings: 250,
+  familyHeadline: 500,
+  familySignificance: 3000,
+  familyAction: 3000,
+  personalFeelings: 250,
+  personalHeadline: 500,
+  personalSignificance: 3000,
+  personalAction: 3000,
+  deepDiveParkingLot: 4000,
+  explorationTopics: 4000,
+};
+
 type ReflectionSectionFieldNames = {
   feelings: TextareaFieldName;
   headline: TextareaFieldName;
@@ -386,7 +403,7 @@ export function FivePercentReflectionForm() {
       <div className="space-y-2">
         {renderRequiredLabel(label, name)}
         {helperText ? <p className="text-xs text-muted-foreground">{helperText}</p> : null}
-        <Textarea id={name} rows={rows} {...register(name)} />
+        <Textarea id={name} rows={rows} maxLength={reflectionTextLimits[name]} {...register(name)} />
         {fieldError ? <p className="text-sm text-destructive">{fieldError.message}</p> : null}
       </div>
     );

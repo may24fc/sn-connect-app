@@ -506,7 +506,7 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
         <TabsContent value="details" className="mt-4 space-y-4">
           <div className="space-y-2">
             <Label>Title</Label>
-            <Input value={title} onChange={(event) => setTitle(event.target.value)} />
+            <Input value={title} maxLength={200} onChange={(event) => setTitle(event.target.value)} />
           </div>
           <AnnouncementEditor value={content} onChange={setContent} />
           <div className="flex gap-2">

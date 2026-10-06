@@ -629,6 +629,7 @@ function TargetEvaluationCard({
                   <Textarea
                     placeholder={`Explain why this score changed from ${baselineConfig.label}.`}
                     value={evaluation.comments}
+                    maxLength={5000}
                     onChange={(e) => onChange({ ...evaluation, comments: e.target.value })}
                     className="min-h-[88px] text-sm"
                   />
@@ -652,6 +653,7 @@ function TargetEvaluationCard({
                 : 'Add specific feedback for this target...'
             }
             value={evaluation.comments}
+            maxLength={5000}
             onChange={(e) => onChange({ ...evaluation, comments: e.target.value })}
             className="min-h-[60px] text-sm"
           />
@@ -2045,6 +2047,7 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
                             <Textarea
                               placeholder={`Explain why this overall score changed from ${overallBaselineConfig.label}.`}
                               value={evalForm.comments}
+                              maxLength={5000}
                               onChange={(e) => setEvalForm({ ...evalForm, comments: e.target.value })}
                               className="min-h-[88px] text-sm"
                             />
@@ -2074,6 +2077,7 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
                           : 'Enter your detailed feedback here. Consider:\n• What did the employee do well?\n• What areas need improvement?\n• What specific actions should they take?'
                       }
                       value={evalForm.comments}
+                      maxLength={5000}
                       onChange={(e) => setEvalForm({ ...evalForm, comments: e.target.value })}
                       className="min-h-[140px]"
                     />
@@ -2151,6 +2155,7 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
                     id="manager-assessment-comments"
                     placeholder="Add concise evidence for this rating."
                     value={evalForm.managerAssessmentComments}
+                    maxLength={5000}
                     onChange={(e) =>
                       setEvalForm({
                         ...evalForm,

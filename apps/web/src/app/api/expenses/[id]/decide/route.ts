@@ -9,7 +9,7 @@ export const runtime = 'nodejs';
 
 const expenseDecisionSchema = z.object({
   action: z.enum(['approve', 'reject']),
-  notes: z.string().optional().nullable(),
+  notes: z.string().max(2000).optional().nullable(),
 });
 
 /**

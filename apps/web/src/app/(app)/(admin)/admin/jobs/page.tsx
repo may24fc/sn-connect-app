@@ -326,6 +326,7 @@ export default function AdminJobsPage(): ReactNode {
             <Input
               placeholder="Search job postings..."
               value={search}
+                maxLength={200}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
             />
@@ -512,6 +513,7 @@ export default function AdminJobsPage(): ReactNode {
                 <Label htmlFor="jp-title">Job Title *</Label>
                 <Input
                   id="jp-title"
+                  maxLength={200}
                   value={formData.title}
                   onChange={(e) => setFormData((p) => ({ ...p, title: e.target.value }))}
                   placeholder="e.g. Senior Software Engineer"
@@ -540,6 +542,7 @@ export default function AdminJobsPage(): ReactNode {
                   <Label htmlFor="jp-location">Location</Label>
                   <Input
                     id="jp-location"
+                    maxLength={200}
                     value={formData.location}
                     onChange={(e) => setFormData((p) => ({ ...p, location: e.target.value }))}
                     placeholder="e.g. Remote, Cebu"
@@ -553,6 +556,7 @@ export default function AdminJobsPage(): ReactNode {
                   <Label htmlFor="jp-department">Team / Division</Label>
                   <Input
                     id="jp-department"
+                    maxLength={100}
                     value={formData.department}
                     onChange={(e) => setFormData((p) => ({ ...p, department: e.target.value }))}
                     placeholder="e.g. Sales, Engineering"
@@ -599,6 +603,7 @@ export default function AdminJobsPage(): ReactNode {
                 <Label htmlFor="jp-salary">Salary Range</Label>
                 <Input
                   id="jp-salary"
+                  maxLength={100}
                   value={formData.salary_range}
                   onChange={(e) => setFormData((p) => ({ ...p, salary_range: e.target.value }))}
                   placeholder="e.g. ₱50k-80k"
@@ -610,6 +615,7 @@ export default function AdminJobsPage(): ReactNode {
                 <Label htmlFor="jp-description">Description *</Label>
                 <Textarea
                   id="jp-description"
+                  maxLength={5000}
                   value={formData.description}
                   onChange={(e) => setFormData((p) => ({ ...p, description: e.target.value }))}
                   rows={5}
@@ -622,6 +628,7 @@ export default function AdminJobsPage(): ReactNode {
                 <Label htmlFor="jp-requirements">Requirements</Label>
                 <Textarea
                   id="jp-requirements"
+                  maxLength={5000}
                   value={formData.requirements}
                   onChange={(e) => setFormData((p) => ({ ...p, requirements: e.target.value }))}
                   rows={4}
@@ -634,6 +641,7 @@ export default function AdminJobsPage(): ReactNode {
                 <Label htmlFor="jp-benefits">Benefits</Label>
                 <Textarea
                   id="jp-benefits"
+                  maxLength={5000}
                   value={formData.benefits}
                   onChange={(e) => setFormData((p) => ({ ...p, benefits: e.target.value }))}
                   rows={3}

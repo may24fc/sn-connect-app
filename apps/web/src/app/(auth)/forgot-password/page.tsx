@@ -79,6 +79,7 @@ export default function ForgotPasswordPage(): ReactNode {
             >
               <Input
                 id="email"
+              maxLength={320}
                 type="email"
                 placeholder="you@company.com"
                 value={email}

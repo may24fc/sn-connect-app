@@ -12,6 +12,7 @@ export function AnnouncementEditor({ value, onChange }: AnnouncementEditorProps)
       <Label className="mb-2 block">Content</Label>
       <Textarea
         value={value}
+        maxLength={10000}
         onChange={(event) => onChange(event.target.value)}
         className="min-h-[320px]"
         placeholder="Write announcement details..."

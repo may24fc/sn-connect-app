@@ -193,6 +193,7 @@ function TagsInput({
         <input
           type="text"
           value={inputValue}
+          maxLength={50}
           onChange={(e) => {
             setInputValue(e.target.value);
             setShowSuggestions(true);
@@ -375,6 +376,7 @@ export function RoleMetadataForm({
                   <Input
                     id={`${roleType}-${field.key}`}
                     type="text"
+                    maxLength={300}
                     value={(formData[field.key] as string) || ''}
                     onChange={(e) => handleFieldChange(field.key, e.target.value)}
                     placeholder={field.placeholder}
@@ -400,6 +402,7 @@ export function RoleMetadataForm({
                   <Input
                     id={`${roleType}-${field.key}`}
                     type="url"
+                    maxLength={2048}
                     value={(formData[field.key] as string) || ''}
                     onChange={(e) => handleFieldChange(field.key, e.target.value)}
                     placeholder={field.placeholder || 'https://...'}

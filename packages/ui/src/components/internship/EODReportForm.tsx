@@ -94,6 +94,7 @@ function StringListField({
           <div key={`${title}-${index}`} className="flex items-start gap-2">
             <Input
               value={entry}
+              maxLength={1000}
               onChange={(event) => updateEntry(index, event.target.value)}
               placeholder={placeholder}
               className={cn('h-9 text-sm', invalid ? 'border-error' : '')}
@@ -181,6 +182,7 @@ function ProjectEntryField({
           </Label>
           <Input
             value={entry.projectFocus}
+            maxLength={500}
             onChange={(event) => updateField('projectFocus', event.target.value)}
             placeholder="Example: Employee onboarding guide"
             className="h-9"
@@ -193,6 +195,7 @@ function ProjectEntryField({
           </Label>
           <Textarea
             value={entry.challenge ?? ''}
+            maxLength={3000}
             onChange={(event) => updateField('challenge', event.target.value)}
             placeholder="Describe the challenge, blocker, or constraint for this focus area"
             rows={3}
@@ -205,6 +208,7 @@ function ProjectEntryField({
           </Label>
           <Textarea
             value={entry.actionTaken}
+            maxLength={3000}
             onChange={(event) => updateField('actionTaken', event.target.value)}
             placeholder="Describe the work you completed for this focus area"
             rows={3}
@@ -217,6 +221,7 @@ function ProjectEntryField({
           </Label>
           <Textarea
             value={entry.outcome}
+            maxLength={3000}
             onChange={(event) => updateField('outcome', event.target.value)}
             placeholder="State the result, impact, or what moved forward"
             rows={3}

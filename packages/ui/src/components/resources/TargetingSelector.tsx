@@ -23,6 +23,7 @@ export function ResourceTargetingSelector({ value, onChange }: ResourceTargeting
         <Input
           placeholder="employee, associate, hr"
           value={value.rolesCsv}
+          maxLength={1000}
           onChange={(event) => onChange({ ...value, rolesCsv: event.target.value })}
         />
       </div>
@@ -34,6 +35,7 @@ export function ResourceTargetingSelector({ value, onChange }: ResourceTargeting
         <Textarea
           rows={2}
           value={value.departmentsCsv}
+          maxLength={20000}
           onChange={(event) => onChange({ ...value, departmentsCsv: event.target.value })}
         />
       </div>
@@ -45,6 +47,7 @@ export function ResourceTargetingSelector({ value, onChange }: ResourceTargeting
         <Textarea
           rows={2}
           value={value.employeesCsv}
+          maxLength={20000}
           onChange={(event) => onChange({ ...value, employeesCsv: event.target.value })}
         />
       </div>

@@ -34,10 +34,10 @@ const assignmentSnapshotSchema = z.string().trim().min(1).max(200);
 
 export const keyResultSchema = z.object({
   id: z.string().optional(),
-  description: z.string().min(1),
+  description: z.string().min(1).max(500),
   targetValue: z.number().nonnegative().default(0),
   currentValue: z.number().nonnegative().default(0),
-  unit: z.string().default(''),
+  unit: z.string().max(50).default(''),
   weight: z.number().min(0).max(100).default(0),
   progressPercentage: z.number().min(0).max(100).default(0),
 });
@@ -45,7 +45,7 @@ export const keyResultSchema = z.object({
 export const updateReviewCycleSchema = z
   .object({
     id: z.string().uuid(),
-    description: z.string().optional().nullable(),
+    description: z.string().max(1000).optional().nullable(),
     quarter: reviewCycleQuarterSchema.optional(),
     year: reviewCycleYearSchema.optional(),
     okrSubmissionDeadline: dateSchema.optional().nullable(),
@@ -102,11 +102,11 @@ export const createPerformanceReviewSchema = z.object({
   reviewerId: z.string().uuid().optional().nullable(),
   status: reviewStatusSchema.default('pending'),
   selfRating: z.number().int().min(1).max(5).optional().nullable(),
-  selfComments: z.string().optional().nullable(),
+  selfComments: z.string().max(5000).optional().nullable(),
   managerRating: z.number().int().min(1).max(5).optional().nullable(),
-  managerComments: z.string().optional().nullable(),
+  managerComments: z.string().max(5000).optional().nullable(),
   finalRating: z.number().int().min(1).max(5).optional().nullable(),
-  goalsForNextPeriod: z.string().optional().nullable(),
+  goalsForNextPeriod: z.string().max(5000).optional().nullable(),
 });
 
 export const updatePerformanceReviewSchema = z.object({
@@ -114,11 +114,11 @@ export const updatePerformanceReviewSchema = z.object({
   status: reviewStatusSchema.optional(),
   reviewerId: z.string().uuid().optional().nullable(),
   selfRating: z.number().int().min(1).max(5).optional().nullable(),
-  selfComments: z.string().optional().nullable(),
+  selfComments: z.string().max(5000).optional().nullable(),
   managerRating: z.number().int().min(1).max(5).optional().nullable(),
-  managerComments: z.string().optional().nullable(),
+  managerComments: z.string().max(5000).optional().nullable(),
   finalRating: z.number().int().min(1).max(5).optional().nullable(),
-  goalsForNextPeriod: z.string().optional().nullable(),
+  goalsForNextPeriod: z.string().max(5000).optional().nullable(),
   submittedAt: z.string().datetime().optional().nullable(),
   completedAt: z.string().datetime().optional().nullable(),
 });
@@ -126,24 +126,24 @@ export const updatePerformanceReviewSchema = z.object({
 export const createOKRSchema = z.object({
   employeeId: z.string().uuid().optional(),
   cycleId: z.string().uuid().optional().nullable(),
-  objective: z.string().min(1),
-  description: z.string().optional().nullable(),
-  keyResults: z.array(keyResultSchema).default([]),
+  objective: z.string().min(1).max(300),
+  description: z.string().max(3000).optional().nullable(),
+  keyResults: z.array(keyResultSchema).max(20).default([]),
   status: z.string().default('in_progress'),
   weight: z.number().min(0).default(1),
 });
 
 export const updateOKRSchema = z.object({
   id: z.string().uuid(),
-  objective: z.string().min(1).optional(),
-  description: z.string().optional().nullable(),
-  keyResults: z.array(keyResultSchema).optional(),
+  objective: z.string().min(1).max(300).optional(),
+  description: z.string().max(3000).optional().nullable(),
+  keyResults: z.array(keyResultSchema).max(20).optional(),
   status: z.string().optional(),
   weight: z.number().min(0).optional(),
   adminRating: z
     .enum(['exceptional', 'exceeds', 'meets', 'needs_improvement', 'unsatisfactory'])
     .optional(),
-  adminComments: z.string().optional(),
+  adminComments: z.string().max(5000).optional(),
   evaluatedBy: z.string().uuid().optional(),
   evaluatedAt: z.string().datetime().optional(),
 });
@@ -154,42 +154,42 @@ export const createOKRTargetSchema = z.object({
   okrId: z.string().uuid(),
   employeeId: z.string().uuid().optional(),
   cycleId: z.string().uuid().optional().nullable(),
-  name: z.string().min(1),
-  description: z.string().optional().nullable(),
+  name: z.string().min(1).max(300),
+  description: z.string().max(3000).optional().nullable(),
   metricType: targetMetricTypeSchema.default('number'),
   startValue: z.number().default(0),
   targetValue: z.number(),
   currentValue: z.number().default(0),
-  unit: z.string().optional().nullable(),
+  unit: z.string().max(50).optional().nullable(),
   weight: z.number().min(0).default(1),
   sortOrder: z.number().int().default(0),
-  rubric1: z.string().min(1).optional(),
-  rubric2: z.string().min(1).optional(),
-  rubric3: z.string().min(1).optional(),
-  rubric4: z.string().min(1).optional(),
+  rubric1: z.string().min(1).max(1000).optional(),
+  rubric2: z.string().min(1).max(1000).optional(),
+  rubric3: z.string().min(1).max(1000).optional(),
+  rubric4: z.string().min(1).max(1000).optional(),
 });
 
 export const updateOKRTargetSchema = z.object({
   id: z.string().uuid(),
-  name: z.string().min(1).optional(),
-  description: z.string().optional().nullable(),
+  name: z.string().min(1).max(300).optional(),
+  description: z.string().max(3000).optional().nullable(),
   metricType: targetMetricTypeSchema.optional(),
   startValue: z.number().optional(),
   targetValue: z.number().optional(),
   currentValue: z.number().optional(),
-  unit: z.string().optional().nullable(),
+  unit: z.string().max(50).optional().nullable(),
   weight: z.number().min(0).optional(),
   sortOrder: z.number().int().optional(),
   adminRating: z
     .enum(['exceptional', 'exceeds', 'meets', 'needs_improvement', 'unsatisfactory'])
     .optional(),
-  adminComments: z.string().optional(),
+  adminComments: z.string().max(5000).optional(),
   evaluatedBy: z.string().uuid().optional(),
   evaluatedAt: z.string().datetime().optional(),
-  rubric1: z.string().min(1).optional(),
-  rubric2: z.string().min(1).optional(),
-  rubric3: z.string().min(1).optional(),
-  rubric4: z.string().min(1).optional(),
+  rubric1: z.string().min(1).max(1000).optional(),
+  rubric2: z.string().min(1).max(1000).optional(),
+  rubric3: z.string().min(1).max(1000).optional(),
+  rubric4: z.string().min(1).max(1000).optional(),
   selfRating: z.number().int().min(1).max(4).optional().nullable(),
 });
 
@@ -199,17 +199,17 @@ export const createKPISchema = z
   .object({
     employeeId: z.string().uuid(),
     cycleId: z.string().uuid().optional().nullable(),
-    name: z.string().min(1),
+    name: z.string().min(1).max(300),
     targetValue: z.number(),
     currentValue: z.number().default(0),
-    unit: z.string().optional().nullable(),
+    unit: z.string().max(50).optional().nullable(),
     periodStart: dateSchema,
     periodEnd: dateSchema,
     kpiType: kpiTypeSchema,
-    rubric1: z.string().min(1).optional(),
-    rubric2: z.string().min(1).optional(),
-    rubric3: z.string().min(1).optional(),
-    rubric4: z.string().min(1).optional(),
+    rubric1: z.string().min(1).max(1000).optional(),
+    rubric2: z.string().min(1).max(1000).optional(),
+    rubric3: z.string().min(1).max(1000).optional(),
+    rubric4: z.string().min(1).max(1000).optional(),
   })
   .refine((data) => data.periodStart <= data.periodEnd, {
     message: 'periodStart must be earlier than or equal to periodEnd',
@@ -228,22 +228,22 @@ export const createKPISchema = z
 
 export const updateKPISchema = z.object({
   id: z.string().uuid(),
-  name: z.string().min(1).optional(),
+  name: z.string().min(1).max(300).optional(),
   targetValue: z.number().optional(),
   currentValue: z.number().optional(),
-  unit: z.string().optional().nullable(),
+  unit: z.string().max(50).optional().nullable(),
   periodStart: dateSchema.optional(),
   periodEnd: dateSchema.optional(),
   status: z.string().optional(),
   selfRating: z.number().int().min(1).max(4).optional().nullable(),
-  rubric1: z.string().min(1).optional(),
-  rubric2: z.string().min(1).optional(),
-  rubric3: z.string().min(1).optional(),
-  rubric4: z.string().min(1).optional(),
+  rubric1: z.string().min(1).max(1000).optional(),
+  rubric2: z.string().min(1).max(1000).optional(),
+  rubric3: z.string().min(1).max(1000).optional(),
+  rubric4: z.string().min(1).max(1000).optional(),
   adminRating: z
     .enum(['exceptional', 'exceeds', 'meets', 'needs_improvement', 'unsatisfactory'])
     .optional(),
-  adminComments: z.string().optional(),
+  adminComments: z.string().max(5000).optional(),
   evaluatedBy: z.string().uuid().optional(),
   evaluatedAt: z.string().datetime().optional(),
 });
@@ -264,14 +264,14 @@ export const probationExtendSchema = z.object({
   action: z.literal('extend'),
   employeeId: z.string().uuid(),
   newProbationEndDate: dateSchema,
-  reason: z.string().optional().nullable(),
+  reason: z.string().max(3000).optional().nullable(),
 });
 
 export const probationCompleteSchema = z.object({
   action: z.literal('complete'),
   employeeId: z.string().uuid(),
   finalRating: z.number().int().min(1).max(5).optional().nullable(),
-  comments: z.string().optional().nullable(),
+  comments: z.string().max(3000).optional().nullable(),
 });
 
 export const probationSetStatusSchema = z.object({

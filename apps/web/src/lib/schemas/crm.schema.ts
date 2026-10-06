@@ -16,41 +16,42 @@ export const TECH_PIPELINE_STAGE_VALUES = [
   'closed_lost',
 ] as const;
 
-const optionalTrimmedText = z.string().trim().min(1).optional();
+const optionalShortText = z.string().trim().min(1).max(300).optional();
+const optionalNarrative = z.string().trim().min(1).max(5000).optional();
 
 export const sfoLeadCreateSchema = z.object({
-  customerName: z.string().trim().min(1),
-  socialLink: optionalTrimmedText,
-  messageSource: optionalTrimmedText,
+  customerName: z.string().trim().min(1).max(300),
+  socialLink: z.string().trim().min(1).max(2048).optional(),
+  messageSource: optionalShortText,
   platform: z.enum(SFO_PLATFORM_VALUES),
   dateOfContact: z.string().date(),
-  actionPlan: optionalTrimmedText,
+  actionPlan: optionalNarrative,
   followUpStatus: z.enum(SFO_STATUS_VALUES).default('new'),
-  actionTaken: optionalTrimmedText,
+  actionTaken: optionalNarrative,
   customerType: z.enum(SFO_CUSTOMER_TYPE_VALUES).default('new'),
-  reasonForReachingOut: optionalTrimmedText,
-  contactNumber: optionalTrimmedText,
-  address: optionalTrimmedText,
+  reasonForReachingOut: optionalShortText,
+  contactNumber: z.string().trim().min(1).max(30).optional(),
+  address: z.string().trim().min(1).max(500).optional(),
   orderDate: z.string().date().optional(),
-  products: z.array(z.string().trim().min(1)).default([]),
+  products: z.array(z.string().trim().min(1).max(200)).max(100).default([]),
   amount: z.number().finite().min(0),
-  invoiceNumber: optionalTrimmedText,
+  invoiceNumber: optionalShortText,
   status: z.enum(SFO_STATUS_VALUES).default('new'),
-  remarks: optionalTrimmedText,
+  remarks: optionalNarrative,
 });
 
 export const sfoLeadUpdateSchema = sfoLeadCreateSchema.partial();
 
 export const techInquiryCreateSchema = z.object({
-  companyName: z.string().trim().min(1),
-  contactPerson: z.string().trim().min(1),
-  companyBackground: optionalTrimmedText,
-  requirementsSummary: z.string().trim().min(1),
-  requirementsChecklist: z.array(z.string().trim().min(1)).default([]),
+  companyName: z.string().trim().min(1).max(300),
+  contactPerson: z.string().trim().min(1).max(300),
+  companyBackground: optionalNarrative,
+  requirementsSummary: z.string().trim().min(1).max(5000),
+  requirementsChecklist: z.array(z.string().trim().min(1).max(500)).max(100).default([]),
   pipelineStage: z.enum(TECH_PIPELINE_STAGE_VALUES).default('initial_contact'),
-  longFormRemarks: optionalTrimmedText,
+  longFormRemarks: optionalNarrative,
   followUpDate: z.string().date().optional(),
-  assignedRep: optionalTrimmedText,
+  assignedRep: optionalShortText,
 });
 
 export const techInquiryUpdateSchema = techInquiryCreateSchema.partial();

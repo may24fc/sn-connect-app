@@ -293,6 +293,7 @@ export default function TaskDetailPage({
                 {proofType === 'link' ? (
                   <Input
                     type="url"
+                  maxLength={2048}
                     placeholder="https://..."
                     value={proofContent}
                     onChange={(e) => setProofContent(e.target.value)}
@@ -305,7 +306,7 @@ export default function TaskDetailPage({
                     onChange={(e) => setProofContent(e.target.value)}
                     rows={3}
                     required
-                    maxLength={2000}
+                    maxLength={3000}
                   />
                 )}
               </div>

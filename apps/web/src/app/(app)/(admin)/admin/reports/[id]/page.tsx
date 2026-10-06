@@ -459,6 +459,7 @@ export default function AdminReportDetailPage({
               </label>
               <Textarea
                 id="action-notes"
+                maxLength={5000}
                 rows={3}
                 placeholder="Add review notes..."
                 value={actionNotes}

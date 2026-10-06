@@ -293,6 +293,7 @@ export default function ExpenseMatchingQueuePage() {
 
                 <Textarea
                   placeholder="Reconciliation notes (optional)"
+                  maxLength={2000}
                   value={matchedNotes}
                   onChange={(e) => setMatchedNotes(e.target.value)}
                   className="min-h-[70px] text-xs"

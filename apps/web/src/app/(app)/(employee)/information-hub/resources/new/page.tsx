@@ -48,9 +48,10 @@ export default function EmployeeNewResourcePage() {
     description,
     folderId: folderId || undefined,
     filePath: filePath || undefined,
-      externalUrl: externalUrl.trim() || undefined,
+    externalUrl: externalUrl.trim() || undefined,
     fileSize: fileMeta?.fileSize,
     mimeType: fileMeta?.mimeType,
+    tags: [],
     isPublic,
     isFeatured: false,
     isPinned: false,
@@ -113,6 +114,7 @@ export default function EmployeeNewResourcePage() {
               <Input
                 placeholder="Resource title..."
                 value={title}
+                maxLength={200}
                 onChange={(e) => setTitle(e.target.value)}
                 className="text-2xl font-heading font-bold border-0 bg-transparent px-0 h-auto py-2 focus-visible:ring-0 placeholder:text-zinc-300 dark:placeholder:text-zinc-600 tracking-tight"
               />
@@ -126,6 +128,7 @@ export default function EmployeeNewResourcePage() {
                 ref={descriptionRef}
                 placeholder="A short description about the resource"
                 value={description}
+                maxLength={5000}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={6}
                 className="min-h-[180px] border-0 rounded-none resize-none focus-visible:ring-0 px-4 py-4 text-base leading-relaxed bg-card"
@@ -160,6 +163,7 @@ export default function EmployeeNewResourcePage() {
                 <Input
                   placeholder="https://example.com/resource"
                   value={externalUrl}
+                  maxLength={2048}
                   onChange={(e) => setExternalUrl(e.target.value)}
                   type="url"
                 />

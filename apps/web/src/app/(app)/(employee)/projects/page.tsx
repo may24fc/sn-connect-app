@@ -318,6 +318,7 @@ function EditProjectDialog({
             <Label htmlFor="edit-proj-name">Name</Label>
             <Input
               id="edit-proj-name"
+                  maxLength={200}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required

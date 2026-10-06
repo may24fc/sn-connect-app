@@ -546,6 +546,7 @@ export function PerformanceWorkspace({ detailHrefBase }: PerformanceWorkspacePro
                 <Label htmlFor="objective" className="text-sm font-medium">What do you want to achieve?</Label>
                 <Input
                   id="objective"
+              maxLength={300}
                   placeholder="e.g., Increase monthly VP points to 2,000"
                   value={formState.objective}
                   onChange={(event) => setFormState({ ...formState, objective: event.target.value })}
@@ -561,6 +562,7 @@ export function PerformanceWorkspace({ detailHrefBase }: PerformanceWorkspacePro
                 </Label>
                 <Textarea
                   id="description"
+              maxLength={3000}
                   placeholder="Add context so your team understands the purpose behind this goal..."
                   value={formState.description}
                   onChange={(event) => setFormState({ ...formState, description: event.target.value })}

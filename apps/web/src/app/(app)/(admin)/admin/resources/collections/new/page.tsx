@@ -62,11 +62,13 @@ export default function NewCollectionPage() {
           <Input
             placeholder="Title"
             value={title}
+            maxLength={200}
             onChange={(event) => setTitle(event.target.value)}
           />
           <Textarea
             placeholder="Description"
             value={description}
+            maxLength={2000}
             onChange={(event) => setDescription(event.target.value)}
           />
 
@@ -82,11 +84,13 @@ export default function NewCollectionPage() {
           <Input
             placeholder="Target roles (comma-separated)"
             value={rolesCsv}
+            maxLength={1000}
             onChange={(event) => setRolesCsv(event.target.value)}
             disabled={isPublic}
           />
           <Textarea
             rows={3}
+            maxLength={20000}
             placeholder="Target departments UUIDs (comma-separated)"
             value={departmentsCsv}
             onChange={(event) => setDepartmentsCsv(event.target.value)}

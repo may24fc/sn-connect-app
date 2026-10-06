@@ -7,17 +7,17 @@ import {
 } from '../../_lib';
 
 const onboardingTaskInputSchema = z.object({
-  title: z.string().min(1),
-  description: z.string().optional().nullable(),
-  category: z.string().min(1),
+  title: z.string().min(1).max(300),
+  description: z.string().max(3000).optional().nullable(),
+  category: z.string().min(1).max(100),
   isRequired: z.boolean().default(true),
   dueDaysFromStart: z.number().int().min(1).max(365).default(7),
   assignedTo: z.string().uuid().optional().nullable(),
   requiresSubmission: z.boolean().default(false),
   submissionType: z.enum(['none', 'link', 'document', 'link_or_document']).default('none'),
-  submissionLabel: z.string().optional().nullable(),
-  submissionDescription: z.string().optional().nullable(),
-  referenceUrl: z.string().url().optional().nullable(),
+  submissionLabel: z.string().max(200).optional().nullable(),
+  submissionDescription: z.string().max(1000).optional().nullable(),
+  referenceUrl: z.string().url().max(2048).optional().nullable(),
 });
 
 function normalizeTaskInput(task: z.infer<typeof onboardingTaskInputSchema>) {

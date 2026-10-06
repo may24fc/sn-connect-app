@@ -163,6 +163,7 @@ function TagChipsInput({
       <div className="flex items-center gap-2">
         <Input
           value={customInput}
+        maxLength={50}
           onChange={(e) => setCustomInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Type a custom tag and press Enter…"
@@ -369,6 +370,7 @@ export default function MyTasksPage() {
               className="w-full pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
               placeholder="Search tasks..."
               value={search}
+            maxLength={200}
               onChange={(event) => setSearch(event.target.value)}
             />
           </div>
@@ -531,6 +533,7 @@ export default function MyTasksPage() {
               </Label>
               <Input
                 id="task-title"
+                maxLength={200}
                 placeholder="Task title (min 3 characters)"
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
@@ -542,6 +545,7 @@ export default function MyTasksPage() {
               <Label htmlFor="task-description">Description</Label>
               <Textarea
                 id="task-description"
+                maxLength={5000}
                 placeholder="Describe the task..."
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}

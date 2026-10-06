@@ -104,6 +104,7 @@ export function TicketCommentsPanel({
         <Label htmlFor={`ticket-reply-${ticket.id}`}>Add Reply</Label>
         <Textarea
           id={`ticket-reply-${ticket.id}`}
+          maxLength={5000}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           placeholder="Share an update, ask a clarifying question, or provide the requested details..."

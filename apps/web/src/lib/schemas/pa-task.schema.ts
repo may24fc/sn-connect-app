@@ -46,7 +46,7 @@ export const paTaskCreateSchema = paTaskBaseSchema;
 export const paTaskUpdateSchema = paTaskBaseSchema.partial();
 
 export const paTaskFiltersSchema = z.object({
-  search: z.string().trim().optional(),
+  search: z.string().trim().max(200).optional(),
   statusId: z.string().uuid().optional(),
   statusScope: z.enum(['active', 'archive', 'all']).default('all'),
   priorityId: z.string().uuid().optional(),
@@ -91,13 +91,13 @@ export const paTaskAccessGrantDeleteSchema = z.object({
 const paTaskLinkAttachmentSchema = z.object({
   attachmentType: z.literal('link'),
   title: z.string().trim().max(200).optional(),
-  url: z.string().url('A valid URL is required'),
+  url: z.string().url('A valid URL is required').max(2048),
 });
 
 const paTaskFileAttachmentSchema = z.object({
   attachmentType: z.literal('file'),
   title: z.string().trim().max(200).optional(),
-  storagePath: z.string().trim().min(1, 'storagePath is required'),
+  storagePath: z.string().trim().min(1, 'storagePath is required').max(1000),
   fileSizeBytes: z.coerce.number().int().min(0).nullable().optional(),
   mimeType: z.string().trim().max(120).nullable().optional(),
 });

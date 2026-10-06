@@ -211,6 +211,7 @@ export function EditInternshipDialog({
               <Label htmlFor="internship-department">Department</Label>
               <Input
                 id="internship-department"
+                maxLength={150}
                 value={form.department}
                 onChange={(event) => setField('department', event.target.value)}
               />
@@ -219,6 +220,7 @@ export function EditInternshipDialog({
               <Label htmlFor="internship-school">School</Label>
               <Input
                 id="internship-school"
+                maxLength={200}
                 value={form.school}
                 onChange={(event) => setField('school', event.target.value)}
               />
@@ -227,6 +229,7 @@ export function EditInternshipDialog({
               <Label htmlFor="internship-program">Program</Label>
               <Input
                 id="internship-program"
+                maxLength={200}
                 value={form.program}
                 onChange={(event) => setField('program', event.target.value)}
               />

@@ -310,6 +310,7 @@ export function TaskDetailView({
                     </Label>
                     <Textarea
                       id="note"
+                      maxLength={5000}
                       placeholder={
                         selectedStatus === 'blocked'
                           ? 'Explain why this task is blocked...'

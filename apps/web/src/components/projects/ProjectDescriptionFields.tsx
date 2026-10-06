@@ -79,6 +79,7 @@ export function ProjectDescriptionFields({
               <div key={`${sectionConfig.key}-${index}`} className="flex items-center gap-2">
                 <Input
                   value={item}
+            maxLength={1000}
                   onChange={(event) =>
                     updateItem(sectionConfig.key, index, event.target.value)
                   }

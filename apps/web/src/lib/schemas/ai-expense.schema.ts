@@ -9,9 +9,9 @@ export const aiExpenseCreateSchema = z.object({
   transactionDate: z.string().min(1, 'Transaction date is required'),
   amountCents: z.number().int('Amount must be a whole number of cents').positive('Amount must be greater than 0'),
   currency: z.enum(AI_EXPENSE_CURRENCIES),
-  accountEmail: z.string().trim().min(1, 'Account / Email is required').max(120, 'Account / Email is too long'),
-  transactionId: z.string().trim().min(1, 'Transaction ID is required'),
-  reason: z.string().trim().min(1, 'Reason is required'),
+  accountEmail: z.string().trim().min(1, 'Account / Email is required').max(320, 'Account / Email is too long'),
+  transactionId: z.string().trim().min(1, 'Transaction ID is required').max(255),
+  reason: z.string().trim().min(1, 'Reason is required').max(2000),
 });
 
 export const aiExpenseUpdateSchema = aiExpenseCreateSchema.partial();

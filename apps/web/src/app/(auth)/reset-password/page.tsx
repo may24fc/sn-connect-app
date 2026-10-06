@@ -241,6 +241,7 @@ export default function ResetPasswordPage(): ReactNode {
               <div className="relative">
                 <Input
                   id="password"
+                maxLength={128}
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Enter new password"
                   value={password}
@@ -271,6 +272,7 @@ export default function ResetPasswordPage(): ReactNode {
               <div className="relative">
                 <Input
                   id="confirmPassword"
+                maxLength={128}
                   type={showConfirmPassword ? 'text' : 'password'}
                   placeholder="Re-enter your password"
                   value={confirmPassword}

@@ -372,6 +372,7 @@ function WeeklyRecordingCard({
       <CardContent className="space-y-3">
         <Input
           value={value}
+          maxLength={2048}
           onChange={(event) => onChange(event.target.value)}
           placeholder="https://your-recording-link"
           disabled={!hasPartner || disabled}

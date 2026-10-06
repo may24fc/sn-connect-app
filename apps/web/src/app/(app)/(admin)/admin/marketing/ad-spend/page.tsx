@@ -1221,6 +1221,7 @@ export default function MarketingAdSpendPage() {
                         </label>
                         <Input
                           id={`ad-spend-${platform.value}-transaction-id`}
+                  maxLength={120}
                           type="text"
                           value={quickAdd.transactionId}
                           onChange={(event) =>
@@ -1242,6 +1243,7 @@ export default function MarketingAdSpendPage() {
                         </label>
                         <Input
                           id={`ad-spend-${platform.value}-payment-method`}
+                  maxLength={80}
                           type="text"
                           value={quickAdd.paymentMethod}
                           onChange={(event) =>
@@ -1283,6 +1285,7 @@ export default function MarketingAdSpendPage() {
                         </label>
                         <Input
                           id={`ad-spend-${platform.value}-invoice-link`}
+                  maxLength={2048}
                           type="url"
                           value={quickAdd.invoiceReference}
                           onChange={(event) =>
@@ -1304,6 +1307,7 @@ export default function MarketingAdSpendPage() {
                         </label>
                         <Input
                           id={`ad-spend-${platform.value}-invoice-file-name`}
+                  maxLength={255}
                           type="text"
                           value={quickAdd.invoiceFileName}
                           onChange={(event) =>
@@ -1321,6 +1325,7 @@ export default function MarketingAdSpendPage() {
                     <div className="flex items-center justify-between gap-3">
                       <Textarea
                         value={quickAdd.notes}
+                  maxLength={2000}
                         onChange={(event) =>
                           setQuickAdd((current) => ({ ...current, notes: event.target.value }))
                         }

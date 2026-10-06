@@ -45,6 +45,7 @@ export default function AdminCollectionsPage() {
       <Input
         placeholder="Search collections"
         value={search}
+        maxLength={200}
         onChange={(event) => setSearch(event.target.value)}
         className="max-w-md"
       />

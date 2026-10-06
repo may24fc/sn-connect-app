@@ -390,6 +390,7 @@ export function ApproveOnboardingModal({
               </Label>
               <Textarea
                 id="notes"
+                maxLength={5000}
                 placeholder="Add any notes about this approval/rejection..."
                 rows={3}
                 {...register('notes')}

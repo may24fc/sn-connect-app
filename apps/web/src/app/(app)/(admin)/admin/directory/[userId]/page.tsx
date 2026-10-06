@@ -286,6 +286,7 @@ function ReviewDialog({
             </p>
             <Textarea
               value={reviewNote}
+              maxLength={5000}
               onChange={(e) => setReviewNote(e.target.value)}
               placeholder="Add a note about this decision..."
               className="resize-none text-sm"

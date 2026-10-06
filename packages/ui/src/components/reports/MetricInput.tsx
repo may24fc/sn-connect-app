@@ -42,6 +42,7 @@ export function MetricInput({
         <Input
           placeholder="Metric name"
           value={metric.name}
+          maxLength={200}
           onChange={(e) => handleFieldChange('name', e.target.value)}
           className="col-span-1"
         />

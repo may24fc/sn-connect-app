@@ -17,16 +17,16 @@ const PriorityEnum = z.enum(['Low', 'Medium', 'High', 'Urgent']);
 
 const IntakeSchema = z.object({
   title: z.string().min(3).max(200),
-  problem_statement: z.string().min(3),
-  objective: z.string().min(3),
+  problem_statement: z.string().min(3).max(4000),
+  objective: z.string().min(3).max(4000),
   technical_scope: z.array(z.string()).default([]),
   target_departments: z.array(z.string()).default([]),
   priority: PriorityEnum.default('Medium'),
-  assigned_name_hint: z.string().nullable().optional(),
-  raw_transcript: z.string().optional(),
-  source_chat_id: z.string().optional(),
-  source_message_id: z.string().optional(),
-  extraction_model: z.string().optional(),
+  assigned_name_hint: z.string().max(300).nullable().optional(),
+  raw_transcript: z.string().max(100000).optional(),
+  source_chat_id: z.string().max(255).optional(),
+  source_message_id: z.string().max(255).optional(),
+  extraction_model: z.string().max(100).optional(),
 });
 
 function isAuthorized(headerSecret: string | null): boolean {

@@ -636,6 +636,7 @@ export default function EvaluationsPage(): ReactNode {
                     id="eval-comments"
                     placeholder="Provide feedback on this objective and the employee's performance..."
                     value={evalForm.comments}
+                    maxLength={5000}
                     onChange={(e) => setEvalForm({ ...evalForm, comments: e.target.value })}
                     className="min-h-[100px]"
                   />

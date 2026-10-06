@@ -185,6 +185,7 @@ export function AtsAccessManagerDialog({
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
               <Input
                 value={search}
+              maxLength={200}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search by name, email, or role"
                 className="pl-10"

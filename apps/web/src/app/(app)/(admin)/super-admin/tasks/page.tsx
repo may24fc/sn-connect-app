@@ -177,6 +177,7 @@ function TagChipsInput({
       <div className="flex items-center gap-2">
         <Input
           value={customInput}
+        maxLength={50}
           onChange={(e) => setCustomInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Type a custom tag and press Enter…"
@@ -448,6 +449,7 @@ export default function TaskManagementPage() {
                 <Input
                   placeholder="Search tasks..."
                   value={search}
+            maxLength={200}
                   onChange={(event) => setSearch(event.target.value)}
                   className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
                 />
@@ -469,6 +471,7 @@ export default function TaskManagementPage() {
                 </Select>
                 <Input
                   value={tagFilter}
+            maxLength={1000}
                   onChange={(event) => setTagFilter(event.target.value)}
                   placeholder="Tags: onboarding, urgent"
                   className="w-[220px] bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
@@ -581,6 +584,7 @@ export default function TaskManagementPage() {
               </Label>
               <Input
                 value={title}
+              maxLength={200}
                 onChange={(event) => setTitle(event.target.value)}
                 placeholder="Enter task title"
                 required
@@ -592,6 +596,7 @@ export default function TaskManagementPage() {
               <Label className="text-sm font-medium">Description</Label>
               <Textarea
                 value={description}
+              maxLength={5000}
                 onChange={(event) => setDescription(event.target.value)}
                 placeholder="Add a description for this task..."
                 rows={3}

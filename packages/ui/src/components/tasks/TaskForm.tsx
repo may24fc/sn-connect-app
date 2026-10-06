@@ -94,6 +94,7 @@ function TaskTagsInput({
       <input
         type="text"
         value={inputValue}
+        maxLength={50}
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={value.length === 0 ? 'Add tags (press Enter or comma)...' : 'Add more...'}
@@ -383,7 +384,7 @@ export function TaskForm({
                 'min-h-[120px] resize-none',
                 errors.description && 'border-rose-500 focus-visible:ring-rose-500/20'
               )}
-              maxLength={2000}
+              maxLength={5000}
             />
             <div className="flex items-center justify-between text-xs">
               <div>

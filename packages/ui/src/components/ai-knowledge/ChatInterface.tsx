@@ -184,6 +184,7 @@ export function ChatInterface({
             <Textarea
               ref={textareaRef}
               value={inputValue}
+              maxLength={4000}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask the HR Agent a question..."

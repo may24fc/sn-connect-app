@@ -84,6 +84,7 @@ export function ManageTicketHandlersDialog({
             <Label htmlFor="ticket-handler-search">Add IT Handler</Label>
             <Input
               id="ticket-handler-search"
+              maxLength={200}
               value={search}
               onChange={(event) => {
                 setSelectedUserId('');

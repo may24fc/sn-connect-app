@@ -751,12 +751,14 @@ export default function ProjectDetailPage() {
                       <Label htmlFor="project-doc-link">Documentation link</Label>
                       <Input
                         id="project-doc-link"
+                          maxLength={2048}
                         value={docLink}
                         onChange={(event) => setDocLink(event.target.value)}
                         placeholder="https://docs.google.com/..."
                       />
                       <Input
                         value={docLabel}
+                          maxLength={200}
                         onChange={(event) => setDocLabel(event.target.value)}
                         placeholder="Optional label"
                       />
@@ -1465,6 +1467,7 @@ function ChecklistSection({
         <form onSubmit={handleAdd} className="mt-2 flex gap-1">
           <Input
             value={newTitle}
+                        maxLength={300}
             onChange={(e) => setNewTitle(e.target.value)}
             placeholder="Add item…"
             className="h-7 text-xs"
@@ -1588,6 +1591,7 @@ function EditProjectDialog({
             <Label htmlFor="project-edit-name">Project name</Label>
             <Input
               id="project-edit-name"
+                  maxLength={200}
               value={name}
               onChange={(event) => setName(event.target.value)}
               required
@@ -1748,6 +1752,7 @@ function EditMilestoneDialog({
             <Label htmlFor={`milestone-edit-title-${milestone.id}`}>Title</Label>
             <Input
               id={`milestone-edit-title-${milestone.id}`}
+                              maxLength={200}
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               required
@@ -1922,6 +1927,7 @@ function EditChecklistItemDialog({
             <Label htmlFor={`checklist-edit-${item.id}`}>Title</Label>
             <Input
               id={`checklist-edit-${currentItem.id}`}
+                      maxLength={300}
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               required
@@ -2046,6 +2052,7 @@ function CreateMilestoneDialog({
             <Label htmlFor="ms-title">Title</Label>
             <Input
               id="ms-title"
+                    maxLength={200}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required

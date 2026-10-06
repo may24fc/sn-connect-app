@@ -428,6 +428,7 @@ export default function AdminProjectPoolPage() {
                 <Label htmlFor="pool-title">Title</Label>
                 <Input
                   id="pool-title"
+                maxLength={200}
                   value={editForm.title}
                   onChange={(event) =>
                     setEditForm((current) =>
@@ -442,6 +443,7 @@ export default function AdminProjectPoolPage() {
                 <Label htmlFor="pool-problem">Problem statement</Label>
                 <Textarea
                   id="pool-problem"
+                maxLength={4000}
                   rows={4}
                   value={editForm.problemStatement}
                   onChange={(event) =>
@@ -457,6 +459,7 @@ export default function AdminProjectPoolPage() {
                 <Label htmlFor="pool-objective">Objective</Label>
                 <Textarea
                   id="pool-objective"
+                maxLength={4000}
                   rows={3}
                   value={editForm.objective}
                   onChange={(event) =>
@@ -473,6 +476,7 @@ export default function AdminProjectPoolPage() {
                   <Label htmlFor="pool-scope">Technical scope</Label>
                   <Input
                     id="pool-scope"
+                maxLength={2020}
                     value={editForm.technicalScope}
                     onChange={(event) =>
                       setEditForm((current) =>
@@ -488,6 +492,7 @@ export default function AdminProjectPoolPage() {
                   <Label htmlFor="pool-departments">Target departments</Label>
                   <Input
                     id="pool-departments"
+                maxLength={2020}
                     value={editForm.targetDepartments}
                     onChange={(event) =>
                       setEditForm((current) =>

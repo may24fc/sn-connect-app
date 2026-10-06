@@ -18,9 +18,9 @@ import {
 } from '../../_lib';
 
 const offboardingTaskDetailsSchema = z.object({
-  title: z.string().min(1),
-  description: z.string().optional().nullable(),
-  category: z.string().min(1),
+  title: z.string().min(1).max(300),
+  description: z.string().max(3000).optional().nullable(),
+  category: z.string().min(1).max(100),
   dueDate: z.string().date().optional().nullable(),
   ownerType: z.enum(['employee', 'internal']).default('employee'),
 });

@@ -64,6 +64,28 @@ type TextareaFieldName = Exclude<
   | 'comfortableRaisingConcerns'
 >;
 
+const monthlySelfEvaluationTextLimits: Record<TextareaFieldName, number> = {
+  topThreeThingsWorkedOn: 4000,
+  biggestImpact: 3000,
+  impactReason: 3000,
+  significantAchievement: 3000,
+  challengeResolved: 3000,
+  monthlyImprovement: 3000,
+  workSlowdown: 3000,
+  unseenWorkflowIssue: 3000,
+  requestedSupport: 3000,
+  productivityReason: 3000,
+  ownershipOutsideRole: 3000,
+  professionalImprovementArea: 3000,
+  nextSkillToLearn: 3000,
+  leadershipDidWell: 3000,
+  leadershipCanImprove: 3000,
+  hiddenProductivityIssue: 3000,
+  immediateImprovement: 3000,
+  additionalComments: 3000,
+  nextMonthGoal: 3000,
+};
+
 const responseOptions = monthlySelfEvaluationResponseSchema.options;
 
 const impactReasonExamples = [
@@ -326,7 +348,7 @@ export function MonthlySelfEvaluationForm() {
       <div className="space-y-2">
         {renderRequiredLabel(label, name)}
         {helperText ? <p className="text-xs text-muted-foreground">{helperText}</p> : null}
-        <Textarea id={name} rows={4} {...register(name)} />
+        <Textarea id={name} rows={4} maxLength={monthlySelfEvaluationTextLimits[name]} {...register(name)} />
         {fieldError ? <p className="text-sm text-destructive">{fieldError.message}</p> : null}
       </div>
     );

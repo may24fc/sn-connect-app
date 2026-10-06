@@ -884,6 +884,7 @@ export default function AdminInternsPage(): ReactNode {
               <Input
                 placeholder="Search by name, email, or program..."
                 value={searchQuery}
+                maxLength={200}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
               />
@@ -1101,6 +1102,7 @@ export default function AdminInternsPage(): ReactNode {
               <Input
                 placeholder="Search associates..."
                 value={associateEvaluationSearch}
+                maxLength={200}
                 onChange={(event) => setAssociateEvaluationSearch(event.target.value)}
                 className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
               />
@@ -1928,6 +1930,7 @@ export default function AdminInternsPage(): ReactNode {
                 <p className="text-sm font-medium">1. Overall assessment</p>
                 <Textarea
                   value={overallAssessment}
+                  maxLength={8000}
                   onChange={(event) => setOverallAssessment(event.target.value)}
                   className="min-h-[110px]"
                   placeholder="Write the overall assessment as a paragraph."
@@ -1938,6 +1941,7 @@ export default function AdminInternsPage(): ReactNode {
                 <p className="text-sm font-medium">2. Key strengths</p>
                 <Textarea
                   value={keyStrengths}
+                  maxLength={8000}
                   onChange={(event) => setKeyStrengths(event.target.value)}
                   className="min-h-[110px]"
                   placeholder="Summarize key strengths as a paragraph."
@@ -1948,6 +1952,7 @@ export default function AdminInternsPage(): ReactNode {
                 <p className="text-sm font-medium">3. Areas for Continued Growth</p>
                 <Textarea
                   value={areasForContinuedGrowth}
+                  maxLength={8000}
                   onChange={(event) => setAreasForContinuedGrowth(event.target.value)}
                   className="min-h-[110px]"
                   placeholder="Describe growth areas as a paragraph."

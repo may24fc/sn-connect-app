@@ -1052,6 +1052,7 @@ export function OnboardingChecklistManager({
                   <Label htmlFor={`${roleLabel}-task-title`}>Title</Label>
                   <Input
                     id={`${roleLabel}-task-title`}
+                  maxLength={300}
                     className="bg-white"
                     value={taskDraft.title}
                     onChange={(event) =>
@@ -1065,6 +1066,7 @@ export function OnboardingChecklistManager({
                   <Label htmlFor={`${roleLabel}-task-category`}>Category</Label>
                   <Input
                     id={`${roleLabel}-task-category`}
+                  maxLength={100}
                     className="bg-white"
                     value={taskDraft.category}
                     onChange={(event) =>
@@ -1079,6 +1081,7 @@ export function OnboardingChecklistManager({
                 <Label htmlFor={`${roleLabel}-task-description`}>Description</Label>
                 <Textarea
                   id={`${roleLabel}-task-description`}
+                  maxLength={3000}
                   className="bg-white"
                   value={taskDraft.description}
                   onChange={(event) =>
@@ -1187,6 +1190,7 @@ export function OnboardingChecklistManager({
                         <Label htmlFor={`${roleLabel}-task-submission-label`}>Proof label</Label>
                         <Input
                           id={`${roleLabel}-task-submission-label`}
+                  maxLength={200}
                           className="bg-white"
                           value={taskDraft.submissionLabel}
                           onChange={(event) =>
@@ -1206,6 +1210,7 @@ export function OnboardingChecklistManager({
                       </Label>
                       <Textarea
                         id={`${roleLabel}-task-submission-description`}
+                  maxLength={1000}
                         className="bg-white"
                         rows={3}
                         value={taskDraft.submissionDescription}
@@ -1225,6 +1230,7 @@ export function OnboardingChecklistManager({
                         <Link2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                         <Input
                           id={`${roleLabel}-task-reference-url`}
+                  maxLength={2048}
                           className="bg-white pl-9"
                           type="url"
                           value={taskDraft.referenceUrl}
@@ -1328,6 +1334,7 @@ export function OnboardingChecklistManager({
                 <Label htmlFor={`${roleLabel}-task-title-empty`}>Title</Label>
                 <Input
                   id={`${roleLabel}-task-title-empty`}
+                  maxLength={300}
                   className="bg-white"
                   value={taskDraft.title}
                   onChange={(event) =>

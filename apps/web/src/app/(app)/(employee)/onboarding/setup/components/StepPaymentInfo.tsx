@@ -162,6 +162,7 @@ export function StepPaymentInfo({
             </Label>
             <Input
               id="paymentAccountName"
+            maxLength={150}
               value={get('paymentAccountName')}
               onChange={(e) => update('paymentAccountName', e.target.value)}
               required
@@ -173,6 +174,7 @@ export function StepPaymentInfo({
             </Label>
             <Input
               id="paymentAccountNumber"
+            maxLength={30}
               value={get('paymentAccountNumber')}
               onChange={(e) => update('paymentAccountNumber', e.target.value)}
               required
@@ -184,6 +186,7 @@ export function StepPaymentInfo({
             </Label>
             <Input
               id="paymentEmail"
+            maxLength={320}
               type="email"
               value={get('paymentEmail')}
               onChange={(e) => update('paymentEmail', e.target.value)}
@@ -211,6 +214,7 @@ export function StepPaymentInfo({
             </Label>
             <Input
               id="paymentCity"
+            maxLength={100}
               value={get('paymentCity')}
               onChange={(e) => update('paymentCity', e.target.value)}
               placeholder="Enter city"

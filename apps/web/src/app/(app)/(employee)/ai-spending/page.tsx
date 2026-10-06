@@ -729,6 +729,7 @@ export default function AiSpendingPage() {
 
                   <Input
                     value={searchFilter}
+                maxLength={200}
                     onChange={(event) => setSearchFilter(event.target.value)}
                     placeholder="Search provider/email/txn"
                   />
@@ -989,6 +990,7 @@ export default function AiSpendingPage() {
                 </label>
                 <Input
                   id="accountEmail"
+                  maxLength={320}
                   value={form.accountEmail}
                   onChange={(event) =>
                     setForm((current) => ({
@@ -1007,6 +1009,7 @@ export default function AiSpendingPage() {
               </label>
               <Input
                 id="transactionId"
+                maxLength={255}
                 value={form.transactionId}
                 onChange={(event) =>
                   setForm((current) => ({
@@ -1024,6 +1027,7 @@ export default function AiSpendingPage() {
               </label>
               <textarea
                 id="reason"
+                maxLength={2000}
                 rows={4}
                 value={form.reason}
                 onChange={(event) =>
@@ -1061,6 +1065,7 @@ export default function AiSpendingPage() {
             <div className="flex gap-2">
               <Input
                 value={newProviderName}
+                maxLength={60}
                 onChange={(event) => setNewProviderName(event.target.value)}
                 placeholder="e.g. OpenAI"
               />
@@ -1076,7 +1081,7 @@ export default function AiSpendingPage() {
                 providers.map((provider) => (
                   <div key={provider.id} className="flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2">
                     {editingProviderId === provider.id ? (
-                      <Input value={editingProviderName} onChange={(event) => setEditingProviderName(event.target.value)} className="h-8 flex-1" />
+                      <Input value={editingProviderName} maxLength={60} onChange={(event) => setEditingProviderName(event.target.value)} className="h-8 flex-1" />
                     ) : (
                       <span className="flex-1 truncate text-sm">{provider.name}</span>
                     )}

@@ -145,6 +145,7 @@ export default function ArchivedAnnouncementsPage() {
             <Input
               placeholder="Search archived announcements..."
               value={search}
+              maxLength={200}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
             />

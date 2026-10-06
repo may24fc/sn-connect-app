@@ -183,6 +183,7 @@ export function TicketAssignmentDialog({
             <Label>Resolution Summary</Label>
             <Textarea
               value={resolutionSummary}
+              maxLength={5000}
               onChange={(event) => setResolutionSummary(event.target.value)}
               placeholder="Add triage notes or a resolution summary..."
               rows={4}

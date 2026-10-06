@@ -39,7 +39,7 @@ export const onboardingDocumentViewSchema = z.object({
 });
 
 export const onboardingProfileFiltersSchema = z.object({
-  search: z.string().optional(),
+  search: z.string().max(200).optional(),
   status: z.enum(['completed', 'in_progress']).optional(),
   role: z.enum(['employee', 'associate']).optional(),
   departmentId: z.string().uuid().optional(),

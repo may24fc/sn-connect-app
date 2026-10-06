@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { getAuthedSupabase, isStandupAdmin } from './_lib';
 
 const standupFiltersSchema = z.object({
-  search: z.string().optional(),
+  search: z.string().max(200).optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   page: z.coerce.number().int().positive().default(1),
@@ -13,7 +13,7 @@ const standupFiltersSchema = z.object({
 const createStandupSchema = z.object({
   title: z.string().min(1).max(255),
   recording_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD format'),
-  file_path: z.string().min(1),
+  file_path: z.string().min(1).max(1000),
   file_size: z.number().int().positive().optional(),
   duration_seconds: z.number().int().positive().optional(),
   attendees: z.array(z.string().uuid()).optional().default([]),

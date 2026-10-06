@@ -65,6 +65,7 @@ export function TaskFilters({
             <Input
               id="search"
               type="text"
+              maxLength={200}
               placeholder="Search tasks..."
               value={filters.search || ''}
               onChange={(e) => handleFilterChange('search', e.target.value)}
@@ -172,6 +173,7 @@ export function TaskFilters({
           <Input
             id="tags"
             type="text"
+            maxLength={1000}
             placeholder="Tags: onboarding, urgent"
             value={filters.tags?.join(', ') || ''}
             onChange={(e) => {

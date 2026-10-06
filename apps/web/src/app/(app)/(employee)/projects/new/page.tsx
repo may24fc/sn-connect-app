@@ -101,6 +101,7 @@ export default function NewProjectPage() {
                 <Label htmlFor="name">Project name</Label>
                 <Input
                   id="name"
+            maxLength={200}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Marketing Analytics Dashboard"

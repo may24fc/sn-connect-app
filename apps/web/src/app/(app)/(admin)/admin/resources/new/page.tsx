@@ -210,6 +210,7 @@ export default function NewResourcePage() {
               <Input
                 placeholder="Resource title..."
                 value={title}
+                maxLength={200}
                 onChange={(e) => setTitle(e.target.value)}
                 className="text-2xl font-heading font-bold border-0 bg-transparent px-0 h-auto py-2 focus-visible:ring-0 placeholder:text-zinc-300 dark:placeholder:text-zinc-600 tracking-tight"
               />
@@ -226,6 +227,7 @@ export default function NewResourcePage() {
                 ref={descriptionRef}
                 placeholder="What is this resource about? Who should use it?"
                 value={description}
+                maxLength={5000}
                 onChange={(e) => setDescription(e.target.value)}
                 onFocus={handleDescriptionFocus}
                 onBlur={handleDescriptionBlur}
@@ -251,6 +253,7 @@ export default function NewResourcePage() {
                   <Input
                     placeholder="https://example.com/resource (optional)"
                     value={externalUrl}
+                    maxLength={2048}
                     onChange={(e) => setExternalUrl(e.target.value)}
                     type="url"
                   />

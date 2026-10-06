@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const jobPostingFiltersSchema = z.object({
-  search: z.string().optional(),
+  search: z.string().max(200).optional(),
   employmentType: z.enum(['full-time', 'part-time', 'internship', 'contract']).optional(),
   isActive: z
     .string()
@@ -18,9 +18,9 @@ export const createJobPostingSchema = z.object({
   location: z.string().max(200).optional(),
   total_headcount: z.coerce.number().int().min(1).max(999).default(1),
   employment_type: z.enum(['full-time', 'part-time', 'internship', 'contract']).default('full-time'),
-  description: z.string().min(10),
-  requirements: z.string().optional(),
-  benefits: z.string().optional(),
+  description: z.string().min(10).max(5000),
+  requirements: z.string().max(5000).optional(),
+  benefits: z.string().max(5000).optional(),
   salary_range: z.string().max(100).optional(),
   is_active: z.boolean().default(true),
   closes_at: z.string().datetime().optional().nullable(),
@@ -29,7 +29,7 @@ export const createJobPostingSchema = z.object({
 export const updateJobPostingSchema = createJobPostingSchema.partial();
 
 export const applicationFiltersSchema = z.object({
-  search: z.string().optional(),
+  search: z.string().max(200).optional(),
   status: z
     .enum(['pending', 'reviewed', 'shortlisted', 'interview', 'rejected', 'approved', 'hired'])
     .optional(),

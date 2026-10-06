@@ -147,6 +147,7 @@ export function Header({
               />
               <Input
                 type="search"
+                maxLength={200}
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

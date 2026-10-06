@@ -964,6 +964,7 @@ export default function EmployeeManagementPage(): ReactNode {
               <Input
                 placeholder="Search employees..."
                 value={searchTerm}
+                maxLength={200}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
               />
@@ -2070,6 +2071,7 @@ export default function EmployeeManagementPage(): ReactNode {
                       <Textarea
                         placeholder={`Provide specific feedback on ${selectedProbationEmp.name}'s progress, areas of strength, and areas for improvement...`}
                         value={appraisalFeedback}
+                        maxLength={5000}
                         onChange={(e) => setAppraisalFeedback(e.target.value)}
                         className="min-h-[150px]"
                       />

@@ -293,7 +293,7 @@ export function QuarterlyTemperatureCheckForm() {
       <div className="space-y-2">
         {renderRequiredLabel(label, name)}
         {helperText ? <p className="text-xs text-muted-foreground">{helperText}</p> : null}
-        <Textarea id={name} rows={4} {...register(name)} />
+        <Textarea id={name} rows={4} maxLength={8000} {...register(name)} />
         {fieldError ? <p className="text-sm text-destructive">{fieldError.message}</p> : null}
       </div>
     );

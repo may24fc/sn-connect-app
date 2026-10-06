@@ -911,6 +911,7 @@ function ConversationGroup({
               <input
                 ref={renameInputRef}
                 value={renameValue}
+                maxLength={255}
                 onChange={(e) => setRenameValue(e.target.value)}
                 onBlur={() => handleRenameSubmit(conv.id)}
                 onKeyDown={(e) => {

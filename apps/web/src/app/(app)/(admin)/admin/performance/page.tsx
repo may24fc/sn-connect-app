@@ -699,6 +699,7 @@ export default function AdminPerformancePage(): ReactNode {
           <Input
             placeholder="Search by name, email, or position..."
             value={search}
+              maxLength={200}
             onChange={(e) => {
               setSearch(e.target.value);
               setPage(1);

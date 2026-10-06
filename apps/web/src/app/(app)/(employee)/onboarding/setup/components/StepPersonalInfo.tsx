@@ -73,6 +73,7 @@ export function StepPersonalInfo({
             </Label>
             <Input
               id="firstName"
+            maxLength={120}
               value={get('firstName')}
               onChange={(e) => update('firstName', e.target.value)}
               required
@@ -84,6 +85,7 @@ export function StepPersonalInfo({
             </Label>
             <Input
               id="middleName"
+            maxLength={120}
               value={get('middleName')}
               onChange={(e) => update('middleName', e.target.value)}
             />
@@ -94,6 +96,7 @@ export function StepPersonalInfo({
             </Label>
             <Input
               id="lastName"
+            maxLength={120}
               value={get('lastName')}
               onChange={(e) => update('lastName', e.target.value)}
               required
@@ -105,6 +108,7 @@ export function StepPersonalInfo({
             </Label>
             <Input
               id="position"
+            maxLength={150}
               value={get('position')}
               onChange={(e) => update('position', e.target.value)}
               required
@@ -162,6 +166,7 @@ export function StepPersonalInfo({
             </Label>
             <Input
               id="major"
+            maxLength={200}
               value={get('major')}
               onChange={(e) => update('major', e.target.value)}
               placeholder="e.g., Computer Science, Business"
@@ -180,6 +185,7 @@ export function StepPersonalInfo({
             </Label>
             <Input
               id="personalEmail"
+            maxLength={320}
               type="email"
               value={get('personalEmail')}
               onChange={(e) => update('personalEmail', e.target.value)}
@@ -207,6 +213,7 @@ export function StepPersonalInfo({
             </Label>
             <Input
               id="streetAddress"
+            maxLength={300}
               value={get('streetAddress')}
               onChange={(e) => update('streetAddress', e.target.value)}
               placeholder="House/Unit, Building, Street"
@@ -219,6 +226,7 @@ export function StepPersonalInfo({
             </Label>
             <Input
               id="city"
+            maxLength={100}
               value={get('city')}
               onChange={(e) => update('city', e.target.value)}
               required
@@ -230,6 +238,7 @@ export function StepPersonalInfo({
             </Label>
             <Input
               id="province"
+            maxLength={100}
               value={get('province')}
               onChange={(e) => update('province', e.target.value)}
               required
@@ -241,6 +250,7 @@ export function StepPersonalInfo({
             </Label>
             <Input
               id="country"
+            maxLength={100}
               value={get('country')}
               onChange={(e) => update('country', e.target.value)}
               required
@@ -252,6 +262,7 @@ export function StepPersonalInfo({
             </Label>
             <Input
               id="zipcode"
+            maxLength={20}
               value={get('zipcode')}
               onChange={(e) => update('zipcode', e.target.value)}
             />
@@ -269,6 +280,7 @@ export function StepPersonalInfo({
             </Label>
             <Input
               id="emergencyContactName"
+            maxLength={120}
               value={get('emergencyContactName')}
               onChange={(e) => update('emergencyContactName', e.target.value)}
               required
@@ -314,6 +326,7 @@ export function StepPersonalInfo({
             </Label>
             <Input
               id="emergencyContactEmail"
+            maxLength={320}
               type="email"
               value={get('emergencyContactEmail')}
               onChange={(e) => update('emergencyContactEmail', e.target.value)}

@@ -493,6 +493,7 @@ export function OKRSelfServiceWorkspace({ fallbackPath }: OKRSelfServiceWorkspac
                 </Label>
                 <Input
                   id="objective"
+              maxLength={300}
                   placeholder="e.g., Improve customer satisfaction rating"
                   value={newOKR.objective}
                   onChange={(event) => setNewOKR({ ...newOKR, objective: event.target.value })}
@@ -510,6 +511,7 @@ export function OKRSelfServiceWorkspace({ fallbackPath }: OKRSelfServiceWorkspac
                 </Label>
                 <Textarea
                   id="description"
+              maxLength={3000}
                   placeholder="Add context so your team understands the purpose behind this goal..."
                   value={newOKR.description}
                   onChange={(event) => setNewOKR({ ...newOKR, description: event.target.value })}
@@ -531,6 +533,7 @@ export function OKRSelfServiceWorkspace({ fallbackPath }: OKRSelfServiceWorkspac
                   <div className="flex-1 space-y-1">
                     <Input
                       id="kr1"
+              maxLength={500}
                       placeholder="e.g., Increase NPS score from 30 to 50"
                       value={newOKR.kr1}
                       onChange={(event) => setNewOKR({ ...newOKR, kr1: event.target.value })}
@@ -545,6 +548,7 @@ export function OKRSelfServiceWorkspace({ fallbackPath }: OKRSelfServiceWorkspac
                   <div className="flex-1 space-y-1">
                     <Input
                       id="kr2"
+              maxLength={500}
                       placeholder="e.g., Reduce average response time to under 2 hours"
                       value={newOKR.kr2}
                       onChange={(event) => setNewOKR({ ...newOKR, kr2: event.target.value })}
@@ -559,6 +563,7 @@ export function OKRSelfServiceWorkspace({ fallbackPath }: OKRSelfServiceWorkspac
                   <div className="flex-1 space-y-1">
                     <Input
                       id="kr3"
+              maxLength={500}
                       placeholder="Optional - e.g., Achieve 95% customer retention rate"
                       value={newOKR.kr3}
                       onChange={(event) => setNewOKR({ ...newOKR, kr3: event.target.value })}
@@ -616,6 +621,7 @@ export function OKRSelfServiceWorkspace({ fallbackPath }: OKRSelfServiceWorkspac
                   <Input
                     placeholder="Type a subtask and press Enter..."
                     value={subtaskInput}
+                    maxLength={300}
                     onChange={(event) => setSubtaskInput(event.target.value)}
                     onKeyDown={handleSubtaskKeyDown}
                   />

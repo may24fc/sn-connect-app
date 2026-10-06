@@ -109,6 +109,7 @@ export function TicketWorkDialog({
             <Label>Resolution Summary</Label>
             <Textarea
               value={resolutionSummary}
+              maxLength={5000}
               onChange={(event) => setResolutionSummary(event.target.value)}
               placeholder="Add a brief update or resolution note..."
               rows={4}

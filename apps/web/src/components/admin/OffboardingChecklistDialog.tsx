@@ -877,6 +877,7 @@ export function OffboardingChecklistManager({
               <Label htmlFor="offboarding-task-title">Title</Label>
               <Input
                 id="offboarding-task-title"
+                maxLength={300}
                 className="bg-white"
                 value={taskDraft.title}
                 onChange={(event) =>
@@ -890,6 +891,7 @@ export function OffboardingChecklistManager({
               <Label htmlFor="offboarding-task-description">Description</Label>
               <Textarea
                 id="offboarding-task-description"
+                maxLength={3000}
                 className="bg-white"
                 rows={4}
                 value={taskDraft.description}
@@ -905,6 +907,7 @@ export function OffboardingChecklistManager({
                 <Label htmlFor="offboarding-task-category">Category</Label>
                 <Input
                   id="offboarding-task-category"
+                maxLength={100}
                   className="bg-white"
                   value={taskDraft.category}
                   onChange={(event) =>

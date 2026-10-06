@@ -129,6 +129,7 @@ export function ReportForm({
               id="summary"
               placeholder="Brief overview of the week's activities and outcomes..."
               value={summary}
+              maxLength={5000}
               onChange={(e) => setSummary(e.target.value)}
               rows={4}
               required
@@ -154,6 +155,7 @@ export function ReportForm({
                 <Input
                   placeholder={`Accomplishment ${index + 1}`}
                   value={item}
+                  maxLength={1000}
                   onChange={(e) =>
                     handleStringArrayChange(
                       index,
@@ -198,6 +200,7 @@ export function ReportForm({
                 <Input
                   placeholder={`Challenge ${index + 1}`}
                   value={item}
+                  maxLength={1000}
                   onChange={(e) =>
                     handleStringArrayChange(index, e.target.value, challenges, setChallenges)
                   }
@@ -235,6 +238,7 @@ export function ReportForm({
                 <Input
                   placeholder={`Plan ${index + 1}`}
                   value={item}
+                  maxLength={1000}
                   onChange={(e) =>
                     handleStringArrayChange(index, e.target.value, nextWeekPlans, setNextWeekPlans)
                   }
@@ -319,6 +323,7 @@ export function ReportForm({
           <Textarea
             placeholder="Additional comments or notes..."
             value={notes}
+            maxLength={5000}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
           />
