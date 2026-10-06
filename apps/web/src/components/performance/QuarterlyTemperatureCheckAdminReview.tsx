@@ -1,5 +1,6 @@
 'use client';
 
+import { FilterSearchInput, FilterSelect } from '@/components/data-display/FilterControls';
 import { monthlySelfEvaluationDepartmentRoleOptions } from '@/lib/schemas/performance.schema';
 import { EvaluationSummaryView } from './EvaluationSummaryView';
 import {
@@ -19,13 +20,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Input,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Skeleton,
   Table,
   TableBody,
@@ -212,48 +206,22 @@ export function QuarterlyTemperatureCheckAdminReview() {
             Review quarter-level team health responses by quarter, person, and department or role.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex gap-4 justify-between items-end">
-          <div className="flex flex-wrap gap-4 md:flex-nowrap">
-            <div className="space-y-2">
-              <Label>Quarter</Label>
-              <Select value={quarterKey} onValueChange={setQuarterKey}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a quarter" />
-                </SelectTrigger>
-                <SelectContent>
-                  {getQuarterOptions().map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {formatQuarterKey(option)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Department / Role</Label>
-              <Select value={departmentRole} onValueChange={setDepartmentRole}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All departments and roles" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All departments and roles</SelectItem>
-                  {monthlySelfEvaluationDepartmentRoleOptions.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="quarterly-review-search">Search</Label>
-              <Input
-                id="quarterly-review-search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search by full name"
-              />
-            </div>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <FilterSelect
+              label="Quarter"
+              value={quarterKey}
+              onValueChange={setQuarterKey}
+              allValue={null}
+              options={getQuarterOptions().map((option) => ({ value: option, label: formatQuarterKey(option) }))}
+            />
+            <FilterSelect
+              label="Department / role"
+              value={departmentRole}
+              onValueChange={setDepartmentRole}
+              options={monthlySelfEvaluationDepartmentRoleOptions.map((option) => ({ value: option, label: option }))}
+            />
+            <FilterSearchInput value={search} onChange={setSearch} placeholder="Search by full name" />
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button

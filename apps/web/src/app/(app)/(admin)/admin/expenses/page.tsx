@@ -3,6 +3,12 @@
 import { useMemo, useState } from 'react';
 import ExpenseMatchingQueuePage from '@/app/(app)/(employee)/expenses/verify/page';
 import { ImportExpensesDialog } from '@/components/admin/ImportExpensesDialog';
+import {
+  ClearFiltersButton,
+  FilterDateInput,
+  FilterSearchInput,
+  FilterSelect,
+} from '@/components/data-display/FilterControls';
 import { downloadMonthlyExpenseReport } from '@/hooks/useExpenseImport';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useDeleteExpense, useExpenses, useLeadershipDecision } from '@/hooks/useExpenses';
@@ -15,13 +21,12 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Input,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Table,
   TableBody,
   TableCell,
@@ -39,6 +44,7 @@ import { Badge } from '@hr-portal/ui';
 import {
   AlertCircle,
   CheckCircle,
+  ChevronDown,
   Download,
   FileCheck2,
   FileX2,
@@ -47,12 +53,10 @@ import {
   LineChart,
   Loader2,
   Scale,
-  Search,
   Sparkles,
   FileSpreadsheet,
   Trash2,
   Upload,
-  X,
 } from 'lucide-react';
 
 const SETTLED_STATUSES = new Set(['auto_approved', 'approved', 'rejected']);
@@ -135,6 +139,14 @@ export default function AdminExpensesDashboard() {
   const settled = filteredRows.filter(
     (entry) => SETTLED_STATUSES.has(entry.processing_status) || SETTLED_MATCH_STATUSES.has(entry.match_status)
   );
+
+  const activeFilterCount = [
+    searchTerm.trim() !== '',
+    departmentIdFilter !== 'all',
+    processingStatusFilter !== 'all',
+    dateFrom !== '',
+    dateTo !== '',
+  ].filter(Boolean).length;
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -274,108 +286,64 @@ export default function AdminExpensesDashboard() {
         </TabsList>
 
         {activeTab !== 'matching' ? (
-          <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Ledger Filters</CardTitle>
-              <CardDescription>Search and narrow records by department, processing state, and date window.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-                <div className="xl:col-span-2">
-                  <Label htmlFor="expense-search" className="text-xs text-zinc-600 dark:text-zinc-400">Search vendor</Label>
-                  <div className="relative mt-1">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
-                    <Input
-                      id="expense-search"
-                      value={searchTerm}
-                      onChange={(event) => setSearchTerm(event.target.value)}
-                      placeholder="Search by vendor"
-                      className="pl-8"
-                    />
-                  </div>
-                </div>
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-3 shadow-sm">
+            <FilterSearchInput value={searchTerm} onChange={setSearchTerm} placeholder="Search vendor" />
+            <FilterSelect
+              label="Department"
+              value={departmentIdFilter}
+              onValueChange={setDepartmentIdFilter}
+              options={(departmentsData?.data || []).map((department) => ({
+                value: department.id,
+                label: department.name,
+              }))}
+            />
+            <FilterSelect
+              label="State"
+              value={processingStatusFilter}
+              onValueChange={setProcessingStatusFilter}
+              options={[
+                { value: 'awaiting_associate_review', label: 'Awaiting associate review' },
+                { value: 'leadership_review_required', label: 'Leadership review required' },
+                { value: 'auto_approved', label: 'Auto-approved' },
+                { value: 'approved', label: 'Approved' },
+                { value: 'rejected', label: 'Rejected' },
+              ]}
+            />
+            <FilterDateInput label="From" value={dateFrom} onChange={setDateFrom} />
+            <FilterDateInput label="To" value={dateTo} onChange={setDateTo} />
+            <ClearFiltersButton count={activeFilterCount} onClear={clearFilters} />
 
-                <div>
-                  <Label className="text-xs text-zinc-600 dark:text-zinc-400">Department</Label>
-                  <Select value={departmentIdFilter} onValueChange={setDepartmentIdFilter}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="All departments" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All departments</SelectItem>
-                      {(departmentsData?.data || []).map((department) => (
-                        <SelectItem key={department.id} value={department.id}>
-                          {department.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label className="text-xs text-zinc-600 dark:text-zinc-400">Processing state</Label>
-                  <Select value={processingStatusFilter} onValueChange={setProcessingStatusFilter}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="All states" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All states</SelectItem>
-                      <SelectItem value="awaiting_associate_review">Awaiting associate review</SelectItem>
-                      <SelectItem value="leadership_review_required">Leadership review required</SelectItem>
-                      <SelectItem value="auto_approved">Auto-approved</SelectItem>
-                      <SelectItem value="approved">Approved</SelectItem>
-                      <SelectItem value="rejected">Rejected</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-              </div>
-
-              <div className="flex justify-between items-end gap-3 md:flex-row md:items-center md:gap-6 xl:gap-3 xl:grid xl:grid-cols-5">
-                <div className="flex gap-3">
-                  <div>
-                    <Label htmlFor="date-from" className="text-xs text-zinc-600 dark:text-zinc-400">Date from</Label>
-                    <Input id="date-from" type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} className="mt-1" />
-                  </div>
-                  <div>
-                    <Label htmlFor="date-to" className="text-xs text-zinc-600 dark:text-zinc-400">Date to</Label>
-                    <Input id="date-to" type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} className="mt-1" />
-                  </div>
-                </div>
-
-                <div className="flex items-end gap-2 xl:col-span-4 xl:justify-end">
-                  <Button variant="outline" onClick={clearFilters} className="gap-2">
-                    <X className="h-4 w-4" />
-                    Clear filters
-                  </Button>
-                  <Button variant="outline" onClick={() => handleExport('csv')} className="gap-2">
+            <div className="flex items-center gap-2 sm:ml-auto">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2">
                     <Download className="h-4 w-4" />
-                    Export CSV
+                    Export
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </Button>
-                  <Button variant="outline" onClick={() => handleExport('xlsx')} className="gap-2">
-                    <Download className="h-4 w-4" />
-                    Export XLSX
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => downloadMonthlyExpenseReport('pdf')}
-                    className="gap-2"
-                  >
-                    <FileSpreadsheet className="h-4 w-4" />
-                    Monthly Report
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setImportDialogOpen(true)}
-                    className="gap-2"
-                  >
-                    <Upload className="h-4 w-4" />
-                    Import
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleExport('csv')}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Filtered records (CSV)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport('xlsx')}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Filtered records (XLSX)
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => downloadMonthlyExpenseReport('pdf')}>
+                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                    Monthly report (PDF)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button variant="outline" onClick={() => setImportDialogOpen(true)} className="gap-2">
+                <Upload className="h-4 w-4" />
+                Import
+              </Button>
+            </div>
+          </div>
         ) : null}
 
         <TabsContent value="matching" className="space-y-4 outline-none">
@@ -466,6 +434,7 @@ export default function AdminExpensesDashboard() {
                         </Label>
                         <Textarea
                           id={`decide-${expense.id}`}
+                          maxLength={2000}
                           placeholder="State reasons for approval or specify items to be reformatted."
                           value={decisionNotes[expense.id] || ''}
                           onChange={(e) => handleNotesChange(expense.id, e.target.value)}

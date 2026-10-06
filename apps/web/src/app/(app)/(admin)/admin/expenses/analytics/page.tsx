@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useExpenseAnalytics } from '@/hooks/useExpenseAnalytics';
+import { ClearFiltersButton, FilterDateInput, FilterSelect } from '@/components/data-display/FilterControls';
 import {
   Button,
   Card,
@@ -12,12 +13,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  cn,
 } from '@hr-portal/ui';
 import { ArrowLeft, BarChart3, LineChart as LineChartIcon, Loader2, PieChart as PieChartIcon } from 'lucide-react';
 import {
@@ -193,68 +189,55 @@ export default function ExpenseAnalyticsDashboardPage() {
         </div>
       </div>
 
-      <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Context Filters</CardTitle>
-          <CardDescription>Switch period scope and operational filters to reshape executive reporting instantly.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-          <div>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Period scope</p>
-            <div className="flex gap-2">
-              <Button variant={period === 'week' ? 'default' : 'outline'} onClick={() => setPeriod('week')}>
-                Week
-              </Button>
-              <Button variant={period === 'month' ? 'default' : 'outline'} onClick={() => setPeriod('month')}>
-                Month
-              </Button>
-            </div>
-          </div>
-
-          <div>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Operational unit</p>
-            <Select value={departmentId} onValueChange={setDepartmentId}>
-              <SelectTrigger>
-                <SelectValue placeholder="All departments" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All departments</SelectItem>
-                {(departmentsData?.data || []).map((department) => (
-                  <SelectItem key={department.id} value={department.id}>
-                    {department.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Processing state</p>
-            <Select value={processingStatus} onValueChange={setProcessingStatus}>
-              <SelectTrigger>
-                <SelectValue placeholder="All states" />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Start date</p>
-            <Input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} />
-          </div>
-
-          <div>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">End date</p>
-            <Input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-3 shadow-sm">
+        <div role="group" aria-label="Period" className="inline-flex h-9 rounded-md border border-input bg-card p-0.5 shadow-sm">
+          {(['week', 'month'] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={period === value}
+              onClick={() => setPeriod(value)}
+              className={cn(
+                'rounded px-3 text-sm capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
+                period === value
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              By {value}
+            </button>
+          ))}
+        </div>
+        <FilterSelect
+          label="Department"
+          value={departmentId}
+          onValueChange={setDepartmentId}
+          options={(departmentsData?.data || []).map((department) => ({
+            value: department.id,
+            label: department.name,
+          }))}
+        />
+        <FilterSelect
+          label="State"
+          value={processingStatus}
+          onValueChange={setProcessingStatus}
+          options={STATUS_OPTIONS.filter((option) => option.value !== 'all').map((option) => ({
+            value: option.value,
+            label: option.label,
+          }))}
+        />
+        <FilterDateInput label="From" value={startDate} onChange={setStartDate} />
+        <FilterDateInput label="To" value={endDate} onChange={setEndDate} />
+        <ClearFiltersButton
+          count={[departmentId !== 'all', processingStatus !== 'all', startDate !== '', endDate !== ''].filter(Boolean).length}
+          onClear={() => {
+            setDepartmentId('all');
+            setProcessingStatus('all');
+            setStartDate('');
+            setEndDate('');
+          }}
+        />
+      </div>
 
       {isLoading ? (
         <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">

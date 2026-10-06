@@ -2,6 +2,12 @@
 
 import { stageFormDataFiles } from '@/lib/storage/stage-form-data';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  ClearFiltersButton,
+  FILTER_ALL_VALUE,
+  FilterSearchInput,
+  FilterSelect,
+} from '@/components/data-display/FilterControls';
 import { useDirectory } from '@/hooks/useDirectory';
 import {
   useCreatePaTaskAttachment,
@@ -26,8 +32,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -61,10 +65,22 @@ import {
   Textarea,
   useToast,
 } from '@hr-portal/ui';
-import { Loader2, Paperclip, Plus, Search, ShieldCheck, ShieldX, Trash2, UserPlus } from 'lucide-react';
+import {
+  ArrowUpDown,
+  CalendarDays,
+  Loader2,
+  Paperclip,
+  Plus,
+  Search,
+  ShieldCheck,
+  ShieldX,
+  Trash2,
+  UserPlus,
+  UserRound,
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 type LookupItem = {
   id: string;
@@ -195,6 +211,12 @@ function getDueStatusLabel(status: ReturnType<typeof getTaskDueStatus>) {
     default:
       return 'No Due Date';
   }
+}
+
+const ADD_PERSON_VALUE = '__add_person__';
+
+function todayLocalIso(): string {
+  return new Date().toLocaleDateString('en-CA');
 }
 
 function formatRole(role: string | null): string {
@@ -348,16 +370,15 @@ export default function PaTasksPage() {
     waitingOn: '',
     notes: '',
   });
+  // Status and priority are filled from the lookup defaults; date given is stamped on submit.
   const [quickAddForm, setQuickAddForm] = useState({
     title: '',
     statusId: '',
     priorityId: '',
-    categoryId: NONE_VALUE,
     assignedTo: NONE_VALUE,
     dueDate: '',
-    dateGiven: new Date().toISOString().slice(0, 10),
-    notes: '',
   });
+  const quickAddTitleRef = useRef<HTMLInputElement>(null);
 
   const [editForm, setEditForm] = useState({
     title: '',
@@ -418,21 +439,9 @@ export default function PaTasksPage() {
         : null,
     [createAttachmentDrafts]
   );
-  const quickAddValidationError = useMemo(() => {
-    if (!quickAddForm.title.trim()) {
-      return 'Task title is required.';
-    }
-
-    if (!quickAddForm.statusId) {
-      return 'Status is required.';
-    }
-
-    if (!quickAddForm.priorityId) {
-      return 'Priority is required.';
-    }
-
-    return null;
-  }, [quickAddForm]);
+  const canQuickAdd = Boolean(
+    quickAddForm.title.trim() && quickAddForm.statusId && quickAddForm.priorityId
+  );
 
   const detailAttachmentError = useMemo(
     () =>
@@ -491,16 +500,63 @@ export default function PaTasksPage() {
   }
 
   function resetQuickAddForm() {
-    setQuickAddForm({
-      title: '',
-      statusId: '',
-      priorityId: '',
-      categoryId: NONE_VALUE,
-      assignedTo: NONE_VALUE,
-      dueDate: '',
-      dateGiven: new Date().toISOString().slice(0, 10),
-      notes: '',
-    });
+    // Keep the defaulted status/priority so the next entry is immediately submittable.
+    setQuickAddForm((prev) => ({ ...prev, title: '', assignedTo: NONE_VALUE, dueDate: '' }));
+  }
+
+  function handleQuickAddSubmit() {
+    if (!canQuickAdd || createTask.isPending) return;
+    void createTask
+      .mutateAsync({
+        title: quickAddForm.title.trim(),
+        statusId: quickAddForm.statusId,
+        priorityId: quickAddForm.priorityId,
+        categoryId: null,
+        assignedTo: quickAddForm.assignedTo === NONE_VALUE ? null : quickAddForm.assignedTo,
+        dueDate: quickAddForm.dueDate || null,
+        dateGiven: todayLocalIso(),
+        blockerReason: null,
+        waitingOn: null,
+        notes: null,
+      })
+      .then(() => {
+        addToast({ title: 'Task added' });
+        resetQuickAddForm();
+        quickAddTitleRef.current?.focus();
+        void tasksQuery.refetch();
+      })
+      .catch((error: unknown) => {
+        addToast({
+          title: 'Could not add task',
+          description: error instanceof Error ? error.message : 'Please try again.',
+          variant: 'error',
+        });
+      });
+  }
+
+  // Carries whatever was typed into the full form, so switching never loses input.
+  function openFullCreateFromQuickAdd() {
+    setCreateForm((prev) => ({
+      ...prev,
+      title: quickAddForm.title,
+      assignedTo: quickAddForm.assignedTo,
+      dueDate: quickAddForm.dueDate,
+      dateGiven: prev.dateGiven || todayLocalIso(),
+    }));
+    resetQuickAddForm();
+    setCreateOpen(true);
+  }
+
+  const activeFilterCount = [statusId, priorityId, assigneeId, categoryId, dueStatus].filter(
+    (value) => value !== FILTER_ALL_VALUE
+  ).length;
+
+  function clearFilters() {
+    setStatusId(FILTER_ALL_VALUE);
+    setPriorityId(FILTER_ALL_VALUE);
+    setAssigneeId(FILTER_ALL_VALUE);
+    setCategoryId(FILTER_ALL_VALUE);
+    setDueStatus(FILTER_ALL_VALUE);
   }
 
   async function handleCategorySubmit() {
@@ -750,12 +806,6 @@ export default function PaTasksPage() {
               </Button>
             </>
           ) : null}
-          {!isArchiveView ? (
-            <Button onClick={() => setCreateOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Task
-            </Button>
-          ) : null}
         </div>
       </div>
 
@@ -771,89 +821,41 @@ export default function PaTasksPage() {
       </Tabs>
 
       {!isArchiveView ? (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Quick Add Task</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Fast task entry with essential fields only. Use "New Task" for full details and attachments.
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="space-y-1.5">
-            <Label>Task</Label>
-            <Input
-              value={quickAddForm.title}
-              onChange={(event) => setQuickAddForm((prev) => ({ ...prev, title: event.target.value }))}
-              placeholder="Enter task"
-            />
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="space-y-1.5">
-              <Label>Status</Label>
-              <Select
-                value={quickAddForm.statusId}
-                onValueChange={(value) => setQuickAddForm((prev) => ({ ...prev, statusId: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {selectableStatuses.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>Priority</Label>
-              <Select
-                value={quickAddForm.priorityId}
-                onValueChange={(value) => setQuickAddForm((prev) => ({ ...prev, priorityId: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  {priorities.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>Date Given</Label>
-              <Input
-                type="date"
-                value={quickAddForm.dateGiven}
-                onChange={(event) => setQuickAddForm((prev) => ({ ...prev, dateGiven: event.target.value }))}
+        <form
+          aria-label="Quick add task"
+          onSubmit={(event) => {
+            event.preventDefault();
+            handleQuickAddSubmit();
+          }}
+          className="space-y-1.5"
+        >
+          <div className="flex flex-col gap-2 rounded-lg border border-input bg-card p-2 shadow-sm transition-colors focus-within:border-primary/60 md:flex-row md:items-center">
+            <div className="flex min-w-0 flex-1 items-center gap-2 px-1.5">
+              <Plus className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+              <input
+                ref={quickAddTitleRef}
+                aria-label="Task title"
+                value={quickAddForm.title}
+                maxLength={300}
+                onChange={(event) => setQuickAddForm((prev) => ({ ...prev, title: event.target.value }))}
+                placeholder="Add a task, then press Enter"
+                className="h-9 w-full min-w-0 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label>Due Date</Label>
-              <Input
-                type="date"
-                value={quickAddForm.dueDate}
-                onChange={(event) => setQuickAddForm((prev) => ({ ...prev, dueDate: event.target.value }))}
-              />
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label>Assigned To</Label>
+            <div className="flex flex-wrap items-center gap-2">
               <Select
                 value={quickAddForm.assignedTo}
-                onValueChange={(value) => setQuickAddForm((prev) => ({ ...prev, assignedTo: value }))}
+                onValueChange={(value) => {
+                  if (value === ADD_PERSON_VALUE) {
+                    setAccessManagerOpen(true);
+                    return;
+                  }
+                  setQuickAddForm((prev) => ({ ...prev, assignedTo: value }));
+                }}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Assignee" className="w-auto min-w-[150px] max-w-[220px] gap-1.5">
+                  <UserRound className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -863,87 +865,41 @@ export default function PaTasksPage() {
                       {item.fullName}
                     </SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>Category (optional)</Label>
-              <Select
-                value={quickAddForm.categoryId}
-                onValueChange={(value) => setQuickAddForm((prev) => ({ ...prev, categoryId: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE_VALUE}>None</SelectItem>
-                  {categories.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      {item.label}
+                  {canManage ? (
+                    <SelectItem value={ADD_PERSON_VALUE} className="mt-1 border-t border-border pt-2 text-primary">
+                      Add person…
                     </SelectItem>
-                  ))}
+                  ) : null}
                 </SelectContent>
               </Select>
+
+              <label className="flex h-9 cursor-text items-center gap-1.5 rounded-md border border-input bg-card px-2.5 text-sm shadow-sm transition-colors focus-within:border-primary/60 hover:border-primary/35">
+                <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                <span className="text-muted-foreground">Due</span>
+                <input
+                  type="date"
+                  aria-label="Due date"
+                  value={quickAddForm.dueDate}
+                  onChange={(event) => setQuickAddForm((prev) => ({ ...prev, dueDate: event.target.value }))}
+                  className="bg-transparent text-foreground tabular-nums outline-none"
+                />
+              </label>
+
+              <Button type="submit" disabled={!canQuickAdd || createTask.isPending}>
+                {createTask.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Add
+              </Button>
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label>Notes (optional)</Label>
-            <Input
-              value={quickAddForm.notes}
-              onChange={(event) => setQuickAddForm((prev) => ({ ...prev, notes: event.target.value }))}
-              placeholder="Optional context"
-            />
-          </div>
-
-          {quickAddValidationError ? (
-            <p className="text-sm text-red-600 dark:text-red-400">{quickAddValidationError}</p>
-          ) : null}
-
-          <div className="flex items-center gap-2">
-            <Button
-              disabled={createTask.isPending || Boolean(quickAddValidationError)}
-              onClick={() => {
-                void createTask
-                  .mutateAsync({
-                    title: quickAddForm.title.trim(),
-                    statusId: quickAddForm.statusId,
-                    priorityId: quickAddForm.priorityId,
-                    categoryId: quickAddForm.categoryId === NONE_VALUE ? null : quickAddForm.categoryId,
-                    assignedTo: quickAddForm.assignedTo === NONE_VALUE ? null : quickAddForm.assignedTo,
-                    dueDate: quickAddForm.dueDate || null,
-                    dateGiven: quickAddForm.dateGiven || null,
-                    blockerReason: null,
-                    waitingOn: null,
-                    notes: quickAddForm.notes.trim() || null,
-                  })
-                  .then(() => {
-                    addToast({
-                      title: 'Task added',
-                      description: 'Quick task entry has been created.',
-                    });
-                    resetQuickAddForm();
-                    void tasksQuery.refetch();
-                  })
-                  .catch((error: unknown) => {
-                    addToast({
-                      title: 'Quick add failed',
-                      description: error instanceof Error ? error.message : 'Unable to create quick task',
-                      variant: 'error',
-                    });
-                  });
-              }}
-            >
-              {createTask.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Quick Add
-            </Button>
-            <Button variant="outline" onClick={resetQuickAddForm} disabled={createTask.isPending}>
-              Clear
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          <button
+            type="button"
+            onClick={openFullCreateFromQuickAdd}
+            className="rounded px-1 text-xs font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+          >
+            Need status, category, blockers or attachments? Add with full details
+          </button>
+        </form>
       ) : null}
 
       <Dialog open={accessManagerOpen} onOpenChange={setAccessManagerOpen}>
@@ -1037,6 +993,7 @@ export default function PaTasksPage() {
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                     <Input
                       value={accessSearch}
+                      maxLength={200}
                       onChange={(event) => setAccessSearch(event.target.value)}
                       placeholder="Search by name, email, or role"
                       className="h-12 pl-10"
@@ -1129,97 +1086,62 @@ export default function PaTasksPage() {
       </Dialog>
 
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Filters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-7">
-            <div className="space-y-1.5">
-              <Label>Search</Label>
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" placeholder="Task or description..." />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Status</Label>
-              <Select value={statusId} onValueChange={setStatusId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  {statusFilterOptions.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Priority</Label>
-              <Select value={priorityId} onValueChange={setPriorityId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  {priorities.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Assigned To</Label>
-              <Select value={assigneeId} onValueChange={setAssigneeId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  {assignees.map((item) => (
-                    <SelectItem key={item.userId} value={item.userId}>{item.fullName}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Category</Label>
-              <Select value={categoryId} onValueChange={setCategoryId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  {categories.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Due Status</Label>
-              <Select value={dueStatus} onValueChange={(value) => setDueStatus(value as 'all' | 'overdue' | 'on_time' | 'completed' | 'no_due_date')}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="overdue">Overdue</SelectItem>
-                  <SelectItem value="on_time">On Time</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="no_due_date">No Due Date</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Sort</Label>
-              <Select
-                value={sortPreset}
-                onValueChange={(value) =>
-                  setSortPreset(value as 'recently_updated' | 'due_date_asc' | 'due_date_desc')
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="recently_updated">Recently Updated</SelectItem>
-                  <SelectItem value="due_date_asc">Due Date (Oldest first)</SelectItem>
-                  <SelectItem value="due_date_desc">Due Date (Latest first)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
         <CardContent className="p-0">
+          <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
+            <FilterSearchInput value={search} onChange={setSearch} placeholder="Search tasks" />
+            <FilterSelect
+              label="Status"
+              value={statusId}
+              onValueChange={setStatusId}
+              options={statusFilterOptions.map((item) => ({ value: item.id, label: item.label }))}
+            />
+            <FilterSelect
+              label="Priority"
+              value={priorityId}
+              onValueChange={setPriorityId}
+              options={priorities.map((item) => ({ value: item.id, label: item.label }))}
+            />
+            <FilterSelect
+              label="Assignee"
+              value={assigneeId}
+              onValueChange={setAssigneeId}
+              options={assignees.map((item) => ({ value: item.userId, label: item.fullName }))}
+            />
+            <FilterSelect
+              label="Category"
+              value={categoryId}
+              onValueChange={setCategoryId}
+              options={categories.map((item) => ({ value: item.id, label: item.label }))}
+            />
+            <FilterSelect
+              label="Due"
+              value={dueStatus}
+              onValueChange={(value) => setDueStatus(value as typeof dueStatus)}
+              options={[
+                { value: 'overdue', label: 'Overdue' },
+                { value: 'on_time', label: 'On time' },
+                { value: 'completed', label: 'Completed' },
+                { value: 'no_due_date', label: 'No due date' },
+              ]}
+            />
+            <ClearFiltersButton count={activeFilterCount} onClear={clearFilters} />
+            <Select
+              value={sortPreset}
+              onValueChange={(value) =>
+                setSortPreset(value as 'recently_updated' | 'due_date_asc' | 'due_date_desc')
+              }
+            >
+              <SelectTrigger aria-label="Sort tasks" className="w-auto gap-1.5 whitespace-nowrap sm:ml-auto">
+                <ArrowUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                <SelectItem value="recently_updated">Recently updated</SelectItem>
+                <SelectItem value="due_date_asc">Due soonest</SelectItem>
+                <SelectItem value="due_date_desc">Due latest</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="overflow-x-auto">
             <Table className="table-fixed min-w-[2000px]">
               <TableHeader>
@@ -1364,6 +1286,7 @@ export default function PaTasksPage() {
                 <Input
                   placeholder="Category name"
                   value={categoryForm.label}
+                  maxLength={100}
                   onChange={(e) => setCategoryForm((p) => ({ ...p, label: e.target.value }))}
                 />
                 <Select
@@ -1433,6 +1356,7 @@ export default function PaTasksPage() {
                 <Label>Task</Label>
                 <Textarea
                   value={createForm.title}
+                  maxLength={300}
                   onChange={(e) => setCreateForm((p) => ({ ...p, title: e.target.value }))}
                   className="min-h-[80px] resize-y"
                 />
@@ -1489,11 +1413,11 @@ export default function PaTasksPage() {
               </div>
               <div className="space-y-1.5">
                 <Label>Blockers</Label>
-                <Input value={createForm.blockerReason} onChange={(e) => setCreateForm((p) => ({ ...p, blockerReason: e.target.value }))} />
+                <Input value={createForm.blockerReason} maxLength={500} onChange={(e) => setCreateForm((p) => ({ ...p, blockerReason: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
                 <Label>Waiting On</Label>
-                <Input value={createForm.waitingOn} onChange={(e) => setCreateForm((p) => ({ ...p, waitingOn: e.target.value }))} />
+                <Input value={createForm.waitingOn} maxLength={300} onChange={(e) => setCreateForm((p) => ({ ...p, waitingOn: e.target.value }))} />
               </div>
               <div className="space-y-3 rounded-md border p-3">
                 <div className="flex items-center justify-between gap-2">
@@ -1539,6 +1463,7 @@ export default function PaTasksPage() {
                         <Input
                           placeholder="Attachment title (optional)"
                           value={attachment.title}
+                          maxLength={200}
                           onChange={(e) =>
                             setCreateAttachmentDrafts((prev) =>
                               prev.map((item, itemIndex) => (itemIndex === index ? { ...item, title: e.target.value } : item))
@@ -1550,6 +1475,7 @@ export default function PaTasksPage() {
                             key={`create-link-input-${index}`}
                             placeholder="https://..."
                             value={attachment.url}
+                            maxLength={2048}
                             onChange={(e) =>
                               setCreateAttachmentDrafts((prev) =>
                                 prev.map((item, itemIndex) => (itemIndex === index ? { ...item, url: e.target.value } : item))
@@ -1580,7 +1506,7 @@ export default function PaTasksPage() {
               </div>
               <div className="space-y-1.5">
                 <Label>Notes/Remarks</Label>
-                <Textarea value={createForm.notes} onChange={(e) => setCreateForm((p) => ({ ...p, notes: e.target.value }))} />
+                <Textarea value={createForm.notes} maxLength={5000} onChange={(e) => setCreateForm((p) => ({ ...p, notes: e.target.value }))} />
               </div>
             </SlidePanelSection>
           </SlidePanelBody>
@@ -1721,6 +1647,7 @@ export default function PaTasksPage() {
                     <Label>Task</Label>
                     <Textarea
                       value={editForm.title}
+                      maxLength={300}
                       onChange={(e) => setEditForm((p) => ({ ...p, title: e.target.value }))}
                       className="min-h-[120px] resize-y"
                     />
@@ -1777,15 +1704,15 @@ export default function PaTasksPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label>Blockers</Label>
-                    <Input value={editForm.blockerReason} onChange={(e) => setEditForm((p) => ({ ...p, blockerReason: e.target.value }))} />
+                    <Input value={editForm.blockerReason} maxLength={500} onChange={(e) => setEditForm((p) => ({ ...p, blockerReason: e.target.value }))} />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Waiting On</Label>
-                    <Input value={editForm.waitingOn} onChange={(e) => setEditForm((p) => ({ ...p, waitingOn: e.target.value }))} />
+                    <Input value={editForm.waitingOn} maxLength={300} onChange={(e) => setEditForm((p) => ({ ...p, waitingOn: e.target.value }))} />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Notes/Remarks</Label>
-                    <Textarea value={editForm.notes} onChange={(e) => setEditForm((p) => ({ ...p, notes: e.target.value }))} />
+                    <Textarea value={editForm.notes} maxLength={5000} onChange={(e) => setEditForm((p) => ({ ...p, notes: e.target.value }))} />
                   </div>
                 </SlidePanelSection>
 
@@ -1799,12 +1726,13 @@ export default function PaTasksPage() {
                           <SelectItem value="file">File</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Input placeholder="Title (optional)" value={attachmentForm.title} onChange={(e) => setAttachmentForm((p) => ({ ...p, title: e.target.value }))} />
+                      <Input placeholder="Title (optional)" value={attachmentForm.title} maxLength={200} onChange={(e) => setAttachmentForm((p) => ({ ...p, title: e.target.value }))} />
                       {attachmentForm.type === 'link' ? (
                         <Input
                           key="detail-link-input"
                           placeholder="https://..."
                           value={attachmentForm.url}
+                          maxLength={2048}
                           onChange={(e) => setAttachmentForm((p) => ({ ...p, url: e.target.value }))}
                         />
                       ) : (

@@ -1,5 +1,6 @@
 'use client';
 
+import { FilterDateInput, FilterSearchInput, FilterSelect } from '@/components/data-display/FilterControls';
 import { monthlySelfEvaluationDepartmentRoleOptions } from '@/lib/schemas/performance.schema';
 import { EvaluationSummaryView } from './EvaluationSummaryView';
 import {
@@ -21,13 +22,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Input,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Skeleton,
   Table,
   TableBody,
@@ -200,42 +194,22 @@ export function MonthlyCallFeedbackAdminReview() {
             Review feedback on engagement, clarity, and future call improvements for each monthly session.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex gap-4 justify-between items-end">
-          <div className="flex flex-wrap gap-4 md:flex-nowrap">
-            <div className="space-y-2">
-              <Label htmlFor="monthly-call-feedback-review-month">Month</Label>
-              <Input
-                id="monthly-call-feedback-review-month"
-                type="month"
-                value={monthKey}
-                onChange={(event) => setMonthKey(event.target.value || getCurrentMonthKey())}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Department / Role</Label>
-              <Select value={departmentRole} onValueChange={setDepartmentRole}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All departments and roles" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All departments and roles</SelectItem>
-                  {monthlySelfEvaluationDepartmentRoleOptions.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="monthly-call-feedback-review-search">Search</Label>
-              <Input
-                id="monthly-call-feedback-review-search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search by full name"
-              />
-            </div>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <FilterDateInput
+              type="month"
+              label="Month"
+              value={monthKey}
+              onChange={(value) => setMonthKey(value || getCurrentMonthKey())}
+              isScope
+            />
+            <FilterSelect
+              label="Department / role"
+              value={departmentRole}
+              onValueChange={setDepartmentRole}
+              options={monthlySelfEvaluationDepartmentRoleOptions.map((option) => ({ value: option, label: option }))}
+            />
+            <FilterSearchInput value={search} onChange={setSearch} placeholder="Search by full name" />
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button
