@@ -17,6 +17,26 @@ export class ApiError extends Error {
   }
 }
 
+type ValidationDetails = {
+  fieldErrors?: Record<string, Array<string> | undefined>;
+  formErrors?: Array<string>;
+};
+
+function getValidationMessage(details: unknown): string | null {
+  if (!details || typeof details !== 'object') return null;
+
+  const validation = details as ValidationDetails;
+  const formMessage = validation.formErrors?.find((message) => Boolean(message));
+  if (formMessage) return formMessage;
+
+  for (const messages of Object.values(validation.fieldErrors ?? {})) {
+    const message = messages?.find((entry) => Boolean(entry));
+    if (message) return message;
+  }
+
+  return null;
+}
+
 /**
  * Builds an {@link ApiError} from a failed `fetch` response, preferring the
  * `error` field that this codebase's API routes return.
@@ -27,7 +47,11 @@ export async function toApiError(response: Response, fallbackMessage: string): P
     details?: unknown;
   } | null;
 
-  return new ApiError(payload?.error || fallbackMessage, response.status, payload?.details);
+  return new ApiError(
+    getValidationMessage(payload?.details) || payload?.error || fallbackMessage,
+    response.status,
+    payload?.details
+  );
 }
 
 /** Throws an {@link ApiError} when the response is not ok; otherwise returns it. */

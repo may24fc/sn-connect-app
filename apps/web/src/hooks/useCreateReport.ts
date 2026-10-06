@@ -1,3 +1,4 @@
+import { toApiError } from '@/lib/api-error';
 import { queryKeys } from '@/lib/query-keys';
 import type { ReportCreateInput } from '@/lib/schemas/report.schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -17,8 +18,7 @@ export function useCreateReport() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create report');
+        throw await toApiError(response, 'Failed to create report');
       }
 
       return response.json();

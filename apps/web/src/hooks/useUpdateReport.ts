@@ -1,3 +1,4 @@
+import { toApiError } from '@/lib/api-error';
 import { queryKeys } from '@/lib/query-keys';
 import type { ReportCreateInput } from '@/lib/schemas/report.schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -20,8 +21,7 @@ export function useUpdateReport() {
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Failed to update report' }));
-        throw new Error(error.error || 'Failed to update report');
+        throw await toApiError(response, 'Failed to update report');
       }
 
       return response.json();

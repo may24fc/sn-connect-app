@@ -89,6 +89,8 @@ export const marketingSubmissionKindValues = ['weekly_summary', 'weekly_plan'] a
 
 export const marketingSubmissionKindSchema = z.enum(marketingSubmissionKindValues);
 
+export const WEEKLY_PLAN_ITEM_MAX_LENGTH = 1000;
+
 export const contentCreationEntrySchema = z.object({
   platform: z.string().trim().min(1, 'Platform or app is required').max(80),
   posts: z.coerce.number().int().min(0, 'Posts cannot be negative'),
@@ -101,7 +103,14 @@ export const contentCreationDetailsSchema = z.object({
   observations: z.string().trim().max(5000).optional().nullable(),
 });
 
-export const weeklyPlanItemSchema = z.string().trim().min(1, 'Plan item is required').max(300);
+export const weeklyPlanItemSchema = z
+  .string()
+  .trim()
+  .min(1, 'Plan item is required')
+  .max(
+    WEEKLY_PLAN_ITEM_MAX_LENGTH,
+    `Plan item must be ${WEEKLY_PLAN_ITEM_MAX_LENGTH.toLocaleString()} characters or fewer`
+  );
 
 export const weeklyPlanDetailsSchema = z.object({
   items: z.array(weeklyPlanItemSchema).max(50).default([]),
@@ -122,10 +131,10 @@ export const marketingContextSchema = z.object({
 });
 
 export const reportMetricSchema = z.object({
-  metricName: z.string().min(1, 'Metric name is required'),
+  metricName: z.string().min(1, 'Metric name is required').max(200),
   metricValue: z.number(),
-  metricUnit: z.string().optional().nullable(),
-  notes: z.string().optional().nullable(),
+  metricUnit: z.string().max(50).optional().nullable(),
+  notes: z.string().max(2000).optional().nullable(),
 });
 
 export const reportSchema = z.object({
@@ -133,7 +142,7 @@ export const reportSchema = z.object({
   periodStart: dateSchema,
   periodEnd: dateSchema,
   status: reportStatusSchema.default('draft'),
-  notes: z.string().optional().nullable(),
+  notes: z.string().max(100000).optional().nullable(),
   marketingContext: marketingContextSchema.optional().nullable(),
 });
 

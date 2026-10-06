@@ -33,12 +33,13 @@ import {
   REPORT_CURRENCY_SYMBOL,
   type MarketingMetricTemplate,
 } from '@/lib/report-utils';
-import type {
-  MarketingCampaignType,
-  MarketingObjective,
-  MarketingReportType,
-  MarketingSubmissionKind,
-  ReportCreateInput,
+import {
+  WEEKLY_PLAN_ITEM_MAX_LENGTH,
+  type MarketingCampaignType,
+  type MarketingObjective,
+  type MarketingReportType,
+  type MarketingSubmissionKind,
+  type ReportCreateInput,
 } from '@/lib/schemas/report.schema';
 import {
   Badge,
@@ -479,6 +480,15 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     () => weeklyPlanItems.map((item) => item.trim()).filter(Boolean),
     [weeklyPlanItems]
   );
+  const weeklyPlanItemErrors = useMemo(
+    () =>
+      weeklyPlanItems.map((item) =>
+        item.length > WEEKLY_PLAN_ITEM_MAX_LENGTH
+          ? `Plan item must be ${WEEKLY_PLAN_ITEM_MAX_LENGTH.toLocaleString()} characters or fewer.`
+          : null
+      ),
+    [weeklyPlanItems]
+  );
 
   useEffect(() => {
     if (isEditMode) {
@@ -630,6 +640,11 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
         return 'Add at least one weekly plan item.';
       }
 
+      const overLimitIndex = weeklyPlanItemErrors.findIndex(Boolean);
+      if (overLimitIndex >= 0) {
+        return `Plan item ${overLimitIndex + 1} must be ${WEEKLY_PLAN_ITEM_MAX_LENGTH.toLocaleString()} characters or fewer.`;
+      }
+
       return null;
     }
 
@@ -685,7 +700,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     }
 
     return null;
-  }, [campaignType, isContentCreationReport, isGoogleAdsReport, isWeeklyPlanMode, marketingReportType, normalizedWeeklyPlanItems.length, notes, objective, periodEnd, periodStart, results, selectedObjectives, totalSpend, uploadingMetricIds.length]);
+  }, [campaignType, isContentCreationReport, isGoogleAdsReport, isWeeklyPlanMode, marketingReportType, normalizedWeeklyPlanItems.length, notes, objective, periodEnd, periodStart, results, selectedObjectives, totalSpend, uploadingMetricIds.length, weeklyPlanItemErrors]);
 
   const buildReportPayload = useCallback(
     (asDraft: boolean): ReportCreateInput => {
@@ -1582,6 +1597,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
                             <Input
                               placeholder="Metric name"
                               value={metric.locked && metric.displayName ? metric.displayName : metric.name}
+                              maxLength={200}
                               readOnly={metric.locked}
                               onChange={(event) => handleMetricChange(index, 'name', event.target.value)}
                               className={metric.locked ? 'bg-muted/40 text-muted-foreground' : undefined}
@@ -1596,6 +1612,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
                           )}
                           <Input
                             type="text"
+                            maxLength={100}
                             inputMode={metricValueRule.allowDecimal ? 'decimal' : 'numeric'}
                             value={metric.value}
                             onChange={(event) => handleMetricChange(index, 'value', event.target.value)}
@@ -1727,6 +1744,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
                 <CardContent>
                   <Textarea
                     id="results"
+                    maxLength={5000}
                     value={results}
                     onChange={(event) => setResults(event.target.value)}
                     rows={4}
@@ -1754,6 +1772,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
               <CardContent>
                 <Textarea
                   id="notes"
+                  maxLength={5000}
                   value={notes}
                   onChange={(event) => setNotes(event.target.value)}
                   rows={5}
@@ -1830,11 +1849,31 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
                   <div key={`weekly-plan-${index}`} className="grid gap-2 md:grid-cols-[minmax(0,1fr)_40px] md:items-end">
                     <div className="space-y-1">
                       {index === 0 ? <Label className="text-xs text-muted-foreground">Plan Item</Label> : null}
-                      <Input
+                      <Textarea
                         value={item}
+                        maxLength={WEEKLY_PLAN_ITEM_MAX_LENGTH}
                         onChange={(event) => handlePlanItemChange(index, event.target.value)}
                         placeholder={`Plan item ${index + 1}`}
+                        rows={2}
+                        showCounter={false}
+                        error={Boolean(weeklyPlanItemErrors[index])}
+                        aria-invalid={Boolean(weeklyPlanItemErrors[index])}
+                        aria-describedby={`weekly-plan-${index}-limit`}
+                        className="min-h-20 resize-y"
                       />
+                      <div
+                        id={`weekly-plan-${index}-limit`}
+                        className={cn(
+                          'flex justify-end text-xs',
+                          weeklyPlanItemErrors[index] ? 'text-rose-500' : 'text-muted-foreground'
+                        )}
+                      >
+                        {weeklyPlanItemErrors[index]
+                          ? weeklyPlanItemErrors[index]
+                          : item.length >= WEEKLY_PLAN_ITEM_MAX_LENGTH * 0.8
+                            ? `${item.length.toLocaleString()}/${WEEKLY_PLAN_ITEM_MAX_LENGTH.toLocaleString()}`
+                            : `Up to ${WEEKLY_PLAN_ITEM_MAX_LENGTH.toLocaleString()} characters`}
+                      </div>
                     </div>
                     <div className="flex items-end md:justify-center">
                       {weeklyPlanItems.length > 1 ? (
