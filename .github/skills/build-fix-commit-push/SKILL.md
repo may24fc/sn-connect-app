@@ -8,7 +8,7 @@ disable-model-invocation: false
 
 # Build, Fix, Commit, Push
 
-Complete the requested delivery workflow end to end for this pnpm/Turborepo repository. Preserve unrelated user changes and never apply database migrations or deploy application code unless explicitly requested.
+Complete the requested delivery workflow end to end for this pnpm/Turborepo repository. Preserve unrelated user changes. When the pending delivery includes new database migrations, apply them to local and production as described below; otherwise, do not change either database.
 
 ## Preflight
 
@@ -23,6 +23,36 @@ Complete the requested delivery workflow end to end for this pnpm/Turborepo repo
 
 3. Treat pre-existing changes as user work. Do not revert, discard, or reformat them merely to obtain a clean worktree.
 4. When the requested changes affect a feature, create or update its task tracker before finishing. Mark a task `Done` only after its focused validation passes.
+
+## Migration Gate
+
+1. Check whether the pending delivery contains new migration files before staging commits:
+
+   ```powershell
+   git status --short -- supabase/migrations
+   git diff --name-only -- supabase/migrations
+   ```
+
+2. If there are no new migration files, record that the migration gate was not applicable and continue without database changes.
+3. If migrations are present, state the target environment before every database-changing command. Apply and verify **local** first:
+
+   ```powershell
+   pnpm supabase:start
+   supabase migration up --local
+   supabase migration list --local
+   ```
+
+4. After local migration validation passes, apply and verify **production**. Use the known production project reference, run the dry run, then perform the push only when it reports the intended migration set:
+
+   ```powershell
+   $productionProjectRef = 'tccdupkjmwwxcvpqnpeb'
+   supabase db push --project-ref $productionProjectRef --dry-run
+   supabase db push --project-ref $productionProjectRef
+   supabase migration list --project-ref $productionProjectRef
+   ```
+
+5. Never target staging. Do not modify an already-applied migration. If either environment rejects a migration, stop the delivery, report the target, error cause, and repair required; do not commit or push code that depends on the unapplied migration.
+6. Record the local and production application and verification in the owning feature tracker. Include each migration with its owning feature commit.
 
 ## Build And Diagnose
 
@@ -57,7 +87,7 @@ Complete the requested delivery workflow end to end for this pnpm/Turborepo repo
    chore(scope): tooling or generated artifact update
    ```
 
-6. Include migrations with their owning feature commit, never as an accidental catch-all. Migrations are append-only; do not modify previously applied migration files.
+6. Include migrations with their owning feature commit, never as an accidental catch-all. Migrations are append-only; do not modify previously applied migration files. Complete the Migration Gate before committing a group that includes a new migration.
 
 ## Validate Committed Work
 
@@ -65,6 +95,7 @@ Complete the requested delivery workflow end to end for this pnpm/Turborepo repo
 2. Before pushing, require all of the following:
    - the requested build scope passed during this workflow (`pnpm build` by default, or `pnpm --filter @hr-portal/web build` for web-only requests);
    - focused checks for modified behavior passed where tests exist;
+   - when the delivery contains a new migration, local and production application and verification completed through the Migration Gate;
    - `git status --short` is empty, excluding intentionally ignored tool caches;
    - `git log --oneline origin/main..HEAD` contains the expected commits.
 
