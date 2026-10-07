@@ -9,7 +9,7 @@ process.on('warning', (warning) => {
 });
 
 const nextConfig: NextConfig = {
-  distDir: '.next',
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   transpilePackages: ['@hr-portal/ui', '@hr-portal/database', '@hr-portal/auth', '@hr-portal/ai'],
   serverExternalPackages: ['googleapis', 'pdfkit'],
   outputFileTracingRoot: path.join(__dirname, '../../'),

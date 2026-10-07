@@ -43,6 +43,15 @@ For feature-level optimization work, maintain `docs/features/<feature-slug>/opti
 - Include a linked code map and a dated change log. Use concise Mermaid diagrams for multi-stage, cross-layer, or security/performance tradeoff flows when they improve Markdown preview comprehension.
 - Keep `optimization.md` and `task-tracker.md` linked and factually consistent; the tracker remains the authoritative task-status handoff.
 
+## Latency Measurement
+
+Any fix that can affect latency must be measured; these numbers are required evidence. Follow `.github/skills/measure-latency/SKILL.md` and `docs/guides/latency-measurement.md`.
+
+- Capture `pnpm performance:latency --label before` before editing, rerun with `--label after`, and use `--compare` for the delta.
+- Record p50/p95 before/after/delta with date, commit, environment, role, and sample count in `optimization.md`; summarize the headline delta in the tracker.
+- Use `apps/web/src/lib/observability/timing.ts` for phase timing. Never log PII or record IDs.
+- Never claim "faster" without numbers. If measurement is impossible, record the reason and the resume command; do not mark the task `Done`.
+
 ## Essential Commands
 
 ```bash

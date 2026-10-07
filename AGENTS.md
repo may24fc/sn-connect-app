@@ -79,3 +79,13 @@ For any feature where performance, perceived latency, reliability, complexity, b
 - Include a concise **Visual Guide** using Mermaid whenever a flow spans three or more stages, crosses application layers, or involves a material security/performance tradeoff. Do not add decorative visuals for one-step changes.
 - Keep a dated change log so readers can distinguish what was measured, reviewed, implemented, and still pending.
 - Link the optimization record from the feature's `task-tracker.md`, and keep the tracker and optimization record factually consistent.
+
+## Latency Measurement
+
+Measured numbers are required evidence for any change that can affect latency, load time, API response time, auth/session overhead, or query cost. Use the `measure-latency` skill (`.github/skills/measure-latency/SKILL.md`) and [docs/guides/latency-measurement.md](docs/guides/latency-measurement.md).
+
+- Capture a baseline with `pnpm performance:latency --label before` **before** editing code, then rerun the identical command with `--label after` and use `--compare` for the delta table.
+- Record p50/p95 before, after, and delta, plus date, commit, environment, user role, and sample count in the feature's `optimization.md` `Measurements` section. Summarize the headline delta in the task tracker.
+- Instrument narrower phases with `apps/web/src/lib/observability/timing.ts` (`recordTiming`, `appendServerTiming`) when totals are not specific enough. Never log PII or record IDs.
+- Do not describe a change as faster without numbers. If measurement is impossible, record why and the exact command to run later; the task stays `Deferred` or `Blocked`, not `Done`.
+- Measure against local services only, unless the user explicitly requests production measurement.

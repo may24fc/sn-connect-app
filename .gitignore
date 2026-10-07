@@ -6,6 +6,7 @@ node_modules/
 dist/
 .next/
 .next-build/
+.next-perf/
 out/
 build/
 
@@ -15,6 +16,7 @@ ios/
 
 # Test outputs
 coverage/
+perf-results/
 playwright-report/
 test-results/
 playwright-auth.json

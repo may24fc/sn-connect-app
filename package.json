@@ -10,6 +10,9 @@
     "inngest:status": "node scripts/inngest/inngest-dev-status.mjs",
     "inngest:stop": "node scripts/inngest/stop-inngest-dev.mjs",
     "performance:preview-five-percent-email": "cd apps/web && tsx --tsconfig tsconfig.json --env-file=.env.local ../../scripts/performance/preview-five-percent-summary-email.ts",
+    "performance:latency": "cd apps/web && tsx --env-file=.env.local ../../scripts/performance/measure-latency.ts",
+    "performance:latency:prod": "cd apps/web && tsx --env-file=.env.local.prodops ../../scripts/performance/measure-latency.ts --allow-remote --base-url https://app.sngroup.com.au",
+    "performance:serve": "node scripts/performance/serve-web-prod.mjs",
     "dev:web:e2e": "node scripts/playwright/start-playwright-web.js",
     "dev:all": "pnpm --filter @sn-group/www --filter @hr-portal/web dev",
     "dev:mobile": "pnpm --filter @hr-portal/mobile dev",
@@ -51,6 +54,8 @@
     "notifications:backfill-names:apply": "node scripts/backfill/backfill-notification-names.mjs --apply",
     "notifications:backfill-names:both": "node scripts/backfill/run-notification-backfill-targets.mjs",
     "notifications:backfill-names:both:apply": "node scripts/backfill/run-notification-backfill-targets.mjs --apply --confirm-prod",
+    "employees:backfill-department-names": "node scripts/backfill/backfill-employee-department-names.mjs",
+    "employees:backfill-department-names:apply": "node scripts/backfill/backfill-employee-department-names.mjs --apply",
     "db:migrate": "pnpm --filter @hr-portal/database migrate",
     "db:seed": "pnpm --filter @hr-portal/database seed",
     "db:generate": "pnpm --filter @hr-portal/database generate"

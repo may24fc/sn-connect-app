@@ -1,5 +1,5 @@
 import { createCompanyCalendarNotifications } from '@/lib/notifications/create-notification';
-import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { getCompanyCalendarDate, type CompanyCalendarEvent } from '@/lib/company-calendar';
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleAuth } from 'google-auth-library';
@@ -9,7 +9,8 @@ import { calendar_v3, google } from 'googleapis';
  * GET /api/calendar/events
  *
  * Fetches the next upcoming events from a shared company Google Calendar
- * via a Service Account. No per-user OAuth required.
+ * via a Service Account. No per-user OAuth required. Requires a signed-in user:
+ * Next.js does not run apps/web/middleware.ts, so this handler is its own auth boundary.
  *
  * Env vars:
  *   GOOGLE_CALENDAR_ID                – calendar to read from
@@ -21,6 +22,8 @@ import { calendar_v3, google } from 'googleapis';
  */
 
 const CACHE_SECONDS = 300; // 5 minutes
+// Private: responses are only for authenticated users and must not be stored by shared caches.
+const CACHE_CONTROL = `private, max-age=${CACHE_SECONDS}`;
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 200;
 
@@ -174,6 +177,15 @@ async function syncCalendarNotifications(events: Array<CompanyCalendarEvent>): P
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const calendarId = process.env.GOOGLE_CALENDAR_ID;
   const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
@@ -187,11 +199,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   if (!calendarId || !clientEmail || !privateKey) {
     return NextResponse.json(
       { configured: false, data: [] },
-      {
-        headers: {
-          'Cache-Control': `public, s-maxage=${CACHE_SECONDS}, stale-while-revalidate=${CACHE_SECONDS * 2}`,
-        },
-      },
+      { headers: { 'Cache-Control': CACHE_CONTROL } },
     );
   }
 
@@ -224,11 +232,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json(
       { configured: true, data: events },
-      {
-        headers: {
-          'Cache-Control': `public, s-maxage=${CACHE_SECONDS}, stale-while-revalidate=${CACHE_SECONDS * 2}`,
-        },
-      },
+      { headers: { 'Cache-Control': CACHE_CONTROL } },
     );
   } catch (err) {
     console.error('[calendar/events] Google API error:', err);

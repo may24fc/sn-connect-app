@@ -59,6 +59,7 @@
       "node_modules",
       "dist",
       ".next",
+      ".next-perf",
       "coverage",
       "playwright-report",
       "*.min.js",

@@ -57,7 +57,7 @@ sequenceDiagram
     end
 ```
 
-Serial browser profile hydration and middleware/layout double verification have been removed from normal signed-in routes. Four dashboard APIs also avoid middleware/handler duplication. The remaining API inventory is still mixed and must be expanded only with handler-level security coverage; region distance may amplify every remaining remote call.
+Serial browser profile hydration and middleware/layout double verification have been removed in code. As of 2026-10-07, however, Next.js does not register the middleware (see [Register the Next.js middleware](#register-the-nextjs-middleware)), so the `Middleware getUser` step above does not run. Today the layout fallback performs the only page-level `getUser()`. Four dashboard APIs also avoid middleware/handler duplication. The remaining API inventory is still mixed and must be expanded only with handler-level security coverage; region distance may amplify every remaining remote call.
 
 ### Planned optimization direction
 
@@ -67,8 +67,9 @@ flowchart TB
     B --> C[Done: server snapshot to client shell]
     C --> D[Done: middleware snapshot reuse]
     D --> E[Done: dashboard API bypass pilot]
-    E --> F[Next: collect production p50 and p95]
-    F --> G[Expand audited API bypass]
+    E --> F[Next: register middleware and re-measure]
+    F --> F2[Collect production p50 and p95]
+    F2 --> G[Expand audited API bypass]
     G --> H[Evaluate getClaims and region alignment]
 ```
 
@@ -88,7 +89,8 @@ Use this map to jump from an optimization entry to the implementation area it af
 | Auth provider boundaries | [`apps/web/src/app/layout.tsx`](../../../apps/web/src/app/layout.tsx), [`apps/web/src/app/(auth)/layout.tsx`](../../../apps/web/src/app/(auth)/layout.tsx), [`apps/web/src/app/onboarding/awaiting-approval/layout.tsx`](../../../apps/web/src/app/onboarding/awaiting-approval/layout.tsx) | Limits client auth bootstrap to route groups that need it and preserves coverage for the standalone approval route. |
 | Request middleware verification | [`apps/web/middleware.ts`](../../../apps/web/middleware.ts) | Refreshes/verifies protected page sessions, forwards the verified snapshot upstream, and holds the exact dashboard API bypass allowlist. |
 | Verified request snapshot | [`apps/web/src/lib/auth/request-snapshot.ts`](../../../apps/web/src/lib/auth/request-snapshot.ts) | Serializes only the identity fields needed by the layout and validates the forwarded snapshot before reuse. |
-| Auth timing instrumentation | [`apps/web/src/lib/auth/timing.ts`](../../../apps/web/src/lib/auth/timing.ts) | Emits optional structured PII-free timing events and formats middleware `Server-Timing` metrics. |
+| Auth timing instrumentation | [`apps/web/src/lib/auth/timing.ts`](../../../apps/web/src/lib/auth/timing.ts), [`apps/web/src/lib/observability/timing.ts`](../../../apps/web/src/lib/observability/timing.ts) | Emits optional structured PII-free timing events and formats `Server-Timing` metrics; the auth wrapper delegates to the shared helper. |
+| Latency measurement tooling | [`scripts/performance/measure-latency.ts`](../../../scripts/performance/measure-latency.ts), [`scripts/performance/lib/latency-stats.ts`](../../../scripts/performance/lib/latency-stats.ts), [`tests/scripts/performance/latency-stats.test.ts`](../../../tests/scripts/performance/latency-stats.test.ts) | `pnpm performance:latency --preset auth` sampling, log summaries, and before/after comparison used for the [Measurements](#measurements) section. |
 | Server Supabase client | [`apps/web/src/lib/supabase/server.ts`](../../../apps/web/src/lib/supabase/server.ts) | Builds the cookie-backed server client used by pages and route handlers. |
 | Browser Supabase client | [`apps/web/src/lib/supabase/client.ts`](../../../apps/web/src/lib/supabase/client.ts) | Builds the browser client used by AuthContext session hydration. |
 | Signed-in shell and dashboard loading state | [`apps/web/src/components/layout/AppShell.tsx`](../../../apps/web/src/components/layout/AppShell.tsx) | Waits for the authenticated user before rendering signed-in navigation and dashboard content. |
@@ -230,7 +232,93 @@ Use this map to jump from an optimization entry to the implementation area it af
 - **Validation:** Tests verify structured output is gated and contains no user identifier, and verify the middleware response contains the expected `Server-Timing` metric.
 - **Next measurement condition:** Deploy with `AUTH_TIMING_ENABLED=true`, collect a representative sample, and record p50/p95 before widening the API bypass or changing JWT verification semantics.
 
+## Measurements
+
+Collected with `pnpm performance:latency --preset auth` (see [latency measurement guide](../../guides/latency-measurement.md)). Raw JSON runs are kept locally under `perf-results/authentication/` (gitignored); only summaries are recorded here.
+
+| Environment | `/dashboard` p50 / p95 ms | Slowest API p50 ms | Section |
+| --- | --- | --- | --- |
+| Local `next dev` | 330.8 / 823.1 | 156.7 (`pending`) | [Local current-state baseline](#2026-10-07--local-current-state-baseline-next-dev) |
+| Local `next start` | 59.6 / 143.6 | 71.1 (`pending`) | [Local production build](#2026-10-07-local-production-build-next-start) |
+| Production | 1189.1 / 1579.1 | 2571.4 (`pending`) | [Production baseline](#2026-10-07-production-baseline-httpsappsngroupcomau) |
+
+### 2026-10-07 — Local current-state baseline (`next dev`)
+
+- **Commit:** `8aef36e` with uncommitted changes; local Supabase (`127.0.0.1:55321`); `next dev --port 3001`; Windows workstation.
+- **User/role:** `admin@example.com` (local sample admin). All 120 measured responses returned HTTP 200.
+- **Run shape:** 30 interleaved samples per target after 3 discarded warmups; 5 fresh password sign-ins.
+- **Command:** `pnpm performance:latency --preset auth --label baseline-current` with `LATENCY_BENCH_EMAIL`/`LATENCY_BENCH_PASSWORD` set for the local account.
+
+| Metric | n | p50 ms | p95 ms | mean ms | min ms | max ms |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Supabase password sign-in | 5 | 99.6 | 143.9 | 108.7 | 96.6 | 143.9 |
+| GET /dashboard total | 30 | 330.8 | 823.1 | 394.8 | 263.9 | 856.5 |
+| GET /dashboard ttfb | 30 | 311.9 | 803.0 | 370.9 | 250.4 | 834.4 |
+| GET /api/notifications?limit=1 total | 30 | 141.4 | 376.8 | 171.8 | 113.6 | 445.5 |
+| GET /api/dashboard/stats total | 30 | 156.5 | 434.0 | 181.9 | 122.2 | 549.4 |
+| GET /api/dashboard/pending total | 30 | 156.7 | 389.9 | 189.8 | 128.7 | 516.4 |
+
+**Interpretation:**
+
+- These are the first numeric authentication measurements. No before/after delta exists for the 2026-10-02 optimizations because no baseline was captured before they were implemented.
+- No response carried the `auth_middleware` `Server-Timing` metric because Next.js is not running the middleware; see [Register the Next.js middleware](#register-the-nextjs-middleware). Page latency therefore includes the layout's fallback `getUser()` plus the bootstrap reads, not middleware verification.
+- The middleware-protected control API (`/api/notifications`) and the bypassed dashboard APIs (`/api/dashboard/stats`, `/api/dashboard/pending`) are within about 15 ms at p50. That is consistent with no middleware running on any of them.
+- `next dev` adds compilation and development overhead. Use a `next start` production build for publishable before/after numbers.
+
+### 2026-10-07: Local production build (`next start`)
+
+- **Commit:** `8aef36e` with uncommitted changes; local Supabase; `pnpm performance:serve` (`.next-perf`, port 3101); the same machine and run shape as above.
+- **User/role:** `admin@example.com`; 120/120 HTTP 200.
+- **Command:** `pnpm performance:latency --preset auth --base-url http://localhost:3101 --label local-next-start-baseline`.
+
+| Metric | n | p50 ms | p95 ms | mean ms | min ms | max ms |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Supabase password sign-in | 5 | 115.3 | 351.0 | 157.4 | 98.2 | 351.0 |
+| GET /dashboard total | 30 | 59.6 | 143.6 | 72.8 | 49.9 | 175.8 |
+| GET /api/notifications?limit=1 total | 30 | 57.1 | 123.9 | 69.7 | 46.5 | 222.7 |
+| GET /api/dashboard/stats total | 30 | 57.1 | 138.2 | 67.5 | 48.7 | 164.1 |
+| GET /api/dashboard/pending total | 30 | 71.1 | 159.4 | 83.7 | 59.5 | 227.7 |
+
+### 2026-10-07: Production baseline (`https://app.sngroup.com.au`)
+
+- **Deployment:** current production (anonymous probes returned `x-vercel-id: sin1::iad1`); production Supabase `tccdupkjmwwxcvpqnpeb`; measured from a workstation in UTC+8 (routed through the Singapore edge).
+- **User/role:** `latency-bench@example.com` (dedicated `admin` benchmark account, no `employees` row); 120/120 HTTP 200.
+- **Command:** `pnpm performance:latency:prod --preset auth --label prod-baseline` (30 samples, 3 warmups, 5 sign-ins).
+
+| Metric | n | p50 ms | p95 ms | mean ms | min ms | max ms |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Supabase password sign-in | 5 | 188.5 | 691.5 | 294.6 | 171.8 | 691.5 |
+| GET /dashboard total | 30 | 1189.1 | 1579.1 | 1178.3 | 752.3 | 1591.9 |
+| GET /dashboard ttfb | 30 | 1127.2 | 1361.2 | 1024.3 | 725.5 | 1378.3 |
+| GET /api/notifications?limit=1 total | 30 | 1386.3 | 1897.3 | 1365.2 | 921.8 | 1916.8 |
+| GET /api/dashboard/stats total | 30 | 1156.1 | 1391.3 | 1146.4 | 733.4 | 1440.9 |
+| GET /api/dashboard/pending total | 30 | 2571.4 | 3166.8 | 2493.0 | 1608.0 | 3395.2 |
+
+**Interpretation:**
+
+- The same code is 16–36× slower at p50 in production than in a local production build. `/dashboard` is 1,189 ms vs 59.6 ms, and `/api/dashboard/pending` is 2,571 ms vs 71.1 ms. Application CPU time is therefore a small share of production latency. Network distance and the number of sequential Supabase round trips per request dominate.
+- Direct password sign-in from the client to Supabase takes only 188.5 ms p50. Server-side requests cost about 1.1–2.6 s, which is consistent with the US East (`iad1`) function making repeated round trips to a distant Supabase region. That gives [Co-locate application compute and Supabase](#co-locate-application-compute-and-supabase) the highest expected impact.
+- `/api/dashboard/pending` is about 2.2× slower than the other APIs in production but only about 1.25× slower locally. That suggests sequential queries, which are amplified by per-query distance. It is a candidate for parallelization once region alignment is evaluated.
+- These are the reference numbers for any future auth or region change. Re-run the same command and `--compare` against `perf-results/authentication/*-prod-baseline.json`.
+
 ## Audited Optimization Opportunities
+
+### Register the Next.js middleware
+
+- **Status:** Deferred — 2026-10-07; decided not to re-enable, because handler-level authentication covers every route. Resume only if the evidence below changes.
+- **Problem/evidence:** The app router lives in `apps/web/src/app`, so Next.js 15 only discovers middleware at `apps/web/src/middleware.ts`. Commit `8b0a238` (2026-03-09) deleted that file as obsolete, leaving only `apps/web/middleware.ts`, which Next.js ignores. Evidence:
+  - The local `.next/server/middleware-manifest.json` has an empty `middleware` map.
+  - No local response carries the `auth_middleware` `Server-Timing` metric.
+  - Unauthenticated `/dashboard` requests redirect to `/login` without the middleware's `returnTo` parameter, both locally and in production (`https://app.sngroup.com.au`, probed anonymously on 2026-10-07). The redirect comes from the layout fallback.
+- **Impact:** The middleware/layout snapshot reuse and the dashboard API bypass pilot have no runtime effect, and session cookie refresh in middleware does not occur. The browser Supabase client still refreshes sessions, and the app has run this way since March.
+- **Necessity review (2026-10-07):** Following the record's rule that RLS and route handlers are the security boundary, all 294 `apps/web/src/app/api/**/route.ts` files were scanned for handler-level authentication (`getUser`, shared auth contexts, webhook/cron/n8n secrets, or signature verification).
+  - 293 routes authenticate themselves, delegate to a route that does, or are intentionally public (`health`, `auth/callback`, `auth/signout`, `auth/forgot-password`, `banks`).
+  - The middleware performs no role routing, so pages keep the same protection through the `(app)` layout.
+  - The single gap was `/api/calendar/events`: no auth, an admin client, sync writes, notifications, and a `public, s-maxage` cache header. It now authenticates in its handler and returns `private, max-age=300`.
+  - Re-enabling the middleware is therefore unnecessary for security. It would add a Supabase Auth round trip per matched request.
+- **Relevant paths:** `apps/web/middleware.ts`, `apps/web/src/app/(app)/layout.tsx`, `apps/web/src/app/api/calendar/events/route.ts`, `tests/api/calendar-events-auth-boundary.test.ts`.
+- **Validation:** The calendar boundary tests pass: 401 without a user, no admin-client use, and a private cache header for signed-in users. A live local unauthenticated request now returns 401. The production fix takes effect only after deployment.
+- **Resume condition:** A new API route needs centralized protection, middleware-only cookie refresh becomes required, or the team decides to delete the inert `apps/web/middleware.ts` and its tests. Then measure `before`/`after` with `pnpm performance:latency --preset auth`.
 
 ### Restore local Supabase availability before auth reliability testing
 
@@ -266,6 +354,8 @@ Use this map to jump from an optimization entry to the implementation area it af
 
 - **Status:** Audited
 - **Finding:** Network distance can dominate any remaining Auth or profile request time.
+- **Evidence (2026-10-07):** An anonymous production response carried `x-vercel-id: sin1::iad1`: Singapore edge, US East (`iad1`) function execution. The Supabase project region (`tccdupkjmwwxcvpqnpeb`) has not yet been confirmed. If it is in Asia-Pacific, every server-side Auth and database call crosses the Pacific. The measured production baseline is 16–36× slower at p50 than a local production build of the same code; see [Measurements](#measurements).
+- **Next step:** Confirm the Supabase region in the dashboard. If it differs from `iad1`, set the Vercel function region to match (`regions` in `vercel.json` or project settings). Then re-run `pnpm performance:latency:prod --preset auth --label after-region` and `--compare` it against the production baseline.
 - **Planned solution:** Compare deployment and Supabase regions against the timing baseline, then move or configure compute near the database/Auth region if needed.
 - **Success measure:** Lower server auth and database timing without changing application behavior.
 
@@ -294,3 +384,12 @@ Use this map to jump from an optimization entry to the implementation area it af
 - 2026-10-02: Implemented server-preloaded signed-in auth state, concurrent employee/associate bootstrap reads, and a single post-login cache/navigation transition. Added regression coverage for the shared resolver and AuthProvider behavior; retained server/RLS authorization boundaries and deferred middleware/API verification changes.
 - 2026-10-02: Removed middleware/layout double verification with a sanitized upstream-only user snapshot and safe layout fallback. Added an exact-path middleware bypass for four independently authenticated dashboard APIs, plus 401 boundary tests, spoofed-header coverage, cookie-preservation coverage, structured timing events, and a middleware `Server-Timing` metric. Wider API rollout awaits module-level security tests and production p50/p95 data.
 - 2026-10-06: Restored the local Auth service after a connection refusal caused by Docker Desktop's unavailable Linux engine. Started Docker Desktop and confirmed the configured API endpoint with Supabase status, port-listener, and Auth health checks; no source behavior changed.
+- 2026-10-07: Added reusable latency tooling: `pnpm performance:latency`, a shared `lib/observability/timing.ts` helper, and the `measure-latency` agent skill. Recorded the first numeric local baseline (`/dashboard` p50 330.8 ms / p95 823.1 ms under `next dev`). Found that Next.js has not registered the middleware since 2026-03-09, so the 2026-10-02 middleware optimizations have no runtime effect.
+- 2026-10-07: Reviewed whether the middleware must be re-enabled. Handler-level auth covers 293 of 294 API routes, so it stays deferred. Closed the one gap by authenticating `/api/calendar/events` and making its cache private. Confirmed by an anonymous production probe that production also runs without middleware. Its `x-vercel-id` (`sin1::iad1`) shows US East function execution, which is evidence for the region-alignment item. Added `pnpm performance:latency:prod` for explicitly requested production runs.
+- 2026-10-07: Made both environments measurable without manual setup:
+  - Local `LATENCY_BENCH_*` credentials in the gitignored env files.
+  - A dedicated production `latency-bench@example.com` admin account, created with the new dry-run-first `ensure-latency-bench-account.mjs`.
+  - `pnpm performance:serve`, a local `next start` build in `.next-perf` on port 3101.
+  - Clean CLI failure exits on Windows.
+
+  Recorded local `next start` and production baselines. At p50, production is 16–36× slower than a local production build, which points to region/network round trips as the main latency source.

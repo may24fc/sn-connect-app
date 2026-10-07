@@ -1,3 +1,5 @@
+import { appendServerTiming, recordTiming, startTiming } from '@/lib/observability/timing';
+
 export type AuthTimingLayer = 'api-handler' | 'middleware' | 'server-layout';
 
 interface AuthTimingDetails {
@@ -7,38 +9,18 @@ interface AuthTimingDetails {
   startedAt: number;
 }
 
+export { appendServerTiming };
+
 export function startAuthTiming(): number {
-  return performance.now();
+  return startTiming();
 }
 
 /**
- * Emits structured, PII-free timing when AUTH_TIMING_ENABLED=true and returns
- * the duration so callers can also expose it through Server-Timing.
+ * Emits structured, PII-free `[auth-timing]` events when AUTH_TIMING_ENABLED=true
+ * or LATENCY_TIMING_ENABLED=true, and returns the duration for Server-Timing.
  */
 export function recordAuthTiming(details: AuthTimingDetails): number {
-  const durationMs = Math.max(0, performance.now() - details.startedAt);
-
-  if (process.env.AUTH_TIMING_ENABLED === 'true') {
-    console.info(
-      '[auth-timing]',
-      JSON.stringify({
-        event: 'auth_timing',
-        layer: details.layer,
-        operation: details.operation,
-        route: details.route,
-        duration_ms: Math.round(durationMs * 100) / 100,
-      })
-    );
-  }
-
-  return durationMs;
-}
-
-export function appendServerTiming(
-  headers: Headers,
-  metric: string,
-  durationMs: number,
-  description: string
-): void {
-  headers.append('Server-Timing', `${metric};dur=${durationMs.toFixed(2)};desc="${description}"`);
+  const enabled =
+    process.env.AUTH_TIMING_ENABLED === 'true' || process.env.LATENCY_TIMING_ENABLED === 'true';
+  return recordTiming({ scope: 'auth', ...details }, enabled);
 }
