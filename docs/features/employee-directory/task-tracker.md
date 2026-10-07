@@ -14,6 +14,8 @@ Former Employees tab now supports editing a termination date and permanently del
 
 - [x] Apply `20261006000002_create_purge_directory_user.sql` to local and production - 2026-10-06 (user approved both); local via `supabase migration up --local` earlier; production via `supabase db push --linked` (project `tccdupkjmwwxcvpqnpeb`, it was the only pending migration per `--dry-run`). Verified with `supabase migration list --linked` (recorded on both sides) and two read-only RPC calls with a nonexistent id: service role gets the expected `P0002` refusal (function live, nothing deleted), anon gets `42501 permission denied`. No real account was purged or tested on production.
 
+- [x] Fix Directory summary stat cards - 2026-10-06; changed `apps/web/src/app/api/directory/route.ts`, `tests/api/directory-route.test.ts`; validated with `pnpm vitest run tests/api/directory-route.test.ts` (passes, covers terminated rows). Problem: Associates, On Leave and Probation counted terminated people (screenshot showed Associates 22 vs Total 20), and Total was the filtered/paged result count, so it changed with the tab, filters, and search. Fix: all cards now describe the whole directory; Total, Active, Associates, On Leave and Probation exclude terminated records, Former counts only terminated. Associates remains strict `role === 'associate'` (employees, admins and super admins were never counted). Also repaired the test, which was stale (missing `neq` mock, `terminated`, and the collapsed `employee` role).
+
 ### In Progress
 
 None.
@@ -37,5 +39,6 @@ None.
 - Edit Termination Date is hidden for former entries with no employee record (e.g. accounts that never completed onboarding); they can still be restored or deleted.
 
 ## Session History
+- 2026-10-06 (stat cards): Audited the six summary cards and made them current-headcount counts independent of tab/filters. Decision: Total is now non-terminated headcount rather than the filtered result count. Validation: route unit test only; not checked in the browser against live data. Risk: counts are computed by fetching all directory rows on every request, which will not scale indefinitely.
 - 2026-10-06 (later): Reworked Delete Permanently so linked records never block it, per the user's instruction to delete regardless while keeping names on records others rely on. Migration then approved and applied to production.
 - 2026-10-06: Added Edit Termination Date and Delete Permanently to the Former Employees tab. Decisions: separate `/permanent` route so the existing `DELETE /api/users/[id]` (terminate) keeps its meaning; hard delete rather than soft delete because "permanently" was requested, guarded by terminated-only, role checks, typed confirmation, and DB-level rollback on linked records. Validation: typecheck only. Remaining: runtime verification, tests, storage cleanup. The working tree also held unrelated uncommitted changes from other work (report schemas/hooks, authentication docs) that this session did not touch.

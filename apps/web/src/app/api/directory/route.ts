@@ -230,13 +230,25 @@ export async function GET(request: NextRequest) {
       )
     ).sort();
 
+    // Summary cards describe the whole directory, independent of the current tab,
+    // filters, search, or page. Every card except "Former" counts current
+    // (non-terminated) people only, so terminated associates and probationers
+    // do not inflate them.
+    type SummaryRow = {
+      role: string | null;
+      status: string | null;
+      employment_type: string | null;
+    };
+    const summaryRows: SummaryRow[] = allData || [];
+    const currentRows = summaryRows.filter((e) => e.status !== 'terminated');
+
     const metadata = {
-      total: count || 0,
-      active: allData?.filter((e: { status: string | null }) => e.status === 'active').length || 0,
-      interns: allData?.filter((e: { role: string | null }) => e.role === 'associate').length || 0,
-      onLeave: allData?.filter((e: { status: string | null }) => e.status === 'on_leave').length || 0,
-      probation: allData?.filter((e: { employment_type: string | null }) => e.employment_type === 'probationary').length || 0,
-      terminated: allData?.filter((e: { status: string | null }) => e.status === 'terminated').length || 0,
+      total: currentRows.length,
+      active: currentRows.filter((e) => e.status === 'active').length,
+      interns: currentRows.filter((e) => e.role === 'associate').length,
+      onLeave: currentRows.filter((e) => e.status === 'on_leave').length,
+      probation: currentRows.filter((e) => e.employment_type === 'probationary').length,
+      terminated: summaryRows.filter((e) => e.status === 'terminated').length,
       availableRoles,
     };
 

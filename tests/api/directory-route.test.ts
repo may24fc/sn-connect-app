@@ -18,6 +18,7 @@ function createThenableQuery<T>(result: QueryResult<T>) {
   const query = {
     select: vi.fn(() => query),
     eq: vi.fn(() => query),
+    neq: vi.fn(() => query),
     in: vi.fn(() => query),
     or: vi.fn(() => query),
     order: vi.fn(() => query),
@@ -71,6 +72,28 @@ describe('/api/directory route', () => {
           employment_type: 'probationary',
           department_name: 'Operations',
         },
+        {
+          role: 'associate',
+          status: 'active',
+          internship_status: 'active',
+          employment_type: 'regular',
+          department_name: 'Operations',
+        },
+        // Terminated people must only affect the "Former" card.
+        {
+          role: 'associate',
+          status: 'terminated',
+          internship_status: 'terminated',
+          employment_type: 'probationary',
+          department_name: 'Operations',
+        },
+        {
+          role: 'employee',
+          status: 'terminated',
+          internship_status: null,
+          employment_type: 'probationary',
+          department_name: null,
+        },
       ],
       error: null,
     });
@@ -112,12 +135,13 @@ describe('/api/directory route', () => {
         },
       ],
       metadata: {
-        total: 1,
-        active: 1,
-        interns: 1,
+        total: 3,
+        active: 2,
+        interns: 2,
         onLeave: 1,
         probation: 1,
-        availableRoles: ['admin', 'associate'],
+        terminated: 2,
+        availableRoles: ['associate', 'employee'],
       },
       pagination: {
         page: 1,
