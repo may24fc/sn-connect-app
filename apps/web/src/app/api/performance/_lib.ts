@@ -1,3 +1,4 @@
+import { type DirectoryPerson, normalizeDepartmentName } from '@/lib/people/directory-people';
 import { EMPLOYEE_EQUIVALENT_ROLES } from '@/lib/roles';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -107,8 +108,9 @@ function resolveDirectoryDepartmentRole(directoryEntry: {
   position?: string | null;
   role?: string | null;
 }): string {
-  if (typeof directoryEntry.department_name === 'string' && directoryEntry.department_name.trim()) {
-    return directoryEntry.department_name.trim();
+  const department = normalizeDepartmentName(directoryEntry.department_name);
+  if (department) {
+    return department;
   }
 
   if (typeof directoryEntry.position === 'string' && directoryEntry.position.trim()) {
@@ -116,6 +118,15 @@ function resolveDirectoryDepartmentRole(directoryEntry: {
   }
 
   return formatRoleLabel(directoryEntry.role ?? null);
+}
+
+/** Department/role label for a submitter whose saved snapshot is blank, from their directory row. */
+export function resolvePersonDepartmentRole(person: DirectoryPerson | undefined): string {
+  return resolveDirectoryDepartmentRole({
+    department_name: person?.department ?? null,
+    position: person?.position ?? null,
+    role: person?.role ?? null,
+  });
 }
 
 export async function listPerformanceAudience(
@@ -165,12 +176,11 @@ export async function resolvePerformanceIdentitySnapshot(
       ? data.full_name.trim()
       : resolveMetadataFullName(user);
 
-  const departmentRole =
-    typeof data?.department_name === 'string' && data.department_name.trim()
-      ? data.department_name.trim()
-      : typeof data?.position === 'string' && data.position.trim()
-        ? data.position.trim()
-        : formatRoleLabel(role);
+  const departmentRole = resolveDirectoryDepartmentRole({
+    department_name: data?.department_name ?? null,
+    position: data?.position ?? null,
+    role,
+  });
 
   return {
     fullName,

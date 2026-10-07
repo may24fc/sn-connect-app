@@ -9,6 +9,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import {
   getDisplayName,
   getEmployeeProfilesByUserId,
+  getUserAvatarsByUserId,
   getTicketAuthedContext,
   getTicketWriteErrorMessage,
   isAdminRole,
@@ -175,19 +176,24 @@ export async function GET(request: NextRequest) {
       )
     );
 
-    const profilesByUserId = await getEmployeeProfilesByUserId(supabaseAdmin, userIds).catch(
-      () => new Map()
-    );
+    const [profilesByUserId, avatarsByUserId] = await Promise.all([
+      getEmployeeProfilesByUserId(supabaseAdmin, userIds).catch(() => new Map()),
+      getUserAvatarsByUserId(supabaseAdmin, userIds).catch(() => new Map<string, string>()),
+    ]);
 
     return NextResponse.json({
       data: tickets.map((ticket) => ({
         ...ticket,
-        submitted_by_name: getDisplayName(profilesByUserId.get(ticket.submitted_by), 'Ticket Submitter'),
+        submitted_by_name: getDisplayName(profilesByUserId.get(ticket.submitted_by)),
+        submitted_by_avatar_url: avatarsByUserId.get(ticket.submitted_by) ?? null,
         assigned_to_name: ticket.assigned_to
-          ? getDisplayName(profilesByUserId.get(ticket.assigned_to), 'Assigned Handler')
+          ? getDisplayName(profilesByUserId.get(ticket.assigned_to))
+          : null,
+        assigned_to_avatar_url: ticket.assigned_to
+          ? (avatarsByUserId.get(ticket.assigned_to) ?? null)
           : null,
         assigned_by_name: ticket.assigned_by
-          ? getDisplayName(profilesByUserId.get(ticket.assigned_by), 'Dispatcher')
+          ? getDisplayName(profilesByUserId.get(ticket.assigned_by))
           : null,
       })),
       pagination: {

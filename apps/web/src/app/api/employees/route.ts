@@ -2,6 +2,7 @@ import { logActivity } from '@/lib/audit';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { EmployeeInsert } from '@hr-portal/database';
 import { type NextRequest, NextResponse } from 'next/server';
+import { LINKED_DEPARTMENT_EMBED, withResolvedIdentity } from './_identity';
 
 /**
  * GET /api/employees
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('employees')
       .select(
-        'id, user_id, employee_number, immediate_head, first_name, middle_name, last_name, birthday, date_hired, employment_type, work_arrangement, position, department, division, probation_end_date, phone, company_email, created_at, updated_at, deleted_at, users!employees_user_id_fkey!inner(id, role, status, department_id, division_id, avatar_url), manager:users!employees_immediate_head_fkey(id, role, status)',
+        `id, user_id, employee_number, immediate_head, first_name, middle_name, last_name, birthday, date_hired, employment_type, work_arrangement, position, department, division, probation_end_date, phone, company_email, created_at, updated_at, deleted_at, users!employees_user_id_fkey!inner(id, role, status, department_id, division_id, avatar_url, ${LINKED_DEPARTMENT_EMBED}), manager:users!employees_immediate_head_fkey(id, role, status)`,
         { count: 'exact' }
       )
       .is('deleted_at', null);
@@ -97,7 +98,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      data,
+      data: (data ?? []).map(withResolvedIdentity),
       pagination: {
         page,
         pageSize,

@@ -131,15 +131,23 @@ Get detailed internship with daily logs aggregated into weekly hours, plus super
 
 ## PATCH /api/internships/[id]
 
-Update internship fields. Restricted to admin or the assigned supervisor.
+Update internship fields. Restricted to admin or the assigned supervisor. Only admins may change
+`supervisorId`, `departmentId`, or `department`, because those change who can access the record.
 
 ```json
 {
   "status": "completed",
   "completedHours": 500,
-  "endDate": "2026-07-15"
+  "endDate": "2026-07-15",
+  "supervisorId": "uuid",
+  "departmentId": "uuid"
 }
 ```
+
+- `supervisorId` (`uuid | null`): must be an active user other than the associate; `null` clears it.
+- `departmentId` (`uuid`): a saved department. Sets `internships.department` and syncs the associate's
+  `employees.department` and `users.department_id`. The admin **Edit Associate Profile** dialog uses
+  this instead of free-text department entry.
 
 ---
 

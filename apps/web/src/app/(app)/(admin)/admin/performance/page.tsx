@@ -35,6 +35,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  getPersonMetaParts,
   useToast,
 } from '@hr-portal/ui';
 import {
@@ -906,14 +907,11 @@ export default function AdminPerformancePage(): ReactNode {
                               <p className="text-sm font-semibold text-foreground truncate">
                                 {entry.full_name}
                               </p>
-                              <div className="flex sm:flex-row sm:items-center gap-2">
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {entry.position || 'No position'}
-                                </p>
-                                <span className="text-xs text-muted-foreground truncate">
-                                  · {entry.department_name || 'No department'}
-                                </span>
-                              </div>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {getPersonMetaParts([entry.position, entry.department_name]).join(
+                                  ' · '
+                                ) || 'No position or department set'}
+                              </p>
                             </div>
                           </div>
                           <Badge

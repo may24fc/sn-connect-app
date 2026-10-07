@@ -3,8 +3,6 @@
 import { EODAttachmentGallery } from '@/components/admin/EODAttachmentGallery';
 import type { InternDailyLog } from '@/hooks/useRealtimeInternDailyLogs';
 import {
-  Avatar,
-  AvatarFallback,
   Badge,
   Button,
   Dialog,
@@ -15,6 +13,7 @@ import {
   DialogTitle,
   Label,
   Separator,
+  UserAvatar,
 } from '@hr-portal/ui';
 import {
   Calendar,
@@ -67,12 +66,6 @@ export function EODReportDetailModal({
     ? `${log.internship.employee.first_name} ${log.internship.employee.last_name}`
     : 'Unknown Associate';
 
-  const initials = internName
-    .split(' ')
-    .map((n: string) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
   const projectEntries = log.project_entries ?? [];
   const blockers = log.blockers ?? [];
   const nextSteps = log.next_steps ?? [];
@@ -92,11 +85,12 @@ export function EODReportDetailModal({
         {/* Associate Info */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10">
-              <AvatarFallback className="text-xs bg-zinc-100 text-zinc-700 dark:bg-zinc-800/30 dark:text-zinc-300">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
+            <UserAvatar
+              name={internName}
+              avatarUrl={log.internship?.employee?.avatar_url}
+              size="md"
+              fallbackClassName="text-xs bg-zinc-100 text-zinc-700 dark:bg-zinc-800/30 dark:text-zinc-300"
+            />
             <div>
               <p className="text-sm font-medium">{internName}</p>
               <div className="flex items-center gap-3 text-xs text-muted-foreground">

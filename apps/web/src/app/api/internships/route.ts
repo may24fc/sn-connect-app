@@ -1,4 +1,11 @@
+import { validatePersonAssignment } from '@/lib/people/assignment-validation';
+import {
+  loadDirectoryPeople,
+  normalizeDepartmentName,
+  resolveDepartmentName,
+} from '@/lib/people/directory-people';
 import { createInternshipSchema, internshipFiltersSchema } from '@/lib/schemas/internship.schema';
+import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedInternshipContext, isInternshipAdmin, resolveEmployeeByUserId } from './_lib';
 
@@ -33,7 +40,9 @@ interface EmployeeRow {
   first_name: string;
   last_name: string;
   company_email: string | null;
+  personal_email: string | null;
   department: string;
+  position: string | null;
   users: {
     avatar_url: string | null;
     division_id: string | null;
@@ -138,22 +147,18 @@ export async function GET(request: NextRequest) {
     );
     const internshipIds = internships.map((item) => item.id);
 
-    const [{ data: employeeRows }, { data: supervisorRows }, { data: logRows }] = await Promise.all(
+    // Rows above are already RLS-scoped to the caller. Supervisors' directory rows are not readable by
+    // associates, so their names are resolved with the admin client.
+    const [{ data: employeeRows }, supervisorPeople, { data: logRows }] = await Promise.all(
       [
         supabase
           .from('employees')
           .select(
-            'id, user_id, first_name, last_name, company_email, department, users!employees_user_id_fkey(avatar_url, division_id)'
+            'id, user_id, first_name, last_name, company_email, personal_email, department, position, users!employees_user_id_fkey(avatar_url, division_id)'
           )
           .in('id', employeeIds)
           .is('deleted_at', null),
-        supervisorIds.length > 0
-          ? supabase
-              .from('employees')
-              .select('user_id, first_name, last_name')
-              .in('user_id', supervisorIds)
-              .is('deleted_at', null)
-          : Promise.resolve({ data: [] }),
+        loadDirectoryPeople(createSupabaseAdminClient(), supervisorIds),
         supabase
           .from('intern_daily_logs')
           .select('internship_id, log_date, hours_worked')
@@ -165,11 +170,14 @@ export async function GET(request: NextRequest) {
     const employeeMap = new Map(
       (employeeRows as Array<EmployeeRow> | null)?.map((item) => [item.id, item])
     );
-    const supervisorMap = new Map(
-      (
-        supervisorRows as Array<{ user_id: string; first_name: string; last_name: string }> | null
-      )?.map((item) => [item.user_id, `${item.first_name} ${item.last_name}`])
-    );
+    const getSupervisorLabel = (supervisorId: string | null): string | null => {
+      if (!supervisorId) {
+        return null;
+      }
+
+      const supervisor = supervisorPeople.get(supervisorId);
+      return supervisor?.name ?? supervisor?.email ?? 'Unknown user';
+    };
 
     const logsByInternship = new Map<string, Array<InternDailyLogRow>>();
     for (const log of (logRows as Array<InternDailyLogRow> | null) || []) {
@@ -212,16 +220,17 @@ export async function GET(request: NextRequest) {
           employeeId: row.employee_id,
           userId: employee.user_id,
           name: fullName,
-          email: employee.company_email || '',
+          email: employee.company_email || employee.personal_email || null,
           avatarUrl: employee.users?.avatar_url ?? undefined,
-          school: row.school || 'N/A',
-          program: row.program || 'N/A',
-          department: row.department || employee.department,
+          position: employee.position?.trim() || null,
+          school: row.school?.trim() || null,
+          program: row.program?.trim() || null,
+          department:
+            normalizeDepartmentName(row.department) ??
+            resolveDepartmentName(null, employee.department),
           division: row.division || null,
           divisionId: employee.users?.division_id ?? null,
-          supervisor: row.supervisor_id
-            ? supervisorMap.get(row.supervisor_id) || 'Unassigned'
-            : 'Unassigned',
+          supervisor: getSupervisorLabel(row.supervisor_id),
           supervisorId: row.supervisor_id,
           startDate: row.start_date,
           endDate: row.end_date,
@@ -243,8 +252,8 @@ export async function GET(request: NextRequest) {
         const queryValue = filters.search.toLowerCase();
         return (
           item.name.toLowerCase().includes(queryValue) ||
-          item.email.toLowerCase().includes(queryValue) ||
-          item.program.toLowerCase().includes(queryValue)
+          (item.email ?? '').toLowerCase().includes(queryValue) ||
+          (item.program ?? '').toLowerCase().includes(queryValue)
         );
       });
 
@@ -305,6 +314,25 @@ export async function POST(request: NextRequest) {
     }
 
     const payload = parsed.data;
+
+    if (payload.supervisorId) {
+      const { data: associate } = await supabase
+        .from('employees')
+        .select('user_id')
+        .eq('id', payload.employeeId)
+        .maybeSingle();
+      const supervisorCheck = await validatePersonAssignment(
+        createSupabaseAdminClient(),
+        payload.supervisorId,
+        { label: 'Supervisor', subjectUserId: associate?.user_id ?? null }
+      );
+      if (!supervisorCheck.ok) {
+        return NextResponse.json(
+          { error: supervisorCheck.error },
+          { status: supervisorCheck.status }
+        );
+      }
+    }
 
     const { data, error: insertError } = await supabase
       .from('internships')

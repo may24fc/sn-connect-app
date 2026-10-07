@@ -1,4 +1,5 @@
 import { logActivity } from '@/lib/audit';
+import { generateEmployeeNumber } from '@/lib/people/employee-number';
 import { getLoginUrl } from '@/lib/auth/redirect-config';
 import { sendUserInviteEmail } from '@/lib/email';
 import { createNotification, getUserDisplayName } from '@/lib/notifications/create-notification';
@@ -251,7 +252,7 @@ export async function POST(request: NextRequest) {
           date_hired: new Date().toISOString().slice(0, 10),
           employment_type: 'regular',
           work_arrangement: 'full_time',
-          position: position || formatRoleLabel(role),
+          position: position?.trim() || null,
           department: departmentName,
           division: divisionName,
           company_email: email,
@@ -373,12 +374,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function formatRoleLabel(role: (typeof inviteableRoles)[number]): string {
-  return role
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (character) => character.toUpperCase());
-}
-
 function getInviteNotificationLink(
   role: (typeof inviteableRoles)[number],
   requiresOnboarding: boolean
@@ -400,15 +395,6 @@ function getInviteNotificationLink(
   }
 
   return '/dashboard';
-}
-
-function generateEmployeeNumber(): string {
-  const now = new Date();
-  const yyyy = now.getUTCFullYear();
-  const mm = String(now.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(now.getUTCDate()).padStart(2, '0');
-  const random = Math.floor(Math.random() * 9000 + 1000);
-  return `EMP-${yyyy}${mm}${dd}-${random}`;
 }
 
 async function findAuthUserByEmail(

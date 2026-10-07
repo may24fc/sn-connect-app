@@ -234,7 +234,7 @@ export default function AdminPendingResourcesPage() {
         {rejectOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="w-full max-w-lg">
-              <div className="bg-card border border-border rounded-lg p-4">
+              <div className="max-h-[calc(100dvh-2rem)] overflow-y-auto bg-card border border-border rounded-lg p-4">
                 <h3 className="text-lg font-semibold">Reject Request</h3>
                 <p className="text-sm text-zinc-600 mb-3">Provide a note for the author explaining why this was rejected.</p>
                 <Textarea value={notes} maxLength={5000} onChange={(e: any) => setNotes(e.target.value)} />
@@ -261,7 +261,7 @@ export default function AdminPendingResourcesPage() {
         {modalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="w-full max-w-3xl">
-              <div className="bg-card border border-border rounded-lg p-4">
+              <div className="max-h-[calc(100dvh-2rem)] overflow-y-auto bg-card border border-border rounded-lg p-4">
                 {modalLoading ? (
                   <div className="p-8">
                     <Skeleton className="h-8 w-3/4 mb-4" />

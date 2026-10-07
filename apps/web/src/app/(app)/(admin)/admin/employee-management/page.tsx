@@ -67,6 +67,7 @@ import {
   TabsList,
   TabsTrigger,
   Textarea,
+  getPersonMetaParts,
   useToast,
 } from '@hr-portal/ui';
 import { useQueryClient } from '@tanstack/react-query';
@@ -793,7 +794,13 @@ export default function EmployeeManagementPage(): ReactNode {
   const onProbationCount = probationEmployees.filter((e: ProbationRecord) => e.status === 'on-track' || e.status === 'at-risk' || e.status === 'extended').length;
   const atRiskCount = probationEmployees.filter((e: ProbationRecord) => e.status === 'at-risk').length;
 
-  const departments = [...new Set(probationEmployees.filter((e: ProbationRecord) => e.department).map((e: ProbationRecord) => e.department))];
+  const departments = [
+    ...new Set(
+      probationEmployees
+        .map((e: ProbationRecord) => e.department)
+        .filter((department): department is string => Boolean(department))
+    ),
+  ];
 
   const filteredProbation = probationEmployees.filter((emp: ProbationRecord) => {
     const matchesSearch =
@@ -846,7 +853,7 @@ export default function EmployeeManagementPage(): ReactNode {
         inviteProbationMode: profile.invite_probation_mode,
         inviteProbationAuto90: profile.invite_probation_auto_90,
         inviteProbationEndDate: profile.invite_probation_end_date,
-        departmentName: employeeRecord?.department || assignedDepartment || onboardingDepartment || null,
+        departmentName: employeeRecord?.department_name || assignedDepartment || onboardingDepartment || null,
         divisionName: employeeRecord?.division || null,
         employmentStatus: probationRecord ? 'probationary' : undefined,
         stage: probationRecord?.stage,
@@ -863,7 +870,9 @@ export default function EmployeeManagementPage(): ReactNode {
     emp: ProbationRecord,
     mode: 'employee-assignment' | 'employee-probation'
   ): void => {
-    const employeeRecord = employeeRecordByEmail.get(emp.email.toLowerCase());
+    const employeeRecord = emp.email
+      ? employeeRecordByEmail.get(emp.email.toLowerCase())
+      : undefined;
 
     if (!employeeRecord?.user_id) {
       addToast({
@@ -878,10 +887,10 @@ export default function EmployeeManagementPage(): ReactNode {
       {
         userId: employeeRecord.user_id,
         fullName: emp.name,
-        email: emp.email,
+        email: emp.email ?? employeeRecord.company_email ?? '',
         role: 'employee',
         position: emp.position || null,
-        departmentName: employeeRecord?.department || emp.department || null,
+        departmentName: employeeRecord?.department_name || emp.department || null,
         divisionName: employeeRecord?.division || null,
         employmentStatus: 'probationary',
         stage: emp.stage,
@@ -1875,10 +1884,13 @@ export default function EmployeeManagementPage(): ReactNode {
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold">{selectedProbationEmp.name}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {selectedProbationEmp.position} — {selectedProbationEmp.department}
+                    {getPersonMetaParts([
+                      selectedProbationEmp.position,
+                      selectedProbationEmp.department,
+                    ]).join(' — ') || 'No position or department set'}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Manager: {selectedProbationEmp.manager}
+                    Manager: {selectedProbationEmp.manager ?? 'Not assigned'}
                   </p>
                 </div>
                 <span

@@ -2,7 +2,6 @@
 
 import { AlertCircle, Calendar, Check, Clock, Copy, FileText, Loader2, Tag, User, Users } from 'lucide-react';
 import * as React from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '../../primitives/avatar';
 import { Badge } from '../../primitives/badge';
 import { Button } from '../../primitives/button';
 import {
@@ -26,6 +25,7 @@ import { Textarea } from '../../primitives/textarea';
 import type { Task, TaskStatus } from '../../types/task.types';
 import { formatDueDate, isTaskOverdue } from '../../types/task.types';
 import { cn } from '../../utils/cn';
+import { PersonMeta, UserAvatar, formatPersonRole } from '../people/UserAvatar';
 import { TaskPriorityBadge } from './TaskPriorityBadge';
 import { TaskStatusBadge } from './TaskStatusBadge';
 
@@ -173,10 +173,16 @@ export function TaskDetailView({
               Due Date
             </div>
             <p className={cn('text-sm font-medium pl-6', isOverdue && 'text-error')}>
-              {formatDate(task.dueDate)}
-              <span className="block text-xs text-muted-foreground mt-1">
-                {formatDueDate(task.dueDate)}
-              </span>
+              {task.dueDate ? (
+                <>
+                  {formatDate(task.dueDate)}
+                  <span className="block text-xs text-muted-foreground mt-1">
+                    {formatDueDate(task.dueDate)}
+                  </span>
+                </>
+              ) : (
+                <span className="text-muted-foreground">No due date</span>
+              )}
             </p>
           </div>
 
@@ -245,24 +251,13 @@ export function TaskDetailView({
                 key={assignee.id}
                 className="flex items-center gap-3 rounded-lg border border-border p-3"
               >
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={assignee.avatarUrl} alt={assignee.name} />
-                  <AvatarFallback>
-                    {assignee.name
-                      .split(' ')
-                      .map((n) => n[0])
-                      .join('')
-                      .toUpperCase()
-                      .slice(0, 2)}
-                  </AvatarFallback>
-                </Avatar>
+                <UserAvatar name={assignee.name} avatarUrl={assignee.avatarUrl} size="md" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{assignee.name}</p>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span className="truncate">{assignee.department}</span>
-                    <span>•</span>
-                    <span className="capitalize">{assignee.role}</span>
-                  </div>
+                  <PersonMeta
+                    className="block"
+                    parts={[assignee.department, formatPersonRole(assignee.role)]}
+                  />
                   {assignee.completedAt && (
                     <p className="text-xs text-success mt-1">
                       Completed {formatDateTime(assignee.completedAt)}

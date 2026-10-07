@@ -4,6 +4,11 @@ import type { ExpenseLogRequestInput, ExpenseMatchInput, ExpenseVerifyInput } fr
 
 export interface ExpenseEntry {
   id: string;
+  category_code?: string | null;
+  payment_source?: 'unknown' | 'personal_card' | 'company_card' | 'bank_transfer';
+  payment_status?: 'unknown' | 'unpaid' | 'confirmed';
+  approval_state?: 'pending' | 'approved' | 'rejected';
+  source_system?: string;
   created_at: string;
   submitted_by: string;
   receipt_path: string | null;
@@ -227,6 +232,8 @@ export function useQueueExpenseIngestion() {
     mutationFn: async (params: {
       files: File[];
       businessJustification?: string | undefined;
+      categoryCode?: string;
+      paymentSource?: string;
       concurrency?: number | undefined;
     }): Promise<{
       summary: { total: number; queued: number; failed: number };
@@ -262,6 +269,8 @@ export function useQueueExpenseIngestion() {
           if (params.businessJustification?.trim()) {
             formData.append('businessJustification', params.businessJustification.trim());
           }
+          if (params.categoryCode) formData.append('categoryCode', params.categoryCode);
+          if (params.paymentSource) formData.append('paymentSource', params.paymentSource);
 
           try {
             const response = await fetch('/api/expenses/ingest', {
@@ -423,27 +432,6 @@ export function useMatchExpense() {
 
       return res.json();
     },
-    onMutate: async ({ id, match }) => {
-      await queryClient.cancelQueries({ queryKey: expenseKeys.all });
-      const previousExpenses = queryClient.getQueriesData<{ data: ExpenseEntry[] }>({ queryKey: expenseKeys.lists() });
-      const updateMatch = (expense: ExpenseEntry): ExpenseEntry =>
-        expense.id === id || expense.id === match.counterpartEntryId
-          ? {
-              ...expense,
-              match_status: match.matchStatus,
-              matched_entry_id: expense.id === id ? match.counterpartEntryId : id,
-              ...(match.matchedNotes !== undefined ? { matched_notes: match.matchedNotes } : {}),
-              matched_at: new Date().toISOString(),
-            }
-          : expense;
-      queryClient.setQueriesData<{ data: ExpenseEntry[] }>({ queryKey: expenseKeys.lists() }, (old) =>
-        old ? { ...old, data: old.data.map(updateMatch) } : old
-      );
-      return { previousExpenses };
-    },
-    onError: (_error, _variables, context) => {
-      context?.previousExpenses.forEach(([key, data]) => queryClient.setQueryData(key, data));
-    },
     onSettled: (_, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: expenseKeys.all });
       queryClient.invalidateQueries({ queryKey: expenseKeys.detail(variables.id) });
@@ -473,27 +461,6 @@ export function useLeadershipDecision() {
       }
 
       return res.json();
-    },
-    onMutate: async ({ id, action, notes }) => {
-      await queryClient.cancelQueries({ queryKey: expenseKeys.all });
-      const previousExpenses = queryClient.getQueriesData<{ data: ExpenseEntry[] }>({ queryKey: expenseKeys.lists() });
-      const nextStatus: ExpenseEntry['processing_status'] = action === 'approve' ? 'approved' : 'rejected';
-      queryClient.setQueriesData<{ data: ExpenseEntry[] }>({ queryKey: expenseKeys.lists() }, (old) =>
-        old
-          ? {
-              ...old,
-              data: old.data.map((expense) =>
-                expense.id === id
-                  ? { ...expense, processing_status: nextStatus, ...(notes !== undefined ? { reviewer_notes: notes } : {}) }
-                  : expense
-              ),
-            }
-          : old
-      );
-      return { previousExpenses };
-    },
-    onError: (_error, _variables, context) => {
-      context?.previousExpenses.forEach(([key, data]) => queryClient.setQueryData(key, data));
     },
     onSettled: (_, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: expenseKeys.all });

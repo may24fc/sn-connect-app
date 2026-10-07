@@ -6,15 +6,26 @@ import { Avatar, AvatarFallback } from '../../primitives/avatar';
 import type { ChatMessage as ChatMessageType } from '../../types/ai-knowledge.types';
 import { cn } from '../../utils/cn';
 import { MarkdownContent } from '../../utils/markdown';
+import { UserAvatar } from '../people/UserAvatar';
 import { DebugPanel } from './DebugPanel';
 
 export interface ChatMessageProps {
   message: ChatMessageType;
   showDebug: boolean;
   className?: string;
+  /** Current user's display name, used for the initials fallback on their message avatar. */
+  userName?: string | null;
+  /** Current user's profile photo. When neither this nor userName is set, a generic icon is shown. */
+  userAvatarUrl?: string | null;
 }
 
-export function ChatMessage({ message, showDebug, className }: ChatMessageProps): React.ReactNode {
+export function ChatMessage({
+  message,
+  showDebug,
+  className,
+  userName,
+  userAvatarUrl,
+}: ChatMessageProps): React.ReactNode {
   const [isDebugExpanded, setIsDebugExpanded] = React.useState(false);
 
   const formatTime = (date: Date): string => {
@@ -31,15 +42,24 @@ export function ChatMessage({ message, showDebug, className }: ChatMessageProps)
   return (
     <div className={cn('flex gap-3', isUser ? 'flex-row-reverse' : 'flex-row', className)}>
       {/* Avatar */}
-      <Avatar className="h-9 w-9 flex-shrink-0">
-        <AvatarFallback
-          className={cn(
-            isUser ? 'bg-muted text-muted-foreground' : 'bg-primary text-primary-foreground'
-          )}
-        >
-          {isUser ? <User className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
-        </AvatarFallback>
-      </Avatar>
+      {isUser && (userAvatarUrl || userName) ? (
+        <UserAvatar
+          name={userName}
+          avatarUrl={userAvatarUrl}
+          size="md"
+          className="h-9 w-9 flex-shrink-0"
+        />
+      ) : (
+        <Avatar className="h-9 w-9 flex-shrink-0">
+          <AvatarFallback
+            className={cn(
+              isUser ? 'bg-muted text-muted-foreground' : 'bg-primary text-primary-foreground'
+            )}
+          >
+            {isUser ? <User className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+          </AvatarFallback>
+        </Avatar>
+      )}
 
       {/* Message Content */}
       <div className={cn('flex-1 max-w-[85%] space-y-1.5', isUser && 'flex flex-col items-end')}>

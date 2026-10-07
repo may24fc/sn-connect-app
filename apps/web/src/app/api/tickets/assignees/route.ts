@@ -67,7 +67,7 @@ export async function GET() {
         id: entry.id,
         team: 'hr',
         role: 'admin',
-        name: getDisplayName(profile, 'Admin User'),
+        name: getDisplayName(profile),
         email: profile?.company_email || profile?.personal_email || null,
       };
     });
@@ -78,7 +78,7 @@ export async function GET() {
         id: entry.user_id,
         team: 'it',
         role: 'employee',
-        name: getDisplayName(profile, 'IT Handler'),
+        name: getDisplayName(profile),
         email: profile?.company_email || profile?.personal_email || null,
       };
     });

@@ -2,7 +2,6 @@
 
 import { Loader2, Search, User, X } from 'lucide-react';
 import * as React from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '../../primitives/avatar';
 import { Badge } from '../../primitives/badge';
 import { Button } from '../../primitives/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../primitives/card';
@@ -18,6 +17,7 @@ import {
 } from '../../primitives/select';
 import type { TaskAssignee } from '../../types/task.types';
 import { cn } from '../../utils/cn';
+import { PersonMeta, UserAvatar, formatPersonRole } from '../people/UserAvatar';
 
 export interface TaskAssigneeSelectProps {
   selectedIds: Array<string>;
@@ -40,7 +40,11 @@ export function TaskAssigneeSelect({
 
   // Get unique departments
   const departments = React.useMemo(() => {
-    const depts = new Set(employees.map((emp) => emp.department));
+    const depts = new Set(
+      employees
+        .map((emp) => emp.department)
+        .filter((department): department is string => Boolean(department))
+    );
     return Array.from(depts).sort();
   }, [employees]);
 
@@ -50,7 +54,7 @@ export function TaskAssigneeSelect({
       const matchesSearch =
         searchQuery === '' ||
         emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        emp.email.toLowerCase().includes(searchQuery.toLowerCase());
+        (emp.email ?? '').toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesRole = roleFilter === 'all' || emp.role === roleFilter;
 
@@ -219,24 +223,13 @@ export function TaskAssigneeSelect({
                         onCheckedChange={() => handleToggleEmployee(emp.id)}
                         onClick={(e) => e.stopPropagation()}
                       />
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={emp.avatarUrl} alt={emp.name} />
-                        <AvatarFallback className="text-xs">
-                          {emp.name
-                            .split(' ')
-                            .map((n) => n[0])
-                            .join('')
-                            .toUpperCase()
-                            .slice(0, 2)}
-                        </AvatarFallback>
-                      </Avatar>
+                      <UserAvatar name={emp.name} avatarUrl={emp.avatarUrl} size="sm" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{emp.name}</p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="truncate">{emp.department}</span>
-                          <span>•</span>
-                          <span className="capitalize">{emp.role}</span>
-                        </div>
+                        <PersonMeta
+                          className="block"
+                          parts={[emp.department, formatPersonRole(emp.role)]}
+                        />
                       </div>
                     </div>
                   );

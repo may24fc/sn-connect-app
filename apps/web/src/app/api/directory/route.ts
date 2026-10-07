@@ -1,3 +1,4 @@
+import { getPersonDisplayName } from '@/lib/people/directory-people';
 import {
   collapseEmployeeEquivalentRole,
   expandEmployeeEquivalentRoles,
@@ -6,6 +7,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
 const ADMIN_ROLES = ['admin', 'super_admin'];
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface DirectoryRow {
   full_name: string | null;
@@ -102,9 +104,19 @@ export async function GET(request: NextRequest) {
     const sortOrder = searchParams.get('sort_order') === 'desc' ? false : true;
     const page = Number.parseInt(searchParams.get('page') || '1', 10);
     const pageSize = Math.min(Number.parseInt(searchParams.get('page_size') || '20', 10), 100);
+    // Lets pickers resolve the people they already reference (e.g. a saved manager) by id.
+    const userIdFilters = (searchParams.get('user_ids') || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter((value) => UUID_PATTERN.test(value))
+      .slice(0, 100);
 
     // Build query on the employee_directory view
     let query = supabase.from('employee_directory').select('*', { count: 'exact' });
+
+    if (userIdFilters.length > 0) {
+      query = query.in('user_id', userIdFilters);
+    }
 
     // Role filter — "employee" expands to all non-associate roles so admins/leadership
     // appear in the directory when HR filters by Employee.
@@ -253,7 +265,10 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json({
-      data: data || [],
+      data: (data || []).map((entry: DirectoryRow) => ({
+        ...entry,
+        full_name: getPersonDisplayName(entry.full_name, entry.email),
+      })),
       metadata,
       pagination: {
         page,

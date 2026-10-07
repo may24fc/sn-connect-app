@@ -6,7 +6,7 @@ import {
 } from '@/hooks/useAnnouncementComments';
 import { getApiErrorStatus } from '@/lib/api-error';
 import { formatDate } from '@/lib/format';
-import { Button, EmptyState, Label, Textarea, useToast } from '@hr-portal/ui';
+import { Button, EmptyState, Label, Textarea, UserAvatar, useToast } from '@hr-portal/ui';
 import { AlertCircle, Loader2, Lock, MessageSquareText } from 'lucide-react';
 import { type ReactNode, useMemo, useState } from 'react';
 
@@ -117,13 +117,23 @@ export function AnnouncementCommentsPanel({
               key={comment.id}
               className="rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900/50"
             >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-medium text-foreground">
-                  {comment.commenter_name || 'Unknown user'}
-                </p>
-                <p className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</p>
+              <div className="flex gap-3">
+                <UserAvatar
+                  name={comment.commenter_name}
+                  avatarUrl={comment.commenter_avatar_url}
+                  size="sm"
+                  className="shrink-0"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-medium text-foreground">
+                      {comment.commenter_name || 'Unknown user'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</p>
+                  </div>
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{comment.content}</p>
+                </div>
               </div>
-              <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">{comment.content}</p>
             </div>
           ))}
         </div>

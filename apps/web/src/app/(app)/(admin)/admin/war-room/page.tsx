@@ -3,7 +3,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminProjectsOverview } from '@/hooks/useGamification';
 import { useProjectPoolCount } from '@/hooks/useProjectPool';
-import { useProjects } from '@/hooks/useProjects';
+import { toContributorAvatars, useProjects } from '@/hooks/useProjects';
 import {
   Badge,
   Button,
@@ -15,6 +15,7 @@ import {
   StreakChip,
   ToggleGroup,
   TierBadge,
+  UserAvatar,
 } from '@hr-portal/ui';
 import { Activity, AlertTriangle, FolderKanban, Inbox, Target, Trophy } from 'lucide-react';
 import Link from 'next/link';
@@ -48,10 +49,6 @@ export default function AdminProjectsPage() {
   const poolCount = poolCountData?.count ?? 0;
   const myProjects = myProjectsData?.data ?? [];
   const allProjects = allProjectsData?.data ?? [];
-  const internNameByUserId = useMemo(
-    () => new Map(interns.map((associate) => [associate.user_id, associate.full_name ?? 'Unassigned'])),
-    [interns]
-  );
 
   return (
     <div className="space-y-6 p-6">
@@ -146,6 +143,7 @@ export default function AdminProjectsPage() {
                     health={project.health}
                     earnedPoints={project.earned_points ?? 0}
                     targetEndDate={project.target_end_date}
+                    contributors={toContributorAvatars(project.contributor_people)}
                   />
                 </Link>
               ))}
@@ -286,12 +284,17 @@ export default function AdminProjectsPage() {
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <p className="truncate font-semibold text-zinc-900 dark:text-zinc-100">
-                                {i.full_name ?? 'Unnamed associate'}
-                              </p>
-                              {i.department ? (
-                                <p className="truncate text-xs text-zinc-500">{i.department}</p>
-                              ) : null}
+                              <div className="flex min-w-0 items-center gap-2.5">
+                                <UserAvatar name={i.full_name} avatarUrl={i.avatar_url} size="md" />
+                                <div className="min-w-0">
+                                  <p className="truncate font-semibold text-zinc-900 dark:text-zinc-100">
+                                    {i.full_name ?? 'Unnamed associate'}
+                                  </p>
+                                  {i.department ? (
+                                    <p className="truncate text-xs text-zinc-500">{i.department}</p>
+                                  ) : null}
+                                </div>
+                              </div>
                               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                                 <TierBadge tier={i.current_tier} />
                                 <StreakChip weeks={i.current_streak} />
@@ -369,7 +372,11 @@ export default function AdminProjectsPage() {
                               ) : null}
                             </td>
                             <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">
-                              {internNameByUserId.get(project.lead_user_id) ?? 'Unassigned'}
+                              <ProjectLeadCell
+                                leadUserId={project.lead_user_id}
+                                leadName={project.lead_name ?? null}
+                                leadAvatarUrl={project.lead_avatar_url ?? null}
+                              />
                             </td>
                             <td className="px-4 py-3 text-right font-medium text-zinc-700 dark:text-zinc-300">
                               {Math.round(project.progress_pct)}%
@@ -386,6 +393,28 @@ export default function AdminProjectsPage() {
         </>
       )}
     </div>
+  );
+}
+
+/** "Unassigned" only when the project genuinely has no lead; otherwise the lead's photo and name. */
+function ProjectLeadCell({
+  leadUserId,
+  leadName,
+  leadAvatarUrl,
+}: {
+  leadUserId: string | null;
+  leadName: string | null;
+  leadAvatarUrl: string | null;
+}) {
+  if (!leadUserId) {
+    return <span className="text-zinc-500">Unassigned</span>;
+  }
+
+  return (
+    <span className="flex min-w-0 items-center gap-2">
+      <UserAvatar name={leadName} avatarUrl={leadAvatarUrl} size="xs" />
+      <span className="truncate">{leadName ?? 'Unknown member'}</span>
+    </span>
   );
 }
 

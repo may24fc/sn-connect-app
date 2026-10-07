@@ -1260,7 +1260,7 @@ export type Database = {
           personal_email: string | null;
           phone: string | null;
           phone_country_code: string | null;
-          position: string;
+          position: string | null;
           postal_code: string | null;
           probation_end_date: string | null;
           province: string | null;
@@ -1309,7 +1309,7 @@ export type Database = {
           personal_email?: string | null;
           phone?: string | null;
           phone_country_code?: string | null;
-          position: string;
+          position?: string | null;
           postal_code?: string | null;
           probation_end_date?: string | null;
           province?: string | null;
@@ -1358,7 +1358,7 @@ export type Database = {
           personal_email?: string | null;
           phone?: string | null;
           phone_country_code?: string | null;
-          position?: string;
+          position?: string | null;
           postal_code?: string | null;
           probation_end_date?: string | null;
           province?: string | null;

@@ -1,3 +1,4 @@
+import { getPersonDisplayName } from '@/lib/people/directory-people';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -117,6 +118,10 @@ export async function GET(
     return NextResponse.json({
       data: {
         ...directoryEntry,
+        full_name: getPersonDisplayName(
+          directoryEntry.full_name,
+          directoryEntry.email ?? authUserData?.user?.email
+        ),
         avatar_url:
           directoryEntry.avatar_url ?? authUserData?.user?.user_metadata?.avatar_url ?? null,
         email:

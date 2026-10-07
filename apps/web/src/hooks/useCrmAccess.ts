@@ -17,6 +17,7 @@ export interface CrmAccessGrantRecord {
   role: string | null;
   department: string | null;
   position: string | null;
+  avatarUrl?: string | null;
 }
 
 interface CrmAccessGrantsResponse {

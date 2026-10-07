@@ -8,6 +8,8 @@ import { useCreateDepartment, useDepartments } from '@/hooks/useDepartments';
 import { useCreateDivision, useDivisions } from '@/hooks/useDivisions';
 import { useDirectory, useDirectoryExport } from '@/hooks/useDirectory';
 import type { DirectoryEntry, DirectoryFilters, DirectoryResponse } from '@/hooks/useDirectory';
+import { useEmployee } from '@/hooks/useEmployees';
+import { PersonSearchSelect } from '@/components/people/PersonSearchSelect';
 import {
   Avatar,
   AvatarFallback,
@@ -172,6 +174,12 @@ export default function AdminDirectoryPage(): ReactNode {
   const [editDepartment, setEditDepartment] = useState('');
   const [editDivision, setEditDivision] = useState('');
   const [editPosition, setEditPosition] = useState('');
+  // The manager lives on the employee record (not the directory view); only send it once changed.
+  const [editManagerId, setEditManagerId] = useState<string | null>(null);
+  const [editManagerTouched, setEditManagerTouched] = useState(false);
+  const editEmployeeQuery = useEmployee(editDialogOpen ? employeeToEdit?.employee_id : null);
+  const savedManagerId = editEmployeeQuery.data?.data?.immediate_head ?? null;
+  const effectiveManagerId = editManagerTouched ? editManagerId : savedManagerId;
   const [editStartDate, setEditStartDate] = useState('');
   const [showCreateDepartmentForm, setShowCreateDepartmentForm] = useState(false);
   const [newDepartmentName, setNewDepartmentName] = useState('');
@@ -377,6 +385,7 @@ export default function AdminDirectoryPage(): ReactNode {
         divisionId?: string | null;
         position?: string;
         date_hired?: string | null;
+        immediate_head?: string | null;
       };
     }) => {
       const response = await fetch(`/api/employees/${employeeId}`, {
@@ -477,10 +486,22 @@ export default function AdminDirectoryPage(): ReactNode {
     setEmployeeToEdit(entry);
     setEditFirstName(entry.first_name || '');
     setEditLastName(entry.last_name || '');
-    setEditDepartment(entry.department_id || '');
-    setEditDivision(entry.division_id || '');
+    // department_id/division_id are null for people placed only through the legacy text columns;
+    // match the directory's names so the dialog opens on their current placement.
+    const matchByName = (
+      options: ReadonlyArray<{ id: string; name: string }>,
+      name: string | null
+    ): string =>
+      options.find((option) => option.name.trim().toLowerCase() === (name ?? '').trim().toLowerCase())
+        ?.id ?? '';
+    setEditDepartment(
+      entry.department_id || matchByName(departmentsData?.data ?? [], entry.department_name)
+    );
+    setEditDivision(entry.division_id || matchByName(divisionsData?.data ?? [], entry.division_name));
     setEditPosition(entry.position || '');
     setEditStartDate(entry.start_date || '');
+    setEditManagerId(null);
+    setEditManagerTouched(false);
     setShowCreateDepartmentForm(false);
     setNewDepartmentName('');
     setCreateDepartmentError('');
@@ -539,6 +560,7 @@ export default function AdminDirectoryPage(): ReactNode {
         divisionId: editDivision,
         position: editPosition,
         date_hired: editStartDate || null,
+        ...(editManagerTouched ? { immediate_head: editManagerId } : {}),
       },
     });
   };
@@ -1359,14 +1381,14 @@ export default function AdminDirectoryPage(): ReactNode {
           }
         }}
       >
-        <DialogContent>
+        <DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Pencil className="h-5 w-5" />
               Edit Employee
             </DialogTitle>
             <DialogDescription>
-              Update department, division, position, and start date for{' '}
+              Update name, department, division, position, manager, and start date for{' '}
               <span className="font-semibold text-zinc-900 dark:text-zinc-100">
                 {employeeToEdit?.full_name}
               </span>
@@ -1574,6 +1596,23 @@ export default function AdminDirectoryPage(): ReactNode {
                 onChange={(e) => setEditPosition(e.target.value)}
                 placeholder="Enter position title"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-manager-search">Manager (immediate head)</Label>
+              <PersonSearchSelect
+                id="edit-manager-search"
+                value={effectiveManagerId}
+                onChange={(userId) => {
+                  setEditManagerId(userId);
+                  setEditManagerTouched(true);
+                }}
+                excludeUserIds={[employeeToEdit?.user_id]}
+                roles={['employee']}
+                disabled={editEmployeeQuery.isLoading || updateEmployeeMutation.isPending}
+              />
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Shown on probation records and notified about this person&apos;s probation updates.
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-start-date">Start Date</Label>

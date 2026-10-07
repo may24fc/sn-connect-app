@@ -17,6 +17,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  UserAvatar,
 } from '@hr-portal/ui';
 import { LifeBuoy } from 'lucide-react';
 import { type ReactNode, useMemo, useState } from 'react';
@@ -138,9 +139,19 @@ export function ManageTicketHandlersDialog({
             <div className="space-y-3">
               {activeHandlers.map((handler) => (
                 <div key={handler.user_id} className="flex items-center justify-between rounded-lg border border-border p-4">
-                  <div>
-                    <p className="font-medium text-foreground">{handler.user_name}</p>
-                    <p className="text-sm text-muted-foreground">{handler.user_email ?? 'No email on file'}</p>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <UserAvatar
+                      name={handler.user_name}
+                      avatarUrl={handler.user_avatar_url}
+                      size="md"
+                      className="shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-foreground">{handler.user_name}</p>
+                      <p className="truncate text-sm text-muted-foreground">
+                        {handler.user_email ?? 'No email on file'}
+                      </p>
+                    </div>
                   </div>
                   <Button
                     variant="outline"

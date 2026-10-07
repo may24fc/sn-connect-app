@@ -10,6 +10,7 @@ import {
   type ProjectHealth,
   type ProjectRecord,
   type ProjectStatus,
+  toContributorAvatars,
   useDeleteProject,
   useProjects,
   useUpdateProject,
@@ -202,6 +203,7 @@ export default function ProjectsListPage() {
                     maxPoints={p.max_points_available ?? 0}
                     department={p.primary_department ?? null}
                     targetEndDate={p.target_end_date}
+                    contributors={toContributorAvatars(p.contributor_people)}
                     {...(canEdit
                       ? {
                           onEdit: () => setEditingProject(p),

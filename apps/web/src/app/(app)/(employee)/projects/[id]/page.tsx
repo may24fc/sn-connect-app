@@ -1,6 +1,7 @@
 'use client';
 
 import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
+import { AttachmentDeleteButton } from '@/components/attachments/AttachmentDeleteButton';
 import { ProjectDescriptionFields } from '@/components/projects/ProjectDescriptionFields';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -83,12 +84,14 @@ import {
   Upload,
   Trash2,
   Users,
+  UserCog,
 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from 'react';
 import { WeeklyFocusCard } from '@/components/weekly-focus/WeeklyFocusCard';
 import { MondayCommitmentModal } from '@/components/modals/MondayCommitmentModal';
 import { ManageContributorsDialog } from '@/components/projects/ManageContributorsDialog';
+import { ProjectSupervisorDialog } from '@/components/projects/ProjectSupervisorDialog';
 import { useMyWeeklyCommitment } from '@/hooks/useWeeklyCommitments';
 import { useBackNavigation } from '@/hooks/useBackNavigation';
 
@@ -497,6 +500,7 @@ export default function ProjectDetailPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [createParent, setCreateParent] = useState<MilestoneRecord | null>(null);
   const [editProjectOpen, setEditProjectOpen] = useState(false);
+  const [supervisorDialogOpen, setSupervisorDialogOpen] = useState(false);
   const [deleteProjectOpen, setDeleteProjectOpen] = useState(false);
   // Weekly commitment modal state (auto-open until user locks a commitment)
   const [commitModalOpen, setCommitModalOpen] = useState(false);
@@ -631,7 +635,11 @@ export default function ProjectDetailPage() {
               </span>
               {project.contributors.length > 0 ? (
                 <ContributorAvatarStack
-                  contributors={project.contributors.map((c) => ({ userId: c.user_id }))}
+                  contributors={project.contributors.map((c) => ({
+                    userId: c.user_id,
+                    name: c.name,
+                    avatarUrl: c.avatar_url,
+                  }))}
                 />
               ) : null}
               {canManageContributors ? (
@@ -677,8 +685,12 @@ export default function ProjectDetailPage() {
           ) : null}
         </div>
         {isReadOnlyAdminView ? (
-          <div className="mt-2">
+          <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge variant="outline">Read-only admin view</Badge>
+            <Button variant="outline" size="xs" onClick={() => setSupervisorDialogOpen(true)}>
+              <UserCog className="mr-1.5 h-3.5 w-3.5" />
+              {project.supervisor_id ? 'Change supervisor' : 'Assign supervisor'}
+            </Button>
           </div>
         ) : null}
       </header>
@@ -856,15 +868,11 @@ export default function ProjectDetailPage() {
                             </Button>
                           ) : null}
                           {canAddDocumentation ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                void handleDeleteDocumentation(item);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <AttachmentDeleteButton
+                              itemKind="documentation"
+                              itemName={item.label || item.file_name || 'Project documentation'}
+                              onConfirm={() => handleDeleteDocumentation(item)}
+                            />
                           ) : null}
                         </div>
                       </div>
@@ -994,6 +1002,15 @@ export default function ProjectDetailPage() {
         onOpenChange={setEditProjectOpen}
         project={project}
       />
+      {isReadOnlyAdminView ? (
+        <ProjectSupervisorDialog
+          open={supervisorDialogOpen}
+          onOpenChange={setSupervisorDialogOpen}
+          projectId={project.id}
+          supervisorId={project.supervisor_id}
+          leadUserId={project.lead_user_id}
+        />
+      ) : null}
       <ConfirmActionDialog
         open={deleteProjectOpen}
         onOpenChange={setDeleteProjectOpen}

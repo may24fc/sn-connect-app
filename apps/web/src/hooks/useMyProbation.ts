@@ -5,7 +5,7 @@ export interface MyProbationData {
   employeeId: string;
   name: string;
   position: string;
-  department: string;
+  department: string | null;
   startDate: string;
   endDate: string | null;
   stage: 1 | 2 | 3 | 4;

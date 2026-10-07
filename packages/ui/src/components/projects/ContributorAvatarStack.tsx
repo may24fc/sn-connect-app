@@ -3,6 +3,7 @@
 import type * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../../primitives/avatar';
 import { cn } from '../../utils/cn';
+import { getUserInitials } from '../people/UserAvatar';
 
 export interface ContributorAvatar {
   userId: string;
@@ -17,15 +18,6 @@ export interface ContributorAvatarStackProps {
   className?: string;
 }
 
-function initials(name?: string | null): string {
-  if (!name) return '?';
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? '')
-    .join('');
-}
 
 export function ContributorAvatarStack({
   contributors,
@@ -49,7 +41,7 @@ export function ContributorAvatarStack({
         >
           {c.avatarUrl ? <AvatarImage src={c.avatarUrl} alt={c.name ?? ''} /> : null}
           <AvatarFallback className="bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-            {initials(c.name)}
+            {getUserInitials(c.name)}
           </AvatarFallback>
         </Avatar>
       ))}

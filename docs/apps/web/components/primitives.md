@@ -180,7 +180,7 @@ Full-featured modal dialog wrapping `@radix-ui/react-dialog`. Includes overlay, 
 | `DialogTrigger` | Open trigger |
 | `DialogPortal` | Portals to body |
 | `DialogOverlay` | Semi-transparent black overlay |
-| `DialogContent` | Centered content with max-w-lg, auto close button |
+| `DialogContent` | Centered content with max-w-lg, auto close button. Bounded to the viewport (`max-h-[calc(100dvh-2rem)]`) and scrolls (`overflow-y-auto`) so tall forms keep their actions reachable. Dialogs with their own scroll region override both with `max-h-*` and `overflow-hidden` plus an inner bounded `overflow-y-auto` area. |
 | `DialogHeader` | Header layout |
 | `DialogFooter` | Footer layout (flex-col-reverse → sm:flex-row) |
 | `DialogTitle` | Title text |

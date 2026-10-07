@@ -1,6 +1,9 @@
 'use client';
 
+import { PersonSearchSelect } from '@/components/people/PersonSearchSelect';
 import { useCreateDepartment, useDepartments } from '@/hooks/useDepartments';
+import { useEmployees } from '@/hooks/useEmployees';
+import { useInternships } from '@/hooks/useInternships';
 import { useCreateDivision, useDivisions } from '@/hooks/useDivisions';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '@hr-portal/ui';
@@ -350,6 +353,27 @@ export function AssignEmployeeModal({
   const [showCreateDivisionForm, setShowCreateDivisionForm] = useState(false);
   const [newDivisionName, setNewDivisionName] = useState('');
   const [createDivisionError, setCreateDivisionError] = useState<string | null>(null);
+  const [managerId, setManagerId] = useState<string | null>(null);
+  const [managerTouched, setManagerTouched] = useState(false);
+  const [supervisorId, setSupervisorId] = useState<string | null>(null);
+  const [supervisorTouched, setSupervisorTouched] = useState(false);
+  // Saved manager/supervisor are loaded here so every caller shows (and keeps) the current value.
+  const subjectEmployeeQuery = useEmployees(
+    { ...(assignmentData?.userId ? { userId: assignmentData.userId } : {}), page: 1, pageSize: 1 },
+    { enabled: open && Boolean(assignmentData?.userId) }
+  );
+  const subjectEmployee = subjectEmployeeQuery.data?.data?.[0] ?? null;
+  const subjectInternshipQuery = useInternships(
+    { ...(subjectEmployee?.id ? { employeeId: subjectEmployee.id } : {}), page: 1, pageSize: 1 },
+    { enabled: open && assignmentData?.role === 'associate' && Boolean(subjectEmployee?.id) }
+  );
+  const savedManagerId = subjectEmployee?.immediate_head ?? null;
+  const savedSupervisorId = subjectInternshipQuery.data?.data?.[0]?.supervisorId ?? null;
+  const effectiveManagerId = managerTouched ? managerId : savedManagerId;
+  const effectiveSupervisorId = supervisorTouched ? supervisorId : savedSupervisorId;
+  const isLoadingSavedPeople =
+    subjectEmployeeQuery.isLoading ||
+    (assignmentData?.role === 'associate' && subjectInternshipQuery.isLoading);
   const departmentsQuery = useDepartments({ page: 1, pageSize: 200 });
   const divisionsQuery = useDivisions({ page: 1, pageSize: 200 });
   const createDepartmentMutation = useCreateDepartment();
@@ -433,6 +457,8 @@ export function AssignEmployeeModal({
       status: assignmentData.status ?? 'on-track',
       probationEndDate: nextEmploymentStatus === 'probationary' ? defaultEndDate : '',
     });
+    setManagerId(null);
+    setManagerTouched(false);
   }, [assignmentData, isEmployeeProbationMode, open, resetEmployee]);
 
   useEffect(() => {
@@ -450,6 +476,8 @@ export function AssignEmployeeModal({
       school: assignmentData.school ?? '',
       program: assignmentData.program ?? '',
     });
+    setSupervisorId(null);
+    setSupervisorTouched(false);
   }, [assignmentData, open, resetIntern]);
 
   useEffect(() => {
@@ -660,6 +688,7 @@ export function AssignEmployeeModal({
           stage: assignProbation ? data.stage : undefined,
           status: assignProbation ? data.status : undefined,
           probationEndDate: assignProbation ? data.probationEndDate : undefined,
+          ...(managerTouched ? { immediateHeadId: managerId } : {}),
         }),
       });
 
@@ -713,6 +742,7 @@ export function AssignEmployeeModal({
           weeklyRequiredHours: data.weeklyRequiredHours,
           school: data.school,
           program: data.program,
+          ...(supervisorTouched ? { supervisorId } : {}),
         }),
       });
 
@@ -854,6 +884,24 @@ export function AssignEmployeeModal({
                 }}
                 isCreating={createDivisionMutation.isPending}
               />
+
+              <div className="space-y-2">
+                <Label htmlFor="employee-manager-search">Manager (immediate head)</Label>
+                <PersonSearchSelect
+                  id="employee-manager-search"
+                  value={effectiveManagerId}
+                  onChange={(userId) => {
+                    setManagerId(userId);
+                    setManagerTouched(true);
+                  }}
+                  excludeUserIds={[assignmentData.userId]}
+                  roles={['employee']}
+                  disabled={isSubmitting || isLoadingSavedPeople}
+                />
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Optional. Shown on probation records and notified about probation updates.
+                </p>
+              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="employmentStatus">
@@ -1206,6 +1254,24 @@ export function AssignEmployeeModal({
                     disabled={isSubmitting}
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="associate-supervisor-search">Supervisor</Label>
+                <PersonSearchSelect
+                  id="associate-supervisor-search"
+                  value={effectiveSupervisorId}
+                  onChange={(userId) => {
+                    setSupervisorId(userId);
+                    setSupervisorTouched(true);
+                  }}
+                  excludeUserIds={[assignmentData.userId]}
+                  roles={['employee']}
+                  disabled={isSubmitting || isLoadingSavedPeople}
+                />
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Optional. The supervisor can view this internship and review its daily logs.
+                </p>
               </div>
 
               {error && (

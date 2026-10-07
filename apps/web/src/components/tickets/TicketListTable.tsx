@@ -14,6 +14,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  UserAvatar,
 } from '@hr-portal/ui';
 import { ClipboardList, Paperclip } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -119,12 +120,32 @@ export function TicketListTable({
                 </TableCell>
                 {showSubmittedBy ? (
                   <TableCell className="text-sm text-muted-foreground">
-                    {ticket.submitted_by_name ?? 'Ticket Submitter'}
+                    <div className="flex min-w-0 items-center gap-2">
+                      <UserAvatar
+                        name={ticket.submitted_by_name ?? 'Ticket Submitter'}
+                        avatarUrl={ticket.submitted_by_avatar_url}
+                        size="xs"
+                        className="shrink-0"
+                      />
+                      <span className="truncate">{ticket.submitted_by_name ?? 'Ticket Submitter'}</span>
+                    </div>
                   </TableCell>
                 ) : null}
                 {showAssignedTo ? (
                   <TableCell className="text-sm text-muted-foreground">
-                    {ticket.assigned_to_name ?? 'Unassigned'}
+                    {ticket.assigned_to_name ? (
+                      <div className="flex min-w-0 items-center gap-2">
+                        <UserAvatar
+                          name={ticket.assigned_to_name}
+                          avatarUrl={ticket.assigned_to_avatar_url}
+                          size="xs"
+                          className="shrink-0"
+                        />
+                        <span className="truncate">{ticket.assigned_to_name}</span>
+                      </div>
+                    ) : (
+                      'Unassigned'
+                    )}
                   </TableCell>
                 ) : null}
                 <TableCell className="text-sm text-muted-foreground">

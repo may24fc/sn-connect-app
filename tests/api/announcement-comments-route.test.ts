@@ -39,8 +39,26 @@ function createClient(
   const insertSelect = vi.fn(() => ({ single }));
   const insert = vi.fn(() => ({ select: insertSelect }));
 
-  const employeesIs = vi.fn(async () => ({ data: [], error: null }));
+  const employeesIs = vi.fn(async () => ({
+    data: [{ user_id: 'user-1', first_name: 'Ana', last_name: 'Reyes' }],
+    error: null,
+  }));
   const employeesIn = vi.fn(() => ({ is: employeesIs }));
+
+  const directoryIn = vi.fn(async () => ({
+    data: [
+      {
+        user_id: 'user-1',
+        full_name: 'Ana Reyes',
+        role: 'employee',
+        department_name: null,
+        position: null,
+        email: null,
+        avatar_url: 'https://example.com/ana.png',
+      },
+    ],
+    error: null,
+  }));
 
   const from = vi.fn((table: string) => {
     if (table === 'announcements') {
@@ -48,6 +66,9 @@ function createClient(
     }
     if (table === 'employees') {
       return { select: vi.fn(() => ({ in: employeesIn })) };
+    }
+    if (table === 'employee_directory') {
+      return { select: vi.fn(() => ({ in: directoryIn })) };
     }
     return { select: vi.fn(() => ({ eq: commentsEq })), insert };
   });
@@ -167,6 +188,30 @@ describe('/api/announcements/[id]/comments', () => {
       announcement_id: 'a-1',
       user_id: 'user-1',
       content: 'Hello',
+    });
+    // The response carries the same author fields as GET so the merged comment keeps its author.
+    const body = (await response.json()) as { data: Record<string, unknown> };
+    expect(body.data).toMatchObject({
+      id: 'comment-1',
+      commenter_name: 'Ana Reyes',
+      commenter_avatar_url: 'https://example.com/ana.png',
+    });
+  });
+
+  it('returns the name and photo of each commenter', async () => {
+    mockAuth({
+      announcement: { id: 'a-1', status: 'published', allow_comments: true },
+      comments: [
+        { id: 'c-1', announcement_id: 'a-1', user_id: 'user-1', content: 'Hi', created_at: '2026-10-01T00:00:00Z' },
+      ],
+    });
+
+    const response = await GET(undefined as never, PARAMS);
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { data: Array<Record<string, unknown>> };
+    expect(body.data[0]).toMatchObject({
+      commenter_name: 'Ana Reyes',
+      commenter_avatar_url: 'https://example.com/ana.png',
     });
   });
 

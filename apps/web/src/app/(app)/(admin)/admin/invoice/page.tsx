@@ -631,7 +631,7 @@ export default function AdminInvoicePage() {
 
   const sortedRows = sortItems(employeeRows, {
     employee: (row) => `${row.employee.first_name} ${row.employee.last_name}`.toLowerCase(),
-    department: (row) => row.employee.department ?? '',
+    department: (row) => row.employee.department_name ?? '',
     invoice_number: (row) => row.matchedInvoice?.invoiceNumber ?? '',
     amount: (row) => row.matchedInvoice?.amount ?? 0,
     aud_amount: (row) => row.matchedInvoice?.audAmount ?? 0,
@@ -648,7 +648,7 @@ export default function AdminInvoicePage() {
       invoice,
       employeeName: `${row.employee.first_name} ${row.employee.last_name}`,
       avatarUrl: getAvatarUrl(row.employee),
-      department: row.employee.department || '-',
+      department: row.employee.department_name ?? '-',
       payoutLabel: row.matchedInvoice.payoutLabel,
     });
     setDetailOpen(true);
@@ -680,7 +680,7 @@ export default function AdminInvoicePage() {
           employeeId: emp.id,
           employeeName,
           avatarUrl: getAvatarUrl(emp),
-          department: emp.department || '-',
+          department: emp.department_name ?? '-',
           paymentBankName: data?.data?.payment_bank_name ?? null,
           paymentCountryCode,
           paymentCountryLabel: getSupportedCountryLabel(paymentCountryCode),
@@ -699,7 +699,7 @@ export default function AdminInvoicePage() {
           employeeId: emp.id,
           employeeName,
           avatarUrl: getAvatarUrl(emp),
-          department: emp.department || '-',
+          department: emp.department_name ?? '-',
           paymentBankName: null,
           paymentCountryCode: 'PH',
           paymentCountryLabel: getSupportedCountryLabel('PH'),
@@ -979,7 +979,7 @@ export default function AdminInvoicePage() {
                                 <span>{employeeName}</span>
                               </div>
                             </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">{row.employee.department || '-'}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{row.employee.department_name ?? '-'}</TableCell>
                             <TableCell>{row.matchedInvoice?.invoiceNumber ?? '-'}</TableCell>
                             <TableCell className="text-sm text-muted-foreground">
                               {row.matchedInvoice

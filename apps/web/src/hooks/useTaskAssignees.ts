@@ -6,6 +6,9 @@ export interface TaskAssigneeOption {
   role: 'employee' | 'associate';
   name: string;
   email: string | null;
+  department: string | null;
+  position: string | null;
+  avatar_url: string | null;
 }
 
 interface TaskAssigneesResponse {

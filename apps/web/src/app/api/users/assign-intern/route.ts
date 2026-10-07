@@ -1,3 +1,4 @@
+import { validatePersonAssignment } from '@/lib/people/assignment-validation';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -13,6 +14,8 @@ const assignInternSchema = z.object({
   weeklyRequiredHours: z.number().min(1, 'Weekly required hours must be at least 1').default(20),
   school: z.string().max(200).optional(),
   program: z.string().max(200).optional(),
+  /** Internship supervisor user id; null clears it, omitted leaves it unchanged. */
+  supervisorId: z.string().uuid('Invalid supervisor').nullable().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -60,7 +63,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { userId, departmentId, divisionId, startDate, endDate, requiredHours, weeklyRequiredHours, school, program } = parsed.data;
+    const {
+      userId,
+      departmentId,
+      divisionId,
+      startDate,
+      endDate,
+      requiredHours,
+      weeklyRequiredHours,
+      school,
+      program,
+      supervisorId,
+    } = parsed.data;
+    const supervisorUpdate = supervisorId !== undefined ? { supervisor_id: supervisorId } : {};
 
     // Validate date range
     if (new Date(endDate) <= new Date(startDate)) {
@@ -88,6 +103,17 @@ export async function POST(request: NextRequest) {
     }
 
     const supabaseAdmin = createSupabaseAdminClient();
+
+    if (supervisorId) {
+      const supervisorCheck = await validatePersonAssignment(supabaseAdmin, supervisorId, {
+        label: 'Supervisor',
+        subjectUserId: userId,
+      });
+      if (!supervisorCheck.ok) {
+        return NextResponse.json({ error: supervisorCheck.error }, { status: supervisorCheck.status });
+      }
+    }
+
     const [resolvedDepartment, resolvedDivision] = await Promise.all([
       resolveDepartmentById(supabaseAdmin, departmentId),
       resolveDivisionById(supabaseAdmin, divisionId),
@@ -146,6 +172,7 @@ export async function POST(request: NextRequest) {
           division: resolvedDivision.name,
           school: school || null,
           program: program || null,
+          ...supervisorUpdate,
           updated_at: new Date().toISOString(),
         })
         .eq('id', existingInternship.id);
@@ -172,6 +199,7 @@ export async function POST(request: NextRequest) {
           division_id: resolvedDivision.id,
           school,
           program,
+          ...supervisorUpdate,
           assigned_by: user.id,
         },
         performed_by: user.id,
@@ -209,6 +237,7 @@ export async function POST(request: NextRequest) {
         division: resolvedDivision.name,
         school: school || null,
         program: program || null,
+        supervisor_id: supervisorId ?? null,
       })
       .select('id')
       .single();
@@ -237,6 +266,7 @@ export async function POST(request: NextRequest) {
         division_id: resolvedDivision.id,
         school,
         program,
+        ...supervisorUpdate,
         assigned_by: user.id,
       },
       performed_by: user.id,

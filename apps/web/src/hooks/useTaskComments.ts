@@ -9,6 +9,7 @@ export interface TaskComment {
   content: string;
   created_at: string;
   commenter_name: string | null;
+  commenter_avatar_url?: string | null;
 }
 
 export function useTaskComments(taskId?: string | null, options: { enabled?: boolean } = {}) {

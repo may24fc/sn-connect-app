@@ -44,7 +44,7 @@ Create a new auth user with temporary credentials and an initial onboarding prof
 | `firstName` | `string` | Yes | Min 1 char |
 | `lastName` | `string` | Yes | Min 1 char |
 | `departmentId` | `uuid` | No | |
-| `position` | `string` | No | |
+| `position` | `string` | No | Job title. Left blank, it stays unset (never the account role) |
 
 ### Behavior
 
@@ -158,7 +158,8 @@ Assign an approved employee to the probation tracker with stage details.
   "assignProbation": true,
   "stage": 1,
   "status": "on-track",
-  "probationEndDate": "2026-08-27"
+  "probationEndDate": "2026-08-27",
+  "immediateHeadId": "uuid"
 }
 ```
 
@@ -171,12 +172,13 @@ Assign an approved employee to the probation tracker with stage details.
 | `stage` | `number` | Conditionally | Required when `assignProbation=true`, range 1-3 |
 | `status` | `enum` | Conditionally | Required when `assignProbation=true`, `on-track` or `at-risk` |
 | `probationEndDate` | `string` | Conditionally | Required when `assignProbation=true`, YYYY-MM-DD |
+| `immediateHeadId` | `uuid \| null` | No | Manager. Must be an active user other than the employee; `null` clears it, omitted leaves it unchanged |
 
 ### Behavior
 
 1. Finds the employee record for the given userId
 2. Resolves `departmentId` and `divisionId` against saved lookup tables
-3. Updates `employees.department`, `employees.division`, and probation fields
+3. Updates `employees.department`, `employees.division`, probation fields, and `employees.immediate_head` when `immediateHeadId` is sent
 4. Syncs `users.department_id` and `users.division_id`
 5. Logs operation to `audit_logs`
 
@@ -225,7 +227,8 @@ Assign an approved associate with program details. Creates or updates an interns
   "requiredHours": 480,
   "weeklyRequiredHours": 20,
   "school": "University of the Philippines",
-  "program": "BS Computer Science"
+  "program": "BS Computer Science",
+  "supervisorId": "uuid"
 }
 ```
 
@@ -240,6 +243,7 @@ Assign an approved associate with program details. Creates or updates an interns
 | `weeklyRequiredHours` | `number` | Yes | Min 1 |
 | `school` | `string` | No | |
 | `program` | `string` | No | |
+| `supervisorId` | `uuid \| null` | No | Internship supervisor. Must be an active user other than the associate; `null` clears it, omitted leaves it unchanged |
 
 ### Behavior
 

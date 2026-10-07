@@ -317,6 +317,20 @@ export {
   type ContributorAvatarStackProps,
 } from './components/projects/ContributorAvatarStack';
 export { ProjectCard, type ProjectCardProps } from './components/projects/ProjectCard';
+
+// People
+export {
+  UserAvatar,
+  PersonMeta,
+  PersonIdentity,
+  getUserInitials,
+  formatPersonRole,
+  getPersonMetaParts,
+  type UserAvatarSize,
+  type UserAvatarProps,
+  type PersonMetaProps,
+  type PersonIdentityProps,
+} from './components/people/UserAvatar';
 export { ChecklistItem, type ChecklistItemProps } from './components/projects/ChecklistItem';
 
 // Leaderboard / Gamification Components

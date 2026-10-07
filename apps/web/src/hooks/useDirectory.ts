@@ -16,6 +16,8 @@ export interface DirectoryFilters {
   page?: number;
   pageSize?: number;
   excludeTerminated?: boolean;
+  /** Restrict results to these users (used to resolve already-selected people). */
+  userIds?: string[];
 }
 
 export interface DirectoryEntry {
@@ -87,9 +89,10 @@ export interface DirectoryResponse {
   };
 }
 
-export function useDirectory(filters: DirectoryFilters = {}) {
+export function useDirectory(filters: DirectoryFilters = {}, options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: queryKeys.directory.list(filters),
+    enabled: options.enabled ?? true,
     queryFn: async (): Promise<DirectoryResponse> => {
       const params = new URLSearchParams();
       if (filters.search) params.append('search', filters.search);
@@ -106,6 +109,7 @@ export function useDirectory(filters: DirectoryFilters = {}) {
       if (filters.page) params.append('page', String(filters.page));
       if (filters.pageSize) params.append('page_size', String(filters.pageSize));
       if (filters.excludeTerminated) params.append('exclude_terminated', 'true');
+      if (filters.userIds?.length) params.append('user_ids', filters.userIds.join(','));
 
       const query = params.toString();
       const response = await fetch(`/api/directory${query ? `?${query}` : ''}`);

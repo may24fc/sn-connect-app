@@ -3,9 +3,16 @@ import {
   normalizeProjectEntries,
   normalizeStringList,
 } from '@/lib/associate-daily-log';
+import {
+  loadDirectoryPeople,
+  normalizeDepartmentName,
+  resolveDepartmentName,
+} from '@/lib/people/directory-people';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { updateInternshipSchema } from '@/lib/schemas/internship.schema';
+import { validatePersonAssignment } from '@/lib/people/assignment-validation';
+import { resolveDepartmentById } from '@/app/api/users/_organization';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
   canAccessInternship,
@@ -30,6 +37,21 @@ interface DailyLogRow {
   created_at: string;
   updated_at?: string;
   status?: string;
+}
+
+/** PostgREST returns a to-one embed as an object, but older typings model it as an array. */
+function readJoinedAvatarUrl(joined: unknown): string | null {
+  const record = Array.isArray(joined) ? joined[0] : joined;
+  if (!record || typeof record !== 'object' || !('avatar_url' in record)) {
+    return null;
+  }
+
+  const avatarUrl = record.avatar_url;
+  return typeof avatarUrl === 'string' && avatarUrl.trim() !== '' ? avatarUrl : null;
+}
+
+function textOrNull(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
 }
 
 const DAILY_LOG_ATTACHMENT_BUCKET = 'associate-daily-log-attachments';
@@ -103,22 +125,18 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       updated_at: string;
     };
 
-    const [{ data: internEmployee }, { data: supervisorEmployee }, { data: logs }] =
+    // Access is verified above; the supervisor's directory row is not readable by the associate's RLS scope.
+    const [{ data: internEmployee }, supervisorPeople, { data: logs }] =
       await Promise.all([
         supabase
           .from('employees')
-          .select('id, user_id, first_name, last_name, company_email, phone, department')
+          .select(
+            'id, user_id, first_name, last_name, company_email, personal_email, phone, department, position, users!employees_user_id_fkey(avatar_url)'
+          )
           .eq('id', internship.employee_id)
           .is('deleted_at', null)
           .single(),
-        internship.supervisor_id
-          ? supabase
-              .from('employees')
-              .select('user_id, first_name, last_name, company_email')
-              .eq('user_id', internship.supervisor_id)
-              .is('deleted_at', null)
-              .maybeSingle()
-          : Promise.resolve({ data: null }),
+        loadDirectoryPeople(createSupabaseAdminClient(), [internship.supervisor_id]),
         supabase
           .from('intern_daily_logs')
           .select('*')
@@ -129,6 +147,11 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     if (!internEmployee) {
       return NextResponse.json({ error: 'Associate profile not found' }, { status: 404 });
     }
+
+    const internAvatarUrl = readJoinedAvatarUrl(internEmployee.users);
+    const supervisorPerson = internship.supervisor_id
+      ? supervisorPeople.get(internship.supervisor_id)
+      : undefined;
 
     const reportRows = await Promise.all(
       (((logs as Array<DailyLogRow> | null) || []).map(async (log) => ({
@@ -172,16 +195,21 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
         employeeId: internship.employee_id,
         userId: internEmployee.user_id,
         name: `${internEmployee.first_name} ${internEmployee.last_name}`,
-        email: internEmployee.company_email || '',
+        email: internEmployee.company_email || internEmployee.personal_email || null,
+        avatarUrl: internAvatarUrl,
+        position: textOrNull(internEmployee.position),
         phone: internEmployee.phone || null,
-        school: internship.school || 'N/A',
-        program: internship.program || 'N/A',
-        department: internship.department || internEmployee.department,
-        supervisor: supervisorEmployee
-          ? `${supervisorEmployee.first_name} ${supervisorEmployee.last_name}`
-          : 'Unassigned',
+        school: textOrNull(internship.school),
+        program: textOrNull(internship.program),
+        department:
+          normalizeDepartmentName(internship.department) ??
+          resolveDepartmentName(null, internEmployee.department),
+        supervisor: internship.supervisor_id
+          ? (supervisorPerson?.name ?? supervisorPerson?.email ?? 'Unknown user')
+          : null,
         supervisorId: internship.supervisor_id,
-        supervisorEmail: supervisorEmployee?.company_email || null,
+        supervisorEmail: supervisorPerson?.email ?? null,
+        supervisorAvatarUrl: supervisorPerson?.avatarUrl ?? null,
         startDate: internship.start_date,
         endDate: internship.end_date,
         requiredHours: Number(internship.required_hours || 0),
@@ -224,7 +252,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     const isAdmin = isInternshipAdmin(role);
-    const current = access.internship as { supervisor_id: string | null };
+    const current = access.internship as { supervisor_id: string | null; employee_id: string };
     const isSupervisor = current.supervisor_id === user.id;
 
     if (!isAdmin && !isSupervisor) {
@@ -232,6 +260,44 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     const payload = parsed.data;
+
+    // Reassigning the supervisor or department changes who can access this record.
+    const changesPlacement =
+      payload.supervisorId !== undefined ||
+      payload.departmentId !== undefined ||
+      payload.department !== undefined;
+    if (changesPlacement && !isAdmin) {
+      return NextResponse.json(
+        { error: 'Only admins can change the supervisor or department' },
+        { status: 403 }
+      );
+    }
+
+    const adminClient = createSupabaseAdminClient();
+    const { data: associate } = await adminClient
+      .from('employees')
+      .select('id, user_id')
+      .eq('id', current.employee_id)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (payload.supervisorId) {
+      const supervisorCheck = await validatePersonAssignment(adminClient, payload.supervisorId, {
+        label: 'Supervisor',
+        subjectUserId: associate?.user_id ?? null,
+      });
+      if (!supervisorCheck.ok) {
+        return NextResponse.json(
+          { error: supervisorCheck.error },
+          { status: supervisorCheck.status }
+        );
+      }
+    }
+
+    const resolvedDepartment = payload.departmentId
+      ? await resolveDepartmentById(adminClient, payload.departmentId)
+      : null;
+
     const updates: Record<string, unknown> = {};
 
     if (payload.startDate !== undefined) updates.start_date = payload.startDate;
@@ -241,6 +307,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (payload.status !== undefined) updates.status = payload.status;
     if (payload.supervisorId !== undefined) updates.supervisor_id = payload.supervisorId;
     if (payload.department !== undefined) updates.department = payload.department;
+    if (resolvedDepartment) updates.department = resolvedDepartment.name;
     if (payload.school !== undefined) updates.school = payload.school;
     if (payload.program !== undefined) updates.program = payload.program;
 
@@ -254,6 +321,28 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (updateError || !data) {
       console.error('Error updating internship:', updateError);
       return NextResponse.json({ error: 'Failed to update internship' }, { status: 500 });
+    }
+
+    // Keep the associate's authoritative placement in step with the internship department.
+    if (resolvedDepartment && associate) {
+      const [{ error: employeeSyncError }, { error: userSyncError }] = await Promise.all([
+        adminClient
+          .from('employees')
+          .update({ department: resolvedDepartment.name })
+          .eq('id', associate.id),
+        adminClient
+          .from('users')
+          .update({ department_id: resolvedDepartment.id })
+          .eq('id', associate.user_id),
+      ]);
+
+      if (employeeSyncError || userSyncError) {
+        console.error('Failed to sync associate department:', employeeSyncError ?? userSyncError);
+        return NextResponse.json(
+          { error: 'Internship saved, but the associate department could not be synced' },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({ data });

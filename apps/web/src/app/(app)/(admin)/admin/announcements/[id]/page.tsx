@@ -1,5 +1,6 @@
 'use client';
 
+import { AttachmentDeleteButton } from '@/components/attachments/AttachmentDeleteButton';
 import { stageFormDataFiles } from '@/lib/storage/stage-form-data';
 import { useAnnouncement } from '@/hooks/useAnnouncement';
 import {
@@ -575,10 +576,17 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
                         {attachment.mime_type}
                       </p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={async () => {
+                    <AttachmentDeleteButton
+                      itemName={attachment.file_name}
+                      description={
+                        announcement.status === 'published' ? (
+                          <>
+                            This announcement is published. Employees will no longer be able to
+                            open &ldquo;{attachment.file_name}&rdquo;. This can&apos;t be undone.
+                          </>
+                        ) : undefined
+                      }
+                      onConfirm={async () => {
                         try {
                           const res = await fetch(
                             `/api/announcements/${announcementId}/attachments/${attachment.id}`,
@@ -593,9 +601,7 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
                           addToast({ title: 'Failed to delete attachment', variant: 'error' });
                         }
                       }}
-                    >
-                      Delete
-                    </Button>
+                    />
                   </CardContent>
                 </Card>
               )

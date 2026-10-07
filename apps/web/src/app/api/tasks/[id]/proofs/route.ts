@@ -147,9 +147,10 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to submit proof' }, { status: 500 });
     }
 
+    const submitterName = await getUserDisplayName(user.id);
+
     // Notify the assigner (super-admin) about the proof submission
     if (task.assigned_by) {
-      const submitterName = await getUserDisplayName(user.id);
       createNotification({
         userId: task.assigned_by,
         type: 'system',
@@ -168,7 +169,11 @@ export async function POST(
       metadata: { taskId: id, proofType: parsed.data.proofType },
     });
 
-    return NextResponse.json({ data: proof }, { status: 201 });
+    // Match the GET shape so the cached list keeps the submitter's name after the swap-in.
+    return NextResponse.json(
+      { data: { ...proof, submitted_by_name: submitterName } },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Unexpected error in POST /api/tasks/[id]/proofs:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

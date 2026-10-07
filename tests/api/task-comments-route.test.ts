@@ -10,6 +10,10 @@ vi.mock('@/app/api/tasks/_lib', async () => {
   };
 });
 
+vi.mock('@/lib/people/directory-people', () => ({
+  loadDirectoryPeople: vi.fn(async () => new Map()),
+}));
+
 vi.mock('@/lib/notifications/create-notification', () => ({
   createNotification: vi.fn(),
   getUserDisplayName: vi.fn(async () => 'Jane Doe'),
@@ -18,6 +22,7 @@ vi.mock('@/lib/notifications/create-notification', () => ({
 import { GET, POST } from '@/app/api/tasks/[id]/comments/route';
 import { getTaskAuthedContext } from '@/app/api/tasks/_lib';
 import { createNotification } from '@/lib/notifications/create-notification';
+import { loadDirectoryPeople } from '@/lib/people/directory-people';
 
 interface TaskRow {
   id: string;
@@ -154,6 +159,51 @@ describe('/api/tasks/[id]/comments', () => {
     const body = (await response.json()) as { data: Array<{ commenter_name: string | null }> };
     expect(body.data).toHaveLength(1);
     expect(body.data[0]?.commenter_name).toBeNull();
+  });
+
+  it('returns the commenter name and photo from the directory', async () => {
+    vi.mocked(loadDirectoryPeople).mockResolvedValueOnce(
+      new Map([
+        [
+          'assignee-1',
+          {
+            userId: 'assignee-1',
+            name: 'Ana Reyes',
+            role: 'associate',
+            department: 'Marketing',
+            position: null,
+            email: null,
+            avatarUrl: 'https://cdn.example/ana.png',
+          },
+        ],
+      ])
+    );
+    mockContext({
+      userId: 'assignee-1',
+      role: 'employee',
+      task: TASK,
+      comments: [
+        {
+          id: 'comment-1',
+          task_id: 'task-1',
+          user_id: 'assignee-1',
+          content: 'On it',
+          created_at: '2026-09-18T00:00:00.000Z',
+        },
+      ],
+    });
+
+    const response = await GET(undefined as never, {
+      params: Promise.resolve({ id: 'task-1' }),
+    });
+
+    const body = (await response.json()) as {
+      data: Array<{ commenter_name: string | null; commenter_avatar_url: string | null }>;
+    };
+    expect(body.data[0]).toMatchObject({
+      commenter_name: 'Ana Reyes',
+      commenter_avatar_url: 'https://cdn.example/ana.png',
+    });
   });
 
   it('lists comments for an oversight role that is not on the task', async () => {

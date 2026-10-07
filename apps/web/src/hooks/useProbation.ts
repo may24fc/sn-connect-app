@@ -4,16 +4,18 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 export interface ProbationRecord {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
   avatarUrl?: string;
-  department: string;
-  position: string;
+  /** Resolved department; null when none is assigned. */
+  department: string | null;
+  position: string | null;
   startDate: string;
   probationEndDate: string;
   stage: 1 | 2 | 3 | 4;
   status: 'on-track' | 'at-risk' | 'completed' | 'extended';
   daysRemaining: number;
-  manager: string;
+  /** Immediate head's name (or email); null when no manager is set. */
+  manager: string | null;
   documentsComplete: number;
   totalDocuments: number;
   okrs: Array<{

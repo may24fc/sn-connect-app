@@ -13,8 +13,6 @@ import {
 } from '@/lib/onboarding-review-state';
 import { getOnboardingStepLabel } from '@/lib/onboarding-step';
 import {
-  Avatar,
-  AvatarFallback,
   Badge,
   Button,
   Card,
@@ -26,6 +24,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  UserAvatar,
   useToast,
 } from '@hr-portal/ui';
 import {
@@ -45,15 +44,6 @@ import {
 import { useParams } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
-
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
-}
 
 function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return '—';
@@ -148,11 +138,12 @@ export default function OnboardingDetailPage(): ReactNode {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-start gap-4">
-          <Avatar className="h-14 w-14">
-            <AvatarFallback className="text-lg bg-slate-100 dark:bg-zinc-900/30 text-slate-700 dark:text-zinc-400">
-              {getInitials(fullName)}
-            </AvatarFallback>
-          </Avatar>
+          <UserAvatar
+            name={fullName}
+            avatarUrl={profile.avatar_url}
+            className="h-14 w-14"
+            fallbackClassName="text-lg bg-slate-100 dark:bg-zinc-900/30 text-slate-700 dark:text-zinc-400"
+          />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">

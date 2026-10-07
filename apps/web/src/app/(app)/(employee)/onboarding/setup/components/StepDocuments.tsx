@@ -1,5 +1,7 @@
 'use client';
 
+import { AttachmentDeleteButton } from '@/components/attachments/AttachmentDeleteButton';
+import { useDeleteOnboardingDocument } from '@/hooks/useDeleteOnboardingDocument';
 import { useOnboardingDocuments } from '@/hooks/useOnboardingDocuments';
 import { useUploadOnboardingDocument } from '@/hooks/useUploadOnboardingDocument';
 import { Badge, useToast } from '@hr-portal/ui';
@@ -22,6 +24,7 @@ const documentTypeLabels: Record<DocumentType, string> = {
 export function StepDocuments(): ReactNode {
   const { data, isLoading } = useOnboardingDocuments();
   const upload = useUploadOnboardingDocument();
+  const deleteDocument = useDeleteOnboardingDocument();
   const { addToast } = useToast();
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadingTypes, setUploadingTypes] = useState<Set<DocumentType>>(new Set());
@@ -99,7 +102,27 @@ export function StepDocuments(): ReactNode {
           <p className="text-sm font-medium mb-2">Uploaded Files</p>
           <ul className="space-y-1 text-sm text-muted-foreground">
             {data?.data?.map((doc) => (
-              <li key={doc.id}>{doc.file_name}</li>
+              <li key={doc.id} className="flex items-center justify-between gap-2">
+                <span className="min-w-0 truncate">
+                  {doc.file_name}
+                  <span className="ml-2 text-xs">({documentTypeLabels[doc.document_type]})</span>
+                </span>
+                <AttachmentDeleteButton
+                  itemKind="document"
+                  itemName={doc.file_name}
+                  onConfirm={() =>
+                    deleteDocument.mutateAsync(doc.id).then(
+                      () => addToast({ title: 'Document removed', variant: 'success' }),
+                      (error: unknown) =>
+                        addToast({
+                          title: 'Could not remove document',
+                          description: error instanceof Error ? error.message : 'Please try again.',
+                          variant: 'error',
+                        })
+                    )
+                  }
+                />
+              </li>
             ))}
           </ul>
         </div>

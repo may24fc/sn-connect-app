@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 export interface AdminProjectsInternRow {
   user_id: string;
   full_name: string | null;
+  avatar_url: string | null;
   department: string | null;
   project_count: number;
   avg_progress: number;

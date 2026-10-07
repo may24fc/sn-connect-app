@@ -1,5 +1,6 @@
 import { logActivity } from '@/lib/audit';
 import { getSubmissionEditStatus } from '@/lib/performance/submission-edit-status';
+import { loadDirectoryPeople } from '@/lib/people/directory-people';
 import {
   monthlyCallFeedbackFiltersSchema,
   submitMonthlyCallFeedbackSchema,
@@ -12,6 +13,7 @@ import {
   listPerformanceAudience,
   resolvePerformanceIdentitySnapshot,
   resolveEmployeeIdForUser,
+  resolvePersonDepartmentRole,
 } from '../_lib';
 import { notifyPerformanceEvaluationManagers } from '../_notifications';
 
@@ -151,6 +153,13 @@ export async function GET(request: NextRequest) {
         });
 
       const audienceUserIds = new Set(audience.map((member) => member.userId));
+      // Submitters outside the current audience (e.g. role or department changed) still get their photo.
+      const supplementalPeople = await loadDirectoryPeople(
+        supabaseAdmin,
+        (data || [])
+          .map((record) => record.user_id as string)
+          .filter((userId) => !audienceUserIds.has(userId))
+      );
       const supplementalSubmissions = (data || [])
         .filter((record) => !audienceUserIds.has(record.user_id as string))
         .filter((record) => {
@@ -181,9 +190,16 @@ export async function GET(request: NextRequest) {
             id: submission.user_id as string,
             user_id: submission.user_id as string,
             employee_id: (submission.employee_id as string | null) ?? null,
-            full_name: String(submission.full_name || 'Unknown user'),
-            department_role: String(submission.department_role || 'Unassigned'),
-            avatar_url: null,
+            full_name: String(
+              submission.full_name ||
+                supplementalPeople.get(submission.user_id as string)?.name ||
+                'Unknown user'
+            ),
+            department_role: String(
+              submission.department_role ||
+                resolvePersonDepartmentRole(supplementalPeople.get(submission.user_id as string))
+            ),
+            avatar_url: supplementalPeople.get(submission.user_id as string)?.avatarUrl ?? null,
             submission_status: 'submitted' as const,
             submitted_at: submission.submitted_at ?? null,
             last_employee_edit_at: editStatus.lastEmployeeEditAt,

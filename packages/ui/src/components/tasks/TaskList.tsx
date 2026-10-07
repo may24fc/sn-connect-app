@@ -24,6 +24,7 @@ import {
 import type { Task, TaskId, TaskStatus } from '../../types/task.types';
 import { formatDueDate, isTaskOverdue } from '../../types/task.types';
 import { cn } from '../../utils/cn';
+import { UserAvatar } from '../people/UserAvatar';
 import { TaskCard } from './TaskCard';
 import { TaskPriorityBadge } from './TaskPriorityBadge';
 import { TaskStatusBadge } from './TaskStatusBadge';
@@ -225,18 +226,14 @@ export function TaskList({
                     <TableCell>
                       <div className="flex -space-x-2">
                         {task.assignees.slice(0, 3).map((assignee) => (
-                          <div
-                            key={assignee.id}
-                            className="h-7 w-7 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-medium"
-                            title={assignee.name}
-                          >
-                            {assignee.name
-                              .split(' ')
-                              .map((n) => n[0])
-                              .join('')
-                              .toUpperCase()
-                              .slice(0, 2)}
-                          </div>
+                          <span key={assignee.id} title={assignee.name}>
+                            <UserAvatar
+                              name={assignee.name}
+                              avatarUrl={assignee.avatarUrl}
+                              size="xs"
+                              className="h-7 w-7 border-2 border-background"
+                            />
+                          </span>
                         ))}
                         {task.assignees.length > 3 && (
                           <div className="h-7 w-7 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-medium">

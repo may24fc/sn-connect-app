@@ -8,6 +8,15 @@ vi.mock('@/app/api/tasks/_lib', () => ({
     (error: { message?: string } | null) => error?.message || 'Task operation failed'
   ),
   validateTaskAssignee: vi.fn(),
+  attachTaskPeople: vi.fn(async (_client: unknown, tasks: Array<Record<string, unknown>>) =>
+    tasks.map((task) => ({
+      ...task,
+      assignee_name: null,
+      assigner_name: null,
+      assignee: null,
+      assigner: null,
+    }))
+  ),
 }));
 
 vi.mock('@/lib/audit', () => ({

@@ -66,6 +66,8 @@ import {
   TabsTrigger,
 
   Textarea,
+  PersonMeta,
+  UserAvatar,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -111,16 +113,17 @@ type AssociateEvaluationView = 'cards' | 'list';
 interface AssociateEvaluationRecord {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
   avatarUrl?: string;
-  department: string;
-  position: string;
+  department: string | null;
+  /** Job title from the employee record. Missing titles stay null rather than a placeholder. */
+  position: string | null;
   startDate: string;
   evaluationEndDate: string;
   stage: AssociateEvaluationStage;
   status: AssociateEvaluationStatus;
   daysRemaining: number;
-  manager: string;
+  manager: string | null;
 }
 
 interface PersistedAssociateEvaluation {
@@ -169,15 +172,6 @@ const ASSOCIATE_STATUS_CONFIG: Record<
     icon: Clock,
   },
 };
-
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-}
 
 function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString('en-US', {
@@ -403,7 +397,7 @@ export default function AdminInternsPage(): ReactNode {
       (internshipsQuery.data?.data || []).map((internship) => ({
         id: internship.id as InternId,
         name: internship.name,
-        email: internship.email,
+        email: internship.email ?? '',
         ...(internship.avatarUrl ? { avatarUrl: internship.avatarUrl } : {}),
         school: internship.school,
         program: internship.program,
@@ -464,14 +458,22 @@ export default function AdminInternsPage(): ReactNode {
     reportsThisWeek: 0,
   };
 
-  const schools = [...new Set(interns.map((i) => i.school))];
-  const supervisors = [...new Set(interns.map((i) => i.supervisor))];
+  const schools = [
+    ...new Set(interns.map((i) => i.school).filter((school): school is string => Boolean(school))),
+  ];
+  const supervisors = [
+    ...new Set(
+      interns
+        .map((i) => i.supervisor)
+        .filter((supervisor): supervisor is string => Boolean(supervisor))
+    ),
+  ];
 
   const filteredInterns = interns.filter((associate) => {
     const matchesSearch =
       associate.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       associate.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      associate.program.toLowerCase().includes(searchQuery.toLowerCase());
+      (associate.program ?? '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus =
       statusFilter === 'all' ||
       (statusFilter === 'converted'
@@ -481,6 +483,21 @@ export default function AdminInternsPage(): ReactNode {
     const matchesSupervisor = supervisorFilter === 'all' || associate.supervisor === supervisorFilter;
     return matchesSearch && matchesStatus && matchesSchool && matchesSupervisor;
   });
+
+  const internshipIdentityById = useMemo(
+    () =>
+      new Map(
+        (internshipsQuery.data?.data || []).map((internship) => [
+          internship.id,
+          {
+            email: internship.email,
+            position: internship.position,
+            hasSupervisor: Boolean(internship.supervisorId),
+          },
+        ])
+      ),
+    [internshipsQuery.data]
+  );
 
   const associateEvaluationRecords = useMemo<Array<AssociateEvaluationRecord>>(
     () =>
@@ -504,22 +521,24 @@ export default function AdminInternsPage(): ReactNode {
             status = 'on-track';
           }
 
+          const identity = internshipIdentityById.get(associate.id);
+
           return {
             id: associate.id,
             name: associate.name,
-            email: associate.email,
+            email: identity?.email ?? null,
             ...(associate.avatarUrl ? { avatarUrl: associate.avatarUrl } : {}),
-            department: associate.department || 'Unassigned',
-            position: associate.program || 'Associate',
+            department: associate.department?.trim() || null,
+            position: identity?.position ?? null,
             startDate: associate.startDate,
             evaluationEndDate: associate.endDate,
             stage: getAssociateStage(associate.startDate, associate.endDate),
             status,
             daysRemaining: Math.max(0, daysRemaining),
-            manager: associate.supervisor || 'Unassigned',
+            manager: identity?.hasSupervisor ? associate.supervisor?.trim() || null : null,
           };
         }),
-    [interns]
+    [interns, internshipIdentityById]
   );
 
   const associateEvaluationInternshipIds = useMemo(
@@ -558,7 +577,7 @@ export default function AdminInternsPage(): ReactNode {
   const associateEvaluationDepartments = useMemo(
     () =>
       [...new Set(associateEvaluationRecords.map((record) => record.department))]
-        .filter(Boolean)
+        .filter((department): department is string => Boolean(department))
         .sort((left, right) => left.localeCompare(right)),
     [associateEvaluationRecords]
   );
@@ -570,7 +589,7 @@ export default function AdminInternsPage(): ReactNode {
         const matchesSearch =
           normalizedSearch.length === 0 ||
           record.name.toLowerCase().includes(normalizedSearch) ||
-          record.position.toLowerCase().includes(normalizedSearch);
+          (record.position ?? '').toLowerCase().includes(normalizedSearch);
         const matchesStatus =
           associateEvaluationStatusFilter === 'all' ||
           record.status === associateEvaluationStatusFilter;
@@ -624,10 +643,10 @@ export default function AdminInternsPage(): ReactNode {
         rowMapper: (associate) => [
           associate.name,
           associate.email,
-          associate.school,
-          associate.program,
-          associate.department,
-          associate.supervisor,
+          associate.school ?? '',
+          associate.program ?? '',
+          associate.department ?? '',
+          associate.supervisor ?? '',
           formatDateForCsv(associate.startDate),
           formatDateForCsv(associate.endDate),
           associate.requiredHours,
@@ -688,7 +707,7 @@ export default function AdminInternsPage(): ReactNode {
       email: profile.email_address || employeeRecord?.company_email || employeeRecord?.personal_email || '',
       role: 'associate',
       position: profile.position || employeeRecord?.position || null,
-      departmentName: employeeRecord?.department || assignedDepartment || onboardingDepartment || null,
+      departmentName: employeeRecord?.department_name || assignedDepartment || onboardingDepartment || null,
       divisionName: employeeRecord?.division || null,
       startDate: relatedInternship?.startDate || null,
       endDate: relatedInternship?.endDate || null,
@@ -723,7 +742,7 @@ export default function AdminInternsPage(): ReactNode {
       role: 'associate',
       position: employeeRecord?.position || null,
       divisionId: internshipRecord.divisionId || undefined,
-      departmentName: internshipRecord.department || employeeRecord?.department || null,
+      departmentName: internshipRecord.department || employeeRecord?.department_name || null,
       divisionName: internshipRecord.division || employeeRecord?.division || null,
       startDate: internshipRecord.startDate,
       endDate: internshipRecord.endDate,
@@ -1189,15 +1208,17 @@ export default function AdminInternsPage(): ReactNode {
                   <Card key={record.id} className={isUrgent ? 'border-amber-300 dark:border-amber-700' : ''}>
                     <CardHeader className="pb-3">
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={record.avatarUrl} />
-                          <AvatarFallback className="text-xs bg-slate-100 dark:bg-zinc-900/30 text-slate-700 dark:text-zinc-400">
-                            {getInitials(record.name)}
-                          </AvatarFallback>
-                        </Avatar>
+                        <UserAvatar
+                          name={record.name}
+                          avatarUrl={record.avatarUrl}
+                          size="md"
+                          fallbackClassName="text-xs bg-slate-100 dark:bg-zinc-900/30 text-slate-700 dark:text-zinc-400"
+                        />
                         <div className="min-w-0 flex-1">
                           <CardTitle className="text-sm">{record.name}</CardTitle>
-                          <CardDescription className="text-xs">{record.position}</CardDescription>
+                          {record.position ? (
+                            <CardDescription className="text-xs">{record.position}</CardDescription>
+                          ) : null}
                         </div>
                         <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${statusConfig.badgeClass}`}>
                           <StatusIcon className="h-3 w-3" strokeWidth={1.5} />
@@ -1209,7 +1230,7 @@ export default function AdminInternsPage(): ReactNode {
                       <StageIndicator stage={record.stage} status={record.status} />
                       <div className="flex justify-between text-xs text-zinc-500 dark:text-zinc-400">
                         <span>Started: {formatDate(record.startDate)}</span>
-                        <span>{record.department}</span>
+                        {record.department ? <span>{record.department}</span> : null}
                       </div>
                       <div className="flex items-center gap-2">
                         <Clock
@@ -1272,15 +1293,18 @@ export default function AdminInternsPage(): ReactNode {
                       className="grid grid-cols-[1fr_120px_160px_120px_100px_80px] gap-4 px-4 py-3 items-center hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <Avatar className="h-8 w-8 shrink-0">
-                          <AvatarImage src={record.avatarUrl} />
-                          <AvatarFallback className="text-xs bg-slate-100 dark:bg-zinc-900/30 text-slate-700 dark:text-zinc-400">
-                            {getInitials(record.name)}
-                          </AvatarFallback>
-                        </Avatar>
+                        <UserAvatar
+                          name={record.name}
+                          avatarUrl={record.avatarUrl}
+                          size="sm"
+                          className="shrink-0"
+                          fallbackClassName="text-xs bg-slate-100 dark:bg-zinc-900/30 text-slate-700 dark:text-zinc-400"
+                        />
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50 truncate">{record.name}</p>
-                          <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{record.position}</p>
+                          {record.position ? (
+                            <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{record.position}</p>
+                          ) : null}
                           {isAlreadyEvaluated ? (
                             <p className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
                               Evaluated
@@ -1288,7 +1312,7 @@ export default function AdminInternsPage(): ReactNode {
                           ) : null}
                         </div>
                       </div>
-                      <span className="text-xs text-zinc-600 dark:text-zinc-300 truncate">{record.department}</span>
+                      <span className="text-xs text-zinc-600 dark:text-zinc-300 truncate">{record.department ?? '—'}</span>
                       <div className="flex items-center gap-1.5">
                         <div className="flex items-center gap-0.5">
                           {([1, 2, 3, 4] as AssociateEvaluationStage[]).map((stage) => (
@@ -1774,16 +1798,12 @@ export default function AdminInternsPage(): ReactNode {
                           <TableRow key={log.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onDoubleClick={() => setSelectedEodLog(log)}>
                             <TableCell>
                               <div className="flex items-center gap-3">
-                                <Avatar className="h-9 w-9">
-                                  <AvatarFallback className="text-xs">
-                                    {internName
-                                      .split(' ')
-                                      .map((n: string) => n[0])
-                                      .join('')
-                                      .toUpperCase()
-                                      .slice(0, 2)}
-                                  </AvatarFallback>
-                                </Avatar>
+                                <UserAvatar
+                                  name={internName}
+                                  avatarUrl={log.internship?.employee?.avatar_url}
+                                  className="h-9 w-9"
+                                  fallbackClassName="text-xs"
+                                />
                                 <div>
                                   <p className="font-medium">{internName}</p>
                                 </div>
@@ -1918,12 +1938,19 @@ export default function AdminInternsPage(): ReactNode {
             <div className="space-y-4">
               <div className="rounded-lg bg-muted/50 p-4">
                 <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{selectedAssociateForEvaluation.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {selectedAssociateForEvaluation.position} - {selectedAssociateForEvaluation.department}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Supervisor: {selectedAssociateForEvaluation.manager}
-                </p>
+                <PersonMeta
+                  parts={[
+                    selectedAssociateForEvaluation.position,
+                    selectedAssociateForEvaluation.department,
+                  ]}
+                  separator="-"
+                  className="block"
+                />
+                {selectedAssociateForEvaluation.manager ? (
+                  <p className="text-xs text-muted-foreground">
+                    Supervisor: {selectedAssociateForEvaluation.manager}
+                  </p>
+                ) : null}
               </div>
 
               <div className="space-y-2">

@@ -25,6 +25,7 @@ import {
   TaskPriorityBadge,
   TaskStatusBadge,
   Textarea,
+  UserAvatar,
   useToast,
 } from '@hr-portal/ui';
 import type { TaskPriority, TaskStatus } from '@hr-portal/ui';
@@ -40,7 +41,31 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { type FormEvent, use, useState } from 'react';
+import { type FormEvent, type ReactNode, use, useState } from 'react';
+
+function TaskPersonLine({
+  label,
+  name,
+  avatarUrl,
+}: {
+  label: string;
+  name: string | null | undefined;
+  avatarUrl: string | null | undefined;
+}): ReactNode {
+  return (
+    <p className="flex items-center gap-2">
+      <span className="text-muted-foreground">{label}:</span>
+      {name ? (
+        <>
+          <UserAvatar name={name} avatarUrl={avatarUrl} size="xs" />
+          {name}
+        </>
+      ) : (
+        '—'
+      )}
+    </p>
+  );
+}
 
 export default function TaskDetailPage({
   params,
@@ -167,14 +192,16 @@ export default function TaskDetailPage({
             <p>
               <span className="text-muted-foreground">Due Date:</span> {formatDate(task.due_date)}
             </p>
-            <p>
-              <span className="text-muted-foreground">Assigned To:</span>{' '}
-              {task.assignee_name || '—'}
-            </p>
-            <p>
-              <span className="text-muted-foreground">Assigned By:</span>{' '}
-              {task.assigner_name || '—'}
-            </p>
+            <TaskPersonLine
+              label="Assigned To"
+              name={task.assignee_name}
+              avatarUrl={task.assignee?.avatar_url}
+            />
+            <TaskPersonLine
+              label="Assigned By"
+              name={task.assigner_name}
+              avatarUrl={task.assigner?.avatar_url}
+            />
           </div>
 
           <div className="space-y-2 max-w-xs">

@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
+  PersonIdentity,
   useToast,
 } from '@hr-portal/ui';
 import { AlertCircle, Loader2, Search, ShieldCheck, ShieldX, UserPlus, Users } from 'lucide-react';
@@ -149,22 +150,12 @@ export function CrmAccessManagerDialog({
                       key={grant.userId}
                       className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card/70 px-4 py-3"
                     >
-                      <div className="min-w-0 space-y-1">
-                        <div className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                          {fullName}
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-                          <span>{grant.email ?? 'No email'}</span>
-                          <span>•</span>
-                          <span>{formatRole(grant.role)}</span>
-                          {grant.position ? (
-                            <>
-                              <span>•</span>
-                              <span>{grant.position}</span>
-                            </>
-                          ) : null}
-                        </div>
-                      </div>
+                      <PersonIdentity
+                        name={fullName}
+                        avatarUrl={grant.avatarUrl}
+                        meta={[grant.email ?? 'No email', formatRole(grant.role), grant.position]}
+                        nameClassName="text-zinc-900 dark:text-zinc-50"
+                      />
 
                       <Button
                         type="button"
@@ -234,22 +225,12 @@ export function CrmAccessManagerDialog({
                       key={candidate.user_id}
                       className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card/70 px-4 py-3"
                     >
-                      <div className="min-w-0 space-y-1">
-                        <div className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                          {fullName}
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-                          <span>{candidate.email ?? 'No email'}</span>
-                          <span>•</span>
-                          <span>{formatRole(candidate.role)}</span>
-                          {candidate.position ? (
-                            <>
-                              <span>•</span>
-                              <span>{candidate.position}</span>
-                            </>
-                          ) : null}
-                        </div>
-                      </div>
+                      <PersonIdentity
+                        name={fullName}
+                        avatarUrl={candidate.avatar_url}
+                        meta={[candidate.email ?? 'No email', formatRole(candidate.role), candidate.position]}
+                        nameClassName="text-zinc-900 dark:text-zinc-50"
+                      />
 
                       <Button
                         type="button"

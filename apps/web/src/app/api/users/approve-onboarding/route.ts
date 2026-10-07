@@ -1,4 +1,5 @@
 import { logActivity } from '@/lib/audit';
+import { generateEmployeeNumber } from '@/lib/people/employee-number';
 import { getLoginUrl } from '@/lib/auth/redirect-config';
 import {
   createNotification,
@@ -193,21 +194,29 @@ export async function POST(request: NextRequest) {
 
         if (!employeeId) {
           const employmentType = targetUser.role === 'associate' ? 'associate' : 'regular';
+          const departmentName = await resolveOnboardingDepartmentName(
+            supabaseAdmin,
+            onboardingProfile.department_id
+          );
+          const position =
+            typeof onboardingProfile.position === 'string' ? onboardingProfile.position.trim() : '';
 
           const { data: createdEmployee, error: employeeError } = await supabaseAdmin
             .from('employees')
             .insert({
               user_id: userId,
               employee_number: generateEmployeeNumber(),
-              first_name: onboardingProfile.first_name || 'N/A',
+              // first_name/last_name/department are NOT NULL columns. Prefer real values and fall back
+              // to the same conventions the invite flow uses; a missing job title stays NULL.
+              first_name: targetFirstName,
               middle_name: onboardingProfile.middle_name,
-              last_name: onboardingProfile.last_name || 'N/A',
+              last_name: targetLastName,
               birthday: onboardingProfile.birthday,
               date_hired: onboardingProfile.start_date || new Date().toISOString().slice(0, 10),
               employment_type: employmentType,
               work_arrangement: 'full_time',
-              position: onboardingProfile.position || 'Employee',
-              department: onboardingProfile.department_id ? 'Assigned Department' : 'Unassigned',
+              position: position || null,
+              department: departmentName ?? UNASSIGNED_DEPARTMENT,
               payroll_account_name: onboardingProfile.payment_account_name,
               payroll_account_number: onboardingProfile.payment_account_number,
               phone: onboardingProfile.contact_number,
@@ -500,13 +509,35 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function generateEmployeeNumber(): string {
-  const now = new Date();
-  const yyyy = now.getUTCFullYear();
-  const mm = String(now.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(now.getUTCDate()).padStart(2, '0');
-  const random = Math.floor(Math.random() * 9000 + 1000);
-  return `EMP-${yyyy}${mm}${dd}-${random}`;
+/** `employees.department` is NOT NULL; this matches the invite flow's value for no department. */
+const UNASSIGNED_DEPARTMENT = 'Unassigned';
+
+/**
+ * The department name for the onboarding profile's department, or null when none is set or
+ * the department no longer exists. Lookup failures never block approval.
+ */
+async function resolveOnboardingDepartmentName(
+  supabaseAdmin: ReturnType<typeof createSupabaseAdminClient>,
+  departmentId: unknown
+): Promise<string | null> {
+  if (typeof departmentId !== 'string' || departmentId.length === 0) {
+    return null;
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('departments')
+    .select('name')
+    .eq('id', departmentId)
+    .is('deleted_at', null)
+    .maybeSingle<{ name: string | null }>();
+
+  if (error) {
+    console.warn('Failed to resolve onboarding department during approval:', error.message);
+    return null;
+  }
+
+  const name = data?.name?.trim() ?? '';
+  return name.length > 0 ? name : null;
 }
 
 function resolveCurrencyFromCountry(countryCode: string): string {

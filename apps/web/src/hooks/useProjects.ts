@@ -9,6 +9,24 @@ export type MilestonePeriodType = 'month' | 'week';
 export type MilestoneStatus = 'not_started' | 'in_progress' | 'submitted' | 'approved' | 'overdue';
 export type ChecklistItemStatus = 'todo' | 'done';
 
+/** Display identity for a person attached to a project, resolved from the employee directory. */
+export interface ProjectPersonSummary {
+  user_id: string;
+  name: string | null;
+  avatar_url: string | null;
+}
+
+/** Maps a project list row's contributors to the shape the card avatar stack renders. */
+export function toContributorAvatars(
+  people: ReadonlyArray<ProjectPersonSummary> | undefined
+): Array<{ userId: string; name: string | null; avatarUrl: string | null }> {
+  return (people ?? []).map((person) => ({
+    userId: person.user_id,
+    name: person.name,
+    avatarUrl: person.avatar_url,
+  }));
+}
+
 export interface ProjectRecord {
   id: string;
   name: string;
@@ -26,6 +44,11 @@ export interface ProjectRecord {
   // domain-mastery track, returned by GET /api/projects for the projects list view.
   max_points_available?: number;
   primary_department?: string | null;
+  // Lead identity, resolved server-side so the lead shows even when they are not an associate.
+  lead_name?: string | null;
+  lead_avatar_url?: string | null;
+  // GET /api/projects only: contributor identities for the card avatar stack.
+  contributor_people?: Array<ProjectPersonSummary>;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -36,6 +59,8 @@ export interface ProjectContributorRecord {
   user_id: string;
   role: 'lead' | 'contributor';
   joined_at: string;
+  name: string | null;
+  avatar_url: string | null;
 }
 
 export interface ProjectDocumentationRecord {

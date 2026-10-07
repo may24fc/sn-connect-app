@@ -112,6 +112,144 @@ describe('/api/work-tracker GET route', () => {
     expect(taskQueryCount).toBe(2);
   });
 
+  it('resolves admin identities from the directory instead of an unnamed stub', async () => {
+    let directoryQueryCount = 0;
+    const from = vi.fn((table: string) => {
+      if (table === 'employee_directory') {
+        directoryQueryCount += 1;
+        // First call: the employee/associate staff list. Second: directory lookups for people
+        // outside that list (the admin caller and the admin-led project's lead).
+        return directoryQueryCount === 1
+          ? query({
+              data: [
+                {
+                  user_id: 'employee-1',
+                  full_name: 'Alex Employee',
+                  department_name: null,
+                  role: 'employee',
+                  status: 'active',
+                  avatar_url: 'https://cdn.example/alex.png',
+                },
+              ],
+              error: null,
+            })
+          : query({
+              data: [
+                {
+                  user_id: 'admin-1',
+                  full_name: 'Ada Admin',
+                  role: 'admin',
+                  department_name: 'Operations',
+                  position: 'Ops Lead',
+                  email: null,
+                  avatar_url: 'https://cdn.example/ada.png',
+                },
+              ],
+              error: null,
+            });
+      }
+      if (table === 'projects') {
+        return query({
+          data: [
+            {
+              id: 'project-1',
+              name: 'Launch',
+              description: null,
+              lead_user_id: 'admin-1',
+              status: 'active',
+              health: 'on_track',
+              progress_pct: 10,
+              target_end_date: null,
+              updated_at: '2026-09-29T00:00:00.000Z',
+            },
+          ],
+          error: null,
+        });
+      }
+      if (table === 'project_contributors') {
+        return query({
+          data: [{ project_id: 'project-1', user_id: 'employee-1', role: 'contributor' }],
+          error: null,
+        });
+      }
+      return query({ data: [], error: null });
+    });
+
+    vi.mocked(getProjectAuthedContext).mockResolvedValue({
+      ok: true,
+      context: {
+        supabaseAdmin: { from },
+        user: { id: 'admin-1' },
+        role: 'admin',
+      } as never,
+    });
+
+    const response = await GET(
+      new NextRequest('http://localhost/api/work-tracker?scope=mine&days=30')
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.person).toEqual(
+      expect.objectContaining({
+        userId: 'admin-1',
+        name: 'Ada Admin',
+        department: 'Operations',
+        role: 'admin',
+        avatarUrl: 'https://cdn.example/ada.png',
+      })
+    );
+    expect(body.projects).toEqual([
+      expect.objectContaining({
+        id: 'project-1',
+        leadName: 'Ada Admin',
+        leadAvatarUrl: 'https://cdn.example/ada.png',
+      }),
+    ]);
+  });
+
+  it('returns avatars and leaves a missing department empty for team rows', async () => {
+    const from = vi.fn((table: string) =>
+      table === 'employee_directory'
+        ? query({
+            data: [
+              {
+                user_id: 'employee-1',
+                full_name: 'Alex Employee',
+                department_name: null,
+                role: 'employee',
+                status: 'active',
+                avatar_url: 'https://cdn.example/alex.png',
+              },
+            ],
+            error: null,
+          })
+        : query({ data: [], error: null })
+    );
+
+    vi.mocked(getProjectAuthedContext).mockResolvedValue({
+      ok: true,
+      context: {
+        supabaseAdmin: { from },
+        user: { id: 'admin-1' },
+        role: 'admin',
+      } as never,
+    });
+
+    const response = await GET(
+      new NextRequest('http://localhost/api/work-tracker?scope=team&days=30')
+    );
+    const body = await response.json();
+
+    expect(body.people[0]).toEqual(
+      expect.objectContaining({
+        name: 'Alex Employee',
+        department: null,
+        avatarUrl: 'https://cdn.example/alex.png',
+      })
+    );
+  });
+
   it('queries only valid user_status values so production can load team and roadmap data', async () => {
     const directoryResult: QueryResult = { data: [], error: null };
     const directoryQuery = query(directoryResult);

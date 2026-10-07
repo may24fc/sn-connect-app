@@ -214,6 +214,7 @@ function AppShellInner({
             expensesAccess.capabilities.canViewDeskGlobal ||
             expensesAccess.capabilities.canViewDeskDepartment
           }
+          showFinancePropertiesAccess={expensesAccess.capabilities.isAccounting}
           showAiSpendingAccess={Boolean(aiSpendingAccess.data?.canAccess)}
           showUhpClientTracker={uhpModules.includes('client_tracker')}
           showUhpPortalReminders={uhpModules.includes('portal_reminders')}
@@ -238,6 +239,7 @@ function AppShellInner({
               expensesAccess.capabilities.canViewDeskGlobal ||
               expensesAccess.capabilities.canViewDeskDepartment
             }
+            showFinancePropertiesAccess={expensesAccess.capabilities.isAccounting}
             showAiSpendingAccess={Boolean(aiSpendingAccess.data?.canAccess)}
             showUhpClientTracker={uhpModules.includes('client_tracker')}
             showUhpPortalReminders={uhpModules.includes('portal_reminders')}
@@ -424,6 +426,8 @@ function AppShellAIChatbot(): ReactNode {
 
   return (
     <AIChatbot
+      userName={user?.name ?? null}
+      userAvatarUrl={user?.avatarUrl ?? null}
       messages={chatMessages}
       onStreamMessage={guardedSendMessage}
       isStreamLoading={isLoading}

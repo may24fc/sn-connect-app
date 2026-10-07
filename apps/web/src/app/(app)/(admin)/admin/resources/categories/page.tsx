@@ -139,8 +139,8 @@ function CategoryFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-lg rounded-lg bg-popover p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-lg bg-popover p-6 shadow-xl">
         <h2 className="mb-4 text-lg font-semibold">
           {mode === 'create' ? 'Create Category' : 'Edit Category'}
         </h2>

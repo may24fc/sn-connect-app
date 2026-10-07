@@ -101,6 +101,7 @@ export async function ensureDefaultMarketingPlatforms(
     { name: 'Meta Ads', code: 'meta' },
     { name: 'Google Ads', code: 'google' },
     { name: 'Email Marketing', code: 'email' },
+    { name: 'SEO', code: 'seo' },
   ];
 
   const { data: existingPlatforms, error: existingError } = await admin
@@ -224,6 +225,7 @@ export function normalizeMarketingPlatformKey(name: string): string {
   if (value.includes('email')) {
     return 'email';
   }
+  if (value.includes('seo')) return 'seo';
 
   return value.replace(/\s+/g, '-');
 }

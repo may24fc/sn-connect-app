@@ -33,6 +33,7 @@ import {
   HealthPill,
   Input,
   Label,
+  PersonMeta,
   Progress,
   Select,
   SelectContent,
@@ -41,6 +42,8 @@ import {
   SelectValue,
   Skeleton,
   Textarea,
+  UserAvatar,
+  formatPersonRole,
 } from '@hr-portal/ui';
 import {
   AlertTriangle,
@@ -247,10 +250,20 @@ export default function WorkTrackerPage() {
           {selectedPerson ? (
             <>
               <DialogHeader>
-                <DialogTitle>{selectedPerson.name}</DialogTitle>
-                <p className="text-sm text-muted-foreground">
-                  {selectedPerson.department} · {formatLabel(selectedPerson.role)}
-                </p>
+                <div className="flex min-w-0 items-center gap-3">
+                  <UserAvatar
+                    name={selectedPerson.name}
+                    avatarUrl={selectedPerson.avatarUrl}
+                    size="lg"
+                  />
+                  <div className="flex min-w-0 flex-col gap-0.5">
+                    <DialogTitle className="truncate">{selectedPerson.name}</DialogTitle>
+                    <PersonMeta
+                      parts={[selectedPerson.department, formatPersonRole(selectedPerson.role)]}
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
               </DialogHeader>
               <SummaryCards
                 person={selectedPerson}
@@ -437,14 +450,17 @@ function TeamTable({
                 <td className="px-4 py-3">
                   <button
                     type="button"
-                    className="font-medium hover:underline"
+                    className="group flex min-w-0 items-center gap-3 text-left"
                     onClick={() => onSelect(person.userId)}
                   >
-                    {person.name}
+                    <UserAvatar name={person.name} avatarUrl={person.avatarUrl} size="sm" />
+                    <span className="flex min-w-0 flex-col">
+                      <span className="truncate font-medium group-hover:underline">
+                        {person.name}
+                      </span>
+                      <PersonMeta parts={[person.department, formatPersonRole(person.role)]} />
+                    </span>
                   </button>
-                  <p className="text-xs text-muted-foreground">
-                    {person.department} · {formatLabel(person.role)}
-                  </p>
                 </td>
                 <td className="px-4 py-3">
                   <p>{person.activeProjectCount} active</p>
@@ -668,7 +684,22 @@ function RoadmapView({
                     {project.description || 'No description'}
                   </p>
                 </td>
-                <td className="px-4 py-3">{project.leadName || 'Unassigned'}</td>
+                <td className="px-4 py-3">
+                  {project.leadName ? (
+                    <span className="flex min-w-0 items-center gap-2">
+                      <UserAvatar
+                        name={project.leadName}
+                        avatarUrl={project.leadAvatarUrl}
+                        size="xs"
+                      />
+                      <span className="truncate">{project.leadName}</span>
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      {project.leadUserId ? 'Unknown lead' : 'Unassigned'}
+                    </span>
+                  )}
+                </td>
                 <td className="px-4 py-3">
                   {project.totalTasks ? (
                     <HealthPill

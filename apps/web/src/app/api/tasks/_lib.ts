@@ -1,3 +1,4 @@
+import { type DirectoryPerson, loadDirectoryPeople } from '@/lib/people/directory-people';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const TASK_ASSIGNER_ROLE = 'super_admin';
@@ -210,4 +211,65 @@ export async function canAccessTask(
       assigned_by: string;
     },
   };
+}
+
+/** Display identity of a task's assignee or assigner, as returned to the client. */
+export interface TaskPersonPayload {
+  id: string;
+  name: string | null;
+  role: string | null;
+  department: string | null;
+  position: string | null;
+  avatar_url: string | null;
+}
+
+export interface TaskPeopleFields {
+  assignee_name: string | null;
+  assigner_name: string | null;
+  assignee: TaskPersonPayload | null;
+  assigner: TaskPersonPayload | null;
+}
+
+function toTaskPerson(userId: string, person: DirectoryPerson | undefined): TaskPersonPayload {
+  return {
+    id: userId,
+    name: person?.name ?? null,
+    role: person?.role ?? null,
+    department: person?.department ?? null,
+    position: person?.position ?? null,
+    avatar_url: person?.avatarUrl ?? null,
+  };
+}
+
+/**
+ * Adds assignee/assigner identity to tasks the caller has already been authorized to read.
+ * Uses the admin client because the directory view is not readable by every task participant.
+ */
+export async function attachTaskPeople<
+  T extends { assigned_to: string | null; assigned_by: string | null },
+>(
+  supabaseAdmin: ReturnType<typeof createSupabaseAdminClient>,
+  tasks: Array<T>
+): Promise<Array<T & TaskPeopleFields>> {
+  const people = await loadDirectoryPeople(
+    supabaseAdmin,
+    tasks.flatMap((task) => [task.assigned_to, task.assigned_by])
+  );
+
+  return tasks.map((task) => {
+    const assignee = task.assigned_to
+      ? toTaskPerson(task.assigned_to, people.get(task.assigned_to))
+      : null;
+    const assigner = task.assigned_by
+      ? toTaskPerson(task.assigned_by, people.get(task.assigned_by))
+      : null;
+
+    return {
+      ...task,
+      assignee_name: assignee?.name ?? null,
+      assigner_name: assigner?.name ?? null,
+      assignee,
+      assigner,
+    };
+  });
 }

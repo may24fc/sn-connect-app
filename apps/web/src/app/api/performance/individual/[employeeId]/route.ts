@@ -1,3 +1,4 @@
+import { resolveDepartmentName } from '@/lib/people/directory-people';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { type OkrStateTargetRow, applyComputedOkrState } from '../../_okr-state';
@@ -111,19 +112,18 @@ export async function GET(
 
     // Resolve department name from the canonical users.department_id first.
     // Fall back to the legacy employees.department text only if the FK is missing.
-    let departmentName: string | null = null;
+    let linkedDepartmentName: string | null = null;
     if (userData?.department_id) {
       const { data: dept } = await db
         .from('departments')
         .select('name')
         .eq('id', userData.department_id)
         .maybeSingle();
-      departmentName = dept?.name ?? null;
+      linkedDepartmentName = dept?.name ?? null;
     }
 
-    if (!departmentName) {
-      departmentName = employee.department ?? null;
-    }
+    // Legacy text may be a placeholder ('Unassigned') or a division name; neither is a department.
+    const departmentName = resolveDepartmentName(linkedDepartmentName, employee.department);
 
     // Fetch KPIs
     const { data: kpis } = await db

@@ -3,6 +3,7 @@ import {
   TASK_ASSIGNER_ROLE,
   getTaskAuthedContext,
 } from '@/app/api/tasks/_lib';
+import { loadDirectoryPeople } from '@/lib/people/directory-people';
 import { NextResponse } from 'next/server';
 
 interface TaskAssigneeOption {
@@ -10,14 +11,9 @@ interface TaskAssigneeOption {
   role: (typeof TASK_ASSIGNABLE_ROLES)[number];
   name: string;
   email: string | null;
-}
-
-interface EmployeeNameRow {
-  user_id: string;
-  first_name: string;
-  last_name: string;
-  company_email: string | null;
-  personal_email: string | null;
+  department: string | null;
+  position: string | null;
+  avatar_url: string | null;
 }
 
 export async function GET() {
@@ -53,38 +49,24 @@ export async function GET() {
       return NextResponse.json({ data: [] satisfies Array<TaskAssigneeOption> });
     }
 
-    const userIds = userRows.map((entry) => entry.id);
-
-    const { data: employees, error: employeesError } = await supabase
-      .from('employees')
-      .select('user_id, first_name, last_name, company_email, personal_email')
-      .in('user_id', userIds)
-      .is('deleted_at', null);
-
-    if (employeesError) {
-      console.error('Failed to fetch task assignee employee records:', employeesError);
-      return NextResponse.json({ error: 'Failed to fetch task assignees' }, { status: 500 });
-    }
-
-    const profileByUserId = new Map<string, EmployeeNameRow>();
-    ((employees || []) as Array<EmployeeNameRow>).forEach((entry) => {
-      profileByUserId.set(entry.user_id, entry);
-    });
+    const people = await loadDirectoryPeople(
+      supabase,
+      userRows.map((entry) => entry.id)
+    );
 
     const data: Array<TaskAssigneeOption> = userRows
       .map((entry) => {
-        const profile = profileByUserId.get(entry.id);
-        const name = profile
-          ? `${profile.first_name} ${profile.last_name}`
-          : entry.role === 'associate'
-            ? 'Associate User'
-            : 'Employee User';
+        const person = people.get(entry.id);
 
         return {
           id: entry.id,
           role: entry.role as (typeof TASK_ASSIGNABLE_ROLES)[number],
-          name,
-          email: profile?.company_email || profile?.personal_email || null,
+          // Accounts without an employee record have no name; show their email rather than a made-up one.
+          name: person?.name ?? person?.email ?? 'Unnamed account',
+          email: person?.email ?? null,
+          department: person?.department ?? null,
+          position: person?.position ?? null,
+          avatar_url: person?.avatarUrl ?? null,
         };
       })
       .sort((left, right) => left.name.localeCompare(right.name));

@@ -35,14 +35,18 @@ export interface InternshipSummaryRecord {
   employeeId: string;
   userId: string;
   name: string;
-  email: string;
+  /** Company email, falling back to personal email; null when neither is on file. */
+  email: string | null;
   avatarUrl?: string;
-  school: string;
-  program: string;
-  department: string;
+  /** The employee's job title, separate from the school `program`. */
+  position: string | null;
+  school: string | null;
+  program: string | null;
+  department: string | null;
   division: string | null;
   divisionId: string | null;
-  supervisor: string;
+  /** Supervisor's name (or email); null when no supervisor is set. */
+  supervisor: string | null;
   supervisorId: string | null;
   startDate: string;
   endDate: string;
@@ -85,15 +89,20 @@ export interface InternshipDetailRecord {
   employeeId: string;
   userId: string;
   name: string;
-  email: string;
-  avatarUrl?: string;
+  /** Company email, falling back to personal email; null when neither is on file. */
+  email: string | null;
+  avatarUrl: string | null;
+  /** The employee's job title, separate from the school `program`. */
+  position: string | null;
   phone: string | null;
-  school: string;
-  program: string;
-  department: string;
-  supervisor: string;
+  school: string | null;
+  program: string | null;
+  department: string | null;
+  /** Supervisor's name (or email); null when no supervisor is set. */
+  supervisor: string | null;
   supervisorId: string | null;
   supervisorEmail: string | null;
+  supervisorAvatarUrl: string | null;
   startDate: string;
   endDate: string;
   requiredHours: number;
@@ -221,9 +230,13 @@ interface InternshipActionResponse {
   };
 }
 
-export function useInternships(filters: InternshipFilters = {}) {
+export function useInternships(
+  filters: InternshipFilters = {},
+  options: { enabled?: boolean } = {}
+) {
   return useQuery({
     queryKey: queryKeys.internships.list(filters),
+    enabled: options.enabled ?? true,
     queryFn: async (): Promise<InternshipListResponse> => {
       const params = new URLSearchParams();
       if (filters.search) params.append('search', filters.search);

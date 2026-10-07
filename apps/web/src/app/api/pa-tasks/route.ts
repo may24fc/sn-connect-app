@@ -235,15 +235,36 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const avatarsByUserId = new Map<string, string>();
+
     if (userIds.length > 0) {
-      const { data: employees } = await supabaseAdmin
-        .from('employees')
-        .select('user_id, first_name, last_name')
-        .in('user_id', userIds)
-        .is('deleted_at', null);
+      const assigneeIds = Array.from(
+        new Set(
+          paginatedTaskRows
+            .map((row) => row.assigned_to)
+            .filter((value): value is string => Boolean(value))
+        )
+      );
+
+      const [{ data: employees }, { data: assigneeUsers }] = await Promise.all([
+        supabaseAdmin
+          .from('employees')
+          .select('user_id, first_name, last_name')
+          .in('user_id', userIds)
+          .is('deleted_at', null),
+        assigneeIds.length > 0
+          ? supabaseAdmin.from('users').select('id, avatar_url').in('id', assigneeIds)
+          : Promise.resolve({ data: [] }),
+      ]);
 
       for (const employee of (employees ?? []) as Array<EmployeeNameRow>) {
         namesByUserId.set(employee.user_id, `${employee.first_name} ${employee.last_name}`);
+      }
+
+      for (const user of (assigneeUsers ?? []) as Array<{ id: string; avatar_url: string | null }>) {
+        if (user.avatar_url) {
+          avatarsByUserId.set(user.id, user.avatar_url);
+        }
       }
     }
 
@@ -251,6 +272,7 @@ export async function GET(request: NextRequest) {
       ...row,
       attachments: attachmentsByTaskId.get(row.id) ?? [],
       assignee_name: row.assigned_to ? namesByUserId.get(row.assigned_to) ?? null : null,
+      assignee_avatar_url: row.assigned_to ? avatarsByUserId.get(row.assigned_to) ?? null : null,
       creator_name: namesByUserId.get(row.created_by) ?? null,
     }));
 

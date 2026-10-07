@@ -2,6 +2,7 @@
 
 import {
   Activity,
+  BarChart3,
   BellRing,
   Briefcase,
   Building2,
@@ -20,12 +21,12 @@ import {
   type LucideIcon,
   Megaphone,
   Receipt,
-  Sparkles,
   Store,
   Target,
   TrendingUp,
   UserCog,
   Users,
+  Wallet,
 } from 'lucide-react';
 import type * as React from 'react';
 import { CountBadge } from '../primitives/count-badge';
@@ -79,6 +80,7 @@ export interface SidebarProps {
   showMarketingAdSpendAccess?: boolean;
   showRevenueForecastAccess?: boolean;
   showExpenseDeskAccess?: boolean;
+  showFinancePropertiesAccess?: boolean;
   showAiSpendingAccess?: boolean;
   showUhpClientTracker?: boolean;
   showUhpPortalReminders?: boolean;
@@ -106,8 +108,11 @@ const employeeNavItems: Array<NavItem> = [
   },
   { label: 'Invoice', href: '/invoice', icon: Receipt },
   { label: 'Expenses', href: '/expenses', icon: Receipt },
-  { label: 'AI Spending', href: '/ai-spending', icon: Sparkles },
-  { label: 'Expenses Desk', href: '/expenses/desk', icon: Receipt },
+  { label: 'Finance Overview', href: '/finance', icon: Wallet },
+  { label: 'Finance Expenses', href: '/finance/expenses', icon: Receipt },
+  { label: 'Finance Reports', href: '/finance/reports', icon: BarChart3 },
+  { label: 'Properties', href: '/finance/properties', icon: Store },
+  { label: 'Staff Payments', href: '/finance/staff-payments', icon: FileCheck },
   {
     label: 'Work Tracker',
     href: '/work-tracker',
@@ -132,8 +137,11 @@ const internNavItems: Array<NavItem> = [
     activeFor: ['/performance/self-evaluation', '/my-performance'],
   },
   { label: 'Expenses', href: '/expenses', icon: Receipt },
-  { label: 'AI Spending', href: '/ai-spending', icon: Sparkles },
-  { label: 'Expenses Desk', href: '/expenses/desk', icon: Receipt },
+  { label: 'Finance Overview', href: '/finance', icon: Wallet },
+  { label: 'Finance Expenses', href: '/finance/expenses', icon: Receipt },
+  { label: 'Finance Reports', href: '/finance/reports', icon: BarChart3 },
+  { label: 'Properties', href: '/finance/properties', icon: Store },
+  { label: 'Staff Payments', href: '/finance/staff-payments', icon: FileCheck },
   {
     label: 'Work Tracker',
     href: '/work-tracker',
@@ -157,7 +165,11 @@ const adminNavItems: Array<NavItem> = [
     activeFor: ['/admin/checklists', '/admin/onboarding', '/admin/probation'],
   },
   { label: 'Associate Management', href: '/admin/interns', icon: Users },
-  { label: 'Invoice', href: '/admin/invoice', icon: Receipt },
+  { label: 'Finance Overview', href: '/finance', icon: Wallet },
+  { label: 'Expenses', href: '/finance/expenses', icon: Receipt },
+  { label: 'Staff Payments', href: '/finance/staff-payments', icon: FileCheck },
+  { label: 'Finance Reports', href: '/finance/reports', icon: BarChart3 },
+  { label: 'Properties', href: '/finance/properties', icon: Store },
   {
     label: 'Work Tracker',
     href: '/work-tracker',
@@ -172,15 +184,14 @@ const adminNavItems: Array<NavItem> = [
   },
   { label: 'Marketing Reports', href: '/admin/reports', icon: FileText },
   { label: 'Ad Spend', href: '/admin/marketing/ad-spend', icon: Megaphone },
+  { label: 'SFO Performance', href: '/sfo/performance', icon: TrendingUp },
   { label: 'CRM Tracker', href: '/admin/crm', icon: Store },
-  { label: 'Expenses Desk', href: '/admin/expenses', icon: Receipt },
   {
     label: 'Recruitment',
     href: '/admin/recruitment',
     icon: Briefcase,
     activeFor: ['/admin/jobs'],
   },
-  { label: 'AI Spending', href: '/ai-spending', icon: Sparkles },
   {
     label: 'Resources',
     href: '/admin/resources',
@@ -202,7 +213,11 @@ const superAdminNavItems: Array<NavItem> = [
     activeFor: ['/admin/checklists', '/admin/onboarding', '/admin/probation'],
   },
   { label: 'Associate Management', href: '/admin/interns', icon: Users },
-  { label: 'Invoice', href: '/admin/invoice', icon: Receipt },
+  { label: 'Finance Overview', href: '/finance', icon: Wallet },
+  { label: 'Expenses', href: '/finance/expenses', icon: Receipt },
+  { label: 'Staff Payments', href: '/finance/staff-payments', icon: FileCheck },
+  { label: 'Finance Reports', href: '/finance/reports', icon: BarChart3 },
+  { label: 'Properties', href: '/finance/properties', icon: Store },
   {
     label: 'Work Tracker',
     href: '/work-tracker',
@@ -217,11 +232,9 @@ const superAdminNavItems: Array<NavItem> = [
   },
   { label: 'Marketing Reports', href: '/admin/reports', icon: FileText },
   { label: 'Ad Spend', href: '/admin/marketing/ad-spend', icon: Megaphone },
+  { label: 'SFO Performance', href: '/sfo/performance', icon: TrendingUp },
   { label: 'Revenue Forecast', href: '/super-admin/revenue-forecast', icon: TrendingUp },
   { label: 'CRM Tracker', href: '/admin/crm', icon: Store },
-  { label: 'Expenses Desk', href: '/admin/expenses', icon: Receipt },
-  { label: 'Payroll Approvals', href: '/super-admin/payroll-approvals', icon: FileCheck },
-  { label: 'AI Spending', href: '/ai-spending', icon: Sparkles },
   {
     label: 'Resources',
     href: '/admin/resources',
@@ -286,7 +299,7 @@ const adminInternalSectionConfig: ReadonlyArray<{
   },
   {
     title: 'Finance',
-    hrefs: ['/admin/expenses', '/ai-spending', '/admin/invoice', '/super-admin/payroll-approvals'],
+    hrefs: ['/finance', '/finance/expenses', '/finance/staff-payments', '/finance/reports', '/finance/properties'],
   },
   {
     title: 'Knowledge & Support',
@@ -310,7 +323,7 @@ const selfServiceInternalSectionConfig: ReadonlyArray<{
   },
   {
     title: 'Finance',
-    hrefs: ['/invoice', '/expenses', '/expenses/desk', '/ai-spending'],
+    hrefs: ['/invoice', '/expenses', '/finance', '/finance/expenses', '/finance/reports', '/finance/staff-payments', '/finance/properties'],
   },
   {
     title: 'Knowledge & Support',
@@ -326,6 +339,7 @@ const sfoSectionConfig: ReadonlyArray<{ title: string; hrefs: ReadonlyArray<stri
       '/admin/reports',
       '/marketing/ad-spend',
       '/admin/marketing/ad-spend',
+      '/sfo/performance',
       '/revenue-forecast',
       '/super-admin/revenue-forecast',
       '/crm',
@@ -456,6 +470,7 @@ export function Sidebar({
   showMarketingAdSpendAccess = false,
   showRevenueForecastAccess = false,
   showExpenseDeskAccess = true,
+  showFinancePropertiesAccess = false,
   showAiSpendingAccess = true,
   showUhpClientTracker = false,
   showUhpPortalReminders = false,
@@ -479,7 +494,10 @@ export function Sidebar({
       return false;
     }
 
-    if (isSelfServiceRole(variant) && !showExpenseDeskAccess && item.href === '/expenses/desk') {
+    if (isSelfServiceRole(variant) && !showExpenseDeskAccess && ['/finance','/finance/expenses','/finance/reports','/finance/staff-payments','/finance/properties'].includes(item.href)) {
+      return false;
+    }
+    if (isSelfServiceRole(variant) && !showFinancePropertiesAccess && item.href === '/finance/properties') {
       return false;
     }
 

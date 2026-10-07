@@ -3,6 +3,7 @@ import {
   createNotification,
   getUserDisplayName,
 } from '@/lib/notifications/create-notification';
+import { loadDirectoryPeople, resolveDepartmentName } from '@/lib/people/directory-people';
 import { probationActionSchema } from '@/lib/schemas/performance.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedPerformanceContext, isPerformanceAdmin } from '../performance/_lib';
@@ -158,21 +159,17 @@ export async function GET() {
           : Promise.resolve({ data: [] }),
       ]);
 
-    const { data: managerEmployees } =
-      managerIds.length > 0
-        ? await supabaseAdmin
-            .from('employees')
-            .select('user_id, first_name, last_name')
-            .in('user_id', managerIds)
-            .is('deleted_at', null)
-        : { data: [] };
+    // Departments and manager names resolved like the directory (linked department first; managers
+    // without an employee record still have an account email). Admin-only route.
+    const people = await loadDirectoryPeople(supabaseAdmin, [...userIds, ...managerIds]);
+    const getManagerLabel = (managerId: string | null | undefined): string | null => {
+      if (!managerId) {
+        return null;
+      }
 
-    const managerMap = new Map(
-      (managerEmployees || []).map((manager: any) => [
-        manager.user_id,
-        `${manager.first_name} ${manager.last_name}`,
-      ])
-    );
+      const manager = people.get(managerId);
+      return manager?.name ?? manager?.email ?? 'Unknown user';
+    };
 
     const okrsByEmployee = new Map<string, Array<any>>();
     for (const okr of okrs || []) {
@@ -276,19 +273,21 @@ export async function GET() {
           };
         });
 
+      const person = employee.user_id ? people.get(employee.user_id) : undefined;
+
       return {
         id: employee.id,
         name: `${employee.first_name} ${employee.last_name}`,
-        email: employee.company_email,
+        email: employee.company_email ?? person?.email ?? null,
         avatarUrl: employee.users?.avatar_url ?? null,
-        department: employee.department,
-        position: employee.position,
+        department: person?.department ?? resolveDepartmentName(null, employee.department),
+        position: employee.position?.trim() || null,
         startDate: effectiveDateHired,
         probationEndDate: effectiveProbationEndDate,
         stage: getStage(effectiveDateHired, effectiveProbationEndDate),
         status,
         daysRemaining: Math.max(0, daysRemaining),
-        manager: managerMap.get(employee.immediate_head) || 'Unassigned',
+        manager: getManagerLabel(employee.immediate_head),
         documentsComplete: docsByEmployee.get(employee.id) || 0,
         totalDocuments: 8,
         okrs: employeeOkrs,

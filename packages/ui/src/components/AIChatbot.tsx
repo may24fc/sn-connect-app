@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '../primitives/dropdown-menu';
 import { cn } from '../utils/cn';
+import { UserAvatar } from './people/UserAvatar';
 import { MarkdownContent } from '../utils/markdown';
 import { ChatInput, type AttachedFile } from './ai-chat/ChatInput';
 import { TextShimmer } from './ai-chat/TextShimmer';
@@ -92,6 +93,10 @@ export interface AIChatbotProps {
   welcomeMessage?: string;
   placeholder?: string;
   className?: string;
+  /** Current user's display name, used for the initials fallback on their message avatar. */
+  userName?: string | null;
+  /** Current user's profile photo. When neither this nor userName is set, a generic icon is shown. */
+  userAvatarUrl?: string | null;
 }
 
 const defaultWelcomeMessage = `Hi! I'm Control Hub AI. I can help you with:
@@ -159,7 +164,11 @@ export function AIChatbot({
   welcomeMessage = defaultWelcomeMessage,
   placeholder = 'Ask me anything about HR...',
   className,
+  userName,
+  userAvatarUrl,
 }: AIChatbotProps): React.ReactNode {
+  const hasUserIdentity = Boolean(userAvatarUrl || userName);
+
   // Determine if we're in streaming mode (externally managed messages)
   const isStreamingMode = !!(externalMessages && onStreamMessage);
   // Determine if persistence mode is active (externally managed conversations)
@@ -684,21 +693,30 @@ export function AIChatbot({
                             message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
                           )}
                         >
-                          <Avatar className="h-7 w-7 flex-shrink-0 mt-0.5">
-                            <AvatarFallback
-                              className={cn(
-                                message.role === 'assistant'
-                                  ? 'bg-slate-900 text-white'
-                                  : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300'
-                              )}
-                            >
-                              {message.role === 'assistant' ? (
-                                <Sparkles className="h-3.5 w-3.5" strokeWidth={1.5} />
-                              ) : (
-                                <User className="h-3.5 w-3.5" strokeWidth={1.5} />
-                              )}
-                            </AvatarFallback>
-                          </Avatar>
+                          {message.role === 'user' && hasUserIdentity ? (
+                            <UserAvatar
+                              name={userName}
+                              avatarUrl={userAvatarUrl}
+                              size="xs"
+                              className="h-7 w-7 flex-shrink-0 mt-0.5"
+                            />
+                          ) : (
+                            <Avatar className="h-7 w-7 flex-shrink-0 mt-0.5">
+                              <AvatarFallback
+                                className={cn(
+                                  message.role === 'assistant'
+                                    ? 'bg-slate-900 text-white'
+                                    : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300'
+                                )}
+                              >
+                                {message.role === 'assistant' ? (
+                                  <Sparkles className="h-3.5 w-3.5" strokeWidth={1.5} />
+                                ) : (
+                                  <User className="h-3.5 w-3.5" strokeWidth={1.5} />
+                                )}
+                              </AvatarFallback>
+                            </Avatar>
+                          )}
                           <div
                             className={cn(
                               'flex flex-1 min-w-0 flex-col gap-1',

@@ -49,6 +49,19 @@ Click on an employee to view their full profile:
 
 Use this view to review and manage employee profile change requests.
 
+### Editing Employee Details
+
+Admins can open **Edit Employee Details** from a directory row's action menu to change name,
+department, division, position, start date, and **Manager (immediate head)**. The manager is picked
+from the directory, must be an active user other than the employee, and receives that person's
+probation notifications. The same manager field appears when assigning an employee to the
+probation tracker, and an associate's **Supervisor** is set in the associate assignment and
+**Edit Associate Profile** dialogs.
+
+Admins and leadership without an employee record are prompted to **Complete Your Profile**; finishing
+that setup now creates their employee record so their name and position appear across the app.
+A blank position is stored as "not set" rather than the account role.
+
 ## Inviting New Employees
 
 To add a new employee to the system:

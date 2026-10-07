@@ -4,17 +4,12 @@ import { taskUpdateSchema } from '@/lib/schemas/task.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
   TASK_ASSIGNER_ROLE,
+  attachTaskPeople,
   getTaskAuthedContext,
   getTaskWriteErrorMessage,
   validateTaskAssignee,
   validateTaskProjectLink,
 } from '../_lib';
-
-interface EmployeeNameRow {
-  user_id: string;
-  first_name: string;
-  last_name: string;
-}
 
 /**
  * GET /api/tasks/[id]
@@ -29,7 +24,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    const { supabase } = auth.context;
+    const { supabase, supabaseAdmin } = auth.context;
 
     const { data: task, error } = await supabase
       .from('tasks')
@@ -42,34 +37,9 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
-    const userIds = [task.assigned_to, task.assigned_by].filter(Boolean) as Array<string>;
+    const [taskWithPeople] = await attachTaskPeople(supabaseAdmin, [task]);
 
-    let assigneeName: string | null = null;
-    let assignerName: string | null = null;
-
-    if (userIds.length > 0) {
-      const { data: employees } = await supabase
-        .from('employees')
-        .select('user_id, first_name, last_name')
-        .in('user_id', userIds)
-        .is('deleted_at', null);
-
-      const namesByUserId = new Map<string, string>();
-      for (const employee of (employees || []) as Array<EmployeeNameRow>) {
-        namesByUserId.set(employee.user_id, `${employee.first_name} ${employee.last_name}`);
-      }
-
-      assigneeName = task.assigned_to ? namesByUserId.get(task.assigned_to) || null : null;
-      assignerName = namesByUserId.get(task.assigned_by) || null;
-    }
-
-    return NextResponse.json({
-      data: {
-        ...task,
-        assignee_name: assigneeName,
-        assigner_name: assignerName,
-      },
-    });
+    return NextResponse.json({ data: taskWithPeople });
   } catch (error) {
     console.error('Unexpected error in GET /api/tasks/[id]:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -290,7 +260,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       metadata: { title: data.title, status: data.status },
     });
 
-    return NextResponse.json({ data });
+    const [taskWithPeople] = await attachTaskPeople(supabaseAdmin, [data]);
+
+    return NextResponse.json({ data: taskWithPeople });
   } catch (error) {
     console.error('Unexpected error in PATCH /api/tasks/[id]:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

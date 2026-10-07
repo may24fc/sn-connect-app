@@ -50,7 +50,7 @@ async function listMarketingAccessGrants(
 
   const { data: directoryRows, error: directoryError } = await admin
     .from('employee_directory')
-    .select('user_id, full_name, email, position, department_name')
+    .select('user_id, full_name, email, position, department_name, avatar_url')
     .in('user_id', userIds.length > 0 ? userIds : ['00000000-0000-0000-0000-000000000000']);
 
   if (directoryError) {
@@ -76,6 +76,7 @@ async function listMarketingAccessGrants(
       email: profile?.email ?? null,
       position: profile?.position ?? null,
       departmentName: profile?.department_name ?? null,
+      avatarUrl: profile?.avatar_url ?? null,
       createdAt: grant.created_at,
     };
   });

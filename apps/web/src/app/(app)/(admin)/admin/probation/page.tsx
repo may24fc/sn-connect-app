@@ -13,6 +13,7 @@ import {
 } from '@/lib/onboarding-review-state';
 import { getOnboardingStepLabel } from '@/lib/onboarding-step';
 import { useCompleteProbation, useExtendProbation, useProbation } from '@/hooks/useProbation';
+import { getProbationTrackerViewState } from '@/lib/probation/tracker-view-state';
 import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
 import { useRealtimeProbationEmployees } from '@/hooks/useRealtimeProbationEmployees';
 import { useTableSort } from '@/hooks/useTableSort';
@@ -57,6 +58,7 @@ import {
   TabsList,
   TabsTrigger,
   Textarea,
+  getPersonMetaParts,
   useToast,
 } from '@hr-portal/ui';
 import { useQueryClient } from '@tanstack/react-query';
@@ -128,14 +130,14 @@ interface KPI {
 interface Employee {
   id: string;
   name: string;
-  email: string;
-  department: string;
-  position: string;
+  email: string | null;
+  department: string | null;
+  position: string | null;
   startDate: string;
   stage: ProbationStage;
   status: ProbationStatus;
   daysRemaining: number;
-  manager: string;
+  manager: string | null;
   avatarUrl?: string;
   documentsComplete: number;
   totalDocuments: number;
@@ -247,30 +249,6 @@ function StarRating({
   );
 }
 
-function getProbationTrackerViewState({
-  isLoading,
-  hasError,
-  employeeCount,
-}: {
-  isLoading: boolean;
-  hasError: boolean;
-  employeeCount: number;
-}): 'loading' | 'error' | 'empty' | 'ready' {
-  if (hasError) {
-    return 'error';
-  }
-
-  if (isLoading) {
-    return 'loading';
-  }
-
-  if (employeeCount === 0) {
-    return 'empty';
-  }
-
-  return 'ready';
-}
-
 export default function ProbationPage(): ReactNode {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -325,7 +303,7 @@ export default function ProbationPage(): ReactNode {
   const filteredEmployees = employeeRecords.filter((emp) => {
     const matchesSearch =
       emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      emp.email.toLowerCase().includes(searchQuery.toLowerCase());
+      (emp.email ?? '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || emp.status === statusFilter;
     const matchesDepartment = departmentFilter === 'all' || emp.department === departmentFilter;
     return matchesSearch && matchesStatus && matchesDepartment;
@@ -334,7 +312,7 @@ export default function ProbationPage(): ReactNode {
   const statusOrder: Record<string, number> = { 'on-track': 0, 'at-risk': 1, extended: 2, completed: 3 };
   const sortedEmployees = probationSort.sortItems(filteredEmployees as Employee[], {
     employee: (e: Employee) => e.name.toLowerCase(),
-    department: (e: Employee) => e.department.toLowerCase(),
+    department: (e: Employee) => (e.department ?? '').toLowerCase(),
     stage: (e: Employee) => e.stage,
     status: (e: Employee) => statusOrder[e.status] ?? 99,
     days_left: (e: Employee) => e.daysRemaining,
@@ -388,7 +366,13 @@ export default function ProbationPage(): ReactNode {
     employeeCount: employeeRecords.length,
   });
 
-  const departments = [...new Set(employeeRecords.map((e) => e.department))];
+  const departments = [
+    ...new Set(
+      employeeRecords
+        .map((e) => e.department)
+        .filter((department): department is string => Boolean(department))
+    ),
+  ];
 
   const getInitials = (name: string): string => {
     return name
@@ -625,7 +609,7 @@ export default function ProbationPage(): ReactNode {
                                   </div>
                                 </div>
                               </TableCell>
-                              <TableCell>{employee.department}</TableCell>
+                              <TableCell>{employee.department ?? '—'}</TableCell>
                               <TableCell>
                                 <StageIndicator stage={employee.stage} status={employee.status} />
                               </TableCell>
@@ -745,10 +729,13 @@ export default function ProbationPage(): ReactNode {
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold">{selectedEmployee.name}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {selectedEmployee.position} - {selectedEmployee.department}
+                        {getPersonMetaParts([
+                          selectedEmployee.position,
+                          selectedEmployee.department,
+                        ]).join(' - ') || 'No position or department set'}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Manager: {selectedEmployee.manager}
+                        Manager: {selectedEmployee.manager ?? 'Not assigned'}
                       </p>
                     </div>
                     <Badge variant={statusConfig[selectedEmployee.status].variant}>

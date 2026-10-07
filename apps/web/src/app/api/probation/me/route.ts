@@ -1,3 +1,4 @@
+import { loadDirectoryPeople, resolveDepartmentName } from '@/lib/people/directory-people';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
@@ -48,6 +49,12 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch employee data' }, { status: 500 });
     }
 
+    // The linked department is authoritative; employees.department is legacy text.
+    const department = employee
+      ? ((await loadDirectoryPeople(supabase, [user.id])).get(user.id)?.department ??
+        resolveDepartmentName(null, employee.department))
+      : null;
+
     // No employee record or no probation period set
     if (!employee || !employee.probation_end_date) {
       if (!employee) {
@@ -81,7 +88,7 @@ export async function GET() {
           employeeId: employee.id,
           name: `${employee.first_name} ${employee.last_name}`,
           position: employee.position,
-          department: employee.department,
+          department,
           startDate: employee.date_hired,
           endDate: null,
           stage: 4,
@@ -134,7 +141,7 @@ export async function GET() {
         employeeId: employee.id,
         name: `${employee.first_name} ${employee.last_name}`,
         position: employee.position,
-        department: employee.department,
+        department,
         startDate: employee.date_hired,
         endDate: employee.probation_end_date,
         stage,

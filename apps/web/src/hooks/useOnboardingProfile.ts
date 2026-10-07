@@ -45,6 +45,8 @@ export interface OnboardingProfileRecord {
   created_at: string;
   updated_at: string;
   full_name?: string;
+  /** Admin detail only: the user's uploaded photo, resolved from the joined `users` row. */
+  avatar_url?: string | null;
   status?: 'completed' | 'in_progress';
   review_state?: OnboardingReviewState;
   rejection_notes?: string | null;
@@ -53,8 +55,12 @@ export interface OnboardingProfileRecord {
   rejection_count?: number;
   payment_account_masked?: string | null;
   users?:
-    | { role?: 'employee' | 'associate' | null; status?: string | null }
-    | Array<{ role?: 'employee' | 'associate' | null; status?: string | null }>;
+    | { role?: 'employee' | 'associate' | null; status?: string | null; avatar_url?: string | null }
+    | Array<{
+        role?: 'employee' | 'associate' | null;
+        status?: string | null;
+        avatar_url?: string | null;
+      }>;
   departments?: { id: string; name: string } | Array<{ id: string; name: string }> | null;
 }
 

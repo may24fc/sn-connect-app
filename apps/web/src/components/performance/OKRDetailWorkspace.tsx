@@ -1,5 +1,6 @@
 'use client';
 
+import { AttachmentDeleteButton } from '@/components/attachments/AttachmentDeleteButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBackNavigation } from '@/hooks/useBackNavigation';
 import {
@@ -1298,16 +1299,12 @@ export function OKRDetailWorkspace({
                               </Button>
                             )}
                             {item.submitted_by === user?.id && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="text-destructive hover:text-destructive"
-                                onClick={() => void handleDeleteEvidence(item.id)}
+                              <AttachmentDeleteButton
+                                itemKind="evidence"
+                                itemName={item.label || item.file_name || 'Evidence attachment'}
                                 disabled={deleteEvidence.isPending}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
+                                onConfirm={() => handleDeleteEvidence(item.id)}
+                              />
                             )}
                           </div>
                         </div>

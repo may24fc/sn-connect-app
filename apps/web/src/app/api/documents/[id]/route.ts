@@ -1,6 +1,7 @@
 import { logActivity } from '@/lib/audit';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
 /**
  * DELETE /api/documents/[id]
@@ -12,7 +13,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const parsedId = z.string().uuid().safeParse((await params).id);
+    if (!parsedId.success) {
+      return NextResponse.json({ error: 'Document not found' }, { status: 404 });
+    }
+    const id = parsedId.data;
     const supabase = await createSupabaseServerClient();
     const supabaseAdmin = createSupabaseAdminClient();
 
@@ -76,6 +81,32 @@ export async function DELETE(
           { status: 403 }
         );
       }
+    }
+
+    // Invoices and expense entries read their file from this document; deleting it here
+    // would break their previews, so it has to be changed from that record instead.
+    const [invoiceLink, expenseLink] = await Promise.all([
+      supabaseAdmin
+        .from('invoices')
+        .select('id', { count: 'exact', head: true })
+        .eq('document_id', id)
+        .is('deleted_at', null),
+      supabaseAdmin
+        .from('expense_entries')
+        .select('id', { count: 'exact', head: true })
+        .eq('receipt_document_id', id)
+        .is('deleted_at', null),
+    ]);
+    if (invoiceLink.error || expenseLink.error) {
+      console.error('Error checking document links:', invoiceLink.error ?? expenseLink.error);
+      return NextResponse.json({ error: 'Failed to delete document' }, { status: 500 });
+    }
+    if ((invoiceLink.count ?? 0) > 0 || (expenseLink.count ?? 0) > 0) {
+      const usedBy = (invoiceLink.count ?? 0) > 0 ? 'an invoice' : 'an expense';
+      return NextResponse.json(
+        { error: `This document is attached to ${usedBy}. Remove it from there instead.` },
+        { status: 409 }
+      );
     }
 
     // Soft-delete: set deleted_at

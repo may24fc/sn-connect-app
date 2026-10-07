@@ -99,7 +99,7 @@ export async function listAiSpendingAccessGrants() {
 
   const { data: userRows, error: usersError } = await admin
     .from('users')
-    .select('id, role')
+    .select('id, role, avatar_url')
     .in('id', [...new Set([...userIds, ...granterIds])])
     .is('deleted_at', null);
 
@@ -152,6 +152,7 @@ export async function listAiSpendingAccessGrants() {
       role: userById.get(row.user_id)?.role ?? null,
       department: employee?.department ?? null,
       position: employee?.position ?? null,
+      avatarUrl: userById.get(row.user_id)?.avatar_url ?? null,
     };
   });
 }

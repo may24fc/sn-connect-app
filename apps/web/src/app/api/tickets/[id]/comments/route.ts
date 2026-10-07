@@ -9,6 +9,7 @@ import {
   canAccessTicket,
   getDisplayName,
   getEmployeeProfilesByUserId,
+  getUserAvatarsByUserId,
   getTicketAuthedContext,
   type TicketAuthedContext,
   type TicketAccessRow,
@@ -84,15 +85,17 @@ export async function GET(_: NextRequest, context: RouteContext) {
     }
 
     const comments = (data || []) as Array<TicketCommentRow>;
-    const profilesByUserId = await getEmployeeProfilesByUserId(
-      supabaseAdmin,
-      Array.from(new Set(comments.map((comment) => comment.user_id)))
-    ).catch(() => new Map());
+    const commenterIds = Array.from(new Set(comments.map((comment) => comment.user_id)));
+    const [profilesByUserId, avatarsByUserId] = await Promise.all([
+      getEmployeeProfilesByUserId(supabaseAdmin, commenterIds).catch(() => new Map()),
+      getUserAvatarsByUserId(supabaseAdmin, commenterIds).catch(() => new Map<string, string>()),
+    ]);
 
     return NextResponse.json({
       data: comments.map((comment) => ({
         ...comment,
-        user_name: getDisplayName(profilesByUserId.get(comment.user_id), 'Ticket Participant'),
+        user_name: getDisplayName(profilesByUserId.get(comment.user_id)),
+        user_avatar_url: avatarsByUserId.get(comment.user_id) ?? null,
       })),
     });
   } catch (error) {
@@ -172,11 +175,15 @@ export async function POST(request: NextRequest, context: RouteContext) {
     });
 
     const comment = data as TicketCommentRow;
+    const actorAvatars = await getUserAvatarsByUserId(supabaseAdmin, [user.id]).catch(
+      () => new Map<string, string>()
+    );
     return NextResponse.json(
       {
         data: {
           ...comment,
           user_name: actorName,
+          user_avatar_url: actorAvatars.get(user.id) ?? null,
         },
       },
       { status: 201 }

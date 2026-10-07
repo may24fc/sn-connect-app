@@ -15,6 +15,7 @@ type ExpenseRow = {
   total_amount: number;
   total_amount_aud: number | null;
   department_id: string | null;
+  department?: { name: string | null } | null;
   employee: { department: string | null } | Array<{ department: string | null }> | null;
 };
 
@@ -240,5 +241,63 @@ describe('/api/dashboard/analytics GET route', () => {
     expect(lteCalls).toContainEqual(['transaction_date', '2026-06-30']);
     expect(eqCalls).toContainEqual(['department_id', 'dep-9']);
     expect(eqCalls).toContainEqual(['processing_status', 'approved']);
+  });
+
+  it('labels a department bucket with its linked department, not the submitter legacy text', async () => {
+    const { query: expenseQuery } = createExpenseEntriesQuery([
+      {
+        transaction_date: '2026-05-03',
+        processing_status: 'approved',
+        expense_type: 'software',
+        total_amount: 100,
+        total_amount_aud: 100,
+        department_id: 'dep-2',
+        department: { name: 'Finance' },
+        employee: { department: 'Unassigned' },
+      },
+      {
+        transaction_date: '2026-05-04',
+        processing_status: 'approved',
+        expense_type: 'software',
+        total_amount: 50,
+        total_amount_aud: 50,
+        department_id: 'dep-3',
+        department: null,
+        employee: { department: 'Unassigned' },
+      },
+    ]);
+
+    const from = vi.fn((table: string) => {
+      if (table === 'expense_entries') {
+        return expenseQuery;
+      }
+
+      throw new Error(`Unexpected table: ${table}`);
+    });
+
+    vi.mocked(createSupabaseServerClient).mockResolvedValue({
+      auth: {
+        getUser: vi.fn(async () => ({
+          data: { user: { id: 'admin-1', app_metadata: { db_role: 'admin' } } },
+          error: null,
+        })),
+      },
+      from,
+    } as never);
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/dashboard/analytics?period=month&startDate=2026-05-01&endDate=2026-05-31'
+      )
+    );
+    const json = await response.json();
+
+    expect(json.data.departmentBreakdown).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ departmentId: 'dep-2', departmentName: 'Finance' }),
+        // A bucket with an id but no resolvable name is unknown, never "Unassigned".
+        expect.objectContaining({ departmentId: 'dep-3', departmentName: 'Unknown department' }),
+      ])
+    );
   });
 });

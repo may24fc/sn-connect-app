@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { logActivity } from '@/lib/audit';
+import { validatePersonAssignment } from '@/lib/people/assignment-validation';
+import { loadDirectoryPeople } from '@/lib/people/directory-people';
 import { projectUpdateSchema } from '@/lib/schemas/project.schema';
 import { getProjectAuthedContext, isProjectAdmin, userCanAccessProject } from '../_lib';
 
@@ -28,10 +30,23 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!project) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const { data: contributors } = await supabaseAdmin
+  const { data: contributorRows } = await supabaseAdmin
     .from('project_contributors')
     .select('user_id, role, joined_at')
     .eq('project_id', id);
+
+  // The caller is already authorized for this project, so its members' display identities are
+  // resolved with the admin client the same way the contributor rows are.
+  const contributors = (contributorRows ?? []) as Array<{
+    user_id: string;
+    role: string;
+    joined_at: string;
+  }>;
+  const people = await loadDirectoryPeople(supabaseAdmin, [
+    project.lead_user_id as string | null,
+    ...contributors.map((contributor) => contributor.user_id),
+  ]);
+  const leadPerson = people.get(project.lead_user_id as string);
 
   const { data: pointEvents, error: pointsError } = await supabaseAdmin
     .from('points_events')
@@ -51,7 +66,16 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     data: {
       ...project,
       earned_points: earnedPoints,
-      contributors: contributors ?? [],
+      lead_name: leadPerson?.name ?? null,
+      lead_avatar_url: leadPerson?.avatarUrl ?? null,
+      contributors: contributors.map((contributor) => {
+        const person = people.get(contributor.user_id);
+        return {
+          ...contributor,
+          name: person?.name ?? null,
+          avatar_url: person?.avatarUrl ?? null,
+        };
+      }),
     },
   });
 }
@@ -81,6 +105,29 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   }
 
   const input = parsed.data;
+
+  if (input.supervisorId !== undefined) {
+    // The supervisor gains manage rights over the project, so only admins may assign one.
+    if (!isProjectAdmin(role)) {
+      return NextResponse.json(
+        { error: 'Only admins can change the project supervisor' },
+        { status: 403 }
+      );
+    }
+
+    if (input.supervisorId) {
+      const supervisorCheck = await validatePersonAssignment(supabaseAdmin, input.supervisorId, {
+        label: 'Supervisor',
+      });
+      if (!supervisorCheck.ok) {
+        return NextResponse.json(
+          { error: supervisorCheck.error },
+          { status: supervisorCheck.status }
+        );
+      }
+    }
+  }
+
   const update: Record<string, unknown> = {};
   if (input.name !== undefined) update.name = input.name;
   if (input.description !== undefined) update.description = input.description;

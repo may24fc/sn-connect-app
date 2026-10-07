@@ -40,6 +40,7 @@ import {
   TaskPriorityBadge,
   TaskStatusBadge,
   Textarea,
+  UserAvatar,
   useToast,
 } from '@hr-portal/ui';
 import type { TaskPriority, TaskStatus } from '@hr-portal/ui';
@@ -740,6 +741,7 @@ interface TaskListViewProps {
     tags?: string[] | null;
     due_date: string | null;
     assigner_name?: string | null;
+    assigner?: { avatar_url: string | null } | null;
   }>;
   onStatusChange: (taskId: string, newStatus: TaskStatusDB) => Promise<void>;
   updatingTaskId: string | null;
@@ -885,7 +887,20 @@ function TaskListView({ tasks, onStatusChange, updatingTaskId }: TaskListViewPro
                 <TableCell className="text-sm text-muted-foreground">
                   {formatDate(task.due_date)}
                 </TableCell>
-                <TableCell className="text-sm">{task.assigner_name || '—'}</TableCell>
+                <TableCell className="text-sm">
+                  {task.assigner_name ? (
+                    <span className="flex items-center gap-2">
+                      <UserAvatar
+                        name={task.assigner_name}
+                        avatarUrl={task.assigner?.avatar_url}
+                        size="xs"
+                      />
+                      {task.assigner_name}
+                    </span>
+                  ) : (
+                    '—'
+                  )}
+                </TableCell>
                 <TableCell className="text-right">
                   <Button asChild variant="outline" size="sm">
                     <Link href={getTaskDetailPath(task.id, '/tasks')}>View</Link>

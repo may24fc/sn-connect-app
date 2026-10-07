@@ -40,6 +40,7 @@ import {
   EmptyState,
   Input,
   Label,
+  PersonIdentity,
   Select,
   SelectContent,
   SelectItem,
@@ -62,9 +63,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  UserAvatar,
   Textarea,
   useToast,
 } from '@hr-portal/ui';
+import { AttachmentDeleteButton } from '@/components/attachments/AttachmentDeleteButton';
 import { TrackerPagination } from '@/components/data-display/TrackerPagination';
 import {
   ArrowUpDown,
@@ -75,7 +78,6 @@ import {
   Search,
   ShieldCheck,
   ShieldX,
-  Trash2,
   UserPlus,
   UserRound,
 } from 'lucide-react';
@@ -94,6 +96,7 @@ type LookupItem = {
 
 type PaTaskListRow = PaTaskRecord & {
   assignee_name?: string | null;
+  assignee_avatar_url?: string | null;
   creator_name?: string | null;
   status?: { id: string; label: string; color: PaTaskLookupColor; is_terminal: boolean };
   priority?: { id: string; label: string; color: PaTaskLookupColor };
@@ -937,22 +940,12 @@ export default function PaTasksPage() {
                         key={grant.userId}
                         className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card/70 px-4 py-3"
                       >
-                        <div className="min-w-0 space-y-1">
-                          <div className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                            {fullName}
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-                            <span>{grant.email ?? 'No email'}</span>
-                            <span>•</span>
-                            <span>{formatRole(grant.role)}</span>
-                            {grant.department ? (
-                              <>
-                                <span>•</span>
-                                <span>{grant.department}</span>
-                              </>
-                            ) : null}
-                          </div>
-                        </div>
+                        <PersonIdentity
+                          name={fullName}
+                          avatarUrl={grant.avatarUrl}
+                          meta={[grant.email ?? 'No email', formatRole(grant.role), grant.department]}
+                          nameClassName="text-zinc-900 dark:text-zinc-50"
+                        />
 
                         <Button
                           type="button"
@@ -1043,22 +1036,12 @@ export default function PaTasksPage() {
                         key={entry.user_id}
                         className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card/70 px-4 py-3"
                       >
-                        <div className="min-w-0 space-y-1">
-                          <div className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                            {fullName}
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-                            <span>{entry.email ?? 'No email'}</span>
-                            <span>•</span>
-                            <span>{formatRole(entry.role)}</span>
-                            {entry.department_name ? (
-                              <>
-                                <span>•</span>
-                                <span>{entry.department_name}</span>
-                              </>
-                            ) : null}
-                          </div>
-                        </div>
+                        <PersonIdentity
+                          name={fullName}
+                          avatarUrl={entry.avatar_url}
+                          meta={[entry.email ?? 'No email', formatRole(entry.role), entry.department_name]}
+                          nameClassName="text-zinc-900 dark:text-zinc-50"
+                        />
 
                         <Button
                           type="button"
@@ -1190,7 +1173,16 @@ export default function PaTasksPage() {
                         {task.title}
                       </TableCell>
                       <TableCell className="max-w-[220px] truncate">{task.waiting_on ?? '—'}</TableCell>
-                      <TableCell>{task.assignee_name ?? 'Unassigned'}</TableCell>
+                      <TableCell>
+                        {task.assignee_name ? (
+                          <div className="flex min-w-0 items-center gap-2">
+                            <UserAvatar name={task.assignee_name} avatarUrl={task.assignee_avatar_url} size="xs" />
+                            <span className="truncate">{task.assignee_name}</span>
+                          </div>
+                        ) : (
+                          'Unassigned'
+                        )}
+                      </TableCell>
                       <TableCell><Badge className={task.status ? colorClass(task.status.color) : ''}>{task.status?.label ?? '—'}</Badge></TableCell>
                       <TableCell>{task.category?.label ?? '—'}</TableCell>
                       <TableCell className="max-w-[260px] truncate">{task.notes ?? '—'}</TableCell>
@@ -1801,23 +1793,18 @@ export default function PaTasksPage() {
                               </span>
                             )}
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              void deleteAttachment
-                                .mutateAsync(attachment.id)
-                                .catch((error: unknown) =>
-                                  addToast({
-                                    title: 'Delete failed',
-                                    description: error instanceof Error ? error.message : 'Unable to remove attachment',
-                                    variant: 'error',
-                                  })
-                                );
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <AttachmentDeleteButton
+                            itemName={attachment.title.trim() || 'Untitled attachment'}
+                            onConfirm={() =>
+                              deleteAttachment.mutateAsync(attachment.id).catch((error: unknown) =>
+                                addToast({
+                                  title: 'Delete failed',
+                                  description: error instanceof Error ? error.message : 'Unable to remove attachment',
+                                  variant: 'error',
+                                })
+                              )
+                            }
+                          />
                         </div>
                       ))
                     )}

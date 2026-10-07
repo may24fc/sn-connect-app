@@ -8,7 +8,7 @@ import { SuperAdminTicketsPanel } from '@/components/tickets/SuperAdminTicketsPa
 import { useCreateTask } from '@/hooks/useCreateTask';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useProjectMilestones, useProjects } from '@/hooks/useProjects';
-import { useTaskAssignees } from '@/hooks/useTaskAssignees';
+import { type TaskAssigneeOption, useTaskAssignees } from '@/hooks/useTaskAssignees';
 import { useTasks, type TaskRecord } from '@/hooks/useTasks';
 import { useTasksRealtime } from '@/hooks/useTasksRealtime';
 import { useUpdateTaskStatus } from '@/hooks/useUpdateTask';
@@ -47,6 +47,7 @@ import {
   TaskPriorityBadge,
   TaskStatusBadge,
   Textarea,
+  UserAvatar,
   useToast,
 } from '@hr-portal/ui';
 import type { TaskPriority, TaskStatus } from '@hr-portal/ui';
@@ -217,6 +218,20 @@ const formatDate = (value: string | null | undefined): string => {
   }
 };
 
+/** `/api/employees` embeds the account row as `users`; read its avatar without widening the Employee type. */
+function getEmployeeAvatarUrl(employee: unknown): string | null {
+  if (!employee || typeof employee !== 'object' || !('users' in employee)) {
+    return null;
+  }
+
+  const account = Array.isArray(employee.users) ? employee.users[0] : employee.users;
+  if (!account || typeof account !== 'object' || !('avatar_url' in account)) {
+    return null;
+  }
+
+  return typeof account.avatar_url === 'string' ? account.avatar_url : null;
+}
+
 export default function TaskManagementPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -278,15 +293,25 @@ export default function TaskManagementPage() {
 
   const employeeFallbackAssignees = useMemo(() => {
     const employees = employeesData?.data || [];
-    return employees
-      .map((employee) => ({
-        id: employee.user_id,
-        role:
-          employee.employment_type === 'associate' ? ('associate' as const) : ('employee' as const),
-        name: `${employee.first_name} ${employee.last_name}`,
-        email: employee.company_email || employee.personal_email || null,
-      }))
-      .filter((option) => Boolean(option.id));
+    // Only accounts the tasks API accepts as assignees, labelled with their real account role.
+    return employees.flatMap((employee): Array<TaskAssigneeOption> => {
+      const role = employee.account_role;
+      if (!employee.user_id || (role !== 'employee' && role !== 'associate')) {
+        return [];
+      }
+
+      return [
+        {
+          id: employee.user_id,
+          role,
+          name: `${employee.first_name} ${employee.last_name}`.trim(),
+          email: employee.company_email || employee.personal_email || null,
+          department: employee.department_name,
+          position: employee.position || null,
+          avatar_url: getEmployeeAvatarUrl(employee),
+        },
+      ];
+    });
   }, [employeesData?.data]);
 
   const effectiveAssignees = assignees.length > 0 ? assignees : employeeFallbackAssignees;
@@ -752,13 +777,7 @@ export default function TaskManagementPage() {
                   {effectiveAssignees.map((assignee) => (
                     <SelectItem key={assignee.id} value={assignee.id}>
                       <span className="flex items-center gap-2">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs font-medium text-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                          {assignee.name
-                            .split(' ')
-                            .map((n: string) => n[0])
-                            .join('')
-                            .slice(0, 2)}
-                        </span>
+                        <UserAvatar name={assignee.name} avatarUrl={assignee.avatar_url} size="xs" />
                         {assignee.name}
                       </span>
                     </SelectItem>
@@ -804,6 +823,7 @@ interface AssigneeInfo {
   name: string;
   email: string | null;
   role: 'employee' | 'associate';
+  avatar_url: string | null;
 }
 
 function TasksLoadingSkeleton({ viewMode }: { viewMode: ViewMode }) {
@@ -861,7 +881,7 @@ function TaskListView({
     title: (t) => t.title.toLowerCase(),
     assignee: (t) => {
       const a = t.assigned_to ? assigneeById.get(t.assigned_to) : null;
-      return (a?.name || t.assignee_name || 'Unassigned').toLowerCase();
+      return (a?.name || t.assignee_name || (t.assigned_to ? 'Unknown user' : 'Unassigned')).toLowerCase();
     },
     priority: (t) => priorityOrder[t.priority] ?? 99,
     status: (t) => statusOrder[t.status] ?? 99,
@@ -908,7 +928,9 @@ function TaskListView({
           <TableBody>
             {sortedTasks.map((task) => {
               const assignee = task.assigned_to ? assigneeById.get(task.assigned_to) : null;
-              const assigneeName = assignee?.name || task.assignee_name || 'Unassigned';
+              // Only reached for assigned tasks; a missing directory name is unknown, not unassigned.
+              const assigneeName = assignee?.name || task.assignee_name || 'Unknown user';
+              const assigneeAvatarUrl = assignee?.avatar_url ?? task.assignee?.avatar_url ?? null;
               return (
                 <TableRow
                   key={task.id}
@@ -938,17 +960,14 @@ function TaskListView({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="flex items-center gap-2 text-sm">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-200 text-xs font-medium dark:bg-zinc-700">
-                        {assigneeName
-                          .split(' ')
-                          .map((n: string) => n[0])
-                          .join('')
-                          .slice(0, 2)
-                          .toUpperCase()}
+                    {task.assigned_to ? (
+                      <span className="flex items-center gap-2 text-sm">
+                        <UserAvatar name={assigneeName} avatarUrl={assigneeAvatarUrl} size="xs" />
+                        {assigneeName}
                       </span>
-                      {assigneeName}
-                    </span>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">Unassigned</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <TaskPriorityBadge priority={task.priority as TaskPriority} size="sm" />

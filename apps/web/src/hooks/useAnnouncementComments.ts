@@ -10,6 +10,7 @@ export interface AnnouncementComment {
   content: string;
   created_at: string;
   commenter_name: string | null;
+  commenter_avatar_url?: string | null;
 }
 
 export interface AnnouncementCommentsResponse {

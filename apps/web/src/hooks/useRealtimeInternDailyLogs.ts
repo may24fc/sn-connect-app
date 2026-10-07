@@ -34,6 +34,7 @@ export interface InternDailyLog {
       first_name: string;
       last_name: string;
       user_id: string;
+      avatar_url: string | null;
     };
     school: string | null;
     program: string | null;
@@ -61,6 +62,38 @@ const dailyLogPayloadSchema = z.object({
   status: z.string().optional(),
 });
 
+/** PostgREST to-one embeds arrive as an object, but may be typed or returned as a one-item array. */
+function firstEmbedded(value: unknown): unknown {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function readAvatarUrl(users: unknown): string | null {
+  const record = firstEmbedded(users);
+  if (!record || typeof record !== 'object' || !('avatar_url' in record)) {
+    return null;
+  }
+
+  const avatarUrl = record.avatar_url;
+  return typeof avatarUrl === 'string' && avatarUrl.trim() !== '' ? avatarUrl : null;
+}
+
+type DailyLogEmployee = NonNullable<InternDailyLog['internship']>['employee'];
+
+/** Flattens the nested `users` embed into `avatar_url` on the employee. */
+function mapRealtimeEmployee(employees: unknown): DailyLogEmployee {
+  const employee = firstEmbedded(employees);
+  if (!employee || typeof employee !== 'object') {
+    // Preserves the previous behavior for a missing embed; consumers already guard on it.
+    return employee as DailyLogEmployee;
+  }
+
+  const { users, ...rest } = employee as Record<string, unknown>;
+  return {
+    ...(rest as Omit<DailyLogEmployee, 'avatar_url'>),
+    avatar_url: readAvatarUrl(users),
+  };
+}
+
 function mapRealtimeLog(log: any): InternDailyLog {
   return {
     ...log,
@@ -69,9 +102,7 @@ function mapRealtimeLog(log: any): InternDailyLog {
     next_steps: normalizeStringList(undefined, log.learnings),
     attachments: normalizeAttachmentRecords(log.attachments),
     internship: {
-      employee: Array.isArray(log.internships?.employees)
-        ? log.internships.employees[0]
-        : log.internships?.employees,
+      employee: mapRealtimeEmployee(log.internships?.employees),
       school: log.internships?.school,
       program: log.internships?.program,
       department: log.internships?.department,
@@ -130,7 +161,8 @@ export function useRealtimeInternDailyLogs() {
               id,
               first_name,
               last_name,
-              user_id
+              user_id,
+              users!employees_user_id_fkey(avatar_url)
             )
           )
         `
@@ -202,7 +234,8 @@ export function useRealtimeInternDailyLogs() {
                   id,
                   first_name,
                   last_name,
-                  user_id
+                  user_id,
+                  users!employees_user_id_fkey(avatar_url)
                 )
               )
             `
@@ -268,7 +301,8 @@ export function useRealtimeInternDailyLogs() {
                   id,
                   first_name,
                   last_name,
-                  user_id
+                  user_id,
+                  users!employees_user_id_fkey(avatar_url)
                 )
               )
             `

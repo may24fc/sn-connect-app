@@ -32,7 +32,9 @@ export interface TicketRecord {
   created_by: string | null;
   deleted_at: string | null;
   submitted_by_name?: string | null;
+  submitted_by_avatar_url?: string | null;
   assigned_to_name?: string | null;
+  assigned_to_avatar_url?: string | null;
   assigned_by_name?: string | null;
 }
 
@@ -78,6 +80,7 @@ export interface TicketCommentRecord {
   content: string;
   created_at: string;
   user_name: string;
+  user_avatar_url?: string | null;
 }
 
 export function useTickets(filters: TicketFilters = {}, options: { enabled?: boolean } = {}) {

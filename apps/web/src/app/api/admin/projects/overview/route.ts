@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getProjectAuthedContext, isProjectAdmin } from '@/app/api/projects/_lib';
+import { normalizePersonName } from '@/lib/people/directory-people';
 
 export const dynamic = 'force-dynamic';
 
 interface InternRow {
   user_id: string;
   full_name: string | null;
+  avatar_url: string | null;
   department: string | null;
   project_count: number;
   avg_progress: number;
@@ -33,7 +35,7 @@ export async function GET() {
 
   const { data: interns, error: internsErr } = await supabaseAdmin
     .from('employee_directory')
-    .select('user_id, full_name, department_name, role')
+    .select('user_id, full_name, department_name, role, avatar_url')
     .eq('role', 'associate')
     .neq('status', 'terminated')
     .not('user_id', 'is', null);
@@ -79,7 +81,12 @@ export async function GET() {
   }
 
   const rows: InternRow[] = (interns ?? []).flatMap(
-    (associate: { user_id: string | null; full_name: string | null; department_name: string | null }) => {
+    (associate: {
+      user_id: string | null;
+      full_name: string | null;
+      department_name: string | null;
+      avatar_url: string | null;
+    }) => {
       if (!associate.user_id) {
         return [];
       }
@@ -107,7 +114,8 @@ export async function GET() {
       return [
         {
           user_id: associate.user_id,
-          full_name: associate.full_name,
+          full_name: normalizePersonName(associate.full_name),
+          avatar_url: associate.avatar_url,
           department: associate.department_name,
           project_count: total,
           avg_progress: total ? Math.round(sumPct / total) : 0,

@@ -32,7 +32,7 @@ export interface Task {
   status: TaskStatus;
   category?: TaskCategory | undefined;
   tags?: string[] | undefined;
-  dueDate: string;
+  dueDate: string | null;
   createdBy: string;
   createdByName: string;
   createdAt: string;
@@ -43,10 +43,12 @@ export interface Task {
 export interface TaskAssignee {
   id: string;
   name: string;
-  email: string;
-  role: 'employee' | 'associate';
-  department: string;
-  avatarUrl?: string;
+  /** Optional identity fields are omitted when the directory has no value; never fill them with placeholders. */
+  email?: string | null | undefined;
+  role?: string | null | undefined;
+  department?: string | null | undefined;
+  position?: string | null | undefined;
+  avatarUrl?: string | null | undefined;
   assignedAt: string;
   completedAt?: string;
 }
@@ -112,8 +114,8 @@ export const TASK_STATUS_CONFIG: Record<
 };
 
 // Helper function to check if task is overdue
-export function isTaskOverdue(dueDate: string, status: TaskStatus): boolean {
-  if (status === 'completed') return false;
+export function isTaskOverdue(dueDate: string | null | undefined, status: TaskStatus): boolean {
+  if (!dueDate || status === 'completed') return false;
   const due = new Date(dueDate);
   const today = new Date();
   return due < today;
@@ -129,7 +131,11 @@ export function getDaysUntilDue(dueDate: string): number {
 }
 
 // Helper function to format due date display
-export function formatDueDate(dueDate: string): string {
+export function formatDueDate(dueDate: string | null | undefined): string {
+  if (!dueDate) {
+    return 'No due date';
+  }
+
   const days = getDaysUntilDue(dueDate);
 
   if (days < 0) {

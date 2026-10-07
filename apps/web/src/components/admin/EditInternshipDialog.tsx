@@ -1,5 +1,7 @@
 'use client';
 
+import { PersonSearchSelect } from '@/components/people/PersonSearchSelect';
+import { useDepartments } from '@/hooks/useDepartments';
 import { type InternshipDetailRecord, useUpdateInternship } from '@/hooks/useInternships';
 import {
   Button,
@@ -11,23 +13,27 @@ import {
   DialogTitle,
   Input,
   Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   useToast,
 } from '@hr-portal/ui';
 import { Loader2 } from 'lucide-react';
-import { type FormEvent, type ReactNode, useEffect, useState } from 'react';
+import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react';
 
 /**
  * Text fields on the form, mapped to the payload keys accepted by
  * `updateInternshipSchema`. Nullable columns send `null` when cleared.
  */
 const TEXT_FIELDS: ReadonlyArray<{
-  field: 'startDate' | 'endDate' | 'department' | 'school' | 'program';
+  field: 'startDate' | 'endDate' | 'school' | 'program';
   apiKey: string;
   toPayload: (value: string) => string | null;
 }> = [
   { field: 'startDate', apiKey: 'startDate', toPayload: (value) => value },
   { field: 'endDate', apiKey: 'endDate', toPayload: (value) => value },
-  { field: 'department', apiKey: 'department', toPayload: (value) => value },
   { field: 'school', apiKey: 'school', toPayload: (value) => value || null },
   { field: 'program', apiKey: 'program', toPayload: (value) => value || null },
 ];
@@ -36,10 +42,6 @@ const TEXT_FIELDS: ReadonlyArray<{
 function validateForm(form: FormState, updates: Record<string, unknown>): string | null {
   if (Object.keys(updates).length === 0) {
     return 'Change at least one field before saving.';
-  }
-
-  if (!form.department.trim()) {
-    return 'Department is required.';
   }
 
   const datesChanged = 'startDate' in updates || 'endDate' in updates;
@@ -61,7 +63,6 @@ interface FormState {
   startDate: string;
   endDate: string;
   requiredHours: string;
-  department: string;
   school: string;
   program: string;
 }
@@ -71,7 +72,6 @@ function toFormState(associate: InternshipDetailRecord): FormState {
     startDate: associate.startDate?.slice(0, 10) ?? '',
     endDate: associate.endDate?.slice(0, 10) ?? '',
     requiredHours: String(associate.requiredHours ?? ''),
-    department: associate.department ?? '',
     school: associate.school ?? '',
     program: associate.program ?? '',
   };
@@ -81,7 +81,8 @@ function toFormState(associate: InternshipDetailRecord): FormState {
  * Edits the internship record behind an associate profile via
  * `PATCH /api/internships/[id]`. Only fields accepted by
  * `updateInternshipSchema` are sent, and only changed fields are included so
- * the API's "at least one field" rule stays meaningful.
+ * the API's "at least one field" rule stays meaningful. Department and supervisor
+ * are picked from real records so they stay linked to the directory.
  */
 export function EditInternshipDialog({
   open,
@@ -91,12 +92,28 @@ export function EditInternshipDialog({
 }: EditInternshipDialogProps): ReactNode {
   const { addToast } = useToast();
   const updateInternship = useUpdateInternship();
+  const departmentsQuery = useDepartments({ page: 1, pageSize: 200 });
   const [form, setForm] = useState<FormState>(() => toFormState(associate));
+  const [departmentId, setDepartmentId] = useState<string | null>(null);
+  const [supervisorId, setSupervisorId] = useState<string | null>(associate.supervisorId);
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  const departments = departmentsQuery.data?.data ?? [];
+  const currentDepartmentId = useMemo(
+    () =>
+      departments.find(
+        (department) =>
+          department.name.trim().toLowerCase() === (associate.department ?? '').trim().toLowerCase()
+      )?.id ?? null,
+    [departments, associate.department]
+  );
+  const selectedDepartmentId = departmentId ?? currentDepartmentId;
 
   useEffect(() => {
     if (open) {
       setForm(toFormState(associate));
+      setDepartmentId(null);
+      setSupervisorId(associate.supervisorId);
       setValidationError(null);
     }
   }, [open, associate]);
@@ -126,6 +143,14 @@ export function EditInternshipDialog({
         return { error: 'Required hours must be a whole number between 1 and 20000.' };
       }
       updates.requiredHours = parsedHours;
+    }
+
+    if (departmentId && departmentId !== currentDepartmentId) {
+      updates.departmentId = departmentId;
+    }
+
+    if (supervisorId !== associate.supervisorId) {
+      updates.supervisorId = supervisorId;
     }
 
     const validationMessage = validateForm(form, updates);
@@ -167,7 +192,7 @@ export function EditInternshipDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-h-[calc(100vh-2rem)] max-w-lg overflow-y-auto">
         <form onSubmit={(event) => void handleSubmit(event)}>
           <DialogHeader>
             <DialogTitle>Edit Associate Profile</DialogTitle>
@@ -209,12 +234,28 @@ export function EditInternshipDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="internship-department">Department</Label>
-              <Input
-                id="internship-department"
-                maxLength={150}
-                value={form.department}
-                onChange={(event) => setField('department', event.target.value)}
-              />
+              <Select
+                value={selectedDepartmentId ?? ''}
+                onValueChange={setDepartmentId}
+                disabled={departmentsQuery.isLoading}
+              >
+                <SelectTrigger id="internship-department">
+                  <SelectValue
+                    placeholder={
+                      associate.department
+                        ? `${associate.department} (not in department list)`
+                        : 'Select department'
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map((department) => (
+                    <SelectItem key={department.id} value={department.id}>
+                      {department.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="internship-school">School</Label>
@@ -233,6 +274,20 @@ export function EditInternshipDialog({
                 value={form.program}
                 onChange={(event) => setField('program', event.target.value)}
               />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="internship-supervisor-search">Supervisor</Label>
+              <PersonSearchSelect
+                id="internship-supervisor-search"
+                value={supervisorId}
+                onChange={setSupervisorId}
+                excludeUserIds={[associate.userId]}
+                roles={['employee']}
+                disabled={updateInternship.isPending}
+              />
+              <p className="text-xs text-muted-foreground">
+                The supervisor can view this internship and review its daily logs.
+              </p>
             </div>
           </div>
 

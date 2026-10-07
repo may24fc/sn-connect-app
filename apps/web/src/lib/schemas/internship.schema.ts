@@ -52,6 +52,10 @@ export const createInternshipSchema = z.object({
 export const updateInternshipSchema = createInternshipSchema
   .omit({ employeeId: true })
   .partial()
+  .extend({
+    /** Department picked from the departments list; also syncs the associate's placement. */
+    departmentId: z.string().uuid().optional(),
+  })
   .refine((payload) => Object.keys(payload).length > 0, {
     message: 'At least one field is required',
   });

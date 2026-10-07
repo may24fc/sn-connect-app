@@ -85,10 +85,12 @@ export interface InternSummary {
   name: string;
   email: string;
   avatarUrl?: string;
-  school: string;
-  program: string;
-  department: string;
-  supervisor: string;
+  /** Optional details are null when not on file; never filled with placeholders like 'N/A'. */
+  school: string | null;
+  program: string | null;
+  department: string | null;
+  /** Supervisor's name (or email); null when no supervisor is set. */
+  supervisor: string | null;
   supervisorId: SupervisorId;
   startDate: string;
   endDate: string;

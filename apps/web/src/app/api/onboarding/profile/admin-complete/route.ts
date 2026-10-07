@@ -1,4 +1,6 @@
 import { logActivity } from '@/lib/audit';
+import { generateEmployeeNumber } from '@/lib/people/employee-number';
+import { UNASSIGNED_DEPARTMENT } from '@/lib/people/directory-people';
 import { completeOnboardingSchema } from '@/lib/schemas/onboarding.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { WiseApiError, createRecipient } from '@/lib/wise/client';
@@ -6,6 +8,21 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 /** Roles that may use this self-service profile completion endpoint. */
 const ALLOWED_ROLES = ['admin', 'super_admin', 'hr', 'cos', 'ceo'];
+
+/** Undo the completion flag so the dashboard keeps prompting when the employee record can't be saved. */
+async function reopenProfileSetup(
+  supabaseAdmin: ReturnType<typeof createSupabaseAdminClient>,
+  profileId: string
+): Promise<void> {
+  const { error } = await supabaseAdmin
+    .from('onboarding_profiles')
+    .update({ is_completed: false, completed_at: null })
+    .eq('id', profileId);
+
+  if (error) {
+    console.error('Failed to reopen admin profile setup:', error);
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,7 +49,7 @@ export async function POST(request: NextRequest) {
     const supabaseAdmin = createSupabaseAdminClient();
     const { data: userRecord, error: userError } = await supabaseAdmin
       .from('users')
-      .select('role, status')
+      .select('role, status, department_id')
       .eq('id', user.id)
       .single();
 
@@ -73,14 +90,66 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to complete profile' }, { status: 500 });
     }
 
-    // Update the existing employee record with profile data.
-    // Admin/super-admin users already have an employee record from the invite flow.
-    const { data: existingEmployee } = await supabaseAdmin
+    // Update the employee record with profile data. Invited admins already have one; seeded or
+    // legacy accounts may not, and without it the details entered here would be lost.
+    const { data: foundEmployee } = await supabaseAdmin
       .from('employees')
       .select('id')
       .eq('user_id', user.id)
       .is('deleted_at', null)
       .maybeSingle();
+
+    let existingEmployee = foundEmployee;
+
+    if (!existingEmployee) {
+      const firstName = profile.first_name?.trim();
+      const lastName = profile.last_name?.trim();
+
+      if (!firstName || !lastName) {
+        await reopenProfileSetup(supabaseAdmin, profile.id);
+        return NextResponse.json(
+          { error: 'First and last name are required to create your employee profile' },
+          { status: 400 }
+        );
+      }
+
+      const departmentName = userRecord.department_id
+        ? ((
+            await supabaseAdmin
+              .from('departments')
+              .select('name')
+              .eq('id', userRecord.department_id)
+              .is('deleted_at', null)
+              .maybeSingle()
+          ).data?.name ?? null)
+        : null;
+
+      const { data: createdEmployee, error: createEmployeeError } = await supabaseAdmin
+        .from('employees')
+        .insert({
+          user_id: user.id,
+          employee_number: generateEmployeeNumber(),
+          first_name: firstName,
+          last_name: lastName,
+          date_hired: profile.start_date || new Date().toISOString().slice(0, 10),
+          employment_type: 'regular',
+          work_arrangement: 'full_time',
+          position: profile.position?.trim() || null,
+          department: departmentName ?? UNASSIGNED_DEPARTMENT,
+          company_email: user.email ?? null,
+          created_by: user.id,
+        })
+        .select('id')
+        .single();
+
+      if (createEmployeeError || !createdEmployee) {
+        console.error('Failed to create employee record from admin profile setup:', createEmployeeError);
+        await reopenProfileSetup(supabaseAdmin, profile.id);
+        return NextResponse.json({ error: 'Failed to create employee profile' }, { status: 500 });
+      }
+
+      existingEmployee = createdEmployee;
+    }
 
     if (existingEmployee) {
       const { error: empUpdateError } = await supabaseAdmin

@@ -13,8 +13,6 @@ import {
 import { useProjects } from '@/hooks/useProjects';
 import { exportToCsv, formatDateForCsv, formatPercentageForCsv } from '@/lib/csv';
 import {
-  Avatar,
-  AvatarFallback,
   Badge,
   Button,
   Card,
@@ -51,6 +49,8 @@ import {
   TabsList,
   TabsTrigger,
   Textarea,
+  PersonMeta,
+  UserAvatar,
   calculateHoursProgress,
   getDaysRemaining,
 } from '@hr-portal/ui';
@@ -80,15 +80,6 @@ type AssociateProfileTab = 'overview' | 'reports' | 'timeline' | 'projects';
 
 function getAssociateProfileTab(tab: string | null): AssociateProfileTab {
   return tab === 'reports' || tab === 'timeline' || tab === 'projects' ? tab : 'overview';
-}
-
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
 }
 
 export default function InternDetailPage({
@@ -135,12 +126,12 @@ export default function InternDetailPage({
         field: 'Name',
         value: associate.name,
       },
-      { field: 'Email', value: associate.email },
+      { field: 'Email', value: associate.email ?? '' },
       { field: 'Phone', value: associate.phone || 'N/A' },
-      { field: 'School', value: associate.school },
-      { field: 'Program', value: associate.program },
-      { field: 'Department', value: associate.department },
-      { field: 'Supervisor', value: associate.supervisor },
+      { field: 'School', value: associate.school ?? '' },
+      { field: 'Program', value: associate.program ?? '' },
+      { field: 'Department', value: associate.department ?? '' },
+      { field: 'Supervisor', value: associate.supervisor ?? '' },
       { field: 'Start Date', value: formatDateForCsv(associate.startDate) },
       { field: 'End Date', value: formatDateForCsv(associate.endDate) },
       { field: 'Required Hours', value: String(associate.requiredHours) },
@@ -335,20 +326,28 @@ export default function InternDetailPage({
           <div className="flex flex-col lg:flex-row lg:items-start gap-6">
             {/* Avatar and Basic Info */}
             <div className="flex items-start gap-4">
-              <Avatar className="h-20 w-20">
-                <AvatarFallback className="text-2xl">{getInitials(associate.name)}</AvatarFallback>
-              </Avatar>
+              <UserAvatar
+                name={associate.name}
+                avatarUrl={associate.avatarUrl}
+                className="h-20 w-20"
+                fallbackClassName="text-2xl"
+              />
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <h2 className="text-xl font-bold">{associate.name}</h2>
                   <InternshipStatusBadge status={associate.status} />
                 </div>
-                <p className="text-muted-foreground">{associate.program}</p>
+                <PersonMeta
+                  parts={[associate.position, associate.program]}
+                  className="block text-base"
+                />
                 <div className="flex flex-wrap gap-4 mt-3 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Mail className="h-4 w-4" />
-                    {associate.email}
-                  </span>
+                  {associate.email ? (
+                    <span className="flex items-center gap-1">
+                      <Mail className="h-4 w-4" />
+                      {associate.email}
+                    </span>
+                  ) : null}
                   <span className="flex items-center gap-1">
                     <Phone className="h-4 w-4" />
                     {associate.phone || 'N/A'}
@@ -364,21 +363,32 @@ export default function InternDetailPage({
                   <GraduationCap className="h-4 w-4" />
                   <span className="text-xs">School</span>
                 </div>
-                <p className="font-medium text-sm">{associate.school}</p>
+                <p className="font-medium text-sm">{associate.school ?? 'Not provided'}</p>
               </div>
               <div className="p-3 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-2 text-muted-foreground mb-1">
                   <Building2 className="h-4 w-4" />
                   <span className="text-xs">Department</span>
                 </div>
-                <p className="font-medium text-sm">{associate.department}</p>
+                <p className="font-medium text-sm">{associate.department ?? 'Not assigned'}</p>
               </div>
               <div className="p-3 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-2 text-muted-foreground mb-1">
                   <User className="h-4 w-4" />
                   <span className="text-xs">Supervisor</span>
                 </div>
-                <p className="font-medium text-sm">{associate.supervisor}</p>
+                {associate.supervisorId && associate.supervisor ? (
+                  <div className="flex min-w-0 items-center gap-2">
+                    <UserAvatar
+                      name={associate.supervisor}
+                      avatarUrl={associate.supervisorAvatarUrl}
+                      size="xs"
+                    />
+                    <p className="truncate font-medium text-sm">{associate.supervisor}</p>
+                  </div>
+                ) : (
+                  <p className="font-medium text-sm">Not assigned</p>
+                )}
               </div>
               <div className="p-3 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-2 text-muted-foreground mb-1">

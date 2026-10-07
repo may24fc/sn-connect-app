@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { normalizePersonName } from '@/lib/people/directory-people';
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
 import { formatMasteryTitle } from '@hr-portal/ui/constants/mastery';
 
@@ -125,7 +126,7 @@ export async function GET(request: Request) {
         return [
           {
             user_id: u.user_id,
-            full_name: u.full_name,
+            full_name: normalizePersonName(u.full_name),
             avatar_url: u.avatar_url,
             department: u.department_name,
             role: u.role,

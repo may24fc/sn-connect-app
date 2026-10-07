@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { loadDirectoryPeople } from '@/lib/people/directory-people';
 import { z } from 'zod';
 import { getAuthedSupabase, isAnnouncementAdmin } from '../../_lib';
 
@@ -18,6 +19,52 @@ interface EmployeeNameRow {
   user_id: string;
   first_name: string;
   last_name: string;
+}
+
+interface CommenterIdentity {
+  commenter_name: string | null;
+  commenter_avatar_url: string | null;
+}
+
+/**
+ * Resolves display name and photo for comment authors. Names come from `employees`
+ * (unchanged source); photos come from the `employee_directory` view. Both reads use
+ * the caller's RLS-scoped client.
+ */
+async function loadCommenterIdentities(
+  supabase: Awaited<ReturnType<typeof getAuthedSupabase>>['supabase'],
+  userIds: Array<string>
+): Promise<Map<string, CommenterIdentity>> {
+  const identities = new Map<string, CommenterIdentity>();
+
+  if (userIds.length === 0) {
+    return identities;
+  }
+
+  const [{ data: employees }, people] = await Promise.all([
+    supabase
+      .from('employees')
+      .select('user_id, first_name, last_name')
+      .in('user_id', userIds)
+      .is('deleted_at', null),
+    loadDirectoryPeople(supabase, userIds),
+  ]);
+
+  const namesByUserId = new Map(
+    ((employees ?? []) as Array<EmployeeNameRow>).map((employee) => [
+      employee.user_id,
+      `${employee.first_name} ${employee.last_name}`,
+    ])
+  );
+
+  for (const userId of userIds) {
+    identities.set(userId, {
+      commenter_name: namesByUserId.get(userId) || null,
+      commenter_avatar_url: people.get(userId)?.avatarUrl ?? null,
+    });
+  }
+
+  return identities;
 }
 
 const createCommentSchema = z.object({
@@ -86,26 +133,13 @@ export async function GET(_: NextRequest, context: RouteContext) {
     const rows = (data ?? []) as Array<AnnouncementCommentRow>;
     const commenterIds = Array.from(new Set(rows.map((comment) => comment.user_id)));
 
-    let namesByUserId = new Map<string, string>();
-    if (commenterIds.length > 0) {
-      const { data: employees } = await supabase
-        .from('employees')
-        .select('user_id, first_name, last_name')
-        .in('user_id', commenterIds)
-        .is('deleted_at', null);
-
-      namesByUserId = new Map(
-        ((employees ?? []) as Array<EmployeeNameRow>).map((employee) => [
-          employee.user_id,
-          `${employee.first_name} ${employee.last_name}`,
-        ])
-      );
-    }
+    const identities = await loadCommenterIdentities(supabase, commenterIds);
 
     return NextResponse.json({
       data: rows.map((comment) => ({
         ...comment,
-        commenter_name: namesByUserId.get(comment.user_id) || null,
+        commenter_name: identities.get(comment.user_id)?.commenter_name ?? null,
+        commenter_avatar_url: identities.get(comment.user_id)?.commenter_avatar_url ?? null,
       })),
       meta: { allowComments: visibility.announcement.allow_comments },
     });
@@ -172,7 +206,19 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Failed to create comment' }, { status: 500 });
     }
 
-    return NextResponse.json({ data }, { status: 201 });
+    // Return the same author fields as GET so the merged comment keeps its author.
+    const identity = (await loadCommenterIdentities(supabase, [user.id])).get(user.id);
+
+    return NextResponse.json(
+      {
+        data: {
+          ...(data as AnnouncementCommentRow),
+          commenter_name: identity?.commenter_name ?? null,
+          commenter_avatar_url: identity?.commenter_avatar_url ?? null,
+        },
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Unexpected error in POST /api/announcements/[id]/comments:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

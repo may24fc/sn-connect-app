@@ -1,6 +1,8 @@
 'use client';
 
 import { stageFormDataFiles } from '@/lib/storage/stage-form-data';
+import { AttachmentDeleteButton } from '@/components/attachments/AttachmentDeleteButton';
+import { MarketingContentImagePreview } from '@/components/reports/MarketingContentImagePreview';
 import { MarketingReportsAccessState } from '@/components/reports/MarketingReportsAccessState';
 import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { useCreateReport } from '@/hooks/useCreateReport';
@@ -426,6 +428,10 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSavingRef = useRef(false);
   const contentImageInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  // Content images are deleted from storage only once no saved version of the report uses
+  // them: paths in the last saved report, plus images uploaded in this session.
+  const savedImagePathsRef = useRef<Set<string>>(new Set());
+  const sessionImagePathsRef = useRef<Set<string>>(new Set());
 
   const [activeReportId, setActiveReportId] = useState<string | null>(reportId ?? null);
   const [isFormReady, setIsFormReady] = useState(!isEditMode);
@@ -623,6 +629,11 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
           )
         : mapCustomMetricsFromDraft(report.report_metrics)
     );
+    savedImagePathsRef.current = new Set(
+      contentCreationEntries
+        .map((entry) => entry.imagePath)
+        .filter((path): path is string => Boolean(path))
+    );
     setActiveReportId(report.id);
     setLastSavedAt(report.updated_at ? new Date(report.updated_at) : null);
     setErrorMessage(null);
@@ -810,6 +821,58 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     ]
   );
 
+  const metricsRef = useRef(metrics);
+  useEffect(() => {
+    metricsRef.current = metrics;
+  }, [metrics]);
+
+  // The image paths buildReportPayload writes into the report (content creation only).
+  const getPayloadImagePaths = useCallback(
+    (): Array<string> =>
+      isContentCreationReport
+        ? metrics
+            .filter((metric) => metric.name.trim().length > 0)
+            .map((metric) => metric.imagePath)
+            .filter((path): path is string => Boolean(path))
+        : [],
+    [isContentCreationReport, metrics]
+  );
+
+  const deleteContentImage = useCallback(async (path: string): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/reports/content-images', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path }),
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  // After a successful save, delete images that the saved report no longer uses and that
+  // are not still on the form (an image added after the payload was built is kept).
+  const cleanUpContentImages = useCallback(
+    (savedPaths: Array<string>) => {
+      const saved = new Set(savedPaths);
+      const onForm = new Set(
+        metricsRef.current
+          .map((metric) => metric.imagePath)
+          .filter((path): path is string => Boolean(path))
+      );
+      const candidates = [...savedImagePathsRef.current, ...sessionImagePathsRef.current];
+      savedImagePathsRef.current = saved;
+      for (const path of candidates) {
+        if (saved.has(path) || onForm.has(path)) continue;
+        sessionImagePathsRef.current.delete(path);
+        // Best effort: a failed delete only leaves an unreferenced file behind.
+        void deleteContentImage(path);
+      }
+    },
+    [deleteContentImage]
+  );
+
   const autoSaveDraft = useCallback(async (): Promise<void> => {
     if (!isFormReady || isSavingRef.current || validateBaseFields() !== null) {
       return;
@@ -819,22 +882,34 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
 
     try {
       const payload = buildReportPayload(true);
+      const savedImagePaths = getPayloadImagePaths();
 
       if (activeReportId) {
         await updateReport.mutateAsync({ id: activeReportId, payload });
         setLastSavedAt(new Date());
+        cleanUpContentImages(savedImagePaths);
         return;
       }
 
       const response = await createReport.mutateAsync(payload);
       setActiveReportId(response.data.id);
       setLastSavedAt(new Date());
+      cleanUpContentImages(savedImagePaths);
     } catch {
       // Silent failure keeps auto-save unobtrusive.
     } finally {
       isSavingRef.current = false;
     }
-  }, [activeReportId, buildReportPayload, createReport, isFormReady, updateReport, validateBaseFields]);
+  }, [
+    activeReportId,
+    buildReportPayload,
+    cleanUpContentImages,
+    createReport,
+    getPayloadImagePaths,
+    isFormReady,
+    updateReport,
+    validateBaseFields,
+  ]);
 
   useEffect(() => {
     if (!isFormReady || validateBaseFields() !== null) {
@@ -926,6 +1001,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
       }
 
       const uploadedImage = payload.data;
+      sessionImagePathsRef.current.add(uploadedImage.path);
 
       setMetrics((previous) =>
         previous.map((metric) =>
@@ -952,13 +1028,12 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
       )
     );
 
-    const response = await fetch('/api/reports/content-images', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: imagePath }),
-    });
+    // An image the saved draft still uses is deleted after the next successful save, so
+    // leaving without saving keeps the draft and its image intact.
+    if (!imagePath || savedImagePathsRef.current.has(imagePath)) return;
 
-    if (!response.ok) {
+    sessionImagePathsRef.current.delete(imagePath);
+    if (!(await deleteContentImage(imagePath))) {
       addToast({
         title: 'Image removal failed',
         description: 'The image was removed from this form but could not be deleted from storage.',
@@ -1188,6 +1263,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
 
     try {
       const payload = buildReportPayload(asDraft);
+      const savedImagePaths = getPayloadImagePaths();
       let resolvedReportId = activeReportId;
 
       if (resolvedReportId) {
@@ -1197,6 +1273,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
         resolvedReportId = response.data.id;
         setActiveReportId(response.data.id);
       }
+      cleanUpContentImages(savedImagePaths);
 
       addToast({
         title: isEditMode ? 'Marketing draft updated' : 'Marketing report saved',
@@ -1672,23 +1749,32 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
                               event.currentTarget.value = '';
                             }}
                           />
-                          {metric.imagePreviewUrl ? (
-                            <div className="relative max-w-2xl overflow-hidden rounded-md border bg-muted">
-                              <img
-                                src={metric.imagePreviewUrl}
-                                alt={`Uploaded ${metric.name || 'app'} content preview`}
-                                className="h-64 w-full object-contain"
+                          {metric.imagePath ? (
+                            <div className="relative max-w-2xl">
+                              {metric.imagePreviewUrl ? (
+                                <div className="overflow-hidden rounded-md border bg-muted">
+                                  <img
+                                    src={metric.imagePreviewUrl}
+                                    alt={`Uploaded ${metric.name || 'app'} content preview`}
+                                    className="h-64 w-full object-contain"
+                                  />
+                                </div>
+                              ) : (
+                                // Reopened drafts only store the path; load a signed preview for it.
+                                <MarketingContentImagePreview
+                                  imagePath={metric.imagePath}
+                                  alt={`Uploaded ${metric.name || 'app'} content preview`}
+                                  className="h-64"
+                                />
+                              )}
+                              <AttachmentDeleteButton
+                                variant="overlay"
+                                itemKind="image"
+                                itemName={`${metric.name || 'Content'} image`}
+                                onConfirm={() =>
+                                  handleRemoveContentImage(metric.id, metric.imagePath ?? '')
+                                }
                               />
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                className="absolute right-2 top-2"
-                                onClick={() => void handleRemoveContentImage(metric.id, metric.imagePath ?? '')}
-                              >
-                                <X className="mr-1 h-4 w-4" />
-                                Remove image
-                              </Button>
                             </div>
                           ) : (
                             <button

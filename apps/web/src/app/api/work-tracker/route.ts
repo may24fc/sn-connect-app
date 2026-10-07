@@ -1,4 +1,9 @@
 import { getProjectAuthedContext, isProjectAdmin } from '@/app/api/projects/_lib';
+import {
+  type DirectoryPerson,
+  loadDirectoryPeople,
+  normalizeDepartmentName,
+} from '@/lib/people/directory-people';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -38,8 +43,9 @@ interface StaffRow {
   user_id: string;
   full_name: string | null;
   department_name: string | null;
-  role: string;
+  role: string | null;
   status: string;
+  avatar_url: string | null;
 }
 
 interface ProjectRow {
@@ -116,7 +122,7 @@ export async function GET(request: NextRequest) {
   ] = await Promise.all([
     supabaseAdmin
       .from('employee_directory')
-      .select('user_id, full_name, department_name, role, status')
+      .select('user_id, full_name, department_name, role, status, avatar_url')
       .in('role', ['employee', 'associate'])
       // Probation is an employment_type; active probationary staff are included here.
       .in('status', ['active', 'on_leave'])
@@ -270,9 +276,10 @@ export async function GET(request: NextRequest) {
 
     return {
       userId: staffMember.user_id,
-      name: staffMember.full_name ?? 'Unnamed staff member',
-      department: staffMember.department_name ?? 'Unassigned',
+      name: staffMember.full_name?.trim() || 'Unnamed staff member',
+      department: normalizeDepartmentName(staffMember.department_name),
       role: staffMember.role,
+      avatarUrl: staffMember.avatar_url?.trim() || null,
       activeProjectCount: activeProjects.length,
       averageProjectProgress: activeProjects.length
         ? Math.round(
@@ -303,8 +310,22 @@ export async function GET(request: NextRequest) {
     };
   };
 
-  const staffNameById = new Map(staff.map((member) => [member.user_id, member.full_name]));
+  // Staff only covers employees and associates; projects led by admins resolve their lead from the
+  // directory so the roadmap never shows "Unassigned" for a project that has a lead.
+  const staffById = new Map(staff.map((member) => [member.user_id, member]));
+  const visibleProjects =
+    scope === 'mine'
+      ? projects.filter((project) => projectMembers.get(project.id)?.has(user.id))
+      : projects;
+  const directoryPeople: Map<string, DirectoryPerson> = await loadDirectoryPeople(supabaseAdmin, [
+    ...visibleProjects
+      .map((project) => project.lead_user_id)
+      .filter((leadUserId) => !staffById.has(leadUserId)),
+    ...(scope === 'mine' && !staffById.has(user.id) ? [user.id] : []),
+  ]);
   const buildProjectSummary = (project: ProjectRow) => {
+    const leadStaff = staffById.get(project.lead_user_id);
+    const leadPerson = directoryPeople.get(project.lead_user_id);
     const projectTasks = tasks.filter(
       (task) => task.project_id === project.id && task.status !== 'cancelled'
     );
@@ -317,7 +338,8 @@ export async function GET(request: NextRequest) {
       progressPct: Number(project.progress_pct ?? 0),
       dueDate: project.target_end_date,
       leadUserId: project.lead_user_id,
-      leadName: staffNameById.get(project.lead_user_id) ?? null,
+      leadName: leadStaff?.full_name?.trim() || leadPerson?.name || null,
+      leadAvatarUrl: leadStaff?.avatar_url?.trim() || leadPerson?.avatarUrl || null,
       totalTasks: projectTasks.length,
       completedTasks: projectTasks.filter((task) => task.status === 'completed').length,
       blockedTasks: projectTasks.filter((task) => task.status === 'blocked').length,
@@ -331,12 +353,14 @@ export async function GET(request: NextRequest) {
   };
 
   if (scope === 'mine') {
-    const matchingStaff = staff.find((entry) => entry.user_id === user.id) ?? {
+    const ownDirectoryRow = directoryPeople.get(user.id);
+    const matchingStaff: StaffRow = staffById.get(user.id) ?? {
       user_id: user.id,
-      full_name: null,
-      department_name: null,
-      role: role ?? 'employee',
+      full_name: ownDirectoryRow?.name ?? null,
+      department_name: ownDirectoryRow?.department ?? null,
+      role: ownDirectoryRow?.role ?? role ?? null,
       status: 'active',
+      avatar_url: ownDirectoryRow?.avatarUrl ?? null,
     };
     return NextResponse.json({
       scope,
@@ -344,9 +368,7 @@ export async function GET(request: NextRequest) {
       canAssignTasks: role === 'super_admin' || role === 'admin',
       usageAvailable,
       person: buildSummary(matchingStaff),
-      projects: projects
-        .filter((project) => projectMembers.get(project.id)?.has(user.id))
-        .map(buildProjectSummary),
+      projects: visibleProjects.map(buildProjectSummary),
     });
   }
 
@@ -365,7 +387,7 @@ export async function GET(request: NextRequest) {
     canAssignTasks: role === 'super_admin' || role === 'admin',
     usageAvailable,
     people,
-    projects: projects.map(buildProjectSummary),
+    projects: visibleProjects.map(buildProjectSummary),
     unassignedTaskCount: tasks.filter((task) => !task.assigned_to).length,
   });
 }

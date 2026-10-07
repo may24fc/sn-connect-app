@@ -40,7 +40,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
     const { data, error: queryError } = await supabase
       .from('onboarding_profiles')
-      .select('*, users!inner(id, role, status), departments(id, name)')
+      .select('*, users!inner(id, role, status, avatar_url), departments(id, name)')
       .eq('id', id)
       .is('deleted_at', null)
       .maybeSingle();
@@ -54,6 +54,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     }
 
     const fullName = [data.first_name, data.middle_name, data.last_name].filter(Boolean).join(' ');
+    const userInfo = Array.isArray(data.users) ? data.users[0] : data.users;
 
     let resolvedPaymentBankName =
       typeof data.payment_bank_name === 'string' ? data.payment_bank_name.trim() : '';
@@ -74,6 +75,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
         ...data,
         payment_bank_name: resolvedPaymentBankName || data.payment_bank_name,
         full_name: fullName,
+        avatar_url: userInfo?.avatar_url ?? null,
         status: data.is_completed ? 'completed' : 'in_progress',
         review_state: deriveReviewState(data),
         payment_account_masked: maskPaymentAccount(data.payment_account_number),

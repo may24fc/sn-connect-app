@@ -83,12 +83,12 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({
       data: {
         ...ticket,
-        submitted_by_name: getDisplayName(profilesByUserId.get(ticket.submitted_by), 'Ticket Submitter'),
+        submitted_by_name: getDisplayName(profilesByUserId.get(ticket.submitted_by)),
         assigned_to_name: ticket.assigned_to
-          ? getDisplayName(profilesByUserId.get(ticket.assigned_to), 'Assigned Handler')
+          ? getDisplayName(profilesByUserId.get(ticket.assigned_to))
           : null,
         assigned_by_name: ticket.assigned_by
-          ? getDisplayName(profilesByUserId.get(ticket.assigned_by), 'Dispatcher')
+          ? getDisplayName(profilesByUserId.get(ticket.assigned_by))
           : null,
       },
     });
@@ -266,12 +266,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({
       data: {
         ...ticket,
-        submitted_by_name: getDisplayName(profilesByUserId.get(ticket.submitted_by), 'Ticket Submitter'),
+        submitted_by_name: getDisplayName(profilesByUserId.get(ticket.submitted_by)),
         assigned_to_name: ticket.assigned_to
-          ? getDisplayName(profilesByUserId.get(ticket.assigned_to), 'Assigned Handler')
+          ? getDisplayName(profilesByUserId.get(ticket.assigned_to))
           : null,
         assigned_by_name: ticket.assigned_by
-          ? getDisplayName(profilesByUserId.get(ticket.assigned_by), 'Dispatcher')
+          ? getDisplayName(profilesByUserId.get(ticket.assigned_by))
           : null,
       },
     });

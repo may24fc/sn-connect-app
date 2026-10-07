@@ -39,8 +39,9 @@ export type WorkItem =
 export interface PersonWorkSummary {
   userId: string;
   name: string;
-  department: string;
-  role: string;
+  department: string | null;
+  role: string | null;
+  avatarUrl: string | null;
   activeProjectCount: number;
   averageProjectProgress: number;
   openTaskCount: number;
@@ -64,6 +65,7 @@ export interface ProjectWorkSummary {
   dueDate: string | null;
   leadUserId: string;
   leadName: string | null;
+  leadAvatarUrl: string | null;
   totalTasks: number;
   completedTasks: number;
   blockedTasks: number;

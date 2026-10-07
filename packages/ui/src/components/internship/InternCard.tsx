@@ -17,6 +17,7 @@ import type * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../../primitives/avatar';
 import { Button } from '../../primitives/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../primitives/card';
+import { getPersonMetaParts } from '../people/UserAvatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,7 +73,9 @@ export function InternCard({
             </Avatar>
             <div>
               <CardTitle className="text-base">{associate.name}</CardTitle>
-              <p className="text-sm text-muted-foreground">{associate.program}</p>
+              {associate.program ? (
+                <p className="text-sm text-muted-foreground">{associate.program}</p>
+              ) : null}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -127,15 +130,15 @@ export function InternCard({
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="flex items-center gap-2 text-muted-foreground">
             <GraduationCap className="h-4 w-4" />
-            <span className="truncate">{associate.school}</span>
+            <span className="truncate">{associate.school ?? 'School not provided'}</span>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
             <Building2 className="h-4 w-4" />
-            <span className="truncate">{associate.department}</span>
+            <span className="truncate">{associate.department ?? 'No department'}</span>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
             <User className="h-4 w-4" />
-            <span className="truncate">{associate.supervisor}</span>
+            <span className="truncate">{associate.supervisor ?? 'No supervisor'}</span>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
             <Calendar className="h-4 w-4" />
@@ -277,7 +280,7 @@ export function InternRow({ associate, hoursMode = 'weekly', onView, onDelete, c
         <div>
           <p className="font-medium">{associate.name}</p>
           <p className="text-sm text-muted-foreground">
-            {associate.school} - {associate.program}
+            {getPersonMetaParts([associate.school, associate.program]).join(' - ')}
           </p>
         </div>
       </div>
@@ -299,7 +302,7 @@ export function InternRow({ associate, hoursMode = 'weekly', onView, onDelete, c
           />
         </div>
         <div className="text-right hidden sm:block">
-          <p className="text-sm text-muted-foreground">{associate.supervisor}</p>
+          <p className="text-sm text-muted-foreground">{associate.supervisor ?? 'No supervisor'}</p>
           <p className="text-xs text-muted-foreground">{daysRemaining} days left</p>
         </div>
         <InternshipStatusBadge status={associate.status} />

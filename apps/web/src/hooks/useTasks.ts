@@ -2,6 +2,16 @@ import { STALE_TIMES } from '@/lib/query-client';
 import { type TaskFilters, queryKeys } from '@/lib/query-keys';
 import { useQuery } from '@tanstack/react-query';
 
+/** Assignee/assigner identity returned by the task routes (`attachTaskPeople`). */
+export interface TaskPersonRecord {
+  id: string;
+  name: string | null;
+  role: string | null;
+  department: string | null;
+  position: string | null;
+  avatar_url: string | null;
+}
+
 export interface TaskRecord {
   id: string;
   title: string;
@@ -32,6 +42,8 @@ export interface TaskRecord {
   milestone_name?: string | null;
   assignee_name?: string | null;
   assigner_name?: string | null;
+  assignee?: TaskPersonRecord | null;
+  assigner?: TaskPersonRecord | null;
 }
 
 interface TaskListResponse {

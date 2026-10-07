@@ -2,7 +2,7 @@
 
 > Audience: Developers and coding agents  
 > Status: Adopted  
-> Last updated: 2026-09-24
+> Last updated: 2026-10-07
 
 ## Decision
 
@@ -39,6 +39,7 @@ Keep the UI server-confirmed for mutations with non-deterministic, irreversible,
 - File upload, import, OCR/parsing, bulk processing, and background jobs.
 - Sending reminders or email, publishing externally visible content, and server-generated links.
 - Concurrency-sensitive claims or actions whose authorization can change before the request completes.
+- Onboarding document removal: it deletes the stored file, can be refused once the submission is under review, and required documents gate the onboarding checklist.
 
 These flows should provide explicit pending progress and clear success/failure feedback instead.
 
@@ -59,9 +60,10 @@ The initial rollout added optimistic updates with rollback and reconciliation to
 | Reports | Archive/restore and approve/reject list transitions |
 | Performance | OKR, KPI, and target edits/deletes; KPI and target evidence deletion |
 | Revenue forecast | Entry upsert/update/delete and goal create/delete |
-| Expenses | Verification fields, matching, leadership decision, and deletion |
+| Expenses | Verification fields and deletion. Matching and leadership decisions are server-confirmed because variance computation and approver authorization can change on the server. |
+| Finance redesign | Ordinary expense approval, variance sign-off, category budgets, subscriptions, Wise batch creation/export/result import, payment confirmation, billing CSV import, report draft/finalization, property/rent/maintenance creation, payment voiding, and maintenance status correction are server-confirmed. Approval and match state depend on database checks; imports and Wise verification have external or partial outcomes. Property corrections require atomic, auditable database confirmation before the live register is refreshed. |
 | Directory | Employee edit, deactivate, and restore |
-| UHP workspace | Client and VP creates; client status/type/activity/note changes; client delete (after confirmation); VP target/edit/delete changes; access grant revocation. Screenshot contact extraction and screenshot uploads stay server-confirmed |
+| UHP workspace | Client and VP creates; client status/type/activity/note changes; client delete (after confirmation); screenshot delete (after confirmation); VP target/edit/delete changes; access grant revocation. Screenshot contact extraction and screenshot uploads stay server-confirmed |
 | Christmas Tree | Ornament placement/move/delete and wish add/edit/delete |
 | Onboarding checklist | Task create/edit/delete, clear, and default-template edits |
 | Offboarding checklist | Task create/edit/delete, clear, default-template edits, and template application |

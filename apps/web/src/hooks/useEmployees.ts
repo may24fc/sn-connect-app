@@ -2,8 +2,14 @@ import { type EmployeeFilters, queryKeys } from '@/lib/query-keys';
 import type { Employee, EmployeeInsert } from '@hr-portal/database';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+/** An employee row from GET /api/employees or /api/employees/[id], with its resolved department and account role. */
+export type EmployeeWithIdentity = Employee & {
+  department_name: string | null;
+  account_role: string | null;
+};
+
 interface EmployeeListResponse {
-  data: Array<Employee>;
+  data: Array<EmployeeWithIdentity>;
   pagination: {
     page: number;
     pageSize: number;
@@ -54,7 +60,7 @@ export function useEmployees(
 export function useEmployee(id: string | null | undefined) {
   return useQuery({
     queryKey: queryKeys.employees.detail(id || ''),
-    queryFn: async (): Promise<{ data: Employee }> => {
+    queryFn: async (): Promise<{ data: EmployeeWithIdentity }> => {
       if (!id) throw new Error('Employee ID is required');
 
       const response = await fetch(`/api/employees/${id}`);

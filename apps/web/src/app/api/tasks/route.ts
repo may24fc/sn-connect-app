@@ -4,6 +4,7 @@ import { taskCreateSchema } from '@/lib/schemas/task.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
   TASK_ASSIGNER_ROLE,
+  attachTaskPeople,
   getTaskAuthedContext,
   getTaskWriteErrorMessage,
   validateTaskAssignee,
@@ -36,12 +37,6 @@ interface TaskRow {
   project_id: string | null;
   milestone_id: string | null;
   blocked_reason: string | null;
-}
-
-interface EmployeeNameRow {
-  user_id: string;
-  first_name: string;
-  last_name: string;
 }
 
 /**
@@ -134,32 +129,8 @@ export async function GET(request: NextRequest) {
 
     const taskRows = (tasks || []) as Array<TaskRow>;
 
-    const userIds = Array.from(
-      new Set(
-        taskRows
-          .flatMap((task) => [task.assigned_to, task.assigned_by])
-          .filter((value): value is string => Boolean(value))
-      )
-    );
-
-    const namesByUserId = new Map<string, { first_name: string; last_name: string }>();
     const projectNames = new Map<string, string>();
     const milestoneNames = new Map<string, string>();
-
-    if (userIds.length > 0) {
-      const { data: employees } = await supabaseAdmin
-        .from('employees')
-        .select('user_id, first_name, last_name')
-        .in('user_id', userIds)
-        .is('deleted_at', null);
-
-      for (const employee of (employees || []) as Array<EmployeeNameRow>) {
-        namesByUserId.set(employee.user_id, {
-          first_name: employee.first_name,
-          last_name: employee.last_name,
-        });
-      }
-    }
 
     const projectIds = Array.from(
       new Set(taskRows.map((task) => task.project_id).filter((value): value is string => !!value))
@@ -182,18 +153,11 @@ export async function GET(request: NextRequest) {
       for (const milestone of milestones ?? []) milestoneNames.set(milestone.id, milestone.title);
     }
 
-    const data = taskRows.map((task) => {
-      const assigneeName = task.assigned_to ? namesByUserId.get(task.assigned_to) : undefined;
-      const assignerName = namesByUserId.get(task.assigned_by);
-
-      return {
-        ...task,
-        assignee_name: assigneeName ? `${assigneeName.first_name} ${assigneeName.last_name}` : null,
-        assigner_name: assignerName ? `${assignerName.first_name} ${assignerName.last_name}` : null,
-        project_name: task.project_id ? (projectNames.get(task.project_id) ?? null) : null,
-        milestone_name: task.milestone_id ? (milestoneNames.get(task.milestone_id) ?? null) : null,
-      };
-    });
+    const data = (await attachTaskPeople(supabaseAdmin, taskRows)).map((task) => ({
+      ...task,
+      project_name: task.project_id ? (projectNames.get(task.project_id) ?? null) : null,
+      milestone_name: task.milestone_id ? (milestoneNames.get(task.milestone_id) ?? null) : null,
+    }));
 
     return NextResponse.json({
       data,

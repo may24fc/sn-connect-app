@@ -33,6 +33,8 @@ import {
   SelectValue,
   Skeleton,
   cn,
+  formatPersonRole,
+  getPersonMetaParts,
 } from '@hr-portal/ui';
 import { Grid2x2, HeartHandshake, Target, Trophy, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -779,7 +781,10 @@ function CurrentPartnerPanel({
   combinedScore: number;
 }) {
   const partnerMeta = partner
-    ? `${partner.role.replace('_', ' ')}${partner.email ? ` • ${partner.email}` : ''}`
+    ? getPersonMetaParts([
+        formatPersonRole(partner.role),
+        partner.email !== partner.name ? partner.email : null,
+      ]).join(' • ')
     : 'Choose a teammate to unlock combined totals.';
 
   return (

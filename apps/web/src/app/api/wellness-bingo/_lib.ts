@@ -6,6 +6,7 @@ import {
   computeBingoScore,
   normalizeBingoTileState,
 } from '@/lib/bingo';
+import { loadDirectoryPeople } from '@/lib/people/directory-people';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 
 export interface BingoCycleSummary {
@@ -95,14 +96,6 @@ interface UserRoleRow {
   id: string;
   role: string;
   status: string | null;
-}
-
-interface EmployeeProfileRow {
-  user_id: string;
-  first_name: string;
-  last_name: string;
-  company_email: string | null;
-  personal_email: string | null;
 }
 
 interface PartnershipRow {
@@ -408,9 +401,11 @@ export async function buildWellnessBingoSnapshot(
     const partnerWeeklyScore = computeBingoScore(normalizeBingoTileState(partnerBoard.tile_state));
     partnerScore = buildCycleToDateScore(partnerBoard, partnerWeeklyScore);
 
-    const profiles = await getPartnerProfiles(adminClient, [
-      { id: partnerUserId, role: 'employee', status: null },
-    ]);
+    const [partnerRoleRow] = await fetchUserRoleRows(adminClient, [partnerUserId]);
+    const profiles = await getPartnerProfiles(
+      adminClient,
+      partnerRoleRow ? [partnerRoleRow] : []
+    );
     partner = profiles[0] ?? null;
   }
 
@@ -662,11 +657,7 @@ async function fetchAdminPartnershipSummaries(
     }
   }
 
-  const userRoleRows: Array<UserRoleRow> = uniqueUserIds.map((id) => ({
-    id,
-    role: 'employee',
-    status: null,
-  }));
+  const userRoleRows = await fetchUserRoleRows(adminClient, uniqueUserIds);
   const profiles = await getPartnerProfiles(adminClient, userRoleRows);
   const nameById = new Map(profiles.map((p) => [p.id, p.name]));
 
@@ -683,10 +674,10 @@ async function fetchAdminPartnershipSummaries(
     return {
       partnershipId: p.id,
       partnerAUserId: p.user_a_id,
-      partnerAName: nameById.get(p.user_a_id) ?? 'Unknown',
+      partnerAName: nameById.get(p.user_a_id) ?? 'Unknown user',
       partnerAPoints: aPoints,
       partnerBUserId: p.user_b_id,
-      partnerBName: nameById.get(p.user_b_id) ?? 'Unknown',
+      partnerBName: nameById.get(p.user_b_id) ?? 'Unknown user',
       partnerBPoints: bPoints,
       combinedPoints: aPoints + bPoints,
     } satisfies BingoAdminPartnershipSummary;
@@ -738,17 +729,7 @@ async function fetchAdminWeeklyRecordings(
     return [] satisfies Array<BingoAdminWeeklyRecordingSummary>;
   }
 
-  const { data: usersData, error: usersError } = await adminClient
-    .from('users')
-    .select('id, role, status')
-    .in('id', uniqueUserIds)
-    .is('deleted_at', null);
-
-  if (usersError) {
-    throw new Error('Failed to fetch user rows for weekly recordings');
-  }
-
-  const profileRows = (usersData ?? []) as Array<UserRoleRow>;
+  const profileRows = await fetchUserRoleRows(adminClient, uniqueUserIds);
   const profiles = await getPartnerProfiles(adminClient, profileRows);
   const profileNameById = new Map(profiles.map((entry) => [entry.id, entry.name]));
 
@@ -842,6 +823,28 @@ function clampDate(value: Date, min: Date, max: Date) {
   return minDate(maxDate(value, min), max);
 }
 
+/** Real account roles for the given users; deleted accounts are omitted. */
+async function fetchUserRoleRows(
+  adminClient: ReturnType<typeof createSupabaseAdminClient>,
+  userIds: Array<string>
+): Promise<Array<UserRoleRow>> {
+  if (userIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await adminClient
+    .from('users')
+    .select('id, role, status')
+    .in('id', userIds)
+    .is('deleted_at', null);
+
+  if (error) {
+    throw new Error('Failed to fetch partner accounts');
+  }
+
+  return (data ?? []) as Array<UserRoleRow>;
+}
+
 async function getPartnerProfiles(
   adminClient: ReturnType<typeof createSupabaseAdminClient>,
   users: Array<UserRoleRow>,
@@ -851,44 +854,24 @@ async function getPartnerProfiles(
     return [] satisfies Array<BingoPartnerOption>;
   }
 
-  const userIds = users.map((entry) => entry.id);
-  const { data: employeeProfiles, error } = await adminClient
-    .from('employees')
-    .select('user_id, first_name, last_name, company_email, personal_email')
-    .in('user_id', userIds)
-    .is('deleted_at', null);
-
-  if (error) {
-    throw new Error('Failed to fetch partner profiles');
-  }
-
-  const profileByUserId = new Map<string, EmployeeProfileRow>();
-  for (const entry of (employeeProfiles ?? []) as Array<EmployeeProfileRow>) {
-    profileByUserId.set(entry.user_id, entry);
-  }
+  const people = await loadDirectoryPeople(
+    adminClient,
+    users.map((entry) => entry.id)
+  );
 
   return users
     .map((entry) => {
-      const profile = profileByUserId.get(entry.id);
+      const person = people.get(entry.id);
 
       return {
         id: entry.id,
         role: entry.role,
-        name: profile
-          ? `${profile.first_name} ${profile.last_name}`.trim()
-          : formatRoleLabel(entry.role),
-        email: profile?.company_email || profile?.personal_email || null,
+        // Accounts without an employee record have no name; show their email rather than a role label.
+        name: person?.name ?? person?.email ?? 'Unnamed account',
+        email: person?.email ?? null,
         hasPartner: partneredUserIds?.has(entry.id) ?? false,
         isSelectable: true,
       } satisfies BingoPartnerOption;
     })
     .sort((left, right) => left.name.localeCompare(right.name));
-}
-
-function formatRoleLabel(role: string) {
-  return role
-    .split(/[_\s-]+/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-    .join(' ');
 }

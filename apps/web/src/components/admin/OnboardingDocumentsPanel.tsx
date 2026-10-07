@@ -1,5 +1,7 @@
 'use client';
 
+import { AttachmentDeleteButton } from '@/components/attachments/AttachmentDeleteButton';
+import { useDeleteOnboardingDocument } from '@/hooks/useDeleteOnboardingDocument';
 import {
   type OnboardingDocumentRecord,
   useOnboardingDocumentPreview,
@@ -61,6 +63,7 @@ export function OnboardingDocumentsPanel({ profileId }: OnboardingDocumentsPanel
   const { addToast } = useToast();
   const { data, isLoading, error } = useOnboardingDocuments(profileId);
   const preview = useOnboardingDocumentPreview();
+  const deleteDocument = useDeleteOnboardingDocument();
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
 
   const documents = data?.data ?? [];
@@ -181,6 +184,33 @@ export function OnboardingDocumentsPanel({ profileId }: OnboardingDocumentsPanel
                       <Download className="mr-1.5 h-3.5 w-3.5" />
                       Download
                     </Button>
+                    <AttachmentDeleteButton
+                      itemKind="document"
+                      itemName={doc.file_name}
+                      disabled={isBusy}
+                      description={
+                        <>
+                          &ldquo;{doc.file_name}&rdquo; (
+                          {DOCUMENT_TYPE_LABELS[doc.document_type] ?? doc.document_type}) will be
+                          permanently deleted. The employee will need to upload it again. This
+                          can&apos;t be undone.
+                        </>
+                      }
+                      onConfirm={() =>
+                        deleteDocument.mutateAsync(doc.id).then(
+                          () => addToast({ title: 'Document deleted', variant: 'success' }),
+                          (deleteError: unknown) =>
+                            addToast({
+                              title: 'Could not delete document',
+                              description:
+                                deleteError instanceof Error
+                                  ? deleteError.message
+                                  : 'Please try again.',
+                              variant: 'error',
+                            })
+                        )
+                      }
+                    />
                   </div>
                 </div>
               );

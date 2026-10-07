@@ -1,8 +1,10 @@
 import { createKPIEvidenceSchema } from '@/lib/schemas/performance.schema';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getAuthedPerformanceContext, resolveEmployeeIdForUser } from '../../../_lib';
 
 const KPI_EVIDENCE_BUCKET = 'kpi-evidence';
+const deleteEvidenceSchema = z.object({ kpiId: z.string().uuid(), evidenceId: z.string().uuid() });
 
 /**
  * GET /api/performance/kpis/[id]/evidence
@@ -167,23 +169,28 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await params; // consume params
+    const { id: kpiId } = await params;
     const { supabaseAdmin, user, error } = await getAuthedPerformanceContext();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const evidenceId = request.nextUrl.searchParams.get('evidenceId');
-    if (!evidenceId) {
-      return NextResponse.json({ error: 'evidenceId is required' }, { status: 400 });
+    const ids = deleteEvidenceSchema.safeParse({
+      kpiId,
+      evidenceId: request.nextUrl.searchParams.get('evidenceId'),
+    });
+    if (!ids.success) {
+      return NextResponse.json({ error: 'A valid evidenceId is required' }, { status: 400 });
     }
+    const { evidenceId } = ids.data;
 
-    // Verify evidence exists and user is the submitter
+    // Verify evidence exists on this KPI and user is the submitter
     const { data: evidence, error: fetchError } = await supabaseAdmin
       .from('kpi_evidence')
-      .select('id, submitted_by')
+      .select('id, submitted_by, evidence_type, content')
       .eq('id', evidenceId)
+      .eq('kpi_id', ids.data.kpiId)
       .is('deleted_at', null)
       .maybeSingle();
 
@@ -205,6 +212,15 @@ export async function DELETE(
 
     if (deleteError) {
       return NextResponse.json({ error: 'Failed to delete evidence' }, { status: 500 });
+    }
+
+    // Matches OKR evidence: the uploaded file goes with the record. The row is already
+    // hidden, so a failed removal only leaves an unreachable file in the private bucket.
+    if (evidence.evidence_type === 'file' && evidence.content) {
+      const { error: removeError } = await supabaseAdmin.storage
+        .from(KPI_EVIDENCE_BUCKET)
+        .remove([evidence.content]);
+      if (removeError) console.error('Failed to remove KPI evidence file:', removeError.message);
     }
 
     return NextResponse.json({ success: true });

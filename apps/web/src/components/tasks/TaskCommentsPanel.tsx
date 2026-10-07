@@ -11,6 +11,7 @@ import {
   EmptyState,
   Label,
   Textarea,
+  UserAvatar,
   useToast,
 } from '@hr-portal/ui';
 import { AlertCircle, Loader2, MessageSquareText } from 'lucide-react';
@@ -106,9 +107,16 @@ export function TaskCommentsPanel({
                 className="rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900/50"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-medium text-foreground">
-                    {comment.commenter_name || 'Unknown user'}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <UserAvatar
+                      name={comment.commenter_name}
+                      avatarUrl={comment.commenter_avatar_url}
+                      size="xs"
+                    />
+                    <p className="text-sm font-medium text-foreground">
+                      {comment.commenter_name || 'Unknown user'}
+                    </p>
+                  </div>
                   <p className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</p>
                 </div>
                 <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">

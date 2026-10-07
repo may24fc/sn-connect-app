@@ -268,7 +268,7 @@ export async function listPaTaskAccessGrants() {
 
   const { data: users, error: usersError } = await admin
     .from('users')
-    .select('id, role')
+    .select('id, role, avatar_url')
     .in('id', allIds)
     .is('deleted_at', null);
 
@@ -328,6 +328,7 @@ export async function listPaTaskAccessGrants() {
       role: userRow?.role ?? null,
       position: employee?.position ?? null,
       department: employee?.department ?? null,
+      avatarUrl: userRow?.avatar_url ?? null,
     };
   });
 }

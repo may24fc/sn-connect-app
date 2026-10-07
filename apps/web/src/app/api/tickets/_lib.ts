@@ -1,3 +1,4 @@
+import { loadDirectoryPeople } from '@/lib/people/directory-people';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { getNormalizedMetadataRole, normalizeDbRoleClaim } from '@/lib/auth/role';
 
@@ -31,10 +32,11 @@ export interface TicketAuthedContext {
   isItHandler: boolean;
 }
 
+/** Name and contact for a ticket participant; names are null for accounts without an employee record. */
 interface EmployeeProfileRow {
   user_id: string;
-  first_name: string;
-  last_name: string;
+  first_name: string | null;
+  last_name: string | null;
   company_email: string | null;
   personal_email: string | null;
 }
@@ -223,24 +225,82 @@ export async function getEmployeeProfilesByUserId(
     throw new Error('Failed to fetch employee profiles');
   }
 
-  const profiles = (data || []) as Array<EmployeeProfileRow>;
-  return new Map(profiles.map((profile) => [profile.user_id, profile]));
+  const profiles = new Map(
+    ((data || []) as Array<EmployeeProfileRow>).map((profile) => [profile.user_id, profile])
+  );
+
+  // Accounts without an employee record (often admins) still have a login email in the directory.
+  const missingUserIds = userIds.filter((userId) => !profiles.has(userId));
+  if (missingUserIds.length > 0) {
+    const people = await loadDirectoryPeople(supabaseAdmin, missingUserIds);
+    for (const [userId, person] of people) {
+      profiles.set(userId, {
+        user_id: userId,
+        first_name: null,
+        last_name: null,
+        company_email: person.email,
+        personal_email: null,
+      });
+    }
+  }
+
+  return profiles;
 }
 
+/**
+ * Profile photo URLs for ticket participants the caller is already authorized to see.
+ * Users without a photo are absent from the map; display falls back to initials.
+ */
+export async function getUserAvatarsByUserId(
+  supabaseAdmin: ReturnType<typeof createSupabaseAdminClient>,
+  userIds: string[]
+): Promise<Map<string, string>> {
+  const avatars = new Map<string, string>();
+
+  if (userIds.length === 0) {
+    return avatars;
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('users')
+    .select('id, avatar_url')
+    .in('id', userIds);
+
+  if (error) {
+    throw new Error('Failed to fetch user avatars');
+  }
+
+  for (const row of (data || []) as Array<{ id: string; avatar_url: string | null }>) {
+    if (row.avatar_url) {
+      avatars.set(row.id, row.avatar_url);
+    }
+  }
+
+  return avatars;
+}
+
+/** Employee name, else the account's email; the fallback is only for users that no longer exist. */
 export function getDisplayName(
   profile:
     | {
-        first_name: string;
-        last_name: string;
+        first_name: string | null;
+        last_name: string | null;
+        company_email?: string | null;
+        personal_email?: string | null;
       }
     | undefined,
-  fallback = 'Unknown User'
+  fallback = 'Unknown user'
 ): string {
   if (!profile) {
     return fallback;
   }
 
-  return `${profile.first_name} ${profile.last_name}`.trim() || fallback;
+  const name = [profile.first_name, profile.last_name]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(' ');
+
+  return name || profile.company_email?.trim() || profile.personal_email?.trim() || fallback;
 }
 
 export function getTicketWriteErrorMessage(

@@ -66,7 +66,7 @@ export function TourModal({ isOpen, steps, onClose, tourName }: ModalTourProps) 
 
       {/* Modal */}
       <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2">
-        <div className="bg-white shadow-2xl rounded-lg overflow-hidden dark:bg-zinc-900">
+        <div className="flex max-h-[calc(100dvh-2rem)] flex-col bg-white shadow-2xl rounded-lg overflow-hidden dark:bg-zinc-900">
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800">
             <div className="flex-1">
@@ -88,7 +88,7 @@ export function TourModal({ isOpen, steps, onClose, tourName }: ModalTourProps) 
           </div>
 
           {/* Content */}
-          <div className="px-6 py-6 max-h-96 overflow-y-auto">
+          <div className="min-h-0 flex-1 px-6 py-6 max-h-96 overflow-y-auto">
             {/* Image or Video */}
             {step.videoUrl ? (
               <video

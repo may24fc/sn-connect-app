@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
+  PersonIdentity,
   Select,
   SelectContent,
   SelectItem,
@@ -39,6 +40,7 @@ type MarketingAccessGrant = {
   email?: string | null;
   position?: string | null;
   departmentName?: string | null;
+  avatarUrl?: string | null;
 };
 
 interface MarketingAdSpendAccessManagerDialogProps {
@@ -269,22 +271,12 @@ export function MarketingAdSpendAccessManagerDialog({
                       key={grant.id}
                       className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card/70 px-4 py-3"
                     >
-                      <div className="min-w-0 space-y-1">
-                        <div className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                          {fullName}
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-                          <span>{grant.email ?? 'No email'}</span>
-                          <span>•</span>
-                          <span>{formatRole(grant.role)}</span>
-                          {grant.position ? (
-                            <>
-                              <span>•</span>
-                              <span>{grant.position}</span>
-                            </>
-                          ) : null}
-                        </div>
-                      </div>
+                      <PersonIdentity
+                        name={fullName}
+                        avatarUrl={grant.avatarUrl}
+                        meta={[grant.email ?? 'No email', formatRole(grant.role), grant.position]}
+                        nameClassName="text-zinc-900 dark:text-zinc-50"
+                      />
 
                       <Button
                         type="button"
@@ -351,22 +343,12 @@ export function MarketingAdSpendAccessManagerDialog({
                       key={entry.user_id}
                       className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card/70 px-4 py-3"
                     >
-                      <div className="min-w-0 space-y-1">
-                        <div className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                          {fullName}
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-                          <span>{entry.email ?? 'No email'}</span>
-                          <span>•</span>
-                          <span>{formatRole(entry.role)}</span>
-                          {entry.department_name ? (
-                            <>
-                              <span>•</span>
-                              <span>{entry.department_name}</span>
-                            </>
-                          ) : null}
-                        </div>
-                      </div>
+                      <PersonIdentity
+                        name={fullName}
+                        avatarUrl={entry.avatar_url}
+                        meta={[entry.email ?? 'No email', formatRole(entry.role), entry.department_name]}
+                        nameClassName="text-zinc-900 dark:text-zinc-50"
+                      />
 
                       <Button
                         type="button"

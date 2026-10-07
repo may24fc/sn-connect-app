@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { logActivity } from '@/lib/audit';
+import { validatePersonAssignment } from '@/lib/people/assignment-validation';
+import { loadDirectoryPeople } from '@/lib/people/directory-people';
 import { projectCreateSchema } from '@/lib/schemas/project.schema';
 import { getProjectAuthedContext, isProjectAdmin } from './_lib';
 
@@ -129,6 +131,47 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Contributor and lead identities for the listed projects. The list is already limited to
+  // projects the caller may see, and the detail route exposes the same members, so the admin
+  // client resolves names without widening access.
+  const contributorIdsByProject = new Map<string, Array<string>>();
+  if (projectIds.length > 0) {
+    const { data: contributorRows, error: contributorsError } = await supabaseAdmin
+      .from('project_contributors')
+      .select('project_id, user_id')
+      .in('project_id', projectIds);
+
+    if (contributorsError) {
+      console.error('GET /api/projects contributor lookup failed:', contributorsError);
+    }
+
+    for (const row of (contributorRows ?? []) as Array<{ project_id: string; user_id: string }>) {
+      const ids = contributorIdsByProject.get(row.project_id) ?? [];
+      ids.push(row.user_id);
+      contributorIdsByProject.set(row.project_id, ids);
+    }
+  }
+
+  const people = await loadDirectoryPeople(supabaseAdmin, [
+    ...projects.map((project: { lead_user_id: string | null }) => project.lead_user_id),
+    ...Array.from(contributorIdsByProject.values()).flat(),
+  ]);
+
+  function getContributorPeople(project: {
+    id: string;
+    lead_user_id: string | null;
+  }): Array<{ user_id: string; name: string | null; avatar_url: string | null }> {
+    const ids = contributorIdsByProject.get(project.id) ?? [];
+    // Lead first so the card stack always shows who owns the project.
+    const ordered = project.lead_user_id
+      ? [project.lead_user_id, ...ids.filter((userId) => userId !== project.lead_user_id)]
+      : ids;
+    return ordered.map((userId) => {
+      const person = people.get(userId);
+      return { user_id: userId, name: person?.name ?? null, avatar_url: person?.avatarUrl ?? null };
+    });
+  }
+
   function getPrimaryDepartment(projectId: string): string | null {
     const counts = departmentCountsByProject.get(projectId);
     if (!counts || counts.size === 0) return null;
@@ -149,6 +192,9 @@ export async function GET(request: NextRequest) {
       earned_points: earnedPointsByProject.get(project.id) ?? 0,
       max_points_available: maxPointsByProject.get(project.id) ?? 0,
       primary_department: getPrimaryDepartment(project.id),
+      lead_name: people.get(project.lead_user_id)?.name ?? null,
+      lead_avatar_url: people.get(project.lead_user_id)?.avatarUrl ?? null,
+      contributor_people: getContributorPeople(project),
     })),
     pagination: { page, pageSize, total: count ?? 0 },
   });
@@ -163,7 +209,7 @@ export async function POST(request: NextRequest) {
   const auth = await getProjectAuthedContext();
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  const { supabaseAdmin, supabase, user } = auth.context;
+  const { supabaseAdmin, supabase, user, role } = auth.context;
 
   let body: unknown;
   try {
@@ -181,6 +227,24 @@ export async function POST(request: NextRequest) {
   }
 
   const input = parsed.data;
+
+  if (input.supervisorId) {
+    // The supervisor gains manage rights over the project, so only admins may assign one.
+    if (!isProjectAdmin(role)) {
+      return NextResponse.json(
+        { error: 'Only admins can assign a project supervisor' },
+        { status: 403 }
+      );
+    }
+
+    const supervisorCheck = await validatePersonAssignment(supabaseAdmin, input.supervisorId, {
+      label: 'Supervisor',
+    });
+    if (!supervisorCheck.ok) {
+      return NextResponse.json({ error: supervisorCheck.error }, { status: supervisorCheck.status });
+    }
+  }
+
   const progressPct = input.progressPct ?? (input.isCompletedAlready ? 100 : 0);
 
   const { data: created, error } = await supabaseAdmin

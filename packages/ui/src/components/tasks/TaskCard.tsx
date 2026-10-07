@@ -2,7 +2,6 @@
 
 import { AlertCircle, Calendar, ChevronRight, User, Users } from 'lucide-react';
 import type * as React from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '../../primitives/avatar';
 import { Badge } from '../../primitives/badge';
 import { Button } from '../../primitives/button';
 import { Card, CardContent, CardHeader } from '../../primitives/card';
@@ -16,6 +15,7 @@ import {
 import type { Task, TaskId, TaskStatus } from '../../types/task.types';
 import { formatDueDate, isTaskOverdue } from '../../types/task.types';
 import { cn } from '../../utils/cn';
+import { UserAvatar } from '../people/UserAvatar';
 import { TaskPriorityBadge } from './TaskPriorityBadge';
 import { TaskStatusBadge } from './TaskStatusBadge';
 
@@ -191,17 +191,13 @@ export function TaskCard({
               <span className="text-muted-foreground">Assigned to:</span>
               <div className="flex -space-x-2">
                 {task.assignees.slice(0, 3).map((assignee) => (
-                  <Avatar key={assignee.id} className="h-6 w-6 border-2 border-background">
-                    <AvatarImage src={assignee.avatarUrl} alt={assignee.name} />
-                    <AvatarFallback className="text-xs">
-                      {assignee.name
-                        .split(' ')
-                        .map((n) => n[0])
-                        .join('')
-                        .toUpperCase()
-                        .slice(0, 2)}
-                    </AvatarFallback>
-                  </Avatar>
+                  <UserAvatar
+                    key={assignee.id}
+                    name={assignee.name}
+                    avatarUrl={assignee.avatarUrl}
+                    size="xs"
+                    className="border-2 border-background"
+                  />
                 ))}
                 {task.assignees.length > 3 && (
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium border-2 border-background">

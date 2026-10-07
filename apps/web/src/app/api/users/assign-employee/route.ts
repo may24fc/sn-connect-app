@@ -1,3 +1,4 @@
+import { validatePersonAssignment } from '@/lib/people/assignment-validation';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -11,6 +12,8 @@ const assignEmployeeSchema = z.object({
   stage: z.number().min(1).max(3, 'Probation stage must be between 1 and 3').optional(),
   status: z.enum(['on-track', 'at-risk']).optional(),
   probationEndDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format').optional(),
+  /** Immediate head (manager) user id; null clears it, omitted leaves it unchanged. */
+  immediateHeadId: z.string().uuid('Invalid manager').nullable().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -59,8 +62,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { userId, departmentId, divisionId, assignProbation, stage, status, probationEndDate } =
-      parsed.data;
+    const {
+      userId,
+      departmentId,
+      divisionId,
+      assignProbation,
+      stage,
+      status,
+      probationEndDate,
+      immediateHeadId,
+    } = parsed.data;
+
+    if (immediateHeadId) {
+      const managerCheck = await validatePersonAssignment(supabaseAdmin, immediateHeadId, {
+        label: 'Manager',
+        subjectUserId: userId,
+      });
+      if (!managerCheck.ok) {
+        return NextResponse.json({ error: managerCheck.error }, { status: managerCheck.status });
+      }
+    }
 
     if (assignProbation && (!stage || !status || !probationEndDate)) {
       return NextResponse.json(
@@ -105,6 +126,7 @@ export async function POST(request: NextRequest) {
         division: resolvedDivision.name,
         probation_end_date: assignProbation ? probationEndDate : null,
         employment_type: assignProbation ? 'probationary' : 'regular',
+        ...(immediateHeadId !== undefined ? { immediate_head: immediateHeadId } : {}),
         updated_at: new Date().toISOString(),
       })
       .eq('id', employee.id);
@@ -150,6 +172,7 @@ export async function POST(request: NextRequest) {
         probation_status: assignProbation ? status : null,
         assign_probation: assignProbation,
         employment_type: assignProbation ? 'probationary' : 'regular',
+        ...(immediateHeadId !== undefined ? { immediate_head: immediateHeadId } : {}),
         assigned_by: user.id,
         assigned_at: new Date().toISOString(),
       },

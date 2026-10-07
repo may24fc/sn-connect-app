@@ -200,7 +200,7 @@ export async function listAtsAccessGrants() {
 
   const { data: userRows, error: usersError } = await admin
     .from('users')
-    .select('id, role')
+    .select('id, role, avatar_url')
     .in('id', userIds)
     .is('deleted_at', null);
 
@@ -251,6 +251,7 @@ export async function listAtsAccessGrants() {
       grantedByName: granterIdentity?.displayName ?? null,
       position: employee?.position ?? null,
       department: employee?.department ?? null,
+      avatarUrl: userRow?.avatar_url ?? null,
     };
   });
 }

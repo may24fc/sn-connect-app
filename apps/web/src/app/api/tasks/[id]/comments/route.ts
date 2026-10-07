@@ -2,6 +2,7 @@ import {
   createNotification,
   getUserDisplayName,
 } from '@/lib/notifications/create-notification';
+import { loadDirectoryPeople } from '@/lib/people/directory-people';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { canAccessTask, getTaskAuthedContext } from '../../_lib';
@@ -12,12 +13,6 @@ interface TaskCommentRow {
   user_id: string;
   content: string;
   created_at: string;
-}
-
-interface EmployeeNameRow {
-  user_id: string;
-  first_name: string;
-  last_name: string;
 }
 
 const taskCommentSchema = z.object({
@@ -43,7 +38,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: access.error }, { status: access.status });
     }
 
-    const { supabase } = auth.context;
+    const { supabase, supabaseAdmin } = auth.context;
 
     const { data: comments, error } = await supabase
       .from('task_comments')
@@ -59,26 +54,14 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     const commentRows = (comments || []) as Array<TaskCommentRow>;
     const commenterIds = Array.from(new Set(commentRows.map((comment) => comment.user_id)));
 
-    let namesByUserId = new Map<string, string>();
-    if (commenterIds.length > 0) {
-      const { data: employees } = await supabase
-        .from('employees')
-        .select('user_id, first_name, last_name')
-        .in('user_id', commenterIds)
-        .is('deleted_at', null);
-
-      namesByUserId = new Map(
-        ((employees || []) as Array<EmployeeNameRow>).map((employee) => [
-          employee.user_id,
-          `${employee.first_name} ${employee.last_name}`,
-        ])
-      );
-    }
+    // Access to the task was verified above; the directory view itself is not readable by every participant.
+    const people = await loadDirectoryPeople(supabaseAdmin, commenterIds);
 
     return NextResponse.json({
       data: commentRows.map((comment) => ({
         ...comment,
-        commenter_name: namesByUserId.get(comment.user_id) || null,
+        commenter_name: people.get(comment.user_id)?.name ?? null,
+        commenter_avatar_url: people.get(comment.user_id)?.avatarUrl ?? null,
       })),
     });
   } catch (error) {
@@ -106,7 +89,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: access.error }, { status: access.status });
     }
 
-    const { supabase, user } = auth.context;
+    const { supabase, supabaseAdmin, user } = auth.context;
     const task = access.task;
 
     const body = await request.json();
@@ -161,8 +144,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       });
     }
 
+    const commenter = (await loadDirectoryPeople(supabaseAdmin, [user.id])).get(user.id);
+
     return NextResponse.json(
-      { data: { ...data, commenter_name: commenterName } },
+      {
+        data: {
+          ...data,
+          commenter_name: commenterName,
+          commenter_avatar_url: commenter?.avatarUrl ?? null,
+        },
+      },
       { status: 201 }
     );
   } catch (error) {

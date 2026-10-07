@@ -23,6 +23,7 @@ export interface AtsAccessGrantRecord {
   role: string | null;
   department: string | null;
   position: string | null;
+  avatarUrl?: string | null;
 }
 
 interface AtsAccessGrantsResponse {

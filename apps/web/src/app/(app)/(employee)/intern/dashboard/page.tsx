@@ -39,6 +39,7 @@ import {
   SlidePanelHeader,
   SlidePanelTitle,
   getDaysRemaining,
+  getPersonMetaParts,
   useToast,
 } from '@hr-portal/ui';
 import {
@@ -337,16 +338,16 @@ export default function InternDashboardPage(): ReactNode {
                 {profile.name}
               </h2>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                {profile.program} - {profile.school}
+                {getPersonMetaParts([profile.program, profile.school]).join(' - ')}
               </p>
               <div className="flex items-center gap-4 mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                 <span className="flex items-center gap-1">
                   <Building2 className="h-3 w-3" strokeWidth={1.5} />
-                  {profile.department}
+                  {profile.department ?? 'No department assigned'}
                 </span>
                 <span className="flex items-center gap-1">
                   <User className="h-3 w-3" strokeWidth={1.5} />
-                  {profile.supervisor}
+                  {profile.supervisor ?? 'No supervisor assigned'}
                 </span>
               </div>
             </div>

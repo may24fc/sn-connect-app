@@ -4,6 +4,9 @@ import type { Employee } from '@hr-portal/database';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveDepartmentById, resolveDivisionById } from '@/app/api/users/_organization';
+import { validatePersonAssignment } from '@/lib/people/assignment-validation';
+import { UNASSIGNED_DEPARTMENT, normalizeDepartmentName } from '@/lib/people/directory-people';
+import { LINKED_DEPARTMENT_EMBED, withResolvedIdentity } from '../_identity';
 
 const employeePatchSchema = z.object({
   first_name: z.string().trim().min(1).max(120).nullable().optional(),
@@ -42,7 +45,9 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     // Explicitly specify foreign key relationships to avoid ambiguity
     const { data, error } = await supabase
       .from('employees')
-      .select('*, users!employees_user_id_fkey(*), manager:users!employees_immediate_head_fkey(*)')
+      .select(
+        `*, users!employees_user_id_fkey(*, ${LINKED_DEPARTMENT_EMBED}), manager:users!employees_immediate_head_fkey(*)`
+      )
       .eq('id', id)
       .is('deleted_at', null)
       .single();
@@ -65,7 +70,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       }
     }
 
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: withResolvedIdentity(data) });
   } catch (error) {
     console.error('Unexpected error in GET /api/employees/[id]:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -164,6 +169,21 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     if (typeof body.immediate_head !== 'undefined') {
+      if (body.immediate_head) {
+        const { data: subject } = await adminClient
+          .from('employees')
+          .select('user_id')
+          .eq('id', id)
+          .is('deleted_at', null)
+          .maybeSingle();
+        const managerCheck = await validatePersonAssignment(adminClient, body.immediate_head, {
+          label: 'Manager',
+          subjectUserId: subject?.user_id ?? null,
+        });
+        if (!managerCheck.ok) {
+          return NextResponse.json({ error: managerCheck.error }, { status: managerCheck.status });
+        }
+      }
       updates.immediate_head = body.immediate_head as Employee['immediate_head'];
     }
 
@@ -176,7 +196,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         updates.department = resolvedDepartment.name;
         resolvedDepartmentId = resolvedDepartment.id;
       } else {
-        updates.department = body.department ?? 'Unassigned';
+        updates.department = normalizeDepartmentName(body.department) ?? UNASSIGNED_DEPARTMENT;
         resolvedDepartmentId = null;
       }
     } else if (typeof body.department !== 'undefined') {

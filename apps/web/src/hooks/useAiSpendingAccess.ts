@@ -25,6 +25,7 @@ export interface AiSpendingAccessGrantRecord {
   role: string | null;
   department: string | null;
   position: string | null;
+  avatarUrl?: string | null;
 }
 
 interface AiSpendingAccessGrantsResponse {

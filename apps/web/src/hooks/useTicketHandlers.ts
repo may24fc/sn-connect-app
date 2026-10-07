@@ -9,6 +9,7 @@ export interface TicketHandlerRecord {
   created_at: string;
   updated_at: string;
   user_name: string;
+  user_avatar_url?: string | null;
   user_email: string | null;
   assigned_by_name: string | null;
 }

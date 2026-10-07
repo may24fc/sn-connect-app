@@ -126,7 +126,7 @@ export async function listCrmAccessGrants(
 
   const { data: userRows, error: usersError } = await admin
     .from('users')
-    .select('id, role')
+    .select('id, role, avatar_url')
     .in('id', [...new Set([...userIds, ...granterIds])])
     .is('deleted_at', null);
 
@@ -183,6 +183,7 @@ export async function listCrmAccessGrants(
       role: userRow?.role ?? null,
       department: employee?.department ?? null,
       position: employee?.position ?? null,
+      avatarUrl: userRow?.avatar_url ?? null,
     };
   });
 }

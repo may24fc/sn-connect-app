@@ -1,5 +1,6 @@
 'use client';
 
+import { AttachmentDeleteButton } from '@/components/attachments/AttachmentDeleteButton';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   useDeleteDocument,
@@ -17,7 +18,6 @@ import {
   CardContent,
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -37,7 +37,6 @@ import {
   List,
   Loader2,
   Presentation,
-  Trash2,
   Upload,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -153,8 +152,6 @@ export default function FilesPage() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
   const { addToast } = useToast();
 
   // Fetch the current user's employee record by user_id
@@ -247,21 +244,16 @@ export default function FilesPage() {
     return doc.uploaded_by === user.id;
   };
 
-  const handleDeleteClick = (doc: Document) => {
-    setDocumentToDelete(doc);
-    setDeleteConfirmOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!documentToDelete) return;
+  const handleDelete = async (doc: Document) => {
     try {
-      await deleteDoc.mutateAsync(documentToDelete.id);
+      await deleteDoc.mutateAsync(doc.id);
       addToast({ title: 'Document deleted', variant: 'success' });
-    } catch {
-      addToast({ title: 'Failed to delete document', variant: 'error' });
-    } finally {
-      setDeleteConfirmOpen(false);
-      setDocumentToDelete(null);
+    } catch (error) {
+      addToast({
+        title: 'Could not delete document',
+        description: error instanceof Error ? error.message : 'Please try again.',
+        variant: 'error',
+      });
     }
   };
 
@@ -493,17 +485,12 @@ export default function FilesPage() {
                       <Download className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-300" />
                     </button>
                     {canDelete(d) && (
-                      <button
-                        type="button"
-                        title="Delete"
-                        className="h-7 w-7 rounded-md bg-white/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shadow-sm hover:bg-red-50 dark:hover:bg-red-950/50"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteClick(d);
-                        }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5 text-red-500" />
-                      </button>
+                      <AttachmentDeleteButton
+                        itemKind="document"
+                        itemName={d.file_name}
+                        className="h-7 w-7 rounded-md border border-zinc-200 bg-white/90 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/90"
+                        onConfirm={() => handleDelete(d)}
+                      />
                     )}
                   </div>
 
@@ -624,15 +611,11 @@ export default function FilesPage() {
                         <Download className="h-4 w-4" />
                       </Button>
                       {canDelete(d) && (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50"
-                          onClick={() => handleDeleteClick(d)}
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <AttachmentDeleteButton
+                          itemKind="document"
+                          itemName={d.file_name}
+                          onConfirm={() => handleDelete(d)}
+                        />
                       )}
                     </div>
                   </button>
@@ -687,36 +670,6 @@ export default function FilesPage() {
         isLoading={previewLoading}
       />
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Document</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete &ldquo;{documentToDelete?.file_name}&rdquo;? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setDeleteConfirmOpen(false);
-                setDocumentToDelete(null);
-              }}
-              disabled={deleteDoc.isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleConfirmDelete}
-              disabled={deleteDoc.isPending}
-            >
-              {deleteDoc.isPending ? 'Deleting...' : 'Delete'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

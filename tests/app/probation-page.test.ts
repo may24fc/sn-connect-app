@@ -1,5 +1,5 @@
+import { getProbationTrackerViewState } from '@/lib/probation/tracker-view-state';
 import { describe, expect, it } from 'vitest';
-import { getProbationTrackerViewState } from '../../apps/web/src/app/(app)/(admin)/admin/probation/page';
 
 describe('probation page helpers', () => {
   it('returns loading when the probation query is still in flight', () => {

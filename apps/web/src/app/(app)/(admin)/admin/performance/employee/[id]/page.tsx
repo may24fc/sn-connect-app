@@ -53,6 +53,7 @@ import {
   TabsList,
   TabsTrigger,
   Textarea,
+  getPersonMetaParts,
   useToast,
 } from '@hr-portal/ui';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -1139,7 +1140,8 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
             <div className="flex-1">
               <h1 className="text-xl font-semibold text-foreground">{employee.fullName}</h1>
               <p className="text-sm text-muted-foreground">
-                {employee.position || 'No position'} · {employee.department || 'No department'}
+                {getPersonMetaParts([employee.position, employee.department]).join(' · ') ||
+                  'No position or department set'}
               </p>
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant="outline" className="text-xs capitalize">

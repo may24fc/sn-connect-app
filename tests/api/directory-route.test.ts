@@ -151,4 +151,38 @@ describe('/api/directory route', () => {
       },
     });
   });
+
+  it('restricts results to valid user_ids so pickers can resolve a saved person', async () => {
+    const managerId = '6f1c2b8e-4d3a-4f6b-9a1e-2c3d4e5f6a7b';
+    const pageQuery = createThenableQuery({
+      data: [{ user_id: managerId, full_name: 'Ana Reyes', email: 'ana@example.com' }],
+      error: null,
+      count: 1,
+    });
+    const aggregateQuery = createThenableQuery({ data: [], error: null });
+
+    let directoryCallCount = 0;
+    vi.mocked(createSupabaseServerClient).mockResolvedValue({
+      auth: {
+        getUser: vi.fn(async () => ({
+          data: { user: { id: 'viewer-admin', app_metadata: { db_role: 'admin' } } },
+          error: null,
+        })),
+      },
+      from: vi.fn(() => {
+        directoryCallCount += 1;
+        return directoryCallCount === 1 ? pageQuery : aggregateQuery;
+      }),
+    } as never);
+
+    const response = await GET(
+      new NextRequest(
+        `http://localhost/api/directory?page=1&page_size=1&user_ids=${managerId},not-a-uuid`
+      )
+    );
+
+    expect(response.status).toBe(200);
+    // Malformed ids are dropped before they reach the query.
+    expect(pageQuery.in).toHaveBeenCalledWith('user_id', [managerId]);
+  });
 });

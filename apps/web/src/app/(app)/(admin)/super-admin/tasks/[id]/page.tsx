@@ -29,54 +29,11 @@ import {
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { use, useEffect, useState } from 'react';
-
-interface ApiTaskPayload {
-  id: string;
-  title: string;
-  description: string | null;
-  assigned_to: string | null;
-  assigned_by: string;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'pending' | 'in_progress' | 'blocked' | 'completed' | 'cancelled';
-  due_date: string | null;
-  completed_at: string | null;
-  created_at: string;
-  updated_at: string;
-  assignee_name?: string | null;
-  assigner_name?: string | null;
-}
-
-function toApiTaskStatus(status: TaskStatus): ApiTaskPayload['status'] {
-  return status;
-}
-
-function toTaskDetailViewModel(apiTask: ApiTaskPayload): Task {
-  return {
-    id: apiTask.id as Task['id'],
-    title: apiTask.title,
-    description: apiTask.description || 'No description provided.',
-    priority: apiTask.priority,
-    status: apiTask.status,
-    dueDate: apiTask.due_date || apiTask.created_at,
-    createdBy: apiTask.assigned_by,
-    createdByName: apiTask.assigner_name || 'System',
-    createdAt: apiTask.created_at,
-    updatedAt: apiTask.updated_at,
-    assignees: apiTask.assigned_to
-      ? [
-          {
-            id: apiTask.assigned_to,
-            name: apiTask.assignee_name || 'Assigned User',
-            email: '',
-            role: 'employee',
-            department: '—',
-            assignedAt: apiTask.created_at,
-            ...(apiTask.completed_at ? { completedAt: apiTask.completed_at } : {}),
-          },
-        ]
-      : [],
-  };
-}
+import {
+  type ApiTaskPayload,
+  toApiTaskStatus,
+  toTaskDetailViewModel,
+} from '@/lib/tasks/task-detail-view-model';
 
 interface TaskDetailPageProps {
   params: Promise<{

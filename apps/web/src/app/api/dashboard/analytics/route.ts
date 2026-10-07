@@ -1,4 +1,5 @@
 import { recordAuthTiming, startAuthTiming } from '@/lib/auth/timing';
+import { resolveDepartmentName } from '@/lib/people/directory-people';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -12,6 +13,7 @@ type ExpenseAnalyticsRow = {
   total_amount: number;
   total_amount_aud: number | null;
   department_id: string | null;
+  department?: { name: string | null } | Array<{ name: string | null }> | null;
   employee:
     | {
         department: string | null;
@@ -82,12 +84,18 @@ function parseDateParam(value: string | null): string | null {
   return trimmed;
 }
 
-function getEmployeeDepartment(employee: ExpenseAnalyticsRow['employee']): string {
-  if (Array.isArray(employee)) {
-    return employee[0]?.department || 'Unassigned';
-  }
+/**
+ * Label for an expense's department bucket. Buckets are keyed by `department_id`, so the linked
+ * department's name wins; the submitter's legacy department text is only a fallback.
+ */
+function getDepartmentLabel(row: ExpenseAnalyticsRow): string {
+  const linked = Array.isArray(row.department) ? row.department[0] : row.department;
+  const employee = Array.isArray(row.employee) ? row.employee[0] : row.employee;
 
-  return employee?.department || 'Unassigned';
+  return (
+    resolveDepartmentName(linked?.name, employee?.department) ??
+    (row.department_id ? 'Unknown department' : 'Unassigned')
+  );
 }
 
 export async function GET(request: NextRequest) {
@@ -185,7 +193,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('expense_entries')
       .select(
-        'transaction_date, processing_status, expense_type, total_amount, total_amount_aud, department_id, employee:employees!expense_entries_employee_id_fkey(department)'
+        'transaction_date, processing_status, expense_type, total_amount, total_amount_aud, department_id, department:departments!expense_entries_department_id_fkey(name), employee:employees!expense_entries_employee_id_fkey(department)'
       )
       .is('deleted_at', null)
       .gte('transaction_date', parsedStartDate)
@@ -261,7 +269,7 @@ export async function GET(request: NextRequest) {
       categoryMap.set(categoryKey, currentCategory);
 
       const deptId = row.department_id || 'unassigned';
-      const deptName = getEmployeeDepartment(row.employee);
+      const deptName = getDepartmentLabel(row);
       const currentDept = departmentMap.get(deptId) || {
         departmentId: deptId,
         departmentName: deptName,

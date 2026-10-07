@@ -16,12 +16,15 @@ import {
   EmptyState,
   Input,
   Label,
+  PersonMeta,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
   Skeleton,
+  UserAvatar,
+  formatPersonRole,
   useToast,
 } from '@hr-portal/ui';
 import { AlertCircle, Loader2, Plus, Trash2, Users } from 'lucide-react';
@@ -70,10 +73,11 @@ export function ManageContributorsDialog({
     [contributors]
   );
 
-  const namesByUserId = useMemo(() => {
-    const map = new Map<string, string>();
+  // Contributor identities come from the project detail; the directory page is only a fallback.
+  const directoryPeopleByUserId = useMemo(() => {
+    const map = new Map<string, { name: string; avatarUrl: string | null }>();
     for (const entry of directoryData?.data ?? []) {
-      map.set(entry.user_id, entry.full_name);
+      map.set(entry.user_id, { name: entry.full_name, avatarUrl: entry.avatar_url });
     }
     return map;
   }, [directoryData?.data]);
@@ -149,20 +153,29 @@ export function ManageContributorsDialog({
                 {contributors.map((contributor) => {
                   const isLead = contributor.user_id === leadUserId;
                   const isBusy = pendingUserId === contributor.user_id;
+                  const directoryPerson = directoryPeopleByUserId.get(contributor.user_id);
+                  const name = contributor.name ?? directoryPerson?.name ?? 'Unknown member';
 
                   return (
                     <div
                       key={contributor.user_id}
                       className="flex items-center justify-between gap-2 rounded p-1.5"
                     >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm">
-                          {namesByUserId.get(contributor.user_id) ?? contributor.user_id}
-                        </p>
-                        <p className="text-xs capitalize text-muted-foreground">
-                          {contributor.role}
-                          {isLead ? ' · project lead' : ''}
-                        </p>
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <UserAvatar
+                          name={name}
+                          avatarUrl={contributor.avatar_url ?? directoryPerson?.avatarUrl}
+                          size="sm"
+                        />
+                        <div className="flex min-w-0 flex-col">
+                          <p className="truncate text-sm">{name}</p>
+                          <PersonMeta
+                            parts={[
+                              formatPersonRole(contributor.role),
+                              isLead ? 'Project lead' : null,
+                            ]}
+                          />
+                        </div>
                       </div>
                       <Button
                         variant="ghost"
@@ -248,12 +261,17 @@ export function ManageContributorsDialog({
                       key={entry.user_id}
                       className="flex items-center justify-between gap-2 rounded p-1.5"
                     >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm">{entry.full_name}</p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {entry.position || entry.role}
-                          {entry.department_name ? ` · ${entry.department_name}` : ''}
-                        </p>
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <UserAvatar name={entry.full_name} avatarUrl={entry.avatar_url} size="sm" />
+                        <div className="flex min-w-0 flex-col">
+                          <p className="truncate text-sm">{entry.full_name}</p>
+                          <PersonMeta
+                            parts={[
+                              entry.position || formatPersonRole(entry.role),
+                              entry.department_name,
+                            ]}
+                          />
+                        </div>
                       </div>
                       <Button
                         variant="outline"

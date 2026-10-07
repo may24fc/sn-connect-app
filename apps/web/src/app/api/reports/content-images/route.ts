@@ -1,10 +1,16 @@
 import { resolveStagedFormData } from '@/lib/storage/upload-staging.server';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
 const BUCKET = 'marketing-content-images';
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
+// Exactly the `<userId>/<uuid>.<ext>` shape POST creates.
+const deleteImageSchema = z.object({
+  path: z.string().regex(new RegExp(`^${UUID}/${UUID}\\.(jpeg|png|webp)$`, 'i')),
+});
 
 async function getAuthenticatedUser(): Promise<{ id: string } | null> {
   const supabase = await createSupabaseServerClient();
@@ -82,8 +88,9 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
     const user = await getAuthenticatedUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const body = await request.json() as { path?: unknown };
-    const path = typeof body.path === 'string' ? body.path : '';
+    const parsed = deleteImageSchema.safeParse(await request.json().catch(() => ({})));
+    if (!parsed.success) return NextResponse.json({ error: 'Invalid image path' }, { status: 400 });
+    const { path } = parsed.data;
     if (!path.startsWith(`${user.id}/`)) {
       return NextResponse.json({ error: 'Invalid image path' }, { status: 400 });
     }

@@ -9,7 +9,7 @@ import {
   SlidePanelTitle,
   SlidePanelBody,
   SlidePanelFooter,
-  Avatar,
+  UserAvatar,
   Badge,
   BadgeIcon,
   MasteryTrackCard,
@@ -59,9 +59,7 @@ export function LeaderboardUserDrawer({ open, onOpenChange, userId, fullName, av
         <div className="flex h-full min-h-0 flex-col">
           <SlidePanelHeader>
             <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10">
-                {avatarUrl ? <img src={avatarUrl} alt={fullName ?? ''} /> : null}
-              </Avatar>
+              <UserAvatar name={fullName} avatarUrl={avatarUrl} size="md" />
               <div>
                 <SlidePanelTitle>{fullName ?? 'Unknown'}</SlidePanelTitle>
                 <div className="mt-1 flex items-center gap-2">

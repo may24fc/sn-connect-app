@@ -28,6 +28,7 @@ interface PaTaskAccessGrantsEnvelope {
     role: string | null;
     position: string | null;
     department: string | null;
+    avatarUrl?: string | null;
   }>;
 }
 

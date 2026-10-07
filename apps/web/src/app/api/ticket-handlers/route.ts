@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import {
   getDisplayName,
   getEmployeeProfilesByUserId,
+  getUserAvatarsByUserId,
   getTicketAuthedContext,
   isSuperAdminRole,
 } from '../tickets/_lib';
@@ -42,20 +43,25 @@ export async function GET() {
       )
     );
 
-    const profilesByUserId = await getEmployeeProfilesByUserId(supabaseAdmin, userIds).catch(
-      () => new Map()
-    );
+    const [profilesByUserId, avatarsByUserId] = await Promise.all([
+      getEmployeeProfilesByUserId(supabaseAdmin, userIds).catch(() => new Map()),
+      getUserAvatarsByUserId(
+        supabaseAdmin,
+        rows.map((row) => row.user_id).filter((value): value is string => Boolean(value))
+      ).catch(() => new Map<string, string>()),
+    ]);
 
     return NextResponse.json({
       data: rows.map((row) => ({
         ...row,
-        user_name: getDisplayName(profilesByUserId.get(row.user_id), 'IT Handler'),
+        user_name: getDisplayName(profilesByUserId.get(row.user_id)),
+        user_avatar_url: avatarsByUserId.get(row.user_id) ?? null,
         user_email:
           profilesByUserId.get(row.user_id)?.company_email ||
           profilesByUserId.get(row.user_id)?.personal_email ||
           null,
         assigned_by_name: row.assigned_by
-          ? getDisplayName(profilesByUserId.get(row.assigned_by), 'Super Admin')
+          ? getDisplayName(profilesByUserId.get(row.assigned_by))
           : null,
       })),
     });

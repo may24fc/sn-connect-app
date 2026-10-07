@@ -261,8 +261,8 @@ export default function InternProfilePage() {
   const employeeName = buildDisplayName(employee?.first_name, employee?.last_name);
   const displayName = employeeName || user?.name || 'User';
   const initials = getDisplayNameInitials(displayName, 'U');
-  const position = employee?.position ?? 'Associate';
-  const department = employee?.department ?? 'Department not assigned';
+  const position = employee?.position?.trim() || 'Position not set';
+  const department = employee?.department_name ?? 'Department not assigned';
   const employeeNumber = employee?.employee_number ?? 'N/A';
 
   const formattedMetadata = metadataRecords.map((r) => ({
