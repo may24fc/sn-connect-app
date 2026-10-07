@@ -26,6 +26,11 @@ import {
   Input,
   Label,
   type PerformanceCycle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Table,
   TableBody,
   TableCell,
@@ -193,7 +198,7 @@ export default function CyclesPage(): ReactNode {
 
       setDialogOpen(false);
       setFormData(createDefaultFormData());
-    } catch (error) {
+    } catch {
       addToast({
         title: 'Error',
         description: 'Failed to update cycle',
@@ -249,7 +254,7 @@ export default function CyclesPage(): ReactNode {
         description: `"${cycle.name}" is now active`,
         variant: 'success',
       });
-    } catch (error) {
+    } catch {
       addToast({
         title: 'Error',
         description: 'Failed to activate cycle',
@@ -267,7 +272,7 @@ export default function CyclesPage(): ReactNode {
         description: `"${cycle.name}" has been marked as completed`,
         variant: 'success',
       });
-    } catch (error) {
+    } catch {
       addToast({
         title: 'Error',
         description: 'Failed to close cycle',
@@ -460,23 +465,26 @@ export default function CyclesPage(): ReactNode {
           <div className="space-y-4 py-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                  <Label htmlFor="quarter">Quarter</Label>
-                  <select
-                    id="quarter"
+                <Label htmlFor="quarter">Quarter</Label>
+                <Select
                     value={formData.quarter}
-                    onChange={(e) =>
+                    onValueChange={(value) =>
                       setFormData({
                         ...formData,
-                        quarter: e.target.value as 'Q1' | 'Q2' | 'Q3' | 'Q4',
+                        quarter: value as 'Q1' | 'Q2' | 'Q3' | 'Q4',
                       })
                     }
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   >
-                    <option value="Q1">Q1 (Jan-Mar)</option>
-                    <option value="Q2">Q2 (Apr-Jun)</option>
-                    <option value="Q3">Q3 (Jul-Sep)</option>
-                    <option value="Q4">Q4 (Oct-Dec)</option>
-                  </select>
+                  <SelectTrigger id="quarter" className="h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Q1">Q1 (Jan-Mar)</SelectItem>
+                    <SelectItem value="Q2">Q2 (Apr-Jun)</SelectItem>
+                    <SelectItem value="Q3">Q3 (Jul-Sep)</SelectItem>
+                    <SelectItem value="Q4">Q4 (Oct-Dec)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                   <Label htmlFor="year">Year</Label>

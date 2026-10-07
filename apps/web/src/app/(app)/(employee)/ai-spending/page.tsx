@@ -14,7 +14,12 @@ import {
   useUpdateAiExpense,
   useUpdateAiExpenseProvider,
 } from '@/hooks/useAiExpenses';
-import { AI_EXPENSE_CURRENCIES, AI_SPEND_TYPES, type AiExpenseCurrency, type AiSpendType } from '@/lib/schemas/ai-expense.schema';
+import {
+  AI_EXPENSE_CURRENCIES,
+  type AI_SPEND_TYPES,
+  type AiExpenseCurrency,
+  type AiSpendType,
+} from '@/lib/schemas/ai-expense.schema';
 import {
   Badge,
   Button,
@@ -29,6 +34,11 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Table,
   TableBody,
   TableCell,
@@ -523,22 +533,22 @@ export default function AiSpendingPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="flex items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
+          <div className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-200">
             <CalendarRange className="h-4 w-4" />
             <span>Period</span>
-            <select
-              value={selectedPeriod}
-              onChange={(event) => setSelectedPeriod(event.target.value)}
-              className="bg-transparent font-medium outline-none"
-              aria-label="Select AI spending period"
-            >
-              {periodOptions.map((period) => (
-                <option key={period.value} value={period.value}>
-                  {period.label}
-                </option>
-              ))}
-            </select>
-          </label>
+            <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+              <SelectTrigger aria-label="Select AI spending period" className="w-[8rem]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {periodOptions.map((period) => (
+                  <SelectItem key={period.value} value={period.value}>
+                    {period.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <Button type="button" variant="outline" size="sm" onClick={() => setIsProviderDialogOpen(true)}>
             Manage providers
@@ -687,31 +697,41 @@ export default function AiSpendingPage() {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="grid gap-3 border-b border-zinc-200 p-4 md:grid-cols-2 xl:grid-cols-5 dark:border-zinc-800">
-                  <select
+                  <Select
                     value={providerFilterId}
-                    onChange={(event) => setProviderFilterId(event.target.value)}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                    onValueChange={setProviderFilterId}
                   >
-                    <option value="all">All providers</option>
-                    {providers.map((provider) => (
-                      <option key={provider.id} value={provider.id}>
-                        {provider.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger aria-label="Filter by provider">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All providers</SelectItem>
+                      {providers.map((provider) => (
+                        <SelectItem key={provider.id} value={provider.id}>
+                          {provider.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-                  <select
+                  <Select
                     value={spendTypeFilter}
-                    onChange={(event) => setSpendTypeFilter(event.target.value as ManualSpendTypeFilter)}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                    onValueChange={(value) =>
+                      setSpendTypeFilter(value as ManualSpendTypeFilter)
+                    }
                   >
-                    <option value="all">All spend types</option>
-                    {SPEND_TYPE_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger aria-label="Filter by spend type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All spend types</SelectItem>
+                      {SPEND_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
                   <Input
                     type="date"
@@ -820,18 +840,25 @@ export default function AiSpendingPage() {
                         <label className="text-zinc-500" htmlFor="entriesPerPage">
                           Rows
                         </label>
-                        <select
-                          id="entriesPerPage"
-                          value={entryPageSize}
-                          onChange={(event) => setEntryPageSize(Number(event.target.value) as (typeof ENTRY_PAGE_SIZE_OPTIONS)[number])}
-                          className="rounded-md border border-input bg-background px-2 py-1 text-sm"
+                        <Select
+                          value={String(entryPageSize)}
+                          onValueChange={(value) =>
+                            setEntryPageSize(
+                              Number(value) as (typeof ENTRY_PAGE_SIZE_OPTIONS)[number]
+                            )
+                          }
                         >
-                          {ENTRY_PAGE_SIZE_OPTIONS.map((size) => (
-                            <option key={size} value={size}>
-                              {size}
-                            </option>
-                          ))}
-                        </select>
+                          <SelectTrigger id="entriesPerPage" className="h-8 w-[4.5rem]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ENTRY_PAGE_SIZE_OPTIONS.map((size) => (
+                              <SelectItem key={size} value={String(size)}>
+                                {size}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <span className="text-zinc-500">
                         Page {entryPage} of {totalPages}
@@ -877,47 +904,53 @@ export default function AiSpendingPage() {
               <label className="text-sm font-medium text-foreground" htmlFor="provider">
                 AI Provider
               </label>
-              <select
-                id="provider"
+              <Select
                 value={form.providerId}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   setForm((current) => ({
                     ...current,
-                    providerId: event.target.value,
+                    providerId: value,
                   }))
                 }
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none ring-0 focus:border-ring"
                 disabled={isLoading}
               >
-                {providers.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="provider">
+                  <SelectValue placeholder="Select a provider" />
+                </SelectTrigger>
+                <SelectContent>
+                  {providers.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground" htmlFor="spendType">
                 Spend Type
               </label>
-              <select
-                id="spendType"
+              <Select
                 value={form.spendType}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   setForm((current) => ({
                     ...current,
-                    spendType: event.target.value as (typeof AI_SPEND_TYPES)[number],
+                    spendType: value as (typeof AI_SPEND_TYPES)[number],
                   }))
                 }
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none ring-0 focus:border-ring"
               >
-                {SPEND_TYPE_OPTIONS.map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="spendType">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SPEND_TYPE_OPTIONS.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -965,23 +998,26 @@ export default function AiSpendingPage() {
                 <label className="text-sm font-medium text-foreground" htmlFor="currency">
                   Currency
                 </label>
-                <select
-                  id="currency"
+                <Select
                   value={form.currency}
-                  onChange={(event) =>
+                  onValueChange={(value) =>
                     setForm((current) => ({
                       ...current,
-                      currency: event.target.value as AiExpenseCurrency,
+                      currency: value as AiExpenseCurrency,
                     }))
                   }
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none ring-0 focus:border-ring"
                 >
-                  {CURRENCY_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id="currency">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCY_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
@@ -1061,7 +1097,7 @@ export default function AiSpendingPage() {
             <DialogDescription>Add, edit, or remove providers for manual entries.</DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 overflow-y-auto pr-1">
+          <div className="max-h-[calc(85vh-7rem)] space-y-4 overflow-y-auto pr-1">
             <div className="flex gap-2">
               <Input
                 value={newProviderName}
