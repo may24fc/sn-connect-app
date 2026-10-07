@@ -23,6 +23,61 @@ export const UHP_CLIENT_TYPE_VALUES = [
   'Client',
 ] as const;
 
+/** Always offered in the Source dropdown; sources added by users are merged in after these. */
+export const UHP_CLIENT_SOURCE_DEFAULTS = [
+  'Instagram',
+  'Facebook',
+  'LinkedIn',
+  'TikTok',
+  'Referral',
+  'Website',
+  'Event',
+] as const;
+
+/** Defaults first, then other sources in alphabetical order, deduplicated case-insensitively. */
+export function mergeUhpSourceOptions(sources: ReadonlyArray<string | null>): Array<string> {
+  const seen = new Set<string>();
+  const merged: Array<string> = [];
+  const add = (value: string | null) => {
+    const source = value?.trim().replace(/\s+/g, ' ');
+    if (!source || seen.has(source.toLowerCase())) return;
+    seen.add(source.toLowerCase());
+    merged.push(source);
+  };
+  UHP_CLIENT_SOURCE_DEFAULTS.forEach(add);
+  [...sources]
+    .filter((value): value is string => Boolean(value))
+    .sort((left, right) => left.localeCompare(right))
+    .forEach(add);
+  return merged;
+}
+
+/** Accepts "instagram.com/name" as well as full URLs; returns null for blank input. */
+export function normalizeUhpLink(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return /^[a-z][a-z\d+.-]*:/i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
+/** Mirrors the API rule: an http(s) URL with a hostname. */
+export function isUhpWebLink(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return (url.protocol === 'http:' || url.protocol === 'https:') && url.hostname.includes('.');
+  } catch {
+    return false;
+  }
+}
+
+/** Short label for a link, e.g. "instagram.com". */
+export function uhpLinkLabel(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+}
+
 export type UhpClientContact = {
   id: string;
   name: string;
@@ -71,6 +126,8 @@ export type UhpOutreachActivityRow = {
   reply_received: boolean;
   prospect_outcome: string | null;
   appointment_type: string | null;
+  /** The client's current state, embedded by fetchUhpOutreachRows. */
+  client?: { interest_state: string; replied: boolean } | null;
 };
 
 export type UhpOutreachSummary = {
@@ -86,7 +143,14 @@ export type UhpOutreachSummary = {
   newClients: number;
 };
 
-/** People-based weekly summary: each client counts once regardless of how many messages were logged. */
+/**
+ * People-based summary: each client counts once regardless of how many messages were logged.
+ *
+ * - A client ticked "Replied" in the tracker table counts as a reply only when they were also
+ *   reached out to in the period, so the response rate stays within 0-100%.
+ * - Interested / declined count clients whose outcome was recorded in the period and is still
+ *   their current interest, so a client who changed their mind is counted once, as they stand.
+ */
 export function summarizeUhpOutreach(
   rows: Array<UhpOutreachActivityRow>,
   newClients: number
@@ -94,8 +158,15 @@ export function summarizeUhpOutreach(
   const clientsWhere = (predicate: (row: UhpOutreachActivityRow) => boolean) =>
     new Set(rows.filter((row) => row.client_id && predicate(row)).map((row) => row.client_id));
   const reachedOut = clientsWhere((row) => row.direction === 'outbound');
-  const replied = clientsWhere((row) => row.reply_received || row.direction === 'inbound');
-  const declined = clientsWhere((row) => row.prospect_outcome === 'declined');
+  const replied = clientsWhere(
+    (row) =>
+      row.reply_received ||
+      row.direction === 'inbound' ||
+      (row.direction === 'outbound' && row.client?.replied === true)
+  );
+  const outcomeStillCurrent = (row: UhpOutreachActivityRow, outcome: 'interested' | 'declined') =>
+    row.prospect_outcome === outcome && (!row.client || row.client.interest_state === outcome);
+  const declined = clientsWhere((row) => outcomeStillCurrent(row, 'declined'));
   const repliedAfterOutreach = [...reachedOut].filter((id) => replied.has(id)).length;
   const noResponse = [...reachedOut].filter((id) => !(replied.has(id) || declined.has(id))).length;
 
@@ -106,7 +177,7 @@ export function summarizeUhpOutreach(
     responseRate: reachedOut.size
       ? Math.round((repliedAfterOutreach / reachedOut.size) * 1000) / 10
       : 0,
-    interested: clientsWhere((row) => row.prospect_outcome === 'interested').size,
+    interested: clientsWhere((row) => outcomeStillCurrent(row, 'interested')).size,
     declined: declined.size,
     noResponse,
     wellnessEvaluationsScheduled: rows.filter(
@@ -124,6 +195,15 @@ export const UHP_ACTIVITY_TYPE_VALUES = [
   'WE Presentation',
   'Catch up Call',
 ] as const;
+
+/** Appointment pre-selected when logging these activity types; the user can still change it. */
+export const UHP_ACTIVITY_APPOINTMENT_TYPES: Partial<
+  Record<(typeof UHP_ACTIVITY_TYPE_VALUES)[number], 'wellness_evaluation' | 'call'>
+> = {
+  'WE Presentation': 'wellness_evaluation',
+  'Discovery Call': 'call',
+  'Catch up Call': 'call',
+};
 
 export const UHP_VP_CATEGORY_VALUES = [
   'personal',

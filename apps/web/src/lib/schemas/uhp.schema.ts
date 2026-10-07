@@ -12,6 +12,15 @@ const optionalText = z.string().trim().min(1).max(300).nullable().optional();
 const optionalLongText = z.string().trim().min(1).max(5000).nullable().optional();
 const optionalUrl = z.string().trim().url().max(2048).nullable().optional();
 const optionalDate = z.string().date().nullable().optional();
+// Rendered as a clickable link, so only web URLs are accepted.
+const optionalWebUrl = z
+  .string()
+  .trim()
+  .url()
+  .max(2048)
+  .refine((value) => /^https?:\/\//i.test(value), 'Link must start with http:// or https://')
+  .nullable()
+  .optional();
 
 export const uhpAccessGrantSchema = z.object({
   userId: z.string().uuid(),
@@ -26,6 +35,7 @@ export const uhpClientSchema = z.object({
   replied: z.boolean().default(false),
   leadOwner: optionalText,
   sourceName: optionalText,
+  sourceUrl: optionalWebUrl,
   email: z.string().trim().email().max(320).nullable().optional(),
   phone: z.string().trim().min(1).max(30).nullable().optional(),
   alternatePhone: z.string().trim().min(1).max(30).nullable().optional(),
@@ -105,6 +115,13 @@ export const uhpVpTargetsSchema = z.object({
     })
   ),
 });
+
+export const uhpMetricsQuerySchema = z
+  .object({
+    from: z.string().datetime({ offset: true }),
+    to: z.string().datetime({ offset: true }),
+  })
+  .refine(({ from, to }) => new Date(from) <= new Date(to), 'from must not be after to');
 
 export const uhpOutreachDigestRunSchema = z.object({
   intervalStartedAt: z.string().datetime(),

@@ -1,7 +1,16 @@
 'use client';
 
 import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
-import { UHP_CLIENT_STATUS_VALUES, UHP_CLIENT_TYPE_VALUES, type UhpClientContact } from '@/lib/uhp';
+import { TrackerPagination } from '@/components/data-display/TrackerPagination';
+import {
+  UHP_CLIENT_SOURCE_DEFAULTS,
+  UHP_CLIENT_STATUS_VALUES,
+  UHP_CLIENT_TYPE_VALUES,
+  type UhpClientContact,
+  isUhpWebLink,
+  normalizeUhpLink,
+  uhpLinkLabel,
+} from '@/lib/uhp';
 import {
   extractUhpContact,
   imageFromClipboard,
@@ -9,7 +18,15 @@ import {
   validateUhpScreenshot,
 } from '@/lib/uhp-screenshots';
 import { Button, Card, CardContent, Checkbox, Input, Label, useToast } from '@hr-portal/ui';
-import { AlertTriangle, ImageUp, Loader2, Plus, RefreshCw, Search } from 'lucide-react';
+import {
+  AlertTriangle,
+  ExternalLink,
+  ImageUp,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Search,
+} from 'lucide-react';
 import {
   type ClipboardEvent,
   type FormEvent,
@@ -20,6 +37,7 @@ import {
 } from 'react';
 import { UhpAccessManagerButton } from './UhpAccessManagerDialog';
 import { UhpClientDetailDialog } from './UhpClientDetailDialog';
+import { UhpSourceSelect } from './UhpSourceSelect';
 import { UhpWorkspaceHeader } from './UhpWorkspaceHeader';
 
 type Client = {
@@ -30,6 +48,8 @@ type Client = {
   interest_state: string;
   replied: boolean;
   lead_owner: string | null;
+  source_name: string | null;
+  source_url: string | null;
   email: string | null;
   phone: string | null;
   migration_review_required: boolean;
@@ -64,6 +84,9 @@ const PERIOD_LABELS: Record<MetricsPeriod, string> = {
   quarter: 'This quarter',
 };
 
+const CLIENTS_PER_PAGE = 10;
+const TABLE_COLUMNS = 10;
+
 function getPeriodStart(period: MetricsPeriod, now = new Date()): Date {
   if (period === 'week') {
     const daysSinceMonday = (now.getDay() + 6) % 7;
@@ -80,6 +103,8 @@ type CreateClientPayload = {
   clientType: string;
   status: 'Prospect';
   leadOwner?: string | undefined;
+  sourceName?: string | undefined;
+  sourceUrl?: string | undefined;
   email?: string | undefined;
   phone?: string | undefined;
   logInitialOutreach: boolean;
@@ -91,9 +116,14 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
   const { addToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   const [clients, setClients] = useState<Client[]>([]);
+  const [sourceOptions, setSourceOptions] = useState<Array<string>>([
+    ...UHP_CLIENT_SOURCE_DEFAULTS,
+  ]);
+  const [newClientSource, setNewClientSource] = useState('');
   const [metrics, setMetrics] = useState<Metrics>(emptyMetrics);
   const [period, setPeriod] = useState<MetricsPeriod>('month');
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -123,6 +153,7 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
         );
       }
       setClients(clientsPayload.data);
+      if (Array.isArray(clientsPayload.sources)) setSourceOptions(clientsPayload.sources);
       setMetrics(metricsPayload.data);
     } catch (error) {
       addToast({
@@ -135,15 +166,39 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
     }
   }, [addToast, search, period]);
 
+  // Metrics only, with no loading state or list reload, so a toggled row stays where it is.
+  const refreshMetrics = useCallback(async () => {
+    try {
+      const from = getPeriodStart(period).toISOString();
+      const response = await fetch(`/api/uhp/clients/metrics?from=${encodeURIComponent(from)}`);
+      if (!response.ok) return;
+      const payload = await response.json();
+      setMetrics(payload.data);
+    } catch {
+      // The cards refresh on the next full load.
+    }
+  }, [period]);
+
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 250);
     return () => window.clearTimeout(timer);
   }, [load]);
 
+  const totalPages = Math.max(Math.ceil(clients.length / CLIENTS_PER_PAGE), 1);
+  const visibleClients = clients.slice(
+    (currentPage - 1) * CLIENTS_PER_PAGE,
+    currentPage * CLIENTS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
   function closeForm() {
     setShowForm(false);
     setDuplicateCheck(null);
     setScreenshot(null);
+    setNewClientSource('');
   }
 
   function fillField(name: string, value: string | null) {
@@ -193,11 +248,22 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const text = (key: string) => String(form.get(key) ?? '').trim() || undefined;
+    const sourceUrl = normalizeUhpLink(String(form.get('sourceUrl') ?? ''));
+    if (sourceUrl && !isUhpWebLink(sourceUrl)) {
+      addToast({
+        variant: 'error',
+        title: 'Check the link',
+        description: 'Enter a web address, for example instagram.com/username.',
+      });
+      return;
+    }
     void submitClient({
       name: String(form.get('name')).trim(),
       clientType: String(form.get('clientType')),
       status: 'Prospect',
       leadOwner: text('leadOwner'),
+      sourceName: text('sourceName'),
+      sourceUrl: sourceUrl ?? undefined,
       email: text('email'),
       phone: text('phone'),
       logInitialOutreach: form.get('logInitialOutreach') === 'on',
@@ -214,6 +280,8 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
       interest_state: 'unknown',
       replied: false,
       lead_owner: payload.leadOwner ?? null,
+      source_name: payload.sourceName ?? null,
+      source_url: payload.sourceUrl ?? null,
       email: payload.email ?? null,
       phone: payload.phone ?? null,
       migration_review_required: false,
@@ -222,6 +290,7 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
     const previousClients = clients;
     setSaving(true);
     setDuplicateCheck(null);
+    setCurrentPage(1);
     setClients((current) => [optimisticClient, ...current]);
     try {
       const response = await fetch('/api/uhp/clients', {
@@ -263,29 +332,36 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
     }
   }
 
-  // Optimistic: a single-field toggle on the row being viewed. Not reloaded afterwards,
-  // since the list is ordered by updated_at and the row would jump while being clicked.
-  async function toggleReplied(clientId: string, replied: boolean) {
-    const setReplied = (value: boolean) =>
+  // Optimistic: a single-field edit on the row being viewed. The list is not reloaded
+  // afterwards (it is ordered by updated_at, so the row would jump while being clicked);
+  // only the metric cards are refreshed.
+  async function updateClientRow(
+    client: Client,
+    changes: Partial<Pick<Client, 'replied' | 'interest_state'>>,
+    body: Record<string, unknown>,
+    label: string
+  ) {
+    const setRow = (values: Partial<Client>) =>
       setClients((current) =>
-        current.map((client) => (client.id === clientId ? { ...client, replied: value } : client))
+        current.map((row) => (row.id === client.id ? { ...row, ...values } : row))
       );
-    setReplied(replied);
+    setRow(changes);
     try {
-      const response = await fetch(`/api/uhp/clients/${clientId}`, {
+      const response = await fetch(`/api/uhp/clients/${client.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ replied }),
+        body: JSON.stringify(body),
       });
       if (!response.ok) {
         const result = await response.json().catch(() => ({}));
         throw new Error(result.error ?? 'Failed to update client');
       }
+      void refreshMetrics();
     } catch (error) {
-      setReplied(!replied);
+      setRow({ replied: client.replied, interest_state: client.interest_state });
       addToast({
         variant: 'error',
-        title: 'Could not update Replied',
+        title: `Could not update ${label}`,
         description: error instanceof Error ? error.message : 'Please try again.',
       });
     }
@@ -446,6 +522,26 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
                   placeholder="Telegram, phone, email..."
                 />
               </div>
+              <div className="space-y-1">
+                <Label htmlFor="uhp-source">Source</Label>
+                <UhpSourceSelect
+                  id="uhp-source"
+                  name="sourceName"
+                  value={newClientSource}
+                  options={sourceOptions}
+                  onChange={setNewClientSource}
+                />
+              </div>
+              <div className="space-y-1 md:col-span-2">
+                <Label htmlFor="uhp-source-url">Link</Label>
+                <Input
+                  id="uhp-source-url"
+                  name="sourceUrl"
+                  inputMode="url"
+                  maxLength={2048}
+                  placeholder="Where you found the lead, e.g. instagram.com/username"
+                />
+              </div>
               <div className="flex items-center gap-2 md:col-span-3">
                 <Checkbox id="uhp-log-outreach" name="logInitialOutreach" defaultChecked />
                 <Label htmlFor="uhp-log-outreach">
@@ -510,16 +606,20 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
               aria-label="Search clients"
               placeholder="Search name, email, or phone"
               value={search}
-            maxLength={200}
-              onChange={(event) => setSearch(event.target.value)}
+              maxLength={200}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setCurrentPage(1);
+              }}
               className="max-w-md"
             />
             <Button variant="ghost" size="sm" onClick={() => void load()} aria-label="Refresh">
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
+          {/* Columns keep their natural width and the table scrolls sideways instead of squeezing. */}
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full min-w-[72rem] whitespace-nowrap text-left text-sm">
               <thead className="border-b bg-muted/40 text-xs uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">Client</th>
@@ -527,26 +627,29 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Owner</th>
                   <th className="px-4 py-3">Contact</th>
+                  <th className="px-4 py-3">Source</th>
+                  <th className="px-4 py-3">Link</th>
                   <th className="px-4 py-3">Replied</th>
+                  <th className="px-4 py-3">Interest</th>
                   <th className="px-4 py-3">Updated</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                    <td colSpan={TABLE_COLUMNS} className="p-8 text-center text-muted-foreground">
                       <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
                       Loading clients...
                     </td>
                   </tr>
                 ) : clients.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                    <td colSpan={TABLE_COLUMNS} className="p-8 text-center text-muted-foreground">
                       No UHP clients match this view.
                     </td>
                   </tr>
                 ) : (
-                  clients.map((client) => (
+                  visibleClients.map((client) => (
                     <tr
                       key={client.id}
                       className="cursor-pointer border-b last:border-0 hover:bg-muted/30"
@@ -560,7 +663,12 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
                       }}
                     >
                       <td className="px-4 py-3 font-medium">
-                        {client.name}
+                        <span
+                          className="inline-block max-w-[16rem] truncate align-bottom"
+                          title={client.name}
+                        >
+                          {client.name}
+                        </span>
                         {client.migration_review_required && (
                           <span className="ml-2 rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
                             Review
@@ -579,6 +687,27 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
                       <td className="px-4 py-3 text-muted-foreground">
                         {client.email ?? client.phone ?? '—'}
                       </td>
+                      <td className="px-4 py-3">{client.source_name ?? '—'}</td>
+                      <td
+                        className="px-4 py-3"
+                        onClick={(event) => event.stopPropagation()}
+                        onKeyDown={(event) => event.stopPropagation()}
+                      >
+                        {client.source_url ? (
+                          <a
+                            href={client.source_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={client.source_url}
+                            className="inline-flex max-w-[12rem] items-center gap-1 text-primary hover:underline"
+                          >
+                            <span className="truncate">{uhpLinkLabel(client.source_url)}</span>
+                            <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                          </a>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
                       <td
                         className="px-4 py-3"
                         onClick={(event) => event.stopPropagation()}
@@ -589,9 +718,38 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
                           checked={client.replied}
                           disabled={client.id.startsWith('optimistic-client-')}
                           onCheckedChange={(checked) =>
-                            void toggleReplied(client.id, checked === true)
+                            void updateClientRow(
+                              client,
+                              { replied: checked === true },
+                              { replied: checked === true },
+                              'Replied'
+                            )
                           }
                         />
+                      </td>
+                      <td
+                        className="px-4 py-3"
+                        onClick={(event) => event.stopPropagation()}
+                        onKeyDown={(event) => event.stopPropagation()}
+                      >
+                        <select
+                          aria-label={`Interest: ${client.name}`}
+                          value={client.interest_state}
+                          disabled={client.id.startsWith('optimistic-client-')}
+                          className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                          onChange={(event) =>
+                            void updateClientRow(
+                              client,
+                              { interest_state: event.target.value },
+                              { interestState: event.target.value },
+                              'Interest'
+                            )
+                          }
+                        >
+                          <option value="unknown">Unknown</option>
+                          <option value="interested">Interested</option>
+                          <option value="declined">Declined</option>
+                        </select>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {new Date(client.updated_at).toLocaleDateString()}
@@ -602,6 +760,14 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
               </tbody>
             </table>
           </div>
+          {clients.length > 0 && (
+            <TrackerPagination
+              page={currentPage}
+              totalPages={totalPages}
+              isLoading={loading}
+              onPageChange={setCurrentPage}
+            />
+          )}
         </CardContent>
       </Card>
       <UhpClientDetailDialog
@@ -610,6 +776,7 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
         onOpenChange={(open) => {
           if (!open) setSelectedClientId(null);
         }}
+        sourceOptions={sourceOptions}
         onChanged={() => void load()}
         onDelete={(client) => {
           setSelectedClientId(null);

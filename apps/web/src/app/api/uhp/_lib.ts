@@ -5,6 +5,7 @@ import {
   UHP_ATTACHMENT_MAX_FILE_SIZE,
   UHP_MODULE_VALUES,
   type UhpModule,
+  type UhpOutreachActivityRow,
   isUhpAttachmentMimeType,
 } from '@/lib/uhp';
 
@@ -76,6 +77,60 @@ export async function requireUhpModule(module: UhpModule) {
     return { ok: false as const, status: 403, error: 'Forbidden' };
   }
   return auth;
+}
+
+const OUTREACH_PAGE_SIZE = 1000;
+
+function isOutreachClientState(
+  value: unknown
+): value is NonNullable<UhpOutreachActivityRow['client']> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'interest_state' in value &&
+    typeof value.interest_state === 'string' &&
+    'replied' in value &&
+    typeof value.replied === 'boolean'
+  );
+}
+
+/**
+ * Activities for the outreach metrics and digest, with each client's current interest and
+ * Replied flag. Activities of deleted or review-flagged clients are left out. Pages through
+ * the results because PostgREST caps a single response at 1000 rows.
+ */
+export async function fetchUhpOutreachRows(
+  admin: UhpAuthedContext['admin'],
+  from: string,
+  to: string
+): Promise<{ ok: true; rows: Array<UhpOutreachActivityRow> } | { ok: false }> {
+  const rows: Array<UhpOutreachActivityRow> = [];
+  for (let offset = 0; ; offset += OUTREACH_PAGE_SIZE) {
+    const { data, error } = await admin
+      .from('uhp_client_activities')
+      .select(
+        'client_id, direction, reply_received, prospect_outcome, appointment_type, client:uhp_clients!inner(interest_state, replied, deleted_at, migration_review_required)'
+      )
+      .is('deleted_at', null)
+      .eq('migration_review_required', false)
+      .is('client.deleted_at', null)
+      .eq('client.migration_review_required', false)
+      .gte('occurred_at', from)
+      .lte('occurred_at', to)
+      .order('id')
+      .range(offset, offset + OUTREACH_PAGE_SIZE - 1);
+    if (error) {
+      console.error('Failed to load UHP outreach activity:', error);
+      return { ok: false };
+    }
+    const page = data ?? [];
+    for (const { client, ...activity } of page) {
+      // Many-to-one embeds come back as an object; the untyped client infers an array.
+      const current: unknown = Array.isArray(client) ? client[0] : client;
+      rows.push({ ...activity, client: isOutreachClientState(current) ? current : null });
+    }
+    if (page.length < OUTREACH_PAGE_SIZE) return { ok: true, rows };
+  }
 }
 
 export function readUhpScreenshot(

@@ -5,6 +5,7 @@ import {
   UHP_CLIENT_TYPE_VALUES,
   type UhpClientContact,
   findUhpDuplicateClients,
+  mergeUhpSourceOptions,
 } from '@/lib/uhp';
 import { type NextRequest, NextResponse } from 'next/server';
 import { type UhpAuthedContext, requireUhpModule } from '../_lib';
@@ -73,12 +74,27 @@ export async function GET(request: NextRequest) {
     query = query.eq('client_type', type);
   }
   if (owner) query = query.ilike('lead_owner', owner);
-  const { data, error } = await query;
+  // Sources come from every client, not just this page or search, so a source added on
+  // one client is offered in the dropdown for all of them.
+  const [{ data, error }, sourcesResult] = await Promise.all([
+    query,
+    auth.context.admin
+      .from('uhp_clients')
+      .select('source_name')
+      .is('deleted_at', null)
+      .not('source_name', 'is', null)
+      .limit(10000),
+  ]);
   if (error) {
     console.error('Failed to fetch UHP clients:', error);
     return NextResponse.json({ error: 'Failed to fetch clients' }, { status: 500 });
   }
-  return NextResponse.json({ data: data ?? [] });
+  return NextResponse.json({
+    data: data ?? [],
+    sources: mergeUhpSourceOptions(
+      (sourcesResult.data ?? []).map((row: { source_name: string | null }) => row.source_name)
+    ),
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -116,6 +132,7 @@ export async function POST(request: NextRequest) {
       replied: input.replied,
       lead_owner: input.leadOwner ?? null,
       source_name: input.sourceName ?? null,
+      source_url: input.sourceUrl ?? null,
       email: input.email ?? null,
       phone: input.phone ?? null,
       alternate_phone: input.alternatePhone ?? null,

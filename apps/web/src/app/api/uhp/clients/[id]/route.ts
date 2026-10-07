@@ -87,6 +87,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     interestState: 'interest_state',
     leadOwner: 'lead_owner',
     sourceName: 'source_name',
+    sourceUrl: 'source_url',
     alternatePhone: 'alternate_phone',
     instagramUrl: 'instagram_url',
     jobTitle: 'job_title',

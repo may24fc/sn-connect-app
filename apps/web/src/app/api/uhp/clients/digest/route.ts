@@ -2,7 +2,7 @@ import { uhpOutreachDigestRunSchema } from '@/lib/schemas/uhp.schema';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { summarizeUhpOutreach } from '@/lib/uhp';
 import { type NextRequest, NextResponse } from 'next/server';
-import { isValidN8nCallback } from '../../_lib';
+import { fetchUhpOutreachRows, isValidN8nCallback } from '../../_lib';
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -14,13 +14,7 @@ export async function GET(request: NextRequest) {
   const intervalStartedAt = new Date(Date.now() - WEEK_MS).toISOString();
 
   const [activitiesResult, newClientsResult] = await Promise.all([
-    admin
-      .from('uhp_client_activities')
-      .select('client_id, direction, reply_received, prospect_outcome, appointment_type')
-      .is('deleted_at', null)
-      .eq('migration_review_required', false)
-      .gte('occurred_at', intervalStartedAt)
-      .lte('occurred_at', intervalEndedAt),
+    fetchUhpOutreachRows(admin, intervalStartedAt, intervalEndedAt),
     admin
       .from('uhp_clients')
       .select('id', { count: 'exact', head: true })
@@ -28,7 +22,7 @@ export async function GET(request: NextRequest) {
       .gte('created_at', intervalStartedAt)
       .lte('created_at', intervalEndedAt),
   ]);
-  if (activitiesResult.error || newClientsResult.error) {
+  if (!activitiesResult.ok || newClientsResult.error) {
     return NextResponse.json({ error: 'Failed to build digest' }, { status: 500 });
   }
 
@@ -36,7 +30,7 @@ export async function GET(request: NextRequest) {
     data: {
       intervalStartedAt,
       intervalEndedAt,
-      summary: summarizeUhpOutreach(activitiesResult.data ?? [], newClientsResult.count ?? 0),
+      summary: summarizeUhpOutreach(activitiesResult.rows, newClientsResult.count ?? 0),
     },
   });
 }

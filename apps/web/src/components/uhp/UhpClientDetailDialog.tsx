@@ -2,9 +2,12 @@
 
 import { queryKeys } from '@/lib/query-keys';
 import {
+  UHP_ACTIVITY_APPOINTMENT_TYPES,
   UHP_ACTIVITY_TYPE_VALUES,
   UHP_CLIENT_STATUS_VALUES,
   UHP_CLIENT_TYPE_VALUES,
+  isUhpWebLink,
+  normalizeUhpLink,
 } from '@/lib/uhp';
 import {
   imageFromClipboard,
@@ -25,8 +28,9 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, MessageSquarePlus, NotebookPen, Trash2 } from 'lucide-react';
+import { ExternalLink, Loader2, MessageSquarePlus, NotebookPen, Trash2 } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
+import { UhpSourceSelect } from './UhpSourceSelect';
 
 type ClientDetail = {
   client: {
@@ -35,6 +39,8 @@ type ClientDetail = {
     status: string;
     client_type: string | null;
     interest_state: string;
+    source_name: string | null;
+    source_url: string | null;
     email: string | null;
     phone: string | null;
   };
@@ -89,12 +95,14 @@ async function json<T>(response: Response): Promise<T> {
 export function UhpClientDetailDialog({
   clientId,
   open,
+  sourceOptions,
   onOpenChange,
   onChanged,
   onDelete,
 }: {
   clientId: string | null;
   open: boolean;
+  sourceOptions: ReadonlyArray<string>;
   onOpenChange: (open: boolean) => void;
   onChanged: () => void;
   onDelete: (client: { id: string; name: string }) => void;
@@ -138,6 +146,14 @@ export function UhpClientDetailDialog({
                   interest_state: String(
                     updates.interestState ?? current.data.client.interest_state
                   ),
+                  source_name:
+                    'sourceName' in updates
+                      ? ((updates.sourceName as string | null) ?? null)
+                      : current.data.client.source_name,
+                  source_url:
+                    'sourceUrl' in updates
+                      ? ((updates.sourceUrl as string | null) ?? null)
+                      : current.data.client.source_url,
                 },
               },
             }
@@ -301,6 +317,22 @@ export function UhpClientDetailDialog({
     setActivityScreenshot(file);
   }
 
+  function saveSourceUrl(input: HTMLInputElement, current: string | null) {
+    const sourceUrl = normalizeUhpLink(input.value);
+    if (sourceUrl === current) return;
+    if (sourceUrl && !isUhpWebLink(sourceUrl)) {
+      input.value = current ?? '';
+      addToast({
+        variant: 'error',
+        title: 'Check the link',
+        description: 'Enter a web address, for example instagram.com/username.',
+      });
+      return;
+    }
+    input.value = sourceUrl ?? '';
+    updateClient.mutate({ sourceUrl });
+  }
+
   function submitNote(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -369,6 +401,48 @@ export function UhpClientDetailDialog({
                   <option value="declined">Declined</option>
                 </select>
               </div>
+              <div className="space-y-1">
+                <Label htmlFor="uhp-detail-source">Source</Label>
+                <UhpSourceSelect
+                  id="uhp-detail-source"
+                  value={data.client.source_name ?? ''}
+                  options={sourceOptions}
+                  onChange={(value) => updateClient.mutate({ sourceName: value || null })}
+                />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <Label htmlFor="uhp-detail-source-url">Link</Label>
+                <div className="flex gap-2">
+                  <Input
+                    // Remount when the saved value changes so the field shows what was stored.
+                    key={data.client.source_url ?? ''}
+                    id="uhp-detail-source-url"
+                    inputMode="url"
+                    maxLength={2048}
+                    defaultValue={data.client.source_url ?? ''}
+                    placeholder="Where you found the lead, e.g. instagram.com/username"
+                    onBlur={(event) => saveSourceUrl(event.currentTarget, data.client.source_url)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        event.currentTarget.blur();
+                      }
+                    }}
+                  />
+                  {data.client.source_url && (
+                    <Button asChild size="icon" variant="outline">
+                      <a
+                        href={data.client.source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Open link"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button size="sm" onClick={() => setActivityOpen((value) => !value)}>
@@ -405,6 +479,21 @@ export function UhpClientDetailDialog({
                   <select
                     name="activityType"
                     className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                    onChange={(event) => {
+                      // Suggest the matching appointment so the Wellness evaluations / Calls
+                      // cards count it, unless the user already picked one themselves.
+                      const appointment =
+                        event.currentTarget.form?.elements.namedItem('appointmentType');
+                      if (
+                        appointment instanceof HTMLSelectElement &&
+                        appointment.dataset.touched !== 'true'
+                      ) {
+                        appointment.value =
+                          UHP_ACTIVITY_APPOINTMENT_TYPES[
+                            event.currentTarget.value as (typeof UHP_ACTIVITY_TYPE_VALUES)[number]
+                          ] ?? '';
+                      }
+                    }}
                   >
                     {UHP_ACTIVITY_TYPE_VALUES.map((value) => (
                       <option key={value}>{value}</option>
@@ -451,6 +540,9 @@ export function UhpClientDetailDialog({
                   <select
                     name="appointmentType"
                     className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                    onChange={(event) => {
+                      event.currentTarget.dataset.touched = 'true';
+                    }}
                   >
                     <option value="">None</option>
                     <option value="wellness_evaluation">Wellness evaluation</option>
