@@ -17,7 +17,20 @@ import {
   uploadUhpScreenshot,
   validateUhpScreenshot,
 } from '@/lib/uhp-screenshots';
-import { Button, Card, CardContent, Checkbox, Input, Label, useToast } from '@hr-portal/ui';
+import {
+  Button,
+  Card,
+  CardContent,
+  Checkbox,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  useToast,
+} from '@hr-portal/ui';
 import {
   AlertTriangle,
   ExternalLink,
@@ -140,10 +153,15 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const from = getPeriodStart(period).toISOString();
+      const now = new Date();
+      const from = getPeriodStart(period, now).toISOString();
+      const to = now.toISOString();
       const [clientsResponse, metricsResponse] = await Promise.all([
-        fetch(`/api/uhp/clients?search=${encodeURIComponent(search)}`),
-        fetch(`/api/uhp/clients/metrics?from=${encodeURIComponent(from)}`),
+        fetch(`/api/uhp/clients?search=${encodeURIComponent(search)}`, { cache: 'no-store' }),
+        fetch(
+          `/api/uhp/clients/metrics?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+          { cache: 'no-store' }
+        ),
       ]);
       const clientsPayload = await clientsResponse.json();
       const metricsPayload = await metricsResponse.json();
@@ -169,8 +187,12 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
   // Metrics only, with no loading state or list reload, so a toggled row stays where it is.
   const refreshMetrics = useCallback(async () => {
     try {
-      const from = getPeriodStart(period).toISOString();
-      const response = await fetch(`/api/uhp/clients/metrics?from=${encodeURIComponent(from)}`);
+      const now = new Date();
+      const from = getPeriodStart(period, now).toISOString();
+      const response = await fetch(
+        `/api/uhp/clients/metrics?from=${encodeURIComponent(from)}&to=${encodeURIComponent(now.toISOString())}`,
+        { cache: 'no-store' }
+      );
       if (!response.ok) return;
       const payload = await response.json();
       setMetrics(payload.data);
@@ -419,18 +441,18 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
         <Label htmlFor="uhp-metrics-period" className="text-sm text-muted-foreground">
           Metrics period
         </Label>
-        <select
-          id="uhp-metrics-period"
-          value={period}
-          onChange={(event) => setPeriod(event.target.value as MetricsPeriod)}
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-        >
-          {(Object.keys(PERIOD_LABELS) as Array<MetricsPeriod>).map((value) => (
-            <option key={value} value={value}>
-              {PERIOD_LABELS[value]}
-            </option>
-          ))}
-        </select>
+        <Select value={period} onValueChange={(value) => setPeriod(value as MetricsPeriod)}>
+          <SelectTrigger id="uhp-metrics-period" className="w-[9rem]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {(Object.keys(PERIOD_LABELS) as Array<MetricsPeriod>).map((value) => (
+              <SelectItem key={value} value={value}>
+                {PERIOD_LABELS[value]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
@@ -488,18 +510,18 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
               </div>
               <div className="space-y-1">
                 <Label htmlFor="uhp-type">Client type</Label>
-                <select
-                  id="uhp-type"
-                  name="clientType"
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  required
-                >
-                  {UHP_CLIENT_TYPE_VALUES.map((value) => (
-                    <option key={value} value={value}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
+                <Select name="clientType" defaultValue={UHP_CLIENT_TYPE_VALUES[0]} required>
+                  <SelectTrigger id="uhp-type" className="h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {UHP_CLIENT_TYPE_VALUES.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {value}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1">
                 <Label htmlFor="uhp-owner">Lead owner</Label>
@@ -713,24 +735,30 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
                         onClick={(event) => event.stopPropagation()}
                         onKeyDown={(event) => event.stopPropagation()}
                       >
-                        <select
-                          aria-label={`Interest: ${client.name}`}
+                        <Select
                           value={client.interest_state}
                           disabled={client.id.startsWith('optimistic-client-')}
-                          className="h-8 rounded-md border border-input bg-background px-2 text-sm"
-                          onChange={(event) =>
+                          onValueChange={(value) =>
                             void updateClientRow(
                               client,
-                              { interest_state: event.target.value },
-                              { interestState: event.target.value },
+                              { interest_state: value },
+                              { interestState: value },
                               'Interest'
                             )
                           }
                         >
-                          <option value="unknown">Unknown</option>
-                          <option value="interested">Interested</option>
-                          <option value="declined">Declined</option>
-                        </select>
+                          <SelectTrigger
+                            aria-label={`Interest: ${client.name}`}
+                            className="h-8 w-[8.5rem]"
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="unknown">Unknown</SelectItem>
+                            <SelectItem value="interested">Interested</SelectItem>
+                            <SelectItem value="declined">Declined</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {new Date(client.updated_at).toLocaleDateString()}

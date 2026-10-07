@@ -52,7 +52,7 @@ describe('summarizeUhpOutreach', () => {
     });
   });
 
-  it('counts clients ticked Replied only when they were reached out to in the period', () => {
+  it('counts timestamp-filtered manual replies and activity replies once per client', () => {
     const ticked = { interest_state: 'unknown', replied: true };
     const unticked = { interest_state: 'unknown', replied: false };
     const summary = summarizeUhpOutreach(
@@ -62,7 +62,9 @@ describe('summarizeUhpOutreach', () => {
         row({ client_id: 'b', direction: 'outbound', client: unticked }),
         row({ client_id: 'c', direction: 'outbound', client: unticked }),
         row({ client_id: 'd', direction: 'outbound', reply_received: true, client: ticked }),
-        // 'e' is ticked Replied but was not contacted in this period.
+        // Synthetic row emitted only when 'a' was manually marked Replied in this period.
+        row({ client_id: 'a', direction: null, reply_received: true, client: ticked }),
+        // A current all-time flag alone is not a reply event in this period.
         row({ client_id: 'e', direction: null, client: ticked }),
       ],
       0
@@ -74,6 +76,26 @@ describe('summarizeUhpOutreach', () => {
       responseRate: 50,
       noResponse: 2,
     });
+  });
+
+  it('does not leak an all-time Replied boolean into the selected period', () => {
+    const summary = summarizeUhpOutreach(
+      [
+        row({
+          client_id: 'old-reply',
+          direction: 'outbound',
+          client: { interest_state: 'unknown', replied: true },
+        }),
+        row({
+          client_id: 'reply-in-period',
+          reply_received: true,
+          client: { interest_state: 'unknown', replied: true },
+        }),
+      ],
+      0
+    );
+
+    expect(summary).toMatchObject({ clientsReplied: 1, responseRate: 0 });
   });
 
   it('counts interest as it currently stands, once per client', () => {

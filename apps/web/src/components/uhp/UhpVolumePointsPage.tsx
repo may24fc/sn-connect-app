@@ -1,7 +1,19 @@
 'use client';
 
 import { UHP_VP_CATEGORY_LABELS } from '@/lib/uhp';
-import { Button, Card, CardContent, Input, Label, useToast } from '@hr-portal/ui';
+import {
+  Button,
+  Card,
+  CardContent,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  useToast,
+} from '@hr-portal/ui';
 import { Loader2, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { UhpAccessManagerButton } from './UhpAccessManagerDialog';
@@ -296,18 +308,18 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
               </div>
               <div className="space-y-1">
                 <Label htmlFor="vp-category">Category</Label>
-                <select
-                  id="vp-category"
-                  name="category"
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  defaultValue={editingEntry?.category}
-                >
-                  {Object.entries(UHP_VP_CATEGORY_LABELS).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
+                <Select name="category" defaultValue={editingEntry?.category ?? 'personal'}>
+                  <SelectTrigger id="vp-category" className="h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(UHP_VP_CATEGORY_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1">
                 <Label htmlFor="vp-date">Order date</Label>
@@ -321,7 +333,12 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
               </div>
               <div className="space-y-1">
                 <Label htmlFor="vp-order">Order ID</Label>
-                <Input id="vp-order" name="orderId" maxLength={300} defaultValue={editingEntry?.order_id ?? ''} />
+                <Input
+                  id="vp-order"
+                  name="orderId"
+                  maxLength={300}
+                  defaultValue={editingEntry?.order_id ?? ''}
+                />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="vp-points">Volume points</Label>

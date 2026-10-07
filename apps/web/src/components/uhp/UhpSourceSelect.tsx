@@ -1,10 +1,19 @@
 'use client';
 
-import { Button, Input } from '@hr-portal/ui';
+import {
+  Button,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@hr-portal/ui';
 import { Check, X } from 'lucide-react';
 import { type KeyboardEvent, useState } from 'react';
 
 const ADD_SOURCE = '__add_source__';
+const NO_SOURCE = '__no_source__';
 
 /**
  * Source dropdown with an "Add another source…" option that switches to a text field.
@@ -87,24 +96,27 @@ export function UhpSourceSelect({
 
   return (
     <>
-      <select
-        id={id}
-        value={value}
+      <Select
+        value={value || NO_SOURCE}
         disabled={disabled}
-        className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-        onChange={(event) => {
-          if (event.target.value === ADD_SOURCE) setAdding(true);
-          else onChange(event.target.value);
+        onValueChange={(nextValue) => {
+          if (nextValue === ADD_SOURCE) setAdding(true);
+          else onChange(nextValue === NO_SOURCE ? '' : nextValue);
         }}
       >
-        <option value="">Not set</option>
-        {choices.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-        <option value={ADD_SOURCE}>+ Add another source…</option>
-      </select>
+        <SelectTrigger id={id} className="h-10">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={NO_SOURCE}>Not set</SelectItem>
+          {choices.map((option) => (
+            <SelectItem key={option} value={option}>
+              {option}
+            </SelectItem>
+          ))}
+          <SelectItem value={ADD_SOURCE}>+ Add another source…</SelectItem>
+        </SelectContent>
+      </Select>
       {name && <input type="hidden" name={name} value={value} />}
     </>
   );

@@ -95,9 +95,9 @@ function isOutreachClientState(
 }
 
 /**
- * Activities for the outreach metrics and digest, with each client's current interest and
- * Replied flag. Activities of deleted or review-flagged clients are left out. Pages through
- * the results because PostgREST caps a single response at 1000 rows.
+ * Activities for the outreach metrics and digest, plus timestamped manual reply toggles.
+ * Rows belonging to deleted or review-flagged clients are left out. Both queries are paged
+ * because PostgREST caps a single response at 1000 rows.
  */
 export async function fetchUhpOutreachRows(
   admin: UhpAuthedContext['admin'],
@@ -128,6 +128,35 @@ export async function fetchUhpOutreachRows(
       // Many-to-one embeds come back as an object; the untyped client infers an array.
       const current: unknown = Array.isArray(client) ? client[0] : client;
       rows.push({ ...activity, client: isOutreachClientState(current) ? current : null });
+    }
+    if (page.length < OUTREACH_PAGE_SIZE) break;
+  }
+
+  for (let offset = 0; ; offset += OUTREACH_PAGE_SIZE) {
+    const { data, error } = await admin
+      .from('uhp_clients')
+      .select('id, interest_state, replied')
+      .eq('replied', true)
+      .is('deleted_at', null)
+      .eq('migration_review_required', false)
+      .gte('replied_at', from)
+      .lte('replied_at', to)
+      .order('id')
+      .range(offset, offset + OUTREACH_PAGE_SIZE - 1);
+    if (error) {
+      console.error('Failed to load timestamped UHP replies:', error);
+      return { ok: false };
+    }
+    const page = data ?? [];
+    for (const client of page) {
+      rows.push({
+        client_id: client.id,
+        direction: null,
+        reply_received: true,
+        prospect_outcome: null,
+        appointment_type: null,
+        client: { interest_state: client.interest_state, replied: client.replied },
+      });
     }
     if (page.length < OUTREACH_PAGE_SIZE) return { ok: true, rows };
   }

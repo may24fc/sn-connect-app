@@ -75,7 +75,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const { id } = await params;
   const { data: existing } = await auth.context.admin
     .from('uhp_clients')
-    .select('status, interest_state')
+    .select('status, interest_state, replied')
     .eq('id', id)
     .is('deleted_at', null)
     .maybeSingle();
@@ -96,6 +96,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     dueDate: 'due_date',
   };
   for (const [key, value] of Object.entries(input)) updates[mapping[key] ?? key] = value ?? null;
+  if (input.replied !== undefined && input.replied !== existing.replied) {
+    updates.replied_at = input.replied ? new Date().toISOString() : null;
+  }
   const { data, error } = await auth.context.admin
     .from('uhp_clients')
     .update(updates)

@@ -146,8 +146,8 @@ export type UhpOutreachSummary = {
 /**
  * People-based summary: each client counts once regardless of how many messages were logged.
  *
- * - A client ticked "Replied" in the tracker table counts as a reply only when they were also
- *   reached out to in the period, so the response rate stays within 0-100%.
+ * - Manual Replied toggles are supplied as timestamp-filtered synthetic reply rows. The current
+ *   client boolean must not make an older reply leak into the selected period.
  * - Interested / declined count clients whose outcome was recorded in the period and is still
  *   their current interest, so a client who changed their mind is counted once, as they stand.
  */
@@ -158,12 +158,7 @@ export function summarizeUhpOutreach(
   const clientsWhere = (predicate: (row: UhpOutreachActivityRow) => boolean) =>
     new Set(rows.filter((row) => row.client_id && predicate(row)).map((row) => row.client_id));
   const reachedOut = clientsWhere((row) => row.direction === 'outbound');
-  const replied = clientsWhere(
-    (row) =>
-      row.reply_received ||
-      row.direction === 'inbound' ||
-      (row.direction === 'outbound' && row.client?.replied === true)
-  );
+  const replied = clientsWhere((row) => row.reply_received || row.direction === 'inbound');
   const outcomeStillCurrent = (row: UhpOutreachActivityRow, outcome: 'interested' | 'declined') =>
     row.prospect_outcome === outcome && (!row.client || row.client.interest_state === outcome);
   const declined = clientsWhere((row) => outcomeStillCurrent(row, 'declined'));

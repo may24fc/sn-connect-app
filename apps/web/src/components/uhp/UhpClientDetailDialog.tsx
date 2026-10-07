@@ -1,5 +1,6 @@
 'use client';
 
+import { AttachmentDeleteButton } from '@/components/attachments/AttachmentDeleteButton';
 import { queryKeys } from '@/lib/query-keys';
 import {
   UHP_ACTIVITY_APPOINTMENT_TYPES,
@@ -24,12 +25,17 @@ import {
   DialogTitle,
   Input,
   Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Textarea,
   useToast,
 } from '@hr-portal/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ExternalLink, Loader2, MessageSquarePlus, NotebookPen, Trash2 } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useRef, useState } from 'react';
 import { UhpSourceSelect } from './UhpSourceSelect';
 
 type ClientDetail = {
@@ -67,19 +73,38 @@ type ClientDetail = {
 
 type ActivityInput = { fields: Record<string, unknown>; screenshot: File | null };
 
-function ScreenshotThumbnails({ items }: { items: ClientDetail['attachments'] }) {
+const NO_SELECTION = '__none__';
+const UNASSIGNED_CLIENT_TYPE = '__unassigned__';
+
+function ScreenshotThumbnails({
+  items,
+  onDelete,
+}: {
+  items: ClientDetail['attachments'];
+  onDelete: (attachmentId: string) => void;
+}) {
   if (!items.length) return null;
   return (
     <div className="mt-2 flex flex-wrap gap-2">
       {items.map((item) =>
         item.url ? (
-          <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer">
-            <img
-              src={item.url}
-              alt={item.file_name}
-              className="h-20 w-20 rounded-md border object-cover hover:opacity-80"
+          <div key={item.id} className="relative">
+            <a href={item.url} target="_blank" rel="noopener noreferrer">
+              <img
+                src={item.url}
+                alt={item.file_name}
+                className="h-20 w-20 rounded-md border object-cover hover:opacity-80"
+              />
+            </a>
+            <AttachmentDeleteButton
+              variant="overlay"
+              itemKind="screenshot"
+              itemName={item.file_name}
+              description="The screenshot will be removed from this client and permanently deleted. This can't be undone."
+              disabled={item.id.startsWith('optimistic-')}
+              onConfirm={() => onDelete(item.id)}
             />
-          </a>
+          </div>
         ) : null
       )}
     </div>
@@ -112,6 +137,13 @@ export function UhpClientDetailDialog({
   const [activityOpen, setActivityOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const [activityScreenshot, setActivityScreenshot] = useState<File | null>(null);
+  const [activityType, setActivityType] = useState<(typeof UHP_ACTIVITY_TYPE_VALUES)[number]>(
+    UHP_ACTIVITY_TYPE_VALUES[0]
+  );
+  const [direction, setDirection] = useState('outbound');
+  const [prospectOutcome, setProspectOutcome] = useState(NO_SELECTION);
+  const [appointmentType, setAppointmentType] = useState(NO_SELECTION);
+  const appointmentTouched = useRef(false);
   const key = queryKeys.uhp.client(clientId ?? 'none');
   const detail = useQuery({
     queryKey: key,
@@ -229,6 +261,7 @@ export function UhpClientDetailDialog({
     onSuccess: ({ screenshotFailed }) => {
       setActivityOpen(false);
       setActivityScreenshot(null);
+      resetActivitySelects();
       addToast(
         screenshotFailed
           ? {
@@ -244,6 +277,42 @@ export function UhpClientDetailDialog({
       void queryClient.invalidateQueries({ queryKey: key });
       void queryClient.invalidateQueries({ queryKey: queryKeys.uhp.clientMetrics() });
     },
+  });
+
+  // Optimistic after confirmation: the thumbnail disappears at once and comes back if the
+  // server rejects the delete.
+  const deleteScreenshot = useMutation({
+    mutationFn: async (attachmentId: string) =>
+      json<{ data: { id: string } }>(
+        await fetch(`/api/uhp/clients/${clientId}/attachments/${attachmentId}`, {
+          method: 'DELETE',
+        })
+      ),
+    onMutate: async (attachmentId) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<{ data: ClientDetail }>(key);
+      queryClient.setQueryData<{ data: ClientDetail }>(key, (current) =>
+        current
+          ? {
+              data: {
+                ...current.data,
+                attachments: current.data.attachments.filter((item) => item.id !== attachmentId),
+              },
+            }
+          : current
+      );
+      return { previous };
+    },
+    onError: (error, _attachmentId, context) => {
+      if (context?.previous) queryClient.setQueryData(key, context.previous);
+      addToast({
+        variant: 'error',
+        title: 'Could not delete screenshot',
+        description: error instanceof Error ? error.message : 'Please try again.',
+      });
+    },
+    onSuccess: () => addToast({ variant: 'success', title: 'Screenshot deleted' }),
+    onSettled: () => void queryClient.invalidateQueries({ queryKey: key }),
   });
 
   const addNote = useMutation({
@@ -289,22 +358,29 @@ export function UhpClientDetailDialog({
   function submitActivity(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const appointmentType = String(form.get('appointmentType') || '');
     const appointmentAt = String(form.get('appointmentAt') || '');
     addActivity.mutate({
       screenshot: activityScreenshot,
       fields: {
-        activityType: form.get('activityType'),
+        activityType,
         title: form.get('title'),
         notes: form.get('notes') || undefined,
-        direction: form.get('direction') || undefined,
+        direction: direction === NO_SELECTION ? undefined : direction,
         channel: form.get('channel') || undefined,
         replyReceived: form.get('replyReceived') === 'on',
-        prospectOutcome: form.get('prospectOutcome') || undefined,
-        appointmentType: appointmentType || undefined,
+        prospectOutcome: prospectOutcome === NO_SELECTION ? undefined : prospectOutcome,
+        appointmentType: appointmentType === NO_SELECTION ? undefined : appointmentType,
         appointmentAt: appointmentAt ? new Date(appointmentAt).toISOString() : undefined,
       },
     });
+  }
+
+  function resetActivitySelects() {
+    setActivityType(UHP_ACTIVITY_TYPE_VALUES[0]);
+    setDirection('outbound');
+    setProspectOutcome(NO_SELECTION);
+    setAppointmentType(NO_SELECTION);
+    appointmentTouched.current = false;
   }
 
   function selectActivityScreenshot(file: File | null) {
@@ -363,43 +439,61 @@ export function UhpClientDetailDialog({
           <div className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-1">
-                <Label>Status</Label>
-                <select
-                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                <Label htmlFor="uhp-detail-status">Status</Label>
+                <Select
                   value={data.client.status}
-                  onChange={(event) => updateClient.mutate({ status: event.target.value })}
+                  onValueChange={(value) => updateClient.mutate({ status: value })}
                 >
-                  {UHP_CLIENT_STATUS_VALUES.map((status) => (
-                    <option key={status}>{status}</option>
-                  ))}
-                </select>
+                  <SelectTrigger id="uhp-detail-status" className="h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {UHP_CLIENT_STATUS_VALUES.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1">
-                <Label>Client type</Label>
-                <select
-                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                  value={data.client.client_type ?? ''}
-                  onChange={(event) =>
-                    updateClient.mutate({ clientType: event.target.value || null })
+                <Label htmlFor="uhp-detail-client-type">Client type</Label>
+                <Select
+                  value={data.client.client_type ?? UNASSIGNED_CLIENT_TYPE}
+                  onValueChange={(value) =>
+                    updateClient.mutate({
+                      clientType: value === UNASSIGNED_CLIENT_TYPE ? null : value,
+                    })
                   }
                 >
-                  <option value="">Unassigned</option>
-                  {UHP_CLIENT_TYPE_VALUES.map((type) => (
-                    <option key={type}>{type}</option>
-                  ))}
-                </select>
+                  <SelectTrigger id="uhp-detail-client-type" className="h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={UNASSIGNED_CLIENT_TYPE}>Unassigned</SelectItem>
+                    {UHP_CLIENT_TYPE_VALUES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1">
-                <Label>Interest</Label>
-                <select
-                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                <Label htmlFor="uhp-detail-interest">Interest</Label>
+                <Select
                   value={data.client.interest_state}
-                  onChange={(event) => updateClient.mutate({ interestState: event.target.value })}
+                  onValueChange={(value) => updateClient.mutate({ interestState: value })}
                 >
-                  <option value="unknown">Unknown</option>
-                  <option value="interested">Interested</option>
-                  <option value="declined">Declined</option>
-                </select>
+                  <SelectTrigger id="uhp-detail-interest" className="h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unknown">Unknown</SelectItem>
+                    <SelectItem value="interested">Interested</SelectItem>
+                    <SelectItem value="declined">Declined</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1">
                 <Label htmlFor="uhp-detail-source">Source</Label>
@@ -445,7 +539,15 @@ export function UhpClientDetailDialog({
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" onClick={() => setActivityOpen((value) => !value)}>
+              <Button
+                size="sm"
+                onClick={() =>
+                  setActivityOpen((value) => {
+                    if (!value) resetActivitySelects();
+                    return !value;
+                  })
+                }
+              >
                 <MessageSquarePlus className="mr-2 h-4 w-4" />
                 Log communication
               </Button>
@@ -475,79 +577,86 @@ export function UhpClientDetailDialog({
                 }}
               >
                 <div className="space-y-1">
-                  <Label>Activity type</Label>
-                  <select
-                    name="activityType"
-                    className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                    onChange={(event) => {
+                  <Label htmlFor="uhp-activity-type">Activity type</Label>
+                  <Select
+                    value={activityType}
+                    onValueChange={(value: (typeof UHP_ACTIVITY_TYPE_VALUES)[number]) => {
+                      setActivityType(value);
                       // Suggest the matching appointment so the Wellness evaluations / Calls
                       // cards count it, unless the user already picked one themselves.
-                      const appointment =
-                        event.currentTarget.form?.elements.namedItem('appointmentType');
-                      if (
-                        appointment instanceof HTMLSelectElement &&
-                        appointment.dataset.touched !== 'true'
-                      ) {
-                        appointment.value =
-                          UHP_ACTIVITY_APPOINTMENT_TYPES[
-                            event.currentTarget.value as (typeof UHP_ACTIVITY_TYPE_VALUES)[number]
-                          ] ?? '';
+                      if (!appointmentTouched.current) {
+                        setAppointmentType(UHP_ACTIVITY_APPOINTMENT_TYPES[value] ?? NO_SELECTION);
                       }
                     }}
                   >
-                    {UHP_ACTIVITY_TYPE_VALUES.map((value) => (
-                      <option key={value}>{value}</option>
-                    ))}
-                  </select>
+                    <SelectTrigger id="uhp-activity-type" className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {UHP_ACTIVITY_TYPE_VALUES.map((value) => (
+                        <SelectItem key={value} value={value}>
+                          {value}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-1">
                   <Label>Title</Label>
                   <Input name="title" maxLength={300} required />
                 </div>
                 <div className="space-y-1">
-                  <Label>Direction</Label>
-                  <select
-                    name="direction"
-                    defaultValue="outbound"
-                    className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                  >
-                    <option value="">Not applicable</option>
-                    <option value="outbound">Outbound</option>
-                    <option value="inbound">Inbound</option>
-                  </select>
+                  <Label htmlFor="uhp-activity-direction">Direction</Label>
+                  <Select value={direction} onValueChange={setDirection}>
+                    <SelectTrigger id="uhp-activity-direction" className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NO_SELECTION}>Not applicable</SelectItem>
+                      <SelectItem value="outbound">Outbound</SelectItem>
+                      <SelectItem value="inbound">Inbound</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-1">
                   <Label>Channel</Label>
                   <Input name="channel" maxLength={300} placeholder="Telegram, phone, email..." />
                 </div>
                 <div className="space-y-1">
-                  <Label>Outcome</Label>
-                  <select
-                    name="prospectOutcome"
-                    className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                  >
-                    <option value="">No change</option>
-                    <option value="interested">Interested</option>
-                    <option value="declined">Declined</option>
-                  </select>
+                  <Label htmlFor="uhp-activity-outcome">Outcome</Label>
+                  <Select value={prospectOutcome} onValueChange={setProspectOutcome}>
+                    <SelectTrigger id="uhp-activity-outcome" className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NO_SELECTION}>No change</SelectItem>
+                      <SelectItem value="interested">Interested</SelectItem>
+                      <SelectItem value="declined">Declined</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="flex items-center gap-2 pt-6">
                   <Checkbox id="reply-received" name="replyReceived" />
                   <Label htmlFor="reply-received">Reply received</Label>
                 </div>
                 <div className="space-y-1">
-                  <Label>Appointment</Label>
-                  <select
-                    name="appointmentType"
-                    className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                    onChange={(event) => {
-                      event.currentTarget.dataset.touched = 'true';
+                  <Label htmlFor="uhp-activity-appointment">Appointment</Label>
+                  <Select
+                    value={appointmentType}
+                    onValueChange={(value) => {
+                      appointmentTouched.current = true;
+                      setAppointmentType(value);
                     }}
                   >
-                    <option value="">None</option>
-                    <option value="wellness_evaluation">Wellness evaluation</option>
-                    <option value="call">Call</option>
-                  </select>
+                    <SelectTrigger id="uhp-activity-appointment" className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NO_SELECTION}>None</SelectItem>
+                      <SelectItem value="wellness_evaluation">Wellness evaluation</SelectItem>
+                      <SelectItem value="call">Call</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-1">
                   <Label>Appointment time</Label>
@@ -601,6 +710,7 @@ export function UhpClientDetailDialog({
                 <h3 className="mb-2 font-semibold">Screenshots</h3>
                 <ScreenshotThumbnails
                   items={(data.attachments ?? []).filter((attachment) => !attachment.activity_id)}
+                  onDelete={(attachmentId) => deleteScreenshot.mutate(attachmentId)}
                 />
               </section>
             )}
@@ -630,6 +740,7 @@ export function UhpClientDetailDialog({
                         items={(data.attachments ?? []).filter(
                           (attachment) => attachment.activity_id === item.id
                         )}
+                        onDelete={(attachmentId) => deleteScreenshot.mutate(attachmentId)}
                       />
                     </div>
                   ))
