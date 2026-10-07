@@ -3,6 +3,7 @@
 import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
 import { CrmAccessManagerButton } from '@/components/admin/CrmAccessManagerDialog';
 import { CRMInteractionPanel, type PipelineContext } from '@/components/crm/CRMInteractionPanel';
+import { TrackerPagination } from '@/components/data-display/TrackerPagination';
 import {
   type SfoLeadInput,
   type SfoLeadRecord,
@@ -53,6 +54,8 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import { Loader2, AlertCircle, Store, Building2, Pencil, Trash2 } from 'lucide-react';
+
+const CRM_PAGE_SIZE = 10;
 
 type SfoEditFormState = {
   customerName: string;
@@ -231,8 +234,10 @@ export function CrmPageContent({
 
   const [sfoSearch, setSfoSearch] = useState('');
   const [sfoStatusFilter, setSfoStatusFilter] = useState<'all' | SfoStatus>('all');
+  const [sfoPage, setSfoPage] = useState(1);
   const [techSearch, setTechSearch] = useState('');
   const [techStageFilter, setTechStageFilter] = useState<'all' | TechPipelineStage>('all');
+  const [techPage, setTechPage] = useState(1);
 
   const [selectedSfoId, setSelectedSfoId] = useState<string | null>(null);
   const [selectedTechId, setSelectedTechId] = useState<string | null>(null);
@@ -277,16 +282,34 @@ export function CrmPageContent({
 
   const sfoLeads = sfoLeadsQuery.data?.data ?? [];
   const techInquiries = techInquiriesQuery.data?.data ?? [];
+  const sfoTotalPages = Math.max(Math.ceil(sfoLeads.length / CRM_PAGE_SIZE), 1);
+  const techTotalPages = Math.max(Math.ceil(techInquiries.length / CRM_PAGE_SIZE), 1);
+  const visibleSfoLeads = sfoLeads.slice(
+    (sfoPage - 1) * CRM_PAGE_SIZE,
+    sfoPage * CRM_PAGE_SIZE
+  );
+
+  useEffect(() => {
+    setSfoPage((page) => Math.min(page, sfoTotalPages));
+  }, [sfoTotalPages]);
+
+  useEffect(() => {
+    setTechPage((page) => Math.min(page, techTotalPages));
+  }, [techTotalPages]);
 
   const selectedSfoLead = sfoLeads.find((lead) => lead.id === selectedSfoId) ?? null;
   const selectedTechInquiry = techInquiries.find((lead) => lead.id === selectedTechId) ?? null;
 
   const techByStage = useMemo(() => {
+    const visibleTechInquiries = techInquiries.slice(
+      (techPage - 1) * CRM_PAGE_SIZE,
+      techPage * CRM_PAGE_SIZE
+    );
     return techStageOptions.map((stage) => ({
       stage,
-      records: techInquiries.filter((record) => record.pipeline_stage === stage.value),
+      records: visibleTechInquiries.filter((record) => record.pipeline_stage === stage.value),
     }));
-  }, [techInquiries]);
+  }, [techInquiries, techPage]);
 
   async function handleCreateSfoLead(payload: Parameters<typeof createSfoLead.mutateAsync>[0]): Promise<void> {
     try {
@@ -451,7 +474,7 @@ export function CrmPageContent({
     ) : (
       <div className="grid gap-4 xl:grid-cols-[2fr_1fr]">
         <div className="space-y-3">
-          {sfoLeads.map((lead) => (
+          {visibleSfoLeads.map((lead) => (
             <Card
               key={lead.id}
               onClick={() => setSelectedSfoId(lead.id)}
@@ -571,6 +594,16 @@ export function CrmPageContent({
               </CardContent>
             </Card>
           ))}
+          <TrackerPagination
+            page={sfoPage}
+            totalPages={sfoTotalPages}
+            isLoading={sfoLeadsQuery.isFetching}
+            onPageChange={(page) => {
+              setSfoPage(page);
+              setSelectedSfoId(null);
+            }}
+            className="rounded-lg border bg-card"
+          />
         </div>
 
         <Card className="h-fit xl:sticky xl:top-6">
@@ -612,6 +645,8 @@ export function CrmPageContent({
         value={pipelineContext}
         onValueChange={(value) => {
           setPipelineContext(value as PipelineContext);
+          setSfoPage(1);
+          setTechPage(1);
           setSelectedSfoId(null);
           setSelectedTechId(null);
         }}
@@ -658,11 +693,17 @@ export function CrmPageContent({
             <Input
               value={sfoSearch}
                     maxLength={200}
-              onChange={(event) => setSfoSearch(event.target.value)}
+              onChange={(event) => {
+                setSfoSearch(event.target.value);
+                setSfoPage(1);
+              }}
               placeholder="Search customer, invoice, source, remarks"
               className="md:max-w-md"
             />
-            <Select value={sfoStatusFilter} onValueChange={(value) => setSfoStatusFilter(value as 'all' | SfoStatus)}>
+            <Select value={sfoStatusFilter} onValueChange={(value) => {
+              setSfoStatusFilter(value as 'all' | SfoStatus);
+              setSfoPage(1);
+            }}>
               <SelectTrigger className="w-full md:w-56">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -689,11 +730,17 @@ export function CrmPageContent({
             <Input
               value={sfoSearch}
                         maxLength={200}
-              onChange={(event) => setSfoSearch(event.target.value)}
+              onChange={(event) => {
+                setSfoSearch(event.target.value);
+                setSfoPage(1);
+              }}
               placeholder="Search customer, invoice, source, remarks"
               className="md:max-w-md"
             />
-            <Select value={sfoStatusFilter} onValueChange={(value) => setSfoStatusFilter(value as 'all' | SfoStatus)}>
+            <Select value={sfoStatusFilter} onValueChange={(value) => {
+              setSfoStatusFilter(value as 'all' | SfoStatus);
+              setSfoPage(1);
+            }}>
               <SelectTrigger className="w-full md:w-56">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -720,11 +767,17 @@ export function CrmPageContent({
             <Input
               value={techSearch}
                         maxLength={200}
-              onChange={(event) => setTechSearch(event.target.value)}
+              onChange={(event) => {
+                setTechSearch(event.target.value);
+                setTechPage(1);
+              }}
               placeholder="Search company, contact, summary"
               className="md:max-w-md"
             />
-            <Select value={techStageFilter} onValueChange={(value) => setTechStageFilter(value as 'all' | TechPipelineStage)}>
+            <Select value={techStageFilter} onValueChange={(value) => {
+              setTechStageFilter(value as 'all' | TechPipelineStage);
+              setTechPage(1);
+            }}>
               <SelectTrigger className="w-full md:w-64">
                 <SelectValue placeholder="Pipeline Stage" />
               </SelectTrigger>
@@ -772,9 +825,10 @@ export function CrmPageContent({
             </Card>
           ) : (
             <div className="grid gap-4 xl:grid-cols-[2fr_1fr]">
-              <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-                {techByStage.map(({ stage, records }) => (
-                  <Card key={stage.value}>
+              <div className="space-y-3">
+                <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                  {techByStage.map(({ stage, records }) => (
+                    <Card key={stage.value}>
                     <CardHeader className="pb-3">
                       <CardTitle className="text-sm font-semibold">{stage.label}</CardTitle>
                       <CardDescription>{records.length} deal(s)</CardDescription>
@@ -832,8 +886,19 @@ export function CrmPageContent({
                         ))
                       )}
                     </CardContent>
-                  </Card>
-                ))}
+                    </Card>
+                  ))}
+                </div>
+                <TrackerPagination
+                  page={techPage}
+                  totalPages={techTotalPages}
+                  isLoading={techInquiriesQuery.isFetching}
+                  onPageChange={(page) => {
+                    setTechPage(page);
+                    setSelectedTechId(null);
+                  }}
+                  className="rounded-lg border bg-card"
+                />
               </div>
 
               <Card className="h-fit xl:sticky xl:top-6">

@@ -65,6 +65,7 @@ import {
   Textarea,
   useToast,
 } from '@hr-portal/ui';
+import { TrackerPagination } from '@/components/data-display/TrackerPagination';
 import {
   ArrowUpDown,
   CalendarDays,
@@ -324,8 +325,6 @@ export default function PaTasksPage() {
   const tasksQuery = usePaTasks(filters, { enabled: canAccess });
   const taskRows = (tasksQuery.data?.data ?? []) as PaTaskListRow[];
   const totalPages = Math.max(tasksQuery.data?.pagination.totalPages ?? 1, 1);
-  const hasPreviousPage = currentPage > 1;
-  const hasNextPage = currentPage < totalPages;
   const selectedTaskQuery = usePaTask(selectedTaskId, detailOpen && Boolean(selectedTaskId));
   const selectedTask = (selectedTaskQuery.data?.data ?? null) as (PaTaskListRow & {
     attachments?: Array<{ id: string }>;
@@ -1240,29 +1239,12 @@ export default function PaTasksPage() {
               </TableBody>
             </Table>
           </div>
-          <div className="flex items-center justify-center gap-3 border-t border-border px-4 py-3">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={tasksQuery.isLoading || !hasPreviousPage}
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            >
-              Previous
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={tasksQuery.isLoading || !hasNextPage}
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-            >
-              Next
-            </Button>
-          </div>
+          <TrackerPagination
+            page={currentPage}
+            totalPages={totalPages}
+            isLoading={tasksQuery.isLoading}
+            onPageChange={setCurrentPage}
+          />
         </CardContent>
       </Card>
 

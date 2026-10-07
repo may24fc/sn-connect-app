@@ -1,5 +1,6 @@
 'use client';
 
+import { TrackerPagination } from '@/components/data-display/TrackerPagination';
 import { TaskKanbanBoard, type TaskStatusDB } from '@/components/tasks';
 import { WorkTrackerSectionNav } from '@/components/work-tracker/WorkTrackerSectionNav';
 import { useAuth } from '@/contexts/AuthContext';
@@ -54,7 +55,9 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { type FormEvent, useCallback, useMemo, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+
+const TRACKER_PAGE_SIZE = 10;
 
 type WorkTrackerView = 'team' | 'roadmap' | 'execution';
 
@@ -380,6 +383,17 @@ function TeamTable({
   selectedUserId: string | null;
   onSelect: (userId: string) => void;
 }) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.max(Math.ceil(people.length / TRACKER_PAGE_SIZE), 1);
+  const visiblePeople = people.slice(
+    (currentPage - 1) * TRACKER_PAGE_SIZE,
+    currentPage * TRACKER_PAGE_SIZE
+  );
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
   if (!people.length) {
     return (
       <EmptyState
@@ -413,7 +427,7 @@ function TeamTable({
             </tr>
           </thead>
           <tbody className="divide-y">
-            {people.map((person) => (
+            {visiblePeople.map((person) => (
               <tr
                 key={person.userId}
                 className={`transition-colors hover:bg-muted/50 ${
@@ -465,6 +479,11 @@ function TeamTable({
             ))}
           </tbody>
         </table>
+        <TrackerPagination
+          page={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </CardContent>
     </Card>
   );
@@ -585,6 +604,17 @@ function RoadmapView({
   isLoading: boolean;
   isError: boolean;
 }) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.max(Math.ceil(projects.length / TRACKER_PAGE_SIZE), 1);
+  const visibleProjects = projects.slice(
+    (currentPage - 1) * TRACKER_PAGE_SIZE,
+    currentPage * TRACKER_PAGE_SIZE
+  );
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
   if (isLoading) return <TrackerSkeleton />;
   if (isError) {
     return (
@@ -625,7 +655,7 @@ function RoadmapView({
             </tr>
           </thead>
           <tbody className="divide-y">
-            {projects.map((project) => (
+            {visibleProjects.map((project) => (
               <tr key={project.id} className="hover:bg-muted/30">
                 <td className="px-4 py-3">
                   <Link
@@ -675,6 +705,11 @@ function RoadmapView({
             ))}
           </tbody>
         </table>
+        <TrackerPagination
+          page={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </div>
     </section>
   );
@@ -697,6 +732,7 @@ function ExecutionView({
   const [search, setSearch] = useState(initialSearch);
   const [projectId, setProjectId] = useState(initialProjectId || 'all');
   const [assigneeId, setAssigneeId] = useState(initialAssigneeId || 'all');
+  const [currentPage, setCurrentPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newDescription, setNewDescription] = useState('');
@@ -707,13 +743,13 @@ function ExecutionView({
   const [newDueDate, setNewDueDate] = useState('');
   const filters = useMemo(
     () => ({
-      page: 1,
-      pageSize: 200,
+      page: currentPage,
+      pageSize: TRACKER_PAGE_SIZE,
       ...(search ? { search } : {}),
       ...(projectId !== 'all' ? { projectId } : {}),
       ...(assigneeId !== 'all' ? { assigneeId } : {}),
     }),
-    [assigneeId, projectId, search]
+    [assigneeId, currentPage, projectId, search]
   );
   const { data, isLoading, isError } = useTasks(filters);
   const { data: assigneesData } = useTaskAssignees(canManageAll);
@@ -721,6 +757,11 @@ function ExecutionView({
   const createTask = useCreateTask();
   const updateStatus = useUpdateTaskStatus();
   const tasks = data?.data ?? [];
+  const totalPages = Math.max(data?.pagination?.totalPages ?? 1, 1);
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
   const replaceExecutionUrl = (
     nextProjectId: string,
     nextAssigneeId: string,
@@ -792,6 +833,7 @@ function ExecutionView({
                 maxLength={200}
             onChange={(event) => {
               setSearch(event.target.value);
+              setCurrentPage(1);
               replaceExecutionUrl(projectId, assigneeId, event.target.value);
             }}
             placeholder="Search tasks..."
@@ -802,6 +844,7 @@ function ExecutionView({
           value={projectId}
           onValueChange={(value) => {
             setProjectId(value);
+            setCurrentPage(1);
             replaceExecutionUrl(value, assigneeId, search);
           }}
         >
@@ -823,6 +866,7 @@ function ExecutionView({
             value={assigneeId}
             onValueChange={(value) => {
               setAssigneeId(value);
+              setCurrentPage(1);
               replaceExecutionUrl(projectId, value, search);
             }}
           >
@@ -858,13 +902,23 @@ function ExecutionView({
         />
       ) : null}
       {!isLoading && !isError && tasks.length ? (
-        <TaskKanbanBoard
-          tasks={tasks}
-          onStatusChange={handleStatusChange}
-          linkPrefix={canManageAll ? '/super-admin/tasks' : '/tasks'}
-          returnTo={`/work-tracker?view=execution${projectId !== 'all' ? `&project=${projectId}` : ''}${assigneeId !== 'all' ? `&assignee=${assigneeId}` : ''}`}
-          includeCancelled={false}
-        />
+        <div className="overflow-hidden rounded-lg border bg-card">
+          <div className="p-4">
+            <TaskKanbanBoard
+              tasks={tasks}
+              onStatusChange={handleStatusChange}
+              linkPrefix={canManageAll ? '/super-admin/tasks' : '/tasks'}
+              returnTo={`/work-tracker?view=execution${projectId !== 'all' ? `&project=${projectId}` : ''}${assigneeId !== 'all' ? `&assignee=${assigneeId}` : ''}`}
+              includeCancelled={false}
+            />
+          </div>
+          <TrackerPagination
+            page={currentPage}
+            totalPages={totalPages}
+            isLoading={isLoading}
+            onPageChange={setCurrentPage}
+          />
+        </div>
       ) : null}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-xl">
