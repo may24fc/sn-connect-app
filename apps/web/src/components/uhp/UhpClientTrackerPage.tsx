@@ -617,9 +617,11 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
-          {/* Columns keep their natural width and the table scrolls sideways instead of squeezing. */}
+          {/* Columns keep their natural width and the table scrolls sideways instead of squeezing.
+              The min width fits the first 8 columns on screen; Source and Link (9th, 10th) are
+              reached by scrolling. */}
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[72rem] whitespace-nowrap text-left text-sm">
+            <table className="w-full min-w-[96rem] whitespace-nowrap text-left text-sm">
               <thead className="border-b bg-muted/40 text-xs uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">Client</th>
@@ -627,11 +629,11 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Owner</th>
                   <th className="px-4 py-3">Contact</th>
-                  <th className="px-4 py-3">Source</th>
-                  <th className="px-4 py-3">Link</th>
                   <th className="px-4 py-3">Replied</th>
                   <th className="px-4 py-3">Interest</th>
                   <th className="px-4 py-3">Updated</th>
+                  <th className="px-4 py-3">Source</th>
+                  <th className="px-4 py-3">Link</th>
                 </tr>
               </thead>
               <tbody>
@@ -687,27 +689,6 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
                       <td className="px-4 py-3 text-muted-foreground">
                         {client.email ?? client.phone ?? '—'}
                       </td>
-                      <td className="px-4 py-3">{client.source_name ?? '—'}</td>
-                      <td
-                        className="px-4 py-3"
-                        onClick={(event) => event.stopPropagation()}
-                        onKeyDown={(event) => event.stopPropagation()}
-                      >
-                        {client.source_url ? (
-                          <a
-                            href={client.source_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title={client.source_url}
-                            className="inline-flex max-w-[12rem] items-center gap-1 text-primary hover:underline"
-                          >
-                            <span className="truncate">{uhpLinkLabel(client.source_url)}</span>
-                            <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-                          </a>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
                       <td
                         className="px-4 py-3"
                         onClick={(event) => event.stopPropagation()}
@@ -753,6 +734,27 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {new Date(client.updated_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-3">{client.source_name ?? '—'}</td>
+                      <td
+                        className="px-4 py-3"
+                        onClick={(event) => event.stopPropagation()}
+                        onKeyDown={(event) => event.stopPropagation()}
+                      >
+                        {client.source_url ? (
+                          <a
+                            href={client.source_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={client.source_url}
+                            className="inline-flex max-w-[12rem] items-center gap-1 text-primary hover:underline"
+                          >
+                            <span className="truncate">{uhpLinkLabel(client.source_url)}</span>
+                            <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                          </a>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </td>
                     </tr>
                   ))
