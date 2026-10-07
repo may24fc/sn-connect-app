@@ -11,6 +11,7 @@ import {
   type ExpenseEntry,
 } from '@/hooks/useExpenses';
 import { validateReceiptImageQuality } from '@/lib/expenses/image-quality';
+import { FINANCE_CATEGORIES, categoryToLegacyType, type FinanceCategoryCode } from '@/lib/finance/categories';
 import {
   Button,
   Card,
@@ -47,17 +48,6 @@ import { ClipboardList, FileText, Loader2, Plus, Receipt, Sparkles, Trash2 } fro
 
 const DELETABLE_STATUSES = new Set(['draft_extracted', 'awaiting_associate_review']);
 
-const EXPENSE_TYPES = [
-  { value: 'software', label: 'Software' },
-  { value: 'office_supplies', label: 'Office Supplies' },
-  { value: 'travel', label: 'Travel' },
-  { value: 'meals', label: 'Meals' },
-  { value: 'equipment', label: 'Equipment' },
-  { value: 'utilities', label: 'Utilities' },
-  { value: 'maintenance', label: 'Maintenance' },
-  { value: 'other', label: 'Other' },
-] as const;
-
 const CURRENCIES = ['AUD', 'USD', 'PHP', 'EUR', 'GBP', 'SGD', 'JPY'] as const;
 
 export default function EmployeeExpensesPage() {
@@ -74,7 +64,9 @@ export default function EmployeeExpensesPage() {
   // Manual request logging form state
   const [requestVendor, setRequestVendor] = useState('');
   const [requestDate, setRequestDate] = useState('');
-  const [requestExpenseType, setRequestExpenseType] = useState<(typeof EXPENSE_TYPES)[number]['value']>('software');
+  const [requestCategory, setRequestCategory] = useState<FinanceCategoryCode>('software');
+  const [uploadCategory, setUploadCategory] = useState<FinanceCategoryCode>('software');
+  const [uploadPaymentSource, setUploadPaymentSource] = useState('unknown');
   const [requestCurrency, setRequestCurrency] = useState<(typeof CURRENCIES)[number]>('AUD');
   const [requestTotalAmount, setRequestTotalAmount] = useState('');
   const [requestTaxAmount, setRequestTaxAmount] = useState('');
@@ -86,7 +78,6 @@ export default function EmployeeExpensesPage() {
     user?.id
       ? {
           userId: user.id,
-          sourceType: isRequestOnlyView ? 'staff_request' : undefined,
         }
       : undefined
   );
@@ -192,6 +183,8 @@ export default function EmployeeExpensesPage() {
       {
         files: validatedFiles,
         businessJustification: justification || undefined,
+        categoryCode: uploadCategory,
+        paymentSource: uploadPaymentSource,
         concurrency: 3,
       },
       {
@@ -205,6 +198,8 @@ export default function EmployeeExpensesPage() {
           setUploadOpen(false);
           setSelectedFiles([]);
           setBusinessJustification('');
+          setUploadCategory('software');
+          setUploadPaymentSource('unknown');
         },
         onError: (err: unknown) => {
           const message = err instanceof Error ? err.message : 'Failed to queue receipt ingestion.';
@@ -226,7 +221,7 @@ export default function EmployeeExpensesPage() {
   const resetRequestForm = () => {
     setRequestVendor('');
     setRequestDate('');
-    setRequestExpenseType('software');
+    setRequestCategory('software');
     setRequestCurrency('AUD');
     setRequestTotalAmount('');
     setRequestTaxAmount('');
@@ -255,7 +250,8 @@ export default function EmployeeExpensesPage() {
       {
         vendorName: requestVendor.trim(),
         transactionDate: requestDate,
-        expenseType: requestExpenseType,
+        expenseType: categoryToLegacyType(requestCategory),
+        categoryCode: requestCategory,
         totalAmount: amount,
         taxAmount: Number.isFinite(tax) ? tax : 0,
         currency: requestCurrency,
@@ -339,9 +335,9 @@ export default function EmployeeExpensesPage() {
     }
   };
 
-  const getExpenseTypeLabel = (type: ExpenseEntry['expense_type']) => {
-    const mappedType = EXPENSE_TYPES.find((item) => item.value === type);
-    return mappedType?.label ?? type;
+  const getExpenseTypeLabel = (expense: ExpenseEntry) => {
+    const mappedType = FINANCE_CATEGORIES.find((item) => item.code === (expense.category_code || expense.expense_type));
+    return mappedType?.name ?? expense.expense_type;
   };
 
   const formatDate = (dateStr: string) => {
@@ -402,13 +398,13 @@ export default function EmployeeExpensesPage() {
                   </div>
                   <div className="grid gap-2">
                     <Label>Category</Label>
-                    <Select value={requestExpenseType} onValueChange={(value) => setRequestExpenseType(value as typeof requestExpenseType)}>
+                    <Select value={requestCategory} onValueChange={(value) => setRequestCategory(value as FinanceCategoryCode)}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {EXPENSE_TYPES.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                        {FINANCE_CATEGORIES.map((type) => (
+                          <SelectItem key={type.code} value={type.code}>{type.name} — {type.example}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -528,6 +524,32 @@ export default function EmployeeExpensesPage() {
                     )}
                   </div>
 
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label>Category</Label>
+                      <Select value={uploadCategory} onValueChange={(value) => setUploadCategory(value as FinanceCategoryCode)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {FINANCE_CATEGORIES.map((category) => (
+                            <SelectItem key={category.code} value={category.code}>{category.name} — {category.example}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Paid with</Label>
+                      <Select value={uploadPaymentSource} onValueChange={setUploadPaymentSource}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="unknown">To confirm</SelectItem>
+                          <SelectItem value="personal_card">Personal card</SelectItem>
+                          <SelectItem value="company_card">Company card</SelectItem>
+                          <SelectItem value="bank_transfer">Bank transfer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
                   <div className="grid gap-2">
                     <Label htmlFor="justification">Business Justification / Submitter Notes</Label>
                     <Textarea
@@ -630,7 +652,7 @@ export default function EmployeeExpensesPage() {
                         {isRequestOnlyView ? (
                           <TableCell>
                             <Badge variant="outline" className="w-fit border-zinc-300 text-zinc-600">
-                              {getExpenseTypeLabel(expense.expense_type)}
+                              {getExpenseTypeLabel(expense)}
                             </Badge>
                           </TableCell>
                         ) : (

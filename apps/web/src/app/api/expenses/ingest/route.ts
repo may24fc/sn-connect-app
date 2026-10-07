@@ -1,6 +1,7 @@
 import { resolveStagedFormData } from '@/lib/storage/upload-staging.server';
 import { logActivity } from '@/lib/audit';
 import { resolveExpenseCapabilities } from '@/lib/expenses/capabilities';
+import { FINANCE_CATEGORIES, categoryToLegacyType, type FinanceCategoryCode } from '@/lib/finance/categories';
 import { inngest } from '@/lib/inngest/client';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { extractReceiptFromImage, extractReceiptFromText } from '@hr-portal/ai';
@@ -20,9 +21,13 @@ function sanitizeFileName(fileName: string): string {
 function parseExpenseUploadFormData(formData: FormData): {
   file: File;
   businessJustification: string | null;
+  categoryCode: FinanceCategoryCode;
+  paymentSource: 'unknown' | 'personal_card' | 'company_card' | 'bank_transfer';
 } {
   const file = formData.get('file');
   const businessJustificationRaw = formData.get('businessJustification');
+  const categoryRaw = formData.get('categoryCode');
+  const sourceRaw = formData.get('paymentSource');
 
   if (!(file instanceof File)) {
     throw new Error('No file provided');
@@ -41,7 +46,9 @@ function parseExpenseUploadFormData(formData: FormData): {
       ? businessJustificationRaw.trim()
       : null;
 
-  return { file, businessJustification };
+  const categoryCode = FINANCE_CATEGORIES.some((category) => category.code === categoryRaw) ? categoryRaw as FinanceCategoryCode : 'other';
+  const paymentSource = ['unknown','personal_card','company_card','bank_transfer'].includes(String(sourceRaw)) ? sourceRaw as 'unknown' | 'personal_card' | 'company_card' | 'bank_transfer' : 'unknown';
+  return { file, businessJustification, categoryCode, paymentSource };
 }
 
 async function resolveEmployeeProfile(
@@ -394,7 +401,7 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await resolveStagedFormData(await request.formData());
-    const { file, businessJustification } = parseExpenseUploadFormData(formData);
+    const { file, businessJustification, categoryCode, paymentSource } = parseExpenseUploadFormData(formData);
     const { employeeId, departmentId } = await resolveEmployeeProfile(adminClient, user.id);
 
     const fileBuffer = await file.arrayBuffer();
@@ -425,7 +432,10 @@ export async function POST(request: NextRequest) {
         risk_bucket: 'pending',
         processing_status: 'draft_extracted',
         business_justification: businessJustification,
-        expense_type: 'other',
+        expense_type: categoryToLegacyType(categoryCode),
+        category_code: categoryCode,
+        payment_source: paymentSource,
+        payment_status: 'unknown',
         department_id: departmentId,
         created_by: user.id,
       })

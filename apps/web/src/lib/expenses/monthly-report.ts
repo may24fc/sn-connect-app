@@ -150,6 +150,7 @@ export async function buildMonthlyExpenseReport(
       'transaction_date, total_amount, total_amount_aud, expense_type, processing_status, match_status, risk_bucket, matched_variance_amount, vendor_name, department_id, department:departments(name), employee:employees!expense_entries_employee_id_fkey(department)'
     )
     .is('deleted_at', null)
+    .eq('source_type', 'direct_payment')
     .gte('transaction_date', toIsoDate(previousStart))
     .lte('transaction_date', toIsoDate(currentEnd))
     .order('transaction_date', { ascending: true });

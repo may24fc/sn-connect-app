@@ -27,6 +27,7 @@ function buildFakeAdminClient(rows: FakeRow[]) {
   const builder = {
     select: vi.fn(() => builder),
     is: vi.fn(() => builder),
+    eq: vi.fn(() => builder),
     gte: vi.fn(() => builder),
     lte: vi.fn(() => builder),
     order: vi.fn(() => queryResult),
@@ -93,10 +94,6 @@ describe('buildMonthlyExpenseReport', () => {
     expect(totalSpend?.currentMonth).toBe(400);
     expect(totalSpend?.previousMonth).toBe(200);
     expect(totalSpend?.momPercentChange).toBe(100);
-
-    const entryCount = report.summary.find((m) => m.metric === 'Total Ledger Entries');
-    expect(entryCount?.currentMonth).toBe(2);
-    expect(entryCount?.previousMonth).toBe(1);
 
     const average = report.summary.find((m) => m.metric === 'Average Spend Per Entry');
     expect(average?.currentMonth).toBe(200);

@@ -83,13 +83,17 @@ function buildMonthlyOverview(entries: Array<{ platformName: string; monthIndex:
     const email = monthEntries
       .filter((entry) => normalizeMarketingPlatformKey(entry.platformName) === 'email')
       .reduce((sum, entry) => sum + Number(entry.amount ?? 0), 0);
-    const total = meta + google + email;
+    const seo = monthEntries
+      .filter((entry) => normalizeMarketingPlatformKey(entry.platformName) === 'seo')
+      .reduce((sum, entry) => sum + Number(entry.amount ?? 0), 0);
+    const total = meta + google + email + seo;
 
     return {
       month,
       meta: formatMarketingCurrency(meta),
       google: formatMarketingCurrency(google),
       email: formatMarketingCurrency(email),
+      seo: formatMarketingCurrency(seo),
       total: formatMarketingCurrency(total),
     };
   });

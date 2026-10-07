@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import MarketingAdSpendPage from '@/app/(app)/(admin)/admin/marketing/ad-spend/page';
+import { MarketingAdSpendDashboard } from '@/components/marketing/MarketingAdSpendDashboard';
 import { getMarketingAuthedContext } from '@/app/api/marketing/_lib';
 
 export const dynamic = 'force-dynamic';
@@ -12,6 +12,6 @@ export default async function MarketingAdSpendSharedPage() {
   }
 
   return (
-    <MarketingAdSpendPage />
+    <MarketingAdSpendDashboard />
   );
 }

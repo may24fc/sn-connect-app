@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { FINANCE_CATEGORIES } from '@/lib/finance/categories';
 
 const SUPPORTED_CURRENCIES = ['PHP', 'USD', 'EUR', 'AUD', 'GBP', 'SGD', 'JPY'] as const;
 
@@ -32,6 +33,7 @@ export const expenseLogRequestSchema = z.object({
   vendorName: z.string().min(1, 'Vendor / service name is required').max(255),
   transactionDate: z.string().min(1, 'Transaction date is required'),
   expenseType: z.enum(EXPENSE_TYPES),
+  categoryCode: z.enum(FINANCE_CATEGORIES.map((category) => category.code) as [string, ...string[]]).optional(),
   totalAmount: z.number().positive('Total amount must be greater than 0'),
   taxAmount: z.number().nonnegative().optional().nullable(),
   currency: z.enum(SUPPORTED_CURRENCIES),

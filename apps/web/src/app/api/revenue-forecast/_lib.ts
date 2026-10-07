@@ -21,6 +21,7 @@ export interface RevenueForecastGrantRecord {
   role: string | null;
   department: string | null;
   position: string | null;
+  avatarUrl: string | null;
 }
 
 async function resolveUserRole(
@@ -139,7 +140,7 @@ export async function listRevenueForecastAccessGrants(): Promise<
 
   const { data: userRows, error: usersError } = await admin
     .from('users')
-    .select('id, role')
+    .select('id, role, avatar_url')
     .in('id', [...new Set([...userIds, ...granterIds])])
     .is('deleted_at', null);
 
@@ -201,6 +202,7 @@ export async function listRevenueForecastAccessGrants(): Promise<
       role: userById.get(row.user_id)?.role ?? null,
       department: employee?.department ?? null,
       position: employee?.position ?? null,
+      avatarUrl: userById.get(row.user_id)?.avatar_url ?? null,
     };
   });
 }

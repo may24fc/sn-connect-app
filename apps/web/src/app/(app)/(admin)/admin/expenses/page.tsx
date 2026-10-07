@@ -135,7 +135,7 @@ export default function AdminExpensesDashboard() {
   };
 
   const filteredRows = rawLedger?.data || [];
-  const exceptions = filteredRows.filter((entry) => entry.match_status === EXCEPTION_MATCH_STATUS);
+  const exceptions = filteredRows.filter((entry) => entry.match_status === EXCEPTION_MATCH_STATUS && (entry.source_type === 'staff_request' || !entry.matched_entry_id));
   const settled = filteredRows.filter(
     (entry) => SETTLED_STATUSES.has(entry.processing_status) || SETTLED_MATCH_STATUSES.has(entry.match_status)
   );
@@ -367,7 +367,8 @@ export default function AdminExpensesDashboard() {
             <div className="grid gap-6 md:grid-cols-2">
               {exceptions.map((expense) => {
                 const varianceAmount = expense.matched_variance_amount ?? 0;
-                const isLargeVariance = Math.abs(varianceAmount) >= expense.total_amount * 0.1;
+                const loggedAmountAud = Number(expense.total_amount_aud ?? (expense.currency === 'AUD' ? expense.total_amount : 0));
+                const isLargeVariance = Math.abs(varianceAmount) > 100 || (loggedAmountAud > 0 && Math.abs(varianceAmount) / loggedAmountAud > 0.10);
                 return (
                   <Card
                     key={expense.id}

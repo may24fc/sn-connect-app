@@ -87,25 +87,6 @@ function mean(values: Array<number>): number {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
-function getMonthMax(entries: Array<RevenueEntryLike>, month: number): number | null {
-  const values = entries
-    .filter((entry) => entry.month === month)
-    .map((entry) => entry.actualRevenueAud);
-  if (values.length === 0) {
-    return null;
-  }
-
-  return Math.max(...values);
-}
-
-function getAllTimeMax(entries: Array<RevenueEntryLike>): number | null {
-  if (entries.length === 0) {
-    return null;
-  }
-
-  return Math.max(...entries.map((entry) => entry.actualRevenueAud));
-}
-
 function formatCurrencyNoCents(value: number): string {
   return new Intl.NumberFormat('en-AU', {
     style: 'currency',
@@ -160,7 +141,6 @@ export function computeRevenueForecast(
     entryByYearMonth.set(`${entry.year}-${entry.month}`, entry);
   }
 
-  const allTimeMax = getAllTimeMax(entries);
 
   const actualGrowthSignals = REVENUE_MONTHS.map((_, index) => {
     const month = index + 1;
@@ -173,26 +153,28 @@ export function computeRevenueForecast(
 
     const growth =
       ((current.actualRevenueAud - previous.actualRevenueAud) / previous.actualRevenueAud) * 100;
-    const monthMax = getMonthMax(entries, month);
-    const isMonthlyRecord = monthMax !== null && current.actualRevenueAud >= monthMax;
-    const isAllTimeRecord = allTimeMax !== null && current.actualRevenueAud >= allTimeMax;
-
     return {
       month,
       growth,
-      isRecord: isMonthlyRecord || isAllTimeRecord,
     };
-  }).filter((value): value is { month: number; growth: number; isRecord: boolean } =>
+  }).filter((value): value is { month: number; growth: number } =>
     Boolean(value)
   );
 
   const growthValues = actualGrowthSignals.map((signal) => signal.growth);
+  const averageGrowth = mean(growthValues);
+  const standardDeviation = Math.sqrt(mean(growthValues.map((value) => (value - averageGrowth) ** 2)));
+  const exceptionalMonths = new Set(
+    growthValues.length >= 4
+      ? actualGrowthSignals.filter((signal) => signal.growth > averageGrowth + standardDeviation).map((signal) => signal.month)
+      : []
+  );
   const nonRecordGrowthValues = actualGrowthSignals
-    .filter((signal) => !signal.isRecord)
+    .filter((signal) => !exceptionalMonths.has(signal.month))
     .map((signal) => signal.growth);
 
   const conservative = growthValues.length > 0 ? Math.min(...growthValues) : 0;
-  const average = mean(growthValues);
+  const average = averageGrowth;
   const underlying = nonRecordGrowthValues.length > 0 ? mean(nonRecordGrowthValues) : average;
 
   const scenarioRates: Record<ForecastScenarioKey, number> = {
@@ -226,9 +208,11 @@ export function computeRevenueForecast(
     let recordTag: 'monthly' | 'all-time' | null = null;
 
     if (targetYearActual !== null) {
-      const monthMax = getMonthMax(entries, month);
-      const isMonthlyRecord = monthMax !== null && targetYearActual >= monthMax;
-      const isAllTimeRecord = allTimeMax !== null && targetYearActual >= allTimeMax;
+      const priorEntries = entries.filter((entry) => isBeforeMonth(entry, { year: targetYear, month }));
+      const priorSameMonthMax = priorEntries.filter((entry) => entry.month === month).reduce<number | null>((max, entry) => max === null ? entry.actualRevenueAud : Math.max(max, entry.actualRevenueAud), null);
+      const priorAllTimeMax = priorEntries.reduce<number | null>((max, entry) => max === null ? entry.actualRevenueAud : Math.max(max, entry.actualRevenueAud), null);
+      const isMonthlyRecord = priorSameMonthMax !== null && targetYearActual > priorSameMonthMax;
+      const isAllTimeRecord = priorAllTimeMax !== null && targetYearActual > priorAllTimeMax;
 
       if (isAllTimeRecord) {
         recordTag = 'all-time';

@@ -63,7 +63,7 @@ interface RevenueForecastPageContentProps {
 const scenarioOptions: Array<{ key: ForecastScenarioKey; label: string; subLabel: string }> = [
   { key: 'conservative', label: 'Conservative', subLabel: 'Low-risk projection' },
   { key: 'average', label: 'Average', subLabel: 'Historical average growth' },
-  { key: 'underlying', label: 'Real underlying', subLabel: 'Excludes record spikes' },
+  { key: 'underlying', label: 'Underlying', subLabel: 'Excludes exceptional growth months' },
 ];
 
 export function RevenueForecastPageContent({
@@ -71,7 +71,6 @@ export function RevenueForecastPageContent({
 }: RevenueForecastPageContentProps): ReactNode {
   const now = new Date();
   const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
   const { addToast } = useToast();
 
   const [targetYear, setTargetYear] = useState(currentYear);
@@ -104,6 +103,10 @@ export function RevenueForecastPageContent({
   );
 
   const goalRows = useMemo(
+    () => buildGoalProgressRows(goals, targetYear, forecast.earnedJanToDateAud),
+    [goals, targetYear, forecast.earnedJanToDateAud]
+  );
+  const forecastGoalRows = useMemo(
     () => buildGoalProgressRows(goals, targetYear, forecast.projectedTotalAud),
     [goals, targetYear, forecast.projectedTotalAud]
   );
@@ -121,14 +124,11 @@ export function RevenueForecastPageContent({
   }));
 
   const earnedPeriodEndMonth = useMemo(() => {
-    if (targetYear < currentYear) {
-      return 12;
-    }
-    if (targetYear > currentYear) {
-      return 0;
-    }
-    return currentMonth;
-  }, [currentMonth, currentYear, targetYear]);
+    const recordedMonths = new Set(targetYearEntries.map((entry) => entry.month));
+    let lastContiguousMonth = 0;
+    while (recordedMonths.has(lastContiguousMonth + 1)) lastContiguousMonth += 1;
+    return lastContiguousMonth;
+  }, [targetYearEntries]);
 
   const earnedRangeLabel = useMemo(() => {
     if (earnedPeriodEndMonth <= 0) {
@@ -401,7 +401,7 @@ export function RevenueForecastPageContent({
           <Card>
             <CardHeader>
               <CardTitle>Revenue goals</CardTitle>
-              <CardDescription>Track projected total against annual targets.</CardDescription>
+              <CardDescription>Actual progress against annual targets, with the forecast shown separately.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               {goalRows.length === 0 ? (
@@ -414,7 +414,7 @@ export function RevenueForecastPageContent({
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-zinc-600 dark:text-zinc-300">{goal.label}</span>
                       <span className="font-semibold text-emerald-500">
-                        {goal.progressPercent.toFixed(1)}%
+                        Actual {goal.progressPercent.toFixed(1)}% · Forecast {forecastGoalRows.find((row) => row.id === goal.id)?.progressPercent.toFixed(1) ?? '0.0'}%
                       </span>
                     </div>
                     <Progress value={goal.progressPercent} className="h-2" />

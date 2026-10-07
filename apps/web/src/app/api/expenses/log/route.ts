@@ -1,5 +1,6 @@
 import { logActivity } from '@/lib/audit';
 import { resolveExpenseCapabilities } from '@/lib/expenses/capabilities';
+import { categoryToLegacyType, type FinanceCategoryCode } from '@/lib/finance/categories';
 import { expenseLogRequestSchema } from '@/lib/schemas/expense.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -119,7 +120,10 @@ export async function POST(request: NextRequest) {
         total_amount: parsed.data.totalAmount,
         tax_amount: parsed.data.taxAmount ?? 0,
         currency: parsed.data.currency,
-        expense_type: parsed.data.expenseType,
+        expense_type: parsed.data.categoryCode ? categoryToLegacyType(parsed.data.categoryCode as FinanceCategoryCode) : parsed.data.expenseType,
+        category_code: parsed.data.categoryCode ?? parsed.data.expenseType,
+        payment_source: 'unknown',
+        payment_status: 'unpaid',
         business_justification: parsed.data.businessJustification || null,
         risk_bucket: 'pending',
         processing_status: 'awaiting_associate_review',
