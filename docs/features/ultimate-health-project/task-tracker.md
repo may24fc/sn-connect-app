@@ -2,13 +2,14 @@
 
 ## Current Status
 
-UHP Outreach Tracker metric periods now use explicit time bounds for activity events and timestamped manual replies. The reply-timestamp migration is applied and verified locally and in production. Portal Reminders remains dependent on configuring a Telegram destination and completing the first delivery verification.
+UHP Outreach Tracker metric periods use explicit time bounds for activity events and timestamped manual replies. The legacy-reply backfill is applied locally and in production, giving pre-timestamp checked rows an event time based on their last update so the Replies card includes them in the applicable period. Portal Reminders remains dependent on configuring a Telegram destination and completing the first delivery verification.
 
 Related reliability review: [optimization.md](optimization.md).
 
 ## Tasks
 
 ### Done
+- [x] Backfill timestamps for legacy checked Replied rows - 2026-10-08; added `supabase/migrations/20261008000001_backfill_uhp_replied_at.sql`. Root cause: rows checked before `replied_at` was introduced remained `replied = true, replied_at = NULL`, so the period-aware metrics query omitted them even though the table displayed a check. The migration uses each row's existing `updated_at` (falling back to `created_at`) as the best available event time; new toggles keep their exact API-written timestamp. Validation: applied locally with `supabase migration up --local`; a rollback-only SQL fixture confirmed the timestamp backfill; 10 focused UHP tests and `pnpm --filter web typecheck` passed. Production dry-run listed only `20261008000001`, then the approved push and `supabase migration list --linked` confirmed it on 2026-10-08.
 - [x] Implement authenticated UHP reminder delivery-history callback - 2026-09-28; changed `apps/web/src/app/api/uhp/reminders/runs/route.ts`, `apps/web/src/app/api/uhp/_lib.ts`, and `supabase/migrations/20260923000002_create_uhp_workspace.sql`; focused UHP reminder and workflow tests passed.
 - [x] Configure live n8n reminder callback nodes to use `Control Hub Callback` - 2026-09-28; live workflow `tGgNv4OB3vtADFZg` has Header Auth attached to both success and failure callback nodes; inspected through the configured n8n MCP connection.
 - [x] Audit UHP reminder deployment state - 2026-10-02; live workflow URL, schedule, credential attachment, failure branch, activation state, recipients, and execution history inspected; `pnpm exec vitest run n8n/workflows/uhp-workflows.test.ts apps/web/src/lib/uhp-reminders.test.ts` passed (10 tests).
@@ -34,6 +35,7 @@ Related reliability review: [optimization.md](optimization.md).
 - [ ] Production reminder rollout - configure at least one Telegram destination, run a due-date delivery test, verify the Control Hub history callback, then activate the workflow.
 
 ### Deferred
+- [ ] Capture valid before/after latency measurements for the UHP metrics query - local `next dev` sampling on 2026-10-08 was invalid because concurrent dev servers corrupted the shared `.next` manifests, producing 19/30 HTTP 500 responses on the UHP page, metrics API, and unaffected control route. The local database also has zero checked UHP clients, so it cannot model the production data update. Resume with an isolated production-build server and representative local fixture data; exact sampler target is recorded in `optimization.md`.
 - [ ] Check card numbers against production data - Deferred: bulk reads of production client data were blocked by the permission classifier. Resume: with user approval, compare `/api/uhp/clients/metrics` for this month with a manual count, or click through the deployed page.
 - [ ] Immediate end-to-end reminder test - the workflow intentionally emits no data on non-due dates; resume on a due date or with an explicitly approved temporary test configuration that sends a real Telegram message.
 
@@ -43,6 +45,7 @@ Related reliability review: [optimization.md](optimization.md).
 - [ ] Activation and first delivery verification - Telegram recipient/chat ID has not been configured; owner: workspace administrator.
 
 ## Session History
+- 2026-10-08 (legacy reply checks): Investigated a Replies card showing 1 while at least 3 table rows were checked. Confirmed the card query requires `replied_at` inside the selected period, but legacy checked rows deliberately had null timestamps. Added and locally validated a one-time `updated_at`/`created_at` backfill, preserving period semantics for Week / Month / Quarter. After an explicit production link and a dry-run that listed only `20261008000001`, applied it to production and verified migration history. A valid isolated latency comparison remains deferred.
 - 2026-10-07 (dropdown audit): Found 20 raw HTML selects across six files. Modernized all 12 in UHP using the shared Radix Select and kept eight unrelated AI Spending / Performance controls explicitly deferred in the dropdown modernization tracker. Preserved activity appointment auto-suggestions with controlled state rather than DOM mutation.
 - 2026-10-07 (metric periods): Reviewed the Week / Month / Quarter path. Confirmed activity-derived metrics already filter `occurred_at`; fixed the manual Replied boolean's missing event time with `replied_at`, explicit request bounds, and uncached metric fetches. Existing checked replies are intentionally not backdated because there is no reliable historical reply time. Local migration/schema and 10 focused tests passed; production and browser verification remain.
 - 2026-10-07 (screenshot delete): Added screenshot deletion per a UHP team request. Decisions: soft-delete the row and also remove the file, since screenshots hold private conversations; optimistic after confirmation, matching client delete. Not deployed or committed.
