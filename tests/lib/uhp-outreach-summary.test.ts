@@ -1,6 +1,7 @@
 import {
   type UhpOutreachActivityRow,
   summarizeUhpOutreach,
+  summarizeUhpOutreachCohort,
   updateUhpReplyMetrics,
 } from '@/lib/uhp';
 import { describe, expect, it } from 'vitest';
@@ -160,7 +161,7 @@ describe('summarizeUhpOutreach', () => {
     expect(updateUhpReplyMetrics(checked, 'client-2', false)).toEqual(before);
   });
 
-  it('updates Replies without changing Response rate for a client not reached in the period', () => {
+  it('does not change cohort cards for a client not reached in the period', () => {
     const before = {
       replies: 1,
       responseRate: 50,
@@ -172,9 +173,71 @@ describe('summarizeUhpOutreach', () => {
     };
 
     expect(updateUhpReplyMetrics(before, 'older-client', true)).toMatchObject({
-      replies: 2,
+      replies: 1,
       repliedAfterOutreach: 1,
       responseRate: 50,
+    });
+  });
+
+  it('credits a later reply to the outreach period, but not a reply before outreach', () => {
+    const periodRows = [
+      row({ client_id: 'a', direction: 'outbound', occurred_at: '2026-09-30T09:00:00Z' }),
+      row({ client_id: 'b', direction: 'outbound', occurred_at: '2026-10-01T09:00:00Z' }),
+      row({ client_id: 'b', direction: 'inbound', occurred_at: '2026-09-29T09:00:00Z' }),
+      row({ client_id: 'c', direction: 'inbound', occurred_at: '2026-09-30T12:00:00Z' }),
+    ];
+    const laterRows = [
+      row({
+        client_id: 'a',
+        reply_received: true,
+        manual_reply: true,
+        occurred_at: '2026-10-06T09:00:00Z',
+      }),
+      row({ client_id: 'c', direction: 'inbound', occurred_at: '2026-10-06T10:00:00Z' }),
+    ];
+    expect(summarizeUhpOutreachCohort(periodRows, laterRows)).toMatchObject({
+      outreachAttempts: 2,
+      clientsReachedOut: 2,
+      replies: 1,
+      repliedAfterOutreach: 1,
+      reachedOutClientIds: ['a', 'b'],
+      repliedClientIds: ['a'],
+      responseRate: 50,
+    });
+  });
+
+  it('deduplicates a late manual check and a later inbound reply for the same cohort client', () => {
+    const periodRows = [
+      row({ client_id: 'a', direction: 'outbound', occurred_at: '2026-09-30T09:00:00Z' }),
+    ];
+    const laterRows = [
+      row({
+        client_id: 'a',
+        reply_received: true,
+        manual_reply: true,
+        occurred_at: '2026-10-06T09:00:00Z',
+      }),
+      row({ client_id: 'a', direction: 'inbound', occurred_at: '2026-10-06T10:00:00Z' }),
+    ];
+    expect(summarizeUhpOutreachCohort(periodRows, laterRows)).toMatchObject({
+      replies: 1,
+      activityReplyClientIds: ['a'],
+      responseRate: 100,
+    });
+  });
+
+  it('attributes a reply to a newer follow-up period instead of both outreach periods', () => {
+    const periodRows = [
+      row({ client_id: 'a', direction: 'outbound', occurred_at: '2026-09-30T09:00:00Z' }),
+    ];
+    const laterRows = [
+      row({ client_id: 'a', direction: 'outbound', occurred_at: '2026-10-06T09:00:00Z' }),
+      row({ client_id: 'a', direction: 'inbound', occurred_at: '2026-10-07T09:00:00Z' }),
+    ];
+    expect(summarizeUhpOutreachCohort(periodRows, laterRows)).toMatchObject({
+      clientsReachedOut: 1,
+      replies: 0,
+      responseRate: 0,
     });
   });
 

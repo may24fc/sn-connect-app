@@ -1,4 +1,9 @@
-import { calendarMonthKey, calendarPeriodBounds, yearPeriodOptions } from '@/lib/metrics-period';
+import {
+  calendarMonthKey,
+  calendarPeriodBounds,
+  previousCalendarPeriodBounds,
+  yearPeriodOptions,
+} from '@/lib/metrics-period';
 import { describe, expect, it } from 'vitest';
 
 describe('metric calendar periods', () => {
@@ -38,6 +43,21 @@ describe('metric calendar periods', () => {
     expect(calendarPeriodBounds('month', now, 'Australia/Sydney')).toEqual({
       from: '2026-09-30T14:00:00.000Z',
       until: '2026-10-31T13:00:00.000Z',
+    });
+  });
+
+  it('selects the full previous local week across Italy and Australia DST transitions', () => {
+    expect(
+      previousCalendarPeriodBounds('week', new Date('2026-10-26T12:00:00Z'), 'Europe/Rome')
+    ).toEqual({
+      from: '2026-10-18T22:00:00.000Z',
+      until: '2026-10-25T23:00:00.000Z',
+    });
+    expect(
+      previousCalendarPeriodBounds('week', new Date('2026-10-05T12:00:00Z'), 'Australia/Sydney')
+    ).toEqual({
+      from: '2026-09-27T14:00:00.000Z',
+      until: '2026-10-04T13:00:00.000Z',
     });
   });
 

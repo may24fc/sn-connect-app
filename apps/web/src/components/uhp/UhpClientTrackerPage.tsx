@@ -4,7 +4,7 @@ import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
 import { MetricsPeriodSelect } from '@/components/data-display/MetricsPeriodSelect';
 import { TrackerPagination } from '@/components/data-display/TrackerPagination';
 import { usePeriodRequestGuard } from '@/hooks/usePeriodRequestGuard';
-import { calendarPeriodBounds } from '@/lib/metrics-period';
+import { calendarPeriodBounds, previousCalendarPeriodBounds } from '@/lib/metrics-period';
 import {
   UHP_CLIENT_SOURCE_DEFAULTS,
   UHP_CLIENT_STATUS_VALUES,
@@ -103,10 +103,11 @@ const emptyMetrics: Metrics = {
   callsScheduled: 0,
 };
 
-type MetricsPeriod = 'week' | 'month' | 'quarter';
+type MetricsPeriod = 'week' | 'last-week' | 'month' | 'quarter';
 
 const PERIOD_OPTIONS = [
   { value: 'week', label: 'This week' },
+  { value: 'last-week', label: 'Last week' },
   { value: 'month', label: 'This month' },
   { value: 'quarter', label: 'This quarter' },
 ] as const;
@@ -116,9 +117,17 @@ const TABLE_COLUMNS = 10;
 
 async function fetchMetrics(period: MetricsPeriod): Promise<Metrics> {
   const now = new Date();
-  const { from } = calendarPeriodBounds(period, now, 'viewer');
+  const bounds =
+    period === 'last-week'
+      ? previousCalendarPeriodBounds('week', now, 'viewer')
+      : calendarPeriodBounds(period, now, 'viewer');
+  const from = bounds.from;
+  const to =
+    period === 'last-week'
+      ? new Date(Date.parse(bounds.until) - 1).toISOString()
+      : now.toISOString();
   const response = await fetch(
-    `/api/uhp/clients/metrics?from=${encodeURIComponent(from)}&to=${encodeURIComponent(now.toISOString())}`,
+    `/api/uhp/clients/metrics?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
     { cache: 'no-store' }
   );
   const payload = await response.json();
@@ -477,6 +486,10 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
         options={PERIOD_OPTIONS}
         className="w-[9rem]"
       />
+      <p className="text-xs text-muted-foreground">
+        Based on outreach logged in the selected period. Replies received later still count toward
+        that period's response rate; the Updated column does not affect these cards.
+      </p>
 
       <div
         className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6"

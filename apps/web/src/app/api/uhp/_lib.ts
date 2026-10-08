@@ -109,7 +109,7 @@ export async function fetchUhpOutreachRows(
     const { data, error } = await admin
       .from('uhp_client_activities')
       .select(
-        'client_id, direction, reply_received, prospect_outcome, appointment_type, client:uhp_clients!inner(interest_state, replied, deleted_at, migration_review_required)'
+        'client_id, occurred_at, direction, reply_received, prospect_outcome, appointment_type, client:uhp_clients!inner(interest_state, replied, deleted_at, migration_review_required)'
       )
       .is('deleted_at', null)
       .eq('migration_review_required', false)
@@ -135,7 +135,7 @@ export async function fetchUhpOutreachRows(
   for (let offset = 0; ; offset += OUTREACH_PAGE_SIZE) {
     const { data, error } = await admin
       .from('uhp_clients')
-      .select('id, interest_state, replied')
+      .select('id, interest_state, replied, replied_at')
       .eq('replied', true)
       .is('deleted_at', null)
       .eq('migration_review_required', false)
@@ -151,6 +151,7 @@ export async function fetchUhpOutreachRows(
     for (const client of page) {
       rows.push({
         client_id: client.id,
+        occurred_at: client.replied_at,
         direction: null,
         reply_received: true,
         prospect_outcome: null,

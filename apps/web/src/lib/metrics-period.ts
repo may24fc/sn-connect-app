@@ -87,6 +87,16 @@ export function calendarPeriodBounds(
   };
 }
 
+/** The complete calendar period immediately before the one containing `now`. */
+export function previousCalendarPeriodBounds(
+  period: CalendarMetricPeriod,
+  now: Date,
+  timeZone: MetricTimeZone
+): { from: string; until: string } {
+  const current = calendarPeriodBounds(period, now, timeZone);
+  return calendarPeriodBounds(period, new Date(Date.parse(current.from) - 1), timeZone);
+}
+
 export function calendarMonthKey(now: Date, timeZone: MetricTimeZone): string {
   const local = zonedParts(now, resolvedTimeZone(timeZone));
   return `${local.year}-${String(local.month).padStart(2, '0')}`;

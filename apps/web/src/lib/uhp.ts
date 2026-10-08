@@ -122,6 +122,7 @@ export function isUhpAttachmentMimeType(
 
 export type UhpOutreachActivityRow = {
   client_id: string | null;
+  occurred_at?: string | null;
   direction: string | null;
   reply_received: boolean;
   prospect_outcome: string | null;
@@ -131,6 +132,63 @@ export type UhpOutreachActivityRow = {
   /** The client's current state, embedded by fetchUhpOutreachRows. */
   client?: { interest_state: string; replied: boolean } | null;
 };
+
+/** Replies belong to the period in which the client was reached, even if received later. */
+export function summarizeUhpOutreachCohort(
+  periodRows: Array<UhpOutreachActivityRow>,
+  laterRows: Array<UhpOutreachActivityRow> = []
+) {
+  const firstOutreach = new Map<string, number>();
+  let outreachAttempts = 0;
+  for (const row of periodRows) {
+    if (row.direction !== 'outbound') continue;
+    outreachAttempts += 1;
+    if (!row.client_id) continue;
+    const occurredAt = row.occurred_at ? Date.parse(row.occurred_at) : Number.NEGATIVE_INFINITY;
+    firstOutreach.set(
+      row.client_id,
+      Math.min(firstOutreach.get(row.client_id) ?? Number.POSITIVE_INFINITY, occurredAt)
+    );
+  }
+
+  const repliedClientIds = new Set<string>();
+  const activityReplyClientIds = new Set<string>();
+  const laterOutreach = new Map<string, number>();
+  for (const row of laterRows) {
+    if (row.direction !== 'outbound' || !row.client_id || !row.occurred_at) continue;
+    laterOutreach.set(
+      row.client_id,
+      Math.min(
+        laterOutreach.get(row.client_id) ?? Number.POSITIVE_INFINITY,
+        Date.parse(row.occurred_at)
+      )
+    );
+  }
+  for (const row of [...periodRows, ...laterRows]) {
+    if (!row.client_id || !(row.reply_received || row.direction === 'inbound')) continue;
+    const outreachAt = firstOutreach.get(row.client_id);
+    if (outreachAt === undefined) continue;
+    const replyAt = row.occurred_at ? Date.parse(row.occurred_at) : Number.POSITIVE_INFINITY;
+    if (replyAt < outreachAt) continue;
+    // A later follow-up starts a newer cohort; do not credit one reply to both periods.
+    if (replyAt >= (laterOutreach.get(row.client_id) ?? Number.POSITIVE_INFINITY)) continue;
+    repliedClientIds.add(row.client_id);
+    if (!row.manual_reply) activityReplyClientIds.add(row.client_id);
+  }
+
+  const clientsReachedOut = firstOutreach.size;
+  const replies = repliedClientIds.size;
+  return {
+    outreachAttempts,
+    clientsReachedOut,
+    replies,
+    repliedAfterOutreach: replies,
+    reachedOutClientIds: [...firstOutreach.keys()],
+    repliedClientIds: [...repliedClientIds],
+    activityReplyClientIds: [...activityReplyClientIds],
+    responseRate: clientsReachedOut ? Math.round((replies / clientsReachedOut) * 1000) / 10 : 0,
+  };
+}
 
 export type UhpOutreachSummary = {
   clientsReachedOut: number;
@@ -205,9 +263,9 @@ export function updateUhpReplyMetrics<T extends UhpReplyMetrics>(
 ): T {
   const alreadyReplied = metrics.repliedClientIds.includes(clientId);
   const hasActivityReply = metrics.activityReplyClientIds.includes(clientId);
-  const shouldCountAsReplied = replied || hasActivityReply;
-  const delta = Number(shouldCountAsReplied) - Number(alreadyReplied);
   const reachedOut = metrics.reachedOutClientIds.includes(clientId);
+  const shouldCountAsReplied = reachedOut && (replied || hasActivityReply);
+  const delta = Number(shouldCountAsReplied) - Number(alreadyReplied);
   const repliedAfterOutreach = reachedOut
     ? Math.min(metrics.clientsReachedOut, Math.max(0, metrics.repliedAfterOutreach + delta))
     : metrics.repliedAfterOutreach;
