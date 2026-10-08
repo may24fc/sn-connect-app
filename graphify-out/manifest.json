@@ -72,8 +72,8 @@
     "semantic_hash": ""
   },
   "apps/web/next-env.d.ts": {
-    "mtime": 1791418395.9815328,
-    "seen": 1791418894.1324096,
+    "mtime": 1791422598.9918997,
+    "seen": 1791422952.5480843,
     "ast_hash": "90426577ad8f38459f3e566411c85589",
     "semantic_hash": "90426577ad8f38459f3e566411c85589"
   },
@@ -10002,9 +10002,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/uhp/_lib.ts": {
-    "mtime": 1791416938.3322694,
-    "seen": 1791418894.1334634,
-    "ast_hash": "846c565572c6c87a1accc27c8a142629",
+    "mtime": 1791422015.169613,
+    "seen": 1791422952.5486388,
+    "ast_hash": "73e37e31d2a7ac4ada0a4660079e370c",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/uhp/access-grants/route.ts": {
@@ -10038,9 +10038,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/uhp/clients/metrics/route.ts": {
-    "mtime": 1791418171.89938,
-    "seen": 1791418894.133484,
-    "ast_hash": "cc5ebd084fab558de4d233c7737ebfba",
+    "mtime": 1791422028.9244637,
+    "seen": 1791422952.548651,
+    "ast_hash": "233e38ef8eb556aecc070d423386ec9c",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/uhp/clients/route.ts": {
@@ -10110,9 +10110,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/lib/uhp.ts": {
-    "mtime": 1791416938.1957228,
-    "seen": 1791418894.1342487,
-    "ast_hash": "e43e4b157ba1a3cefbd5d63c69410565",
+    "mtime": 1791422334.552255,
+    "seen": 1791422952.5490913,
+    "ast_hash": "ea0826680d304b2a8cc57e99393fcace",
     "semantic_hash": ""
   },
   "supabase/migrations/20260923000002_create_uhp_workspace.sql": {
@@ -10122,9 +10122,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpClientTrackerPage.tsx": {
-    "mtime": 1791418172.287066,
-    "seen": 1791418894.1337764,
-    "ast_hash": "717c0a81889f218679da32ea2e6b50e8",
+    "mtime": 1791422029.2362075,
+    "seen": 1791422952.5488234,
+    "ast_hash": "407b00dff0217de2a421c34755ea6972",
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpRemindersPage.tsx": {
@@ -10176,9 +10176,9 @@
     "semantic_hash": ""
   },
   "docs/apps/web/architecture/optimistic-ui.md": {
-    "mtime": 1791417271.753428,
-    "seen": 1791418894.1362398,
-    "ast_hash": "05846e9e2187a917ef96978a4fe12533",
+    "mtime": 1791422243.7241352,
+    "seen": 1791422952.550049,
+    "ast_hash": "cb44e55121f11a0cbd9f3d85ef180288",
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpAccessManagerDialog.tsx": {
@@ -11688,9 +11688,9 @@
     "semantic_hash": ""
   },
   "tests/lib/uhp-outreach-summary.test.ts": {
-    "mtime": 1791416938.7131953,
-    "seen": 1791418894.136028,
-    "ast_hash": "759570faca5106d3802f96422880448a",
+    "mtime": 1791422231.339611,
+    "seen": 1791422952.5499315,
+    "ast_hash": "fcffba6a17eaa23aba036956f7646ce8",
     "semantic_hash": ""
   },
   "supabase/migrations/20260930000002_add_task_rollup_fields.sql": {
@@ -11922,15 +11922,15 @@
     "semantic_hash": ""
   },
   "docs/features/ultimate-health-project/optimization.md": {
-    "mtime": 1791418597.9198148,
-    "seen": 1791418894.1363666,
-    "ast_hash": "d456a2918f2fa912b99aa03ed700cfc7",
+    "mtime": 1791422686.8852518,
+    "seen": 1791422952.5501182,
+    "ast_hash": "1157cd168dd67b6706b73113dec9ca1d",
     "semantic_hash": ""
   },
   "docs/features/ultimate-health-project/task-tracker.md": {
-    "mtime": 1791418597.8119614,
-    "seen": 1791418894.1363688,
-    "ast_hash": "7383976c213e3e3004ceb4680a2c4a3a",
+    "mtime": 1791422671.0907004,
+    "seen": 1791422952.5501194,
+    "ast_hash": "a958629ae9097f6f2cc5b4e81e616432",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/users/[id]/permanent/route.ts": {
@@ -12684,9 +12684,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/lib/metrics-period.ts": {
-    "mtime": 1791418045.3045304,
-    "seen": 1791418894.1340837,
-    "ast_hash": "1c942deca0c80e910199577d789c32b5",
+    "mtime": 1791422014.9647195,
+    "seen": 1791422952.5490158,
+    "ast_hash": "5f84704b14e94f62c1c178bf031e942c",
     "semantic_hash": ""
   },
   "tests/components/MetricsPeriodSelect.test.tsx": {
@@ -12702,9 +12702,9 @@
     "semantic_hash": ""
   },
   "tests/lib/metrics-period.test.ts": {
-    "mtime": 1791418045.3045304,
-    "seen": 1791418894.1360126,
-    "ast_hash": "072dce5cc71bd77583099cdd8f4f5877",
+    "mtime": 1791422157.741147,
+    "seen": 1791422952.5499234,
+    "ast_hash": "32ed0198e2f62570f04a4ec93089b651",
     "semantic_hash": ""
   },
   "docs/features/metrics-period-consistency/optimization.md": {
@@ -12717,6 +12717,12 @@
     "mtime": 1791418575.1568835,
     "seen": 1791418894.1363578,
     "ast_hash": "ab725b8368b4f5f3f397ec1904c4ffad",
+    "semantic_hash": ""
+  },
+  "tests/api/uhp-outreach-cohort-route.test.ts": {
+    "mtime": 1791422132.3301158,
+    "seen": 1791422952.5498524,
+    "ast_hash": "c7f58427bc3d2e23ce7641d3cacd9a96",
     "semantic_hash": ""
   }
 }

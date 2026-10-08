@@ -72,8 +72,8 @@
     "semantic_hash": ""
   },
   "apps/web/next-env.d.ts": {
-    "mtime": 1791348729.9649308,
-    "seen": 1791411453.3707545,
+    "mtime": 1791418395.9815328,
+    "seen": 1791418894.1324096,
     "ast_hash": "90426577ad8f38459f3e566411c85589",
     "semantic_hash": "90426577ad8f38459f3e566411c85589"
   },
@@ -852,9 +852,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/leaderboard/route.ts": {
-    "mtime": 1791342627.3353937,
-    "seen": 1791343180.2620869,
-    "ast_hash": "503e10870b0d8424959d14a3456501b3",
+    "mtime": 1791418175.53219,
+    "seen": 1791418894.1332285,
+    "ast_hash": "262a54298ed1e1d1e3616421c1fedbe9",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/marketing/_lib.ts": {
@@ -2592,9 +2592,9 @@
     "semantic_hash": "3d746e34bd0ff0c4754b724e7725ad0f"
   },
   "apps/web/src/hooks/useGamification.ts": {
-    "mtime": 1791339415.271745,
-    "seen": 1791339512.056043,
-    "ast_hash": "203504df5d14a30064eba99e92de8f03",
+    "mtime": 1791418030.1848104,
+    "seen": 1791418894.1338623,
+    "ast_hash": "3f9087877d82177f343bcb021a562234",
     "semantic_hash": ""
   },
   "apps/web/src/hooks/useIndividualPerformance.ts": {
@@ -10002,9 +10002,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/uhp/_lib.ts": {
-    "mtime": 1791339154.7628963,
-    "seen": 1791339512.055669,
-    "ast_hash": "df512ada5ac581fa35125f7a6d2f6530",
+    "mtime": 1791416938.3322694,
+    "seen": 1791418894.1334634,
+    "ast_hash": "846c565572c6c87a1accc27c8a142629",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/uhp/access-grants/route.ts": {
@@ -10038,9 +10038,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/uhp/clients/metrics/route.ts": {
-    "mtime": 1791333974.625426,
-    "seen": 1791339512.0556931,
-    "ast_hash": "b0b43df2102cd997833c678679b3651a",
+    "mtime": 1791418171.89938,
+    "seen": 1791418894.133484,
+    "ast_hash": "cc5ebd084fab558de4d233c7737ebfba",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/uhp/clients/route.ts": {
@@ -10110,9 +10110,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/lib/uhp.ts": {
-    "mtime": 1791339232.8253338,
-    "seen": 1791339512.0563672,
-    "ast_hash": "e6b88fe2413542a581feb318682613f7",
+    "mtime": 1791416938.1957228,
+    "seen": 1791418894.1342487,
+    "ast_hash": "e43e4b157ba1a3cefbd5d63c69410565",
     "semantic_hash": ""
   },
   "supabase/migrations/20260923000002_create_uhp_workspace.sql": {
@@ -10122,9 +10122,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpClientTrackerPage.tsx": {
-    "mtime": 1791339701.7844925,
-    "seen": 1791341361.3777232,
-    "ast_hash": "3fe52b41392a92291f76785561b8ab86",
+    "mtime": 1791418172.287066,
+    "seen": 1791418894.1337764,
+    "ast_hash": "717c0a81889f218679da32ea2e6b50e8",
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpRemindersPage.tsx": {
@@ -10134,9 +10134,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpVolumePointsPage.tsx": {
-    "mtime": 1791339701.7844925,
-    "seen": 1791341361.3777304,
-    "ast_hash": "ff8e610217a54ef31c088501b84ad9f7",
+    "mtime": 1791418172.1519575,
+    "seen": 1791418894.1337826,
+    "ast_hash": "5baf68af51565825c82809f4b7a3a3d9",
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpWorkspaceHeader.tsx": {
@@ -10176,9 +10176,9 @@
     "semantic_hash": ""
   },
   "docs/apps/web/architecture/optimistic-ui.md": {
-    "mtime": 1791346971.409427,
-    "seen": 1791347802.90401,
-    "ast_hash": "1e24d846ce7f2914c2d40ac1bd795174",
+    "mtime": 1791417271.753428,
+    "seen": 1791418894.1362398,
+    "ast_hash": "05846e9e2187a917ef96978a4fe12533",
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpAccessManagerDialog.tsx": {
@@ -10932,9 +10932,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/ai-spending/page.tsx": {
-    "mtime": 1791346032.6979039,
-    "seen": 1791346297.002127,
-    "ast_hash": "e120e61aac3e3d1ae912a8fea1db2644",
+    "mtime": 1791418172.4431324,
+    "seen": 1791418894.1326487,
+    "ast_hash": "6d034093287a37476606ff06fb854dbc",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/announcements/page.tsx": {
@@ -11688,9 +11688,9 @@
     "semantic_hash": ""
   },
   "tests/lib/uhp-outreach-summary.test.ts": {
-    "mtime": 1791339171.4473517,
-    "seen": 1791339512.0577364,
-    "ast_hash": "c3b3427ad9454c63347578f892ede533",
+    "mtime": 1791416938.7131953,
+    "seen": 1791418894.136028,
+    "ast_hash": "759570faca5106d3802f96422880448a",
     "semantic_hash": ""
   },
   "supabase/migrations/20260930000002_add_task_rollup_fields.sql": {
@@ -11922,15 +11922,15 @@
     "semantic_hash": ""
   },
   "docs/features/ultimate-health-project/optimization.md": {
-    "mtime": 1791411351.4212255,
-    "seen": 1791411453.3742297,
-    "ast_hash": "5e46b88a641d08d8be262c3df2642cc2",
+    "mtime": 1791418597.9198148,
+    "seen": 1791418894.1363666,
+    "ast_hash": "d456a2918f2fa912b99aa03ed700cfc7",
     "semantic_hash": ""
   },
   "docs/features/ultimate-health-project/task-tracker.md": {
-    "mtime": 1791411341.0338688,
-    "seen": 1791411453.3742323,
-    "ast_hash": "5740c7201938b9304e37d06d68917748",
+    "mtime": 1791418597.8119614,
+    "seen": 1791418894.1363688,
+    "ast_hash": "7383976c213e3e3004ceb4680a2c4a3a",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/users/[id]/permanent/route.ts": {
@@ -11988,15 +11988,15 @@
     "semantic_hash": ""
   },
   "docs/features/marketing-reporting/optimization.md": {
-    "mtime": 1791285151.8154876,
-    "seen": 1791285258.6766746,
-    "ast_hash": "c0d03d625ffb5addb14bf3ffa3498651",
+    "mtime": 1791418584.316463,
+    "seen": 1791418894.1363516,
+    "ast_hash": "032f361cc850828b5654fb1c6850fd85",
     "semantic_hash": ""
   },
   "docs/features/marketing-reporting/task-tracker.md": {
-    "mtime": 1791285151.6942368,
-    "seen": 1791285258.6766763,
-    "ast_hash": "3dc6a10e25d4364132779e20b8d7429b",
+    "mtime": 1791418584.2008843,
+    "seen": 1791418894.136353,
+    "ast_hash": "655059e1018413ba5aa675522735b498",
     "semantic_hash": ""
   },
   "docs/features/pa-task-tracker/task-tracker.md": {
@@ -12540,9 +12540,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/marketing/MarketingAdSpendDashboard.tsx": {
-    "mtime": 1791346836.0873325,
-    "seen": 1791347802.9029274,
-    "ast_hash": "c654934f631a176243b586a3ca7a7d64",
+    "mtime": 1791418297.6425235,
+    "seen": 1791418894.1336818,
+    "ast_hash": "5545aef70aa874430b9ecbcd906e7e59",
     "semantic_hash": ""
   },
   "apps/web/src/lib/observability/timing.ts": {
@@ -12669,6 +12669,54 @@
     "mtime": 1791349385.7339978,
     "seen": 1791411453.374223,
     "ast_hash": "20e79be55297aee0ce2a847f8b165fd7",
+    "semantic_hash": ""
+  },
+  "apps/web/src/components/data-display/MetricsPeriodSelect.tsx": {
+    "mtime": 1791418045.3045304,
+    "seen": 1791418894.1336372,
+    "ast_hash": "7f7de1a4399e018a44952ed9c4c0ac88",
+    "semantic_hash": ""
+  },
+  "apps/web/src/hooks/usePeriodRequestGuard.ts": {
+    "mtime": 1791417835.7459157,
+    "seen": 1791418894.1339183,
+    "ast_hash": "2ff02047e7d6f3452b2f9c80a5ee5960",
+    "semantic_hash": ""
+  },
+  "apps/web/src/lib/metrics-period.ts": {
+    "mtime": 1791418045.3045304,
+    "seen": 1791418894.1340837,
+    "ast_hash": "1c942deca0c80e910199577d789c32b5",
+    "semantic_hash": ""
+  },
+  "tests/components/MetricsPeriodSelect.test.tsx": {
+    "mtime": 1791418294.499462,
+    "seen": 1791418894.1359107,
+    "ast_hash": "349aa947140024ab2e0e5a20ac4ddfaf",
+    "semantic_hash": ""
+  },
+  "tests/hooks/usePeriodRequestGuard.test.tsx": {
+    "mtime": 1791418039.5628579,
+    "seen": 1791418894.1359656,
+    "ast_hash": "acb0fe2051904e4157d595b9913178b8",
+    "semantic_hash": ""
+  },
+  "tests/lib/metrics-period.test.ts": {
+    "mtime": 1791418045.3045304,
+    "seen": 1791418894.1360126,
+    "ast_hash": "072dce5cc71bd77583099cdd8f4f5877",
+    "semantic_hash": ""
+  },
+  "docs/features/metrics-period-consistency/optimization.md": {
+    "mtime": 1791418575.2784963,
+    "seen": 1791418894.1363559,
+    "ast_hash": "317f872984c8a8393d1caa7f781347d1",
+    "semantic_hash": ""
+  },
+  "docs/features/metrics-period-consistency/task-tracker.md": {
+    "mtime": 1791418575.1568835,
+    "seen": 1791418894.1363578,
+    "ast_hash": "ab725b8368b4f5f3f397ec1904c4ffad",
     "semantic_hash": ""
   }
 }
