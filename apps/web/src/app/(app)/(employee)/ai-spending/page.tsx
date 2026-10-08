@@ -1,7 +1,9 @@
 'use client';
 
 import { AiSpendingAccessManagerButton } from '@/components/admin/AiSpendingAccessManagerPanel';
+import { MetricsPeriodSelect } from '@/components/data-display/MetricsPeriodSelect';
 import { useAuth } from '@/contexts/AuthContext';
+import { yearPeriodOptions } from '@/lib/metrics-period';
 import {
   type AiExpense,
   type AiExpenseProvider,
@@ -106,13 +108,7 @@ export default function AiSpendingPage() {
   const canManageAccess = user?.role === 'admin' || user?.role === 'super_admin';
   const currentYear = new Date().getFullYear();
   const latestPeriodYear = Math.max(currentYear, PERIOD_START_YEAR);
-  const periodOptions = [
-    { value: 'all', label: 'All-time' },
-    ...Array.from({ length: latestPeriodYear - PERIOD_START_YEAR + 1 }, (_, index) => {
-      const year = String(latestPeriodYear - index);
-      return { value: year, label: year };
-    }),
-  ];
+  const periodOptions = yearPeriodOptions(PERIOD_START_YEAR, new Date(), 'viewer');
 
   const providersQuery = useAiExpenseProviders();
   const expensesQuery = useAiExpenses();
@@ -536,18 +532,15 @@ export default function AiSpendingPage() {
           <div className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-200">
             <CalendarRange className="h-4 w-4" />
             <span>Period</span>
-            <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-              <SelectTrigger aria-label="Select AI spending period" className="w-[8rem]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {periodOptions.map((period) => (
-                  <SelectItem key={period.value} value={period.value}>
-                    {period.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <MetricsPeriodSelect
+              id="ai-spending-period"
+              label="Select AI spending period"
+              value={selectedPeriod}
+              onValueChange={setSelectedPeriod}
+              options={periodOptions}
+              className="w-[8rem]"
+              visuallyHiddenLabel
+            />
           </div>
 
           <Button type="button" variant="outline" size="sm" onClick={() => setIsProviderDialogOpen(true)}>

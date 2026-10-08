@@ -89,11 +89,12 @@ export function useLeaderboard(
   scope: LeaderboardScope = 'interns',
   period: LeaderboardPeriod = 'all'
 ) {
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   return useQuery({
-    queryKey: queryKeys.leaderboard.list(scope, period),
+    queryKey: queryKeys.leaderboard.list(scope, `${period}:${timeZone}`),
     queryFn: () =>
       fetchJson<{ data: LeaderboardRow[] }>(
-        `/api/leaderboard?scope=${scope}&period=${period}&limit=50`
+        `/api/leaderboard?scope=${scope}&period=${period}&timeZone=${encodeURIComponent(timeZone)}&limit=50`
       ),
     staleTime: STALE_TIMES.dynamic,
     select: (r) => r.data,

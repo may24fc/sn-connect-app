@@ -126,6 +126,8 @@ export type UhpOutreachActivityRow = {
   reply_received: boolean;
   prospect_outcome: string | null;
   appointment_type: string | null;
+  /** Marks the synthetic row produced from uhp_clients.replied_at. */
+  manual_reply?: boolean;
   /** The client's current state, embedded by fetchUhpOutreachRows. */
   client?: { interest_state: string; replied: boolean } | null;
 };
@@ -134,6 +136,7 @@ export type UhpOutreachSummary = {
   clientsReachedOut: number;
   outreachAttempts: number;
   clientsReplied: number;
+  repliedAfterOutreach: number;
   responseRate: number;
   interested: number;
   declined: number;
@@ -169,6 +172,7 @@ export function summarizeUhpOutreach(
     clientsReachedOut: reachedOut.size,
     outreachAttempts: rows.filter((row) => row.direction === 'outbound').length,
     clientsReplied: replied.size,
+    repliedAfterOutreach,
     responseRate: reachedOut.size
       ? Math.round((repliedAfterOutreach / reachedOut.size) * 1000) / 10
       : 0,
@@ -180,6 +184,44 @@ export function summarizeUhpOutreach(
     ).length,
     callsScheduled: rows.filter((row) => row.appointment_type === 'call').length,
     newClients,
+  };
+}
+
+export type UhpReplyMetrics = {
+  replies: number;
+  responseRate: number;
+  clientsReachedOut: number;
+  repliedAfterOutreach: number;
+  reachedOutClientIds: Array<string>;
+  repliedClientIds: Array<string>;
+  activityReplyClientIds: Array<string>;
+};
+
+/** Apply the deterministic card delta while the Replied PATCH is in flight. */
+export function updateUhpReplyMetrics<T extends UhpReplyMetrics>(
+  metrics: T,
+  clientId: string,
+  replied: boolean
+): T {
+  const alreadyReplied = metrics.repliedClientIds.includes(clientId);
+  const hasActivityReply = metrics.activityReplyClientIds.includes(clientId);
+  const shouldCountAsReplied = replied || hasActivityReply;
+  const delta = Number(shouldCountAsReplied) - Number(alreadyReplied);
+  const reachedOut = metrics.reachedOutClientIds.includes(clientId);
+  const repliedAfterOutreach = reachedOut
+    ? Math.min(metrics.clientsReachedOut, Math.max(0, metrics.repliedAfterOutreach + delta))
+    : metrics.repliedAfterOutreach;
+
+  return {
+    ...metrics,
+    replies: Math.max(0, metrics.replies + delta),
+    repliedClientIds: shouldCountAsReplied
+      ? Array.from(new Set([...metrics.repliedClientIds, clientId]))
+      : metrics.repliedClientIds.filter((id) => id !== clientId),
+    repliedAfterOutreach,
+    responseRate: metrics.clientsReachedOut
+      ? Math.round((repliedAfterOutreach / metrics.clientsReachedOut) * 1000) / 10
+      : 0,
   };
 }
 

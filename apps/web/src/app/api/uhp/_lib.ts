@@ -155,6 +155,7 @@ export async function fetchUhpOutreachRows(
         reply_received: true,
         prospect_outcome: null,
         appointment_type: null,
+        manual_reply: true,
         client: { interest_state: client.interest_state, replied: client.replied },
       });
     }

@@ -1,7 +1,10 @@
 'use client';
 
 import { MarketingAdSpendAccessManagerDialog } from '@/components/admin/MarketingAdSpendAccessManagerDialog';
+import { MetricsPeriodSelect } from '@/components/data-display/MetricsPeriodSelect';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePeriodRequestGuard } from '@/hooks/usePeriodRequestGuard';
+import { yearPeriodOptions } from '@/lib/metrics-period';
 import { computeRevenueForecast } from '@/lib/revenue-forecast';
 import {
   Button,
@@ -16,7 +19,6 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
-  Label,
   PageHeader,
   Progress,
   Select,
@@ -271,18 +273,14 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
   const { user } = useAuth();
   const canManageMarketingAccess = user?.role === 'admin' || user?.role === 'super_admin';
   const currentYear = new Date().getFullYear();
-  const periodOptions = [
-    { value: 'all', label: 'All Time' },
-    ...Array.from({ length: currentYear - 2024 + 1 }, (_, index) => {
-      const year = String(currentYear - index);
-      return { value: year, label: year };
-    }),
-  ];
+  const periodOptions = yearPeriodOptions(2024, new Date(), 'viewer');
 
   const [tab, setTab] = useState(initialTab);
   const [manualPlatformTab, setManualPlatformTab] =
     useState<(typeof manualEntryTabs)[number]['value']>('meta');
   const [selectedPeriod, setSelectedPeriod] = useState(String(currentYear));
+  const { begin: beginPeriodRequest, isCurrent: isCurrentPeriodRequest } =
+    usePeriodRequestGuard(selectedPeriod);
   const [platforms, setPlatforms] = useState<PlatformOption[]>([]);
   const [entries, setEntries] = useState<AdSpendEntry[]>([]);
   const [overviewRows, setOverviewRows] = useState(defaultOverview);
@@ -291,6 +289,7 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
   const [revenueComparisonStatus, setRevenueComparisonStatus] =
     useState<RevenueComparisonStatus>('loading');
   const [isLoading, setIsLoading] = useState(true);
+  const [loadedPeriod, setLoadedPeriod] = useState<string | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [showGrantAccess, setShowGrantAccess] = useState(false);
   const [selectedMonthFilter, setSelectedMonthFilter] = useState('all');
@@ -332,15 +331,17 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
   }, [platforms]);
 
   const refreshPeriodData = async () => {
+    const requestedPeriod = selectedPeriod;
+    const requestId = beginPeriodRequest();
     setIsLoading(true);
     setErrorText(null);
-    setRevenueComparisonStatus(selectedPeriod === 'all' ? 'not-applicable' : 'loading');
+    setRevenueComparisonStatus(requestedPeriod === 'all' ? 'not-applicable' : 'loading');
 
     try {
-      const revenueComparisonPromise = fetchRevenueComparison(selectedPeriod);
-      const response = await fetch(`/api/marketing/ad-spend?period=${selectedPeriod}`, {
-        cache: 'no-store',
-      });
+      const [response, revenueComparison] = await Promise.all([
+        fetch(`/api/marketing/ad-spend?period=${requestedPeriod}`, { cache: 'no-store' }),
+        fetchRevenueComparison(requestedPeriod),
+      ]);
 
       if (!response.ok) {
         const payload = await response
@@ -352,18 +353,20 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
       const payload = await response.json();
       const nextOverview = payload.data?.overview?.totalByPlatform ?? defaultOverview;
       const nextMonthly = payload.data?.overview?.monthly ?? defaultMonthly;
+      if (!isCurrentPeriodRequest(requestedPeriod, requestId)) return;
 
       setOverviewRows(nextOverview);
       setMonthlyRows(nextMonthly);
       setEntries(payload.data?.entries ?? []);
       setPlatforms(payload.data?.platforms ?? []);
-      const revenueComparison = await revenueComparisonPromise;
       setRevenueActuals(revenueComparison.entries);
       setRevenueComparisonStatus(revenueComparison.status);
+      setLoadedPeriod(requestedPeriod);
     } catch (error) {
+      if (!isCurrentPeriodRequest(requestedPeriod, requestId)) return;
       setErrorText(error instanceof Error ? error.message : 'Failed to load ad spend data');
     } finally {
-      setIsLoading(false);
+      if (isCurrentPeriodRequest(requestedPeriod, requestId)) setIsLoading(false);
     }
   };
 
@@ -717,30 +720,16 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
               </Button>
             ) : null}
 
-            <div>
-              <Label htmlFor="ad-spend-period" className="sr-only">
-                Period
-              </Label>
-              <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                <SelectTrigger
-                  id="ad-spend-period"
-                  className="w-[132px]"
-                  aria-label="Select ad spend period"
-                >
-                  <span className="!flex min-w-0 items-center gap-2">
-                    <CalendarRange className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <SelectValue placeholder="Period" />
-                  </span>
-                </SelectTrigger>
-                <SelectContent>
-                  {periodOptions.map((period) => (
-                    <SelectItem key={period.value} value={period.value}>
-                      {period.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <MetricsPeriodSelect
+              id="ad-spend-period"
+              label="Select ad spend period"
+              value={selectedPeriod}
+              onValueChange={setSelectedPeriod}
+              options={periodOptions}
+              className="w-[132px]"
+              icon={<CalendarRange className="h-4 w-4 shrink-0 text-muted-foreground" />}
+              visuallyHiddenLabel
+            />
           </div>
         }
       />
@@ -759,7 +748,22 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
         </div>
       ) : null}
 
-      <Tabs value={tab} onValueChange={setTab} className="space-y-6">
+      {loadedPeriod !== selectedPeriod ? (
+        <div className="py-10 text-center text-sm text-muted-foreground">
+          {isLoading ? 'Loading ad spend data…' : 'Could not load this period.'}
+          {!isLoading ? (
+            <Button variant="outline" className="ml-3" onClick={() => void refreshPeriodData()}>
+              Retry
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+
+      <Tabs
+        value={tab}
+        onValueChange={setTab}
+        className={loadedPeriod === selectedPeriod ? 'space-y-6' : 'hidden'}
+      >
         <TabsList className="w-fit max-w-full justify-start overflow-x-auto">
           <TabsTrigger value="sales-comparison">{sfoView ? 'Performance' : 'Sales Comparison'}</TabsTrigger>
           <TabsTrigger value="overview">Spend Overview</TabsTrigger>
@@ -1400,7 +1404,9 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
         </TabsContent>
       </Tabs>
 
-      {isLoading ? <p className="text-sm text-zinc-500">Loading ad spend data…</p> : null}
+      {isLoading && loadedPeriod === selectedPeriod ? (
+        <p className="text-sm text-zinc-500">Refreshing ad spend data…</p>
+      ) : null}
 
       <Dialog
         open={fullEntriesPlatform !== null}

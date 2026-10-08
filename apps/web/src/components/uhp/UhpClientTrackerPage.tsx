@@ -1,7 +1,10 @@
 'use client';
 
 import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
+import { MetricsPeriodSelect } from '@/components/data-display/MetricsPeriodSelect';
 import { TrackerPagination } from '@/components/data-display/TrackerPagination';
+import { usePeriodRequestGuard } from '@/hooks/usePeriodRequestGuard';
+import { calendarPeriodBounds } from '@/lib/metrics-period';
 import {
   UHP_CLIENT_SOURCE_DEFAULTS,
   UHP_CLIENT_STATUS_VALUES,
@@ -10,6 +13,7 @@ import {
   isUhpWebLink,
   normalizeUhpLink,
   uhpLinkLabel,
+  updateUhpReplyMetrics,
 } from '@/lib/uhp';
 import {
   extractUhpContact,
@@ -72,6 +76,11 @@ type Client = {
 type Metrics = {
   outreachAttempts: number;
   replies: number;
+  clientsReachedOut: number;
+  repliedAfterOutreach: number;
+  reachedOutClientIds: Array<string>;
+  repliedClientIds: Array<string>;
+  activityReplyClientIds: Array<string>;
   responseRate: number;
   interested: number;
   declined: number;
@@ -82,6 +91,11 @@ type Metrics = {
 const emptyMetrics: Metrics = {
   outreachAttempts: 0,
   replies: 0,
+  clientsReachedOut: 0,
+  repliedAfterOutreach: 0,
+  reachedOutClientIds: [],
+  repliedClientIds: [],
+  activityReplyClientIds: [],
   responseRate: 0,
   interested: 0,
   declined: 0,
@@ -91,24 +105,25 @@ const emptyMetrics: Metrics = {
 
 type MetricsPeriod = 'week' | 'month' | 'quarter';
 
-const PERIOD_LABELS: Record<MetricsPeriod, string> = {
-  week: 'This week',
-  month: 'This month',
-  quarter: 'This quarter',
-};
+const PERIOD_OPTIONS = [
+  { value: 'week', label: 'This week' },
+  { value: 'month', label: 'This month' },
+  { value: 'quarter', label: 'This quarter' },
+] as const;
 
 const CLIENTS_PER_PAGE = 10;
 const TABLE_COLUMNS = 10;
 
-function getPeriodStart(period: MetricsPeriod, now = new Date()): Date {
-  if (period === 'week') {
-    const daysSinceMonday = (now.getDay() + 6) % 7;
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysSinceMonday);
-  }
-  if (period === 'quarter') {
-    return new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
-  }
-  return new Date(now.getFullYear(), now.getMonth(), 1);
+async function fetchMetrics(period: MetricsPeriod): Promise<Metrics> {
+  const now = new Date();
+  const { from } = calendarPeriodBounds(period, now, 'viewer');
+  const response = await fetch(
+    `/api/uhp/clients/metrics?from=${encodeURIComponent(from)}&to=${encodeURIComponent(now.toISOString())}`,
+    { cache: 'no-store' }
+  );
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error ?? 'Failed to refresh metrics');
+  return payload.data;
 }
 
 type CreateClientPayload = {
@@ -135,9 +150,14 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
   const [newClientSource, setNewClientSource] = useState('');
   const [metrics, setMetrics] = useState<Metrics>(emptyMetrics);
   const [period, setPeriod] = useState<MetricsPeriod>('month');
+  const [loadedMetricsPeriod, setLoadedMetricsPeriod] = useState<MetricsPeriod | null>(null);
+  const [metricsError, setMetricsError] = useState(false);
+  const { begin: beginMetricsRequest, isCurrent: isCurrentMetricsRequest } =
+    usePeriodRequestGuard(period);
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [metricsLoading, setMetricsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
@@ -150,29 +170,18 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [extracting, setExtracting] = useState(false);
 
-  const load = useCallback(async () => {
+  const loadClients = useCallback(async () => {
     setLoading(true);
     try {
-      const now = new Date();
-      const from = getPeriodStart(period, now).toISOString();
-      const to = now.toISOString();
-      const [clientsResponse, metricsResponse] = await Promise.all([
-        fetch(`/api/uhp/clients?search=${encodeURIComponent(search)}`, { cache: 'no-store' }),
-        fetch(
-          `/api/uhp/clients/metrics?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
-          { cache: 'no-store' }
-        ),
-      ]);
+      const clientsResponse = await fetch(`/api/uhp/clients?search=${encodeURIComponent(search)}`, {
+        cache: 'no-store',
+      });
       const clientsPayload = await clientsResponse.json();
-      const metricsPayload = await metricsResponse.json();
-      if (!clientsResponse.ok || !metricsResponse.ok) {
-        throw new Error(
-          clientsPayload.error ?? metricsPayload.error ?? 'Failed to load outreach tracker'
-        );
+      if (!clientsResponse.ok) {
+        throw new Error(clientsPayload.error ?? 'Failed to load outreach tracker');
       }
       setClients(clientsPayload.data);
       if (Array.isArray(clientsPayload.sources)) setSourceOptions(clientsPayload.sources);
-      setMetrics(metricsPayload.data);
     } catch (error) {
       addToast({
         variant: 'error',
@@ -182,29 +191,45 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
     } finally {
       setLoading(false);
     }
-  }, [addToast, search, period]);
+  }, [addToast, search]);
 
-  // Metrics only, with no loading state or list reload, so a toggled row stays where it is.
-  const refreshMetrics = useCallback(async () => {
-    try {
-      const now = new Date();
-      const from = getPeriodStart(period, now).toISOString();
-      const response = await fetch(
-        `/api/uhp/clients/metrics?from=${encodeURIComponent(from)}&to=${encodeURIComponent(now.toISOString())}`,
-        { cache: 'no-store' }
-      );
-      if (!response.ok) return;
-      const payload = await response.json();
-      setMetrics(payload.data);
-    } catch {
-      // The cards refresh on the next full load.
-    }
-  }, [period]);
+  // Metrics refresh independently from the client list. This makes period changes immediate,
+  // while mutation reconciliation can run in the background without hiding optimistic values.
+  const refreshMetrics = useCallback(
+    async (showLoading = false) => {
+      const requestId = beginMetricsRequest();
+      if (showLoading) {
+        setMetricsLoading(true);
+        setMetricsError(false);
+      }
+      try {
+        const nextMetrics = await fetchMetrics(period);
+        if (!isCurrentMetricsRequest(period, requestId)) return;
+        setMetrics(nextMetrics);
+        setLoadedMetricsPeriod(period);
+      } catch (error) {
+        if (!isCurrentMetricsRequest(period, requestId) || !showLoading) return;
+        setMetricsError(true);
+        addToast({
+          variant: 'error',
+          title: 'Could not refresh metrics',
+          description: error instanceof Error ? error.message : 'Please try again.',
+        });
+      } finally {
+        if (isCurrentMetricsRequest(period, requestId)) setMetricsLoading(false);
+      }
+    },
+    [addToast, beginMetricsRequest, isCurrentMetricsRequest, period]
+  );
 
   useEffect(() => {
-    const timer = window.setTimeout(() => void load(), 250);
+    const timer = window.setTimeout(() => void loadClients(), 250);
     return () => window.clearTimeout(timer);
-  }, [load]);
+  }, [loadClients]);
+
+  useEffect(() => {
+    void refreshMetrics(true);
+  }, [refreshMetrics]);
 
   const totalPages = Math.max(Math.ceil(clients.length / CLIENTS_PER_PAGE), 1);
   const visibleClients = clients.slice(
@@ -340,7 +365,7 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
           })
         );
       }
-      await load();
+      await Promise.all([loadClients(), refreshMetrics()]);
       addToast({ variant: 'success', title: 'Client added to UHP' });
     } catch (error) {
       setClients(previousClients);
@@ -367,6 +392,11 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
       setClients((current) =>
         current.map((row) => (row.id === client.id ? { ...row, ...values } : row))
       );
+    const nextReplied = changes.replied;
+    const replyChanged = typeof nextReplied === 'boolean' && nextReplied !== client.replied;
+    if (replyChanged) {
+      setMetrics((current) => updateUhpReplyMetrics(current, client.id, nextReplied));
+    }
     setRow(changes);
     try {
       const response = await fetch(`/api/uhp/clients/${client.id}`, {
@@ -381,6 +411,9 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
       void refreshMetrics();
     } catch (error) {
       setRow({ replied: client.replied, interest_state: client.interest_state });
+      if (replyChanged) {
+        setMetrics((current) => updateUhpReplyMetrics(current, client.id, client.replied));
+      }
       addToast({
         variant: 'error',
         title: `Could not update ${label}`,
@@ -409,7 +442,7 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
       });
     } finally {
       setDeleting(false);
-      void load();
+      void Promise.all([loadClients(), refreshMetrics()]);
     }
   }
 
@@ -437,30 +470,32 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
         }
       />
 
-      <div className="flex items-center gap-2">
-        <Label htmlFor="uhp-metrics-period" className="text-sm text-muted-foreground">
-          Metrics period
-        </Label>
-        <Select value={period} onValueChange={(value) => setPeriod(value as MetricsPeriod)}>
-          <SelectTrigger id="uhp-metrics-period" className="w-[9rem]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {(Object.keys(PERIOD_LABELS) as Array<MetricsPeriod>).map((value) => (
-              <SelectItem key={value} value={value}>
-                {PERIOD_LABELS[value]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <MetricsPeriodSelect
+        id="uhp-metrics-period"
+        value={period}
+        onValueChange={(value) => setPeriod(value as MetricsPeriod)}
+        options={PERIOD_OPTIONS}
+        className="w-[9rem]"
+      />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+      <div
+        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6"
+        aria-busy={metricsLoading || (loadedMetricsPeriod !== period && !metricsError)}
+        aria-live="polite"
+      >
         {metricCards.map(([label, value]) => (
           <Card key={label}>
             <CardContent className="p-4">
               <p className="text-xs text-muted-foreground">{label}</p>
-              <p className="mt-1 text-2xl font-semibold">{value}</p>
+              <p className="mt-1 text-2xl font-semibold">
+                {metricsError && loadedMetricsPeriod !== period ? (
+                  '—'
+                ) : metricsLoading || loadedMetricsPeriod !== period ? (
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                ) : (
+                  value
+                )}
+              </p>
             </CardContent>
           </Card>
         ))}
@@ -635,7 +670,12 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
               }}
               className="max-w-md"
             />
-            <Button variant="ghost" size="sm" onClick={() => void load()} aria-label="Refresh">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => void Promise.all([loadClients(), refreshMetrics(true)])}
+              aria-label="Refresh"
+            >
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
@@ -807,7 +847,7 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
           if (!open) setSelectedClientId(null);
         }}
         sourceOptions={sourceOptions}
-        onChanged={() => void load()}
+        onChanged={() => void Promise.all([loadClients(), refreshMetrics()])}
         onDelete={(client) => {
           setSelectedClientId(null);
           setDeleteTarget(client);

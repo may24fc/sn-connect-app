@@ -1,5 +1,7 @@
 'use client';
 
+import { usePeriodRequestGuard } from '@/hooks/usePeriodRequestGuard';
+import { calendarMonthKey } from '@/lib/metrics-period';
 import { UHP_VP_CATEGORY_LABELS } from '@/lib/uhp';
 import {
   Button,
@@ -72,9 +74,13 @@ function updateSummaryEntries(
 
 export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) {
   const { addToast } = useToast();
-  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [month, setMonth] = useState(() => calendarMonthKey(new Date(), 'viewer'));
+  const { begin: beginPeriodRequest, isCurrent: isCurrentPeriodRequest } =
+    usePeriodRequestGuard(month);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [loadedMonth, setLoadedMonth] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -84,7 +90,9 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
     Record<string, { targetVp: number; forecastVp: number }>
   >({});
   const load = useCallback(async () => {
+    const requestId = beginPeriodRequest();
     setLoading(true);
+    setLoadError(false);
     try {
       const [summaryResponse, entriesResponse] = await Promise.all([
         fetch(`/api/uhp/volume-points/summary?month=${month}`),
@@ -96,18 +104,22 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
         throw new Error(
           summaryPayload.error ?? entriesPayload.error ?? 'Failed to load volume points'
         );
+      if (!isCurrentPeriodRequest(month, requestId)) return;
       setSummary(summaryPayload.data);
       setEntries(entriesPayload.data);
+      setLoadedMonth(month);
     } catch (error) {
+      if (!isCurrentPeriodRequest(month, requestId)) return;
+      setLoadError(true);
       addToast({
         variant: 'error',
         title: 'Could not load volume points',
         description: error instanceof Error ? error.message : 'Please try again.',
       });
     } finally {
-      setLoading(false);
+      if (isCurrentPeriodRequest(month, requestId)) setLoading(false);
     }
-  }, [addToast, month]);
+  }, [addToast, beginPeriodRequest, isCurrentPeriodRequest, month]);
   useEffect(() => {
     void load();
   }, [load]);
@@ -270,7 +282,9 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
             <Input
               type="month"
               value={month}
-              onChange={(event) => setMonth(event.target.value)}
+              onChange={(event) => {
+                if (event.target.value) setMonth(event.target.value);
+              }}
               className="w-40"
             />
             <Button variant="outline" onClick={openTargets}>
@@ -446,10 +460,17 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
           </CardContent>
         </Card>
       )}
-      {loading ? (
+      {loading || (loadedMonth !== month && !loadError) ? (
         <div className="py-16 text-center text-muted-foreground">
           <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
           Loading volume points...
+        </div>
+      ) : loadError && loadedMonth !== month ? (
+        <div className="py-16 text-center text-muted-foreground">
+          Could not load volume points for this month.
+          <Button variant="outline" className="ml-3" onClick={() => void load()}>
+            Retry
+          </Button>
         </div>
       ) : (
         <>

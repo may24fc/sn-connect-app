@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
+import { calendarPeriodBounds } from '@/lib/metrics-period';
 import { normalizePersonName } from '@/lib/people/directory-people';
-import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { formatMasteryTitle } from '@hr-portal/ui/constants/mastery';
+import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,15 +23,18 @@ export async function GET(request: Request) {
     }
 
     const url = new URL(request.url);
-    const scope = (url.searchParams.get('scope') ?? 'interns') as
-      | 'interns'
-      | 'employees'
-      | 'all';
+    const scope = (url.searchParams.get('scope') ?? 'interns') as 'interns' | 'employees' | 'all';
     const period = (url.searchParams.get('period') ?? 'all') as 'all' | 'month';
-    const limit = Math.min(
-      100,
-      Number.parseInt(url.searchParams.get('limit') ?? '50', 10) || 50
-    );
+    const timeZone = url.searchParams.get('timeZone') ?? 'UTC';
+    if (timeZone.length > 100) {
+      return NextResponse.json({ error: 'Invalid time zone' }, { status: 400 });
+    }
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone });
+    } catch {
+      return NextResponse.json({ error: 'Invalid time zone' }, { status: 400 });
+    }
+    const limit = Math.min(100, Number.parseInt(url.searchParams.get('limit') ?? '50', 10) || 50);
 
     const supabaseAdmin = createSupabaseAdminClient();
 
@@ -61,7 +65,9 @@ export async function GET(request: Request) {
 
     const { data: gam, error: gamErr } = await supabaseAdmin
       .from('user_gamification')
-      .select('user_id, points_total, current_tier, current_streak, longest_streak, last_activity_at')
+      .select(
+        'user_id, points_total, current_tier, current_streak, longest_streak, last_activity_at'
+      )
       .in('user_id', userIds);
 
     if (gamErr) {
@@ -91,15 +97,13 @@ export async function GET(request: Request) {
 
     const periodMap = new Map<string, number>();
     if (period === 'month') {
-      const since = new Date();
-      since.setDate(1);
-      since.setHours(0, 0, 0, 0);
+      const since = calendarPeriodBounds('month', new Date(), timeZone).from;
 
       const { data: events, error: eventsErr } = await supabaseAdmin
         .from('points_events')
         .select('user_id, points')
         .in('user_id', userIds)
-        .gte('created_at', since.toISOString());
+        .gte('created_at', since);
 
       if (eventsErr) {
         return NextResponse.json({ error: eventsErr.message }, { status: 500 });
@@ -150,7 +154,7 @@ export async function GET(request: Request) {
       const dayNum = date.getUTCDay() || 7;
       date.setUTCDate(date.getUTCDate() + 4 - dayNum);
       const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-      const weekNo = Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+      const weekNo = Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
       return { iso_week: weekNo, iso_year: date.getUTCFullYear() };
     }
 
@@ -239,7 +243,10 @@ export async function GET(request: Request) {
 
       // Badge rarity order for picking the "best" badge to surface
       const RARITY_RANK: Record<string, number> = {
-        legendary: 4, rare: 3, uncommon: 2, common: 1,
+        legendary: 4,
+        rare: 3,
+        uncommon: 2,
+        common: 1,
       };
 
       const { data: badgeDefs } = await supabaseAdmin
@@ -280,7 +287,9 @@ export async function GET(request: Request) {
       for (const pref of prefRows ?? []) {
         const metadata = (pref.metadata ?? {}) as Record<string, unknown>;
         const featuredDepartment =
-          typeof metadata.featured_department === 'string' ? metadata.featured_department.trim() : '';
+          typeof metadata.featured_department === 'string'
+            ? metadata.featured_department.trim()
+            : '';
         if (featuredDepartment) {
           featuredDomainPrefMap.set(pref.user_id, featuredDepartment);
         }
@@ -294,7 +303,10 @@ export async function GET(request: Request) {
         .order('mastery_points', { ascending: false })
         .order('department', { ascending: true });
 
-      const masteryByUser = new Map<string, Array<{ department: string; mastery_level: number; mastery_points: number }>>();
+      const masteryByUser = new Map<
+        string,
+        Array<{ department: string; mastery_level: number; mastery_points: number }>
+      >();
       for (const m of masteryRows ?? []) {
         const current = masteryByUser.get(m.user_id) ?? [];
         current.push({
