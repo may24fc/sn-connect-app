@@ -62,7 +62,7 @@ The initial rollout added optimistic updates with rollback and reconciliation to
 | Revenue forecast | Entry upsert/update/delete and goal create/delete |
 | Expenses | Verification fields and deletion. Matching and leadership decisions are server-confirmed because variance computation and approver authorization can change on the server. |
 | Finance redesign | Ordinary expense approval, variance sign-off, category budgets, subscriptions, Wise batch creation/export/result import, payment confirmation, billing CSV import, report draft/finalization, property/rent/maintenance creation, payment voiding, and maintenance status correction are server-confirmed. Approval and match state depend on database checks; imports and Wise verification have external or partial outcomes. Property corrections require atomic, auditable database confirmation before the live register is refreshed. |
-| Directory | Employee edit, deactivate, and restore |
+| Directory | Employee edit, deactivate, and restore; termination date and comment edit on Former employees (terminate itself stays server-confirmed) |
 | UHP workspace | Client and VP creates; client status/type/activity/note changes; Replied-derived outreach-cohort stat cards (only when that client was reached in the selected period); client delete (after confirmation); screenshot delete (after confirmation); VP target/edit/delete changes; access grant revocation. Metrics-period changes, screenshot contact extraction, and screenshot uploads stay server-confirmed |
 | Christmas Tree | Ornament placement/move/delete and wish add/edit/delete |
 | Onboarding checklist | Task create/edit/delete, clear, and default-template edits |

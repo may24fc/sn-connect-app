@@ -6,10 +6,31 @@ import { z } from 'zod';
 const ADMIN_ROLES = ['admin', 'super_admin'] as const;
 const MANAGEABLE_DIRECTORY_ROLES = ['employee', 'associate', 'admin', 'super_admin'] as const;
 
+// Free-text comment (e.g. "Resigned", "AWOL"). Blank clears it.
+const terminationReasonSchema = z.string().trim().max(500, 'Comment must be 500 characters or fewer');
+
 const patchUserSchema = z.union([
   z.object({ status: z.enum(['inactive', 'active']) }).strict(),
-  z.object({ date_terminated: z.string().date() }).strict(),
+  z
+    .object({
+      date_terminated: z.string().date().optional(),
+      termination_reason: terminationReasonSchema.nullable().optional(),
+    })
+    .strict()
+    .refine(
+      (value) => value.date_terminated !== undefined || value.termination_reason !== undefined,
+      { message: 'Provide a termination date or comment' }
+    ),
 ]);
+
+const terminateBodySchema = z
+  .object({ termination_reason: terminationReasonSchema.nullable().optional() })
+  .strict();
+
+function normalizeTerminationReason(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
 
 function isManageableDirectoryRole(role: string): boolean {
   return MANAGEABLE_DIRECTORY_ROLES.includes(role as (typeof MANAGEABLE_DIRECTORY_ROLES)[number]);
@@ -53,8 +74,9 @@ async function getManagedTargetUser(
 /**
  * PATCH /api/users/[id]
  * Deactivate (status=inactive) or restore (status=active) a directory account,
- * or correct the termination date (date_terminated=YYYY-MM-DD) of a terminated one.
- * Restoring also clears the date_terminated field on the linked employee record.
+ * or correct the termination date (date_terminated=YYYY-MM-DD) and/or comment
+ * (termination_reason, max 500 chars, blank clears it) of a terminated one.
+ * Restoring also clears date_terminated and termination_reason on the employee record.
  * Permissions: Admin and Super Admin only
  */
 export async function PATCH(
@@ -111,69 +133,91 @@ export async function PATCH(
       );
     }
 
-    if ('date_terminated' in body) {
+    if (!('status' in body)) {
       if (targetUser.status !== 'terminated') {
         return NextResponse.json(
-          { error: 'Termination date can only be edited for terminated accounts' },
+          { error: 'Termination details can only be edited for terminated accounts' },
           { status: 409 }
         );
       }
 
       const { data: employee, error: employeeError } = await adminClient
         .from('employees')
-        .select('id, date_hired, date_terminated')
+        .select('id, date_hired, date_terminated, termination_reason')
         .eq('user_id', id)
         .is('deleted_at', null)
         .maybeSingle();
 
       if (employeeError) {
-        console.error('Error loading employee for termination date update:', employeeError);
-        return NextResponse.json({ error: 'Failed to update termination date' }, { status: 500 });
+        console.error('Error loading employee for termination update:', employeeError);
+        return NextResponse.json({ error: 'Failed to update termination details' }, { status: 500 });
       }
 
       if (!employee) {
         return NextResponse.json({ error: 'Employee record not found' }, { status: 404 });
       }
 
-      if (body.date_terminated > new Date().toISOString().slice(0, 10)) {
-        return NextResponse.json(
-          { error: 'Termination date cannot be in the future' },
-          { status: 400 }
-        );
+      const updates: { date_terminated?: string; termination_reason?: string | null } = {};
+
+      if (body.date_terminated !== undefined) {
+        if (body.date_terminated > new Date().toISOString().slice(0, 10)) {
+          return NextResponse.json(
+            { error: 'Termination date cannot be in the future' },
+            { status: 400 }
+          );
+        }
+
+        if (employee.date_hired && body.date_terminated < employee.date_hired.slice(0, 10)) {
+          return NextResponse.json(
+            { error: 'Termination date cannot be before the start date' },
+            { status: 400 }
+          );
+        }
+
+        // Midday UTC keeps the calendar day stable when rendered in any timezone.
+        updates.date_terminated = `${body.date_terminated}T12:00:00.000Z`;
       }
 
-      if (employee.date_hired && body.date_terminated < employee.date_hired.slice(0, 10)) {
-        return NextResponse.json(
-          { error: 'Termination date cannot be before the start date' },
-          { status: 400 }
-        );
+      if (body.termination_reason !== undefined) {
+        updates.termination_reason = normalizeTerminationReason(body.termination_reason);
       }
 
-      // Midday UTC keeps the calendar day stable when rendered in any timezone.
-      const dateTerminated = `${body.date_terminated}T12:00:00.000Z`;
-
-      const { error: dateError } = await adminClient
+      const { error: updateDetailsError } = await adminClient
         .from('employees')
-        .update({ date_terminated: dateTerminated })
+        .update(updates)
         .eq('id', employee.id);
 
-      if (dateError) {
-        console.error('Error updating termination date:', dateError);
-        return NextResponse.json({ error: 'Failed to update termination date' }, { status: 500 });
+      if (updateDetailsError) {
+        console.error('Error updating termination details:', updateDetailsError);
+        return NextResponse.json({ error: 'Failed to update termination details' }, { status: 500 });
       }
 
+      // The comment can be sensitive HR text, so the audit entry records only that it changed.
       logActivity(supabase, {
         userId: user.id,
-        action: 'update_termination_date',
+        action: 'update_termination_details',
         tableName: 'employees',
         recordId: employee.id,
         metadata: {
+          date_changed: updates.date_terminated !== undefined,
           previous_date_terminated: employee.date_terminated,
-          date_terminated: dateTerminated,
+          date_terminated: updates.date_terminated ?? employee.date_terminated,
+          reason_changed:
+            updates.termination_reason !== undefined &&
+            updates.termination_reason !== employee.termination_reason,
         },
       });
 
-      return NextResponse.json({ success: true, data: { date_terminated: dateTerminated } });
+      return NextResponse.json({
+        success: true,
+        data: {
+          date_terminated: updates.date_terminated ?? employee.date_terminated,
+          termination_reason:
+            updates.termination_reason !== undefined
+              ? updates.termination_reason
+              : employee.termination_reason,
+        },
+      });
     }
 
     const newStatus = body.status;
@@ -196,12 +240,12 @@ export async function PATCH(
       return NextResponse.json({ error: 'Failed to update user status' }, { status: 500 });
     }
 
-    // When restoring a terminated employee/associate, clear the termination date
+    // When restoring a terminated employee/associate, clear the termination date and comment
     // and re-activate the latest terminated internship (if no active one exists).
     if (newStatus === 'active') {
       const { data: restoredEmployee } = await adminClient
         .from('employees')
-        .update({ date_terminated: null })
+        .update({ date_terminated: null, termination_reason: null })
         .eq('user_id', id)
         .is('deleted_at', null)
         .select('id')
@@ -254,13 +298,14 @@ export async function PATCH(
 
 /**
  * DELETE /api/users/[id]
- * Terminate a directory account.
- * Sets users.status = 'terminated' and records employees.date_terminated.
+ * Terminate a directory account. The body is optional: { termination_reason?: string }.
+ * Sets users.status = 'terminated' and records employees.date_terminated and, when given,
+ * the termination comment.
  * Records are preserved in the directory (visible in the Former Employees tab).
  * Permissions: Admin and Super Admin only
  */
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -288,6 +333,17 @@ export async function DELETE(
     if (id === user.id) {
       return NextResponse.json({ error: 'Cannot terminate your own account' }, { status: 400 });
     }
+
+    // The body is optional: a bare DELETE (no content) terminates without a comment.
+    const rawBody = await request.json().catch(() => ({}));
+    const parsedBody = terminateBodySchema.safeParse(rawBody);
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: parsedBody.error.flatten() },
+        { status: 400 }
+      );
+    }
+    const terminationReason = normalizeTerminationReason(parsedBody.data.termination_reason);
 
     const adminClient = createSupabaseAdminClient();
     const targetUser = await getManagedTargetUser(id, adminClient);
@@ -324,7 +380,7 @@ export async function DELETE(
     // Update employee termination date and get the employee id to cascade to internships
     const { data: employeeData } = await adminClient
       .from('employees')
-      .update({ date_terminated: terminatedAt })
+      .update({ date_terminated: terminatedAt, termination_reason: terminationReason })
       .eq('user_id', id)
       .is('deleted_at', null)
       .select('id')
@@ -346,7 +402,7 @@ export async function DELETE(
       action: 'terminate_user',
       tableName: 'users',
       recordId: id,
-      metadata: { date_terminated: terminatedAt },
+      metadata: { date_terminated: terminatedAt, has_reason: terminationReason !== null },
     });
 
     return NextResponse.json({ success: true });

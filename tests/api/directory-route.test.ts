@@ -152,6 +152,81 @@ describe('/api/directory route', () => {
     });
   });
 
+  it('attaches the termination comment to terminated rows only', async () => {
+    const pageQuery = createThenableQuery({
+      data: [
+        { user_id: 'user-1', employee_id: 'employee-1', full_name: 'Active Person', status: 'active' },
+        { user_id: 'user-2', employee_id: 'employee-2', full_name: 'Gone Person', status: 'terminated' },
+        { user_id: 'user-3', employee_id: 'employee-3', full_name: 'No Comment', status: 'terminated' },
+      ],
+      error: null,
+      count: 3,
+    });
+    const aggregateQuery = createThenableQuery({ data: [], error: null });
+    const employeesQuery = createThenableQuery({
+      data: [
+        { id: 'employee-2', termination_reason: 'AWOL' },
+        { id: 'employee-3', termination_reason: null },
+      ],
+      error: null,
+    });
+
+    let directoryCallCount = 0;
+    vi.mocked(createSupabaseServerClient).mockResolvedValue({
+      auth: {
+        getUser: vi.fn(async () => ({
+          data: { user: { id: 'viewer-admin', app_metadata: { db_role: 'admin' } } },
+          error: null,
+        })),
+      },
+      from: vi.fn((table: string) => {
+        if (table === 'employees') return employeesQuery;
+        directoryCallCount += 1;
+        return directoryCallCount === 1 ? pageQuery : aggregateQuery;
+      }),
+    } as never);
+
+    const response = await GET(
+      new NextRequest('http://localhost/api/directory?status=terminated&page=1&page_size=20')
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    // Only the terminated employees are looked up; the active row is untouched.
+    expect(employeesQuery.in).toHaveBeenCalledWith('id', ['employee-2', 'employee-3']);
+    expect(body.data[0]).not.toHaveProperty('termination_reason');
+    expect(body.data[1].termination_reason).toBe('AWOL');
+    expect(body.data[2].termination_reason).toBeNull();
+  });
+
+  it('does not query employees when the page has no terminated rows', async () => {
+    const pageQuery = createThenableQuery({
+      data: [{ user_id: 'user-1', employee_id: 'employee-1', full_name: 'Active Person', status: 'active' }],
+      error: null,
+      count: 1,
+    });
+    const aggregateQuery = createThenableQuery({ data: [], error: null });
+    const fromMock = vi.fn((table: string) => {
+      if (table === 'employees') throw new Error('employees must not be queried');
+      return fromMock.mock.calls.filter(([name]) => name === 'employee_directory').length === 1
+        ? pageQuery
+        : aggregateQuery;
+    });
+    vi.mocked(createSupabaseServerClient).mockResolvedValue({
+      auth: {
+        getUser: vi.fn(async () => ({
+          data: { user: { id: 'viewer-admin', app_metadata: { db_role: 'admin' } } },
+          error: null,
+        })),
+      },
+      from: fromMock,
+    } as never);
+
+    const response = await GET(new NextRequest('http://localhost/api/directory?page=1'));
+
+    expect(response.status).toBe(200);
+  });
+
   it('restricts results to valid user_ids so pickers can resolve a saved person', async () => {
     const managerId = '6f1c2b8e-4d3a-4f6b-9a1e-2c3d4e5f6a7b';
     const pageQuery = createThenableQuery({

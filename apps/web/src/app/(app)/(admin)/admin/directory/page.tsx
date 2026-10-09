@@ -1,6 +1,7 @@
 'use client';
 
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
+import { TerminationReasonField } from '@/components/admin/TerminationReasonField';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { useAuth } from '@/contexts/AuthContext';
@@ -149,6 +150,7 @@ export default function AdminDirectoryPage(): ReactNode {
   // Terminate employee state
   const [terminateDialogOpen, setTerminateDialogOpen] = useState(false);
   const [employeeToTerminate, setEmployeeToTerminate] = useState<DirectoryEntry | null>(null);
+  const [terminateReason, setTerminateReason] = useState('');
   const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
   const [employeeToDeactivate, setEmployeeToDeactivate] = useState<DirectoryEntry | null>(null);
 
@@ -156,10 +158,11 @@ export default function AdminDirectoryPage(): ReactNode {
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [employeeToRestore, setEmployeeToRestore] = useState<DirectoryEntry | null>(null);
 
-  // Edit termination date state
+  // Edit termination details (date + comment) state
   const [terminationDateDialogOpen, setTerminationDateDialogOpen] = useState(false);
   const [employeeToEditTermination, setEmployeeToEditTermination] = useState<DirectoryEntry | null>(null);
   const [editTerminationDate, setEditTerminationDate] = useState('');
+  const [editTerminationReason, setEditTerminationReason] = useState('');
 
   // Permanent delete state
   const [permanentDeleteDialogOpen, setPermanentDeleteDialogOpen] = useState(false);
@@ -212,9 +215,16 @@ export default function AdminDirectoryPage(): ReactNode {
   };
 
   const terminateEmployeeMutation = useMutation({
-    mutationFn: async (entry: DirectoryEntry) => {
+    mutationFn: async ({ entry, reason }: { entry: DirectoryEntry; reason: string }) => {
+      const trimmedReason = reason.trim();
       const response = await fetch(`/api/users/${entry.user_id}`, {
         method: 'DELETE',
+        ...(trimmedReason
+          ? {
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ termination_reason: trimmedReason }),
+            }
+          : {}),
       });
       if (!response.ok) {
         const error = await response.json().catch(() => ({ error: 'Failed to terminate account' }));
@@ -227,6 +237,7 @@ export default function AdminDirectoryPage(): ReactNode {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       setTerminateDialogOpen(false);
       setEmployeeToTerminate(null);
+      setTerminateReason('');
       addToast({ title: 'Employee terminated', variant: 'success' });
     },
     onError: () => {
@@ -268,25 +279,41 @@ export default function AdminDirectoryPage(): ReactNode {
     },
   });
 
-  const updateTerminationDateMutation = useMutation({
-    mutationFn: async ({ entry, date }: { entry: DirectoryEntry; date: string }) => {
+  // Server-validated inline edit of an already-terminated record: optimistic with rollback.
+  const updateTerminationDetailsMutation = useMutation({
+    mutationFn: async ({
+      entry,
+      date,
+      reason,
+    }: {
+      entry: DirectoryEntry;
+      date?: string;
+      reason?: string | null;
+    }) => {
       const response = await fetch(`/api/users/${entry.user_id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date_terminated: date }),
+        body: JSON.stringify({
+          ...(date !== undefined ? { date_terminated: date } : {}),
+          ...(reason !== undefined ? { termination_reason: reason } : {}),
+        }),
       });
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Failed to update termination date' }));
-        throw new Error(error.error || 'Failed to update termination date');
+        const error = await response.json().catch(() => ({ error: 'Failed to update termination details' }));
+        throw new Error(error.error || 'Failed to update termination details');
       }
       return response.json();
     },
-    onMutate: async ({ entry, date }) => {
+    onMutate: async ({ entry, date, reason }) => {
       await queryClient.cancelQueries({ queryKey: ['directory'] });
       const previousDirectory = queryClient.getQueriesData<DirectoryResponse>({ queryKey: ['directory'] });
       updateDirectoryEntries((current) =>
         current.user_id === entry.user_id
-          ? { ...current, date_terminated: `${date}T12:00:00.000Z` }
+          ? {
+              ...current,
+              ...(date !== undefined ? { date_terminated: `${date}T12:00:00.000Z` } : {}),
+              ...(reason !== undefined ? { termination_reason: reason } : {}),
+            }
           : current
       );
       closeTerminationDateDialog();
@@ -294,12 +321,12 @@ export default function AdminDirectoryPage(): ReactNode {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
-      addToast({ title: 'Termination date updated', variant: 'success' });
+      addToast({ title: 'Termination details updated', variant: 'success' });
     },
     onError: (error, _variables, context) => {
       context?.previousDirectory.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
       addToast({
-        title: 'Failed to update termination date',
+        title: 'Failed to update termination details',
         ...(error instanceof Error ? { description: error.message } : {}),
         variant: 'error',
       });
@@ -437,6 +464,7 @@ export default function AdminDirectoryPage(): ReactNode {
 
   const handleTerminateClick = (entry: DirectoryEntry) => {
     setEmployeeToTerminate(entry);
+    setTerminateReason('');
     setTerminateDialogOpen(true);
   };
 
@@ -445,9 +473,10 @@ export default function AdminDirectoryPage(): ReactNode {
     setRestoreDialogOpen(true);
   };
 
-  const handleEditTerminationDateClick = (entry: DirectoryEntry) => {
+  const handleEditTerminationClick = (entry: DirectoryEntry) => {
     setEmployeeToEditTermination(entry);
     setEditTerminationDate(entry.date_terminated?.slice(0, 10) ?? '');
+    setEditTerminationReason(entry.termination_reason ?? '');
     setTerminationDateDialogOpen(true);
   };
 
@@ -455,13 +484,24 @@ export default function AdminDirectoryPage(): ReactNode {
     setTerminationDateDialogOpen(false);
     setEmployeeToEditTermination(null);
     setEditTerminationDate('');
+    setEditTerminationReason('');
   };
 
-  const handleTerminationDateSubmit = () => {
+  const terminationDateChanged =
+    editTerminationDate !== (employeeToEditTermination?.date_terminated?.slice(0, 10) ?? '');
+  const terminationReasonChanged =
+    editTerminationReason.trim() !== (employeeToEditTermination?.termination_reason ?? '').trim();
+
+  const handleTerminationDetailsSubmit = () => {
     if (!employeeToEditTermination || !editTerminationDate) return;
-    updateTerminationDateMutation.mutate({
+    if (!terminationDateChanged && !terminationReasonChanged) {
+      closeTerminationDateDialog();
+      return;
+    }
+    updateTerminationDetailsMutation.mutate({
       entry: employeeToEditTermination,
-      date: editTerminationDate,
+      ...(terminationDateChanged ? { date: editTerminationDate } : {}),
+      ...(terminationReasonChanged ? { reason: editTerminationReason.trim() || null } : {}),
     });
   };
 
@@ -934,6 +974,7 @@ export default function AdminDirectoryPage(): ReactNode {
                       <>
                         <SortableTableHead column="start_date" sortColumn={sortBy} sortDirection={sortOrder} onSort={handleSort}>Start Date</SortableTableHead>
                         <TableHead>Terminated</TableHead>
+                        <TableHead>Reason</TableHead>
                       </>
                     ) : (
                       <>
@@ -1005,6 +1046,15 @@ export default function AdminDirectoryPage(): ReactNode {
                           <TableCell className="text-sm text-zinc-600 dark:text-zinc-300 tabular-nums">
                             {formatDate(entry.date_terminated)}
                           </TableCell>
+                          <TableCell className="max-w-[220px] text-sm text-zinc-600 dark:text-zinc-300">
+                            {entry.termination_reason ? (
+                              <span className="block truncate" title={entry.termination_reason}>
+                                {entry.termination_reason}
+                              </span>
+                            ) : (
+                              <span className="text-zinc-400 dark:text-zinc-500">—</span>
+                            )}
+                          </TableCell>
                         </>
                       ) : (
                         <>
@@ -1059,9 +1109,9 @@ export default function AdminDirectoryPage(): ReactNode {
                                   <>
                                     <DropdownMenuSeparator />
                                     {entry.employee_id && (
-                                      <DropdownMenuItem onClick={() => handleEditTerminationDateClick(entry)}>
+                                      <DropdownMenuItem onClick={() => handleEditTerminationClick(entry)}>
                                         <CalendarClock className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                                        Edit Termination Date
+                                        Edit Termination Details
                                       </DropdownMenuItem>
                                     )}
                                     <DropdownMenuItem onClick={() => handleRestoreClick(entry)}>
@@ -1148,12 +1198,20 @@ export default function AdminDirectoryPage(): ReactNode {
               ? Their record will be preserved in the <strong>Former Employees</strong> tab with a termination date. This can be reversed using the Restore action.
             </DialogDescription>
           </DialogHeader>
+          <TerminationReasonField
+            id="terminate-reason"
+            label="Reason (optional)"
+            value={terminateReason}
+            onChange={setTerminateReason}
+            disabled={terminateEmployeeMutation.isPending}
+          />
           <DialogFooter>
             <Button
               variant="outline"
               onClick={() => {
                 setTerminateDialogOpen(false);
                 setEmployeeToTerminate(null);
+                setTerminateReason('');
               }}
               disabled={terminateEmployeeMutation.isPending}
             >
@@ -1163,7 +1221,7 @@ export default function AdminDirectoryPage(): ReactNode {
               variant="destructive"
               onClick={() => {
                 if (employeeToTerminate) {
-                  terminateEmployeeMutation.mutate(employeeToTerminate);
+                  terminateEmployeeMutation.mutate({ entry: employeeToTerminate, reason: terminateReason });
                 }
               }}
               disabled={terminateEmployeeMutation.isPending}
@@ -1174,7 +1232,7 @@ export default function AdminDirectoryPage(): ReactNode {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Termination Date Dialog */}
+      {/* Edit Termination Details Dialog */}
       <Dialog
         open={terminationDateDialogOpen}
         onOpenChange={(open) => {
@@ -1185,43 +1243,55 @@ export default function AdminDirectoryPage(): ReactNode {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CalendarClock className="h-5 w-5" />
-              Edit Termination Date
+              Edit Termination Details
             </DialogTitle>
             <DialogDescription>
-              Correct the termination date for{' '}
+              Termination date and reason for{' '}
               <span className="font-semibold text-zinc-900 dark:text-zinc-100">
                 {employeeToEditTermination?.full_name}
               </span>
-              .
+              . Only admins and super admins can see this.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="edit-termination-date">Termination Date</Label>
-            <Input
-              id="edit-termination-date"
-              type="date"
-              value={editTerminationDate}
-              min={employeeToEditTermination?.start_date?.slice(0, 10)}
-              max={new Date().toISOString().slice(0, 10)}
-              onChange={(event) => setEditTerminationDate(event.target.value)}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-termination-date">Termination Date</Label>
+              <Input
+                id="edit-termination-date"
+                type="date"
+                value={editTerminationDate}
+                min={employeeToEditTermination?.start_date?.slice(0, 10)}
+                max={new Date().toISOString().slice(0, 10)}
+                onChange={(event) => setEditTerminationDate(event.target.value)}
+              />
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Must be on or after the start date and not in the future.
+              </p>
+            </div>
+            <TerminationReasonField
+              id="edit-termination-reason"
+              value={editTerminationReason}
+              onChange={setEditTerminationReason}
+              disabled={updateTerminationDetailsMutation.isPending}
             />
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Must be on or after the start date and not in the future.
-            </p>
           </div>
           <DialogFooter>
             <Button
               variant="outline"
               onClick={closeTerminationDateDialog}
-              disabled={updateTerminationDateMutation.isPending}
+              disabled={updateTerminationDetailsMutation.isPending}
             >
               Cancel
             </Button>
             <Button
-              onClick={handleTerminationDateSubmit}
-              disabled={!editTerminationDate || updateTerminationDateMutation.isPending}
+              onClick={handleTerminationDetailsSubmit}
+              disabled={
+                !editTerminationDate ||
+                (!terminationDateChanged && !terminationReasonChanged) ||
+                updateTerminationDetailsMutation.isPending
+              }
             >
-              {updateTerminationDateMutation.isPending ? 'Saving...' : 'Save'}
+              {updateTerminationDetailsMutation.isPending ? 'Saving...' : 'Save'}
             </Button>
           </DialogFooter>
         </DialogContent>

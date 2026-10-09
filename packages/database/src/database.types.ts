@@ -1264,6 +1264,7 @@ export type Database = {
           postal_code: string | null;
           probation_end_date: string | null;
           province: string | null;
+          termination_reason: string | null;
           updated_at: string;
           user_id: string;
           work_arrangement: Database['public']['Enums']['work_arrangement'];
@@ -1313,6 +1314,7 @@ export type Database = {
           postal_code?: string | null;
           probation_end_date?: string | null;
           province?: string | null;
+          termination_reason?: string | null;
           updated_at?: string;
           user_id: string;
           work_arrangement: Database['public']['Enums']['work_arrangement'];
@@ -1362,6 +1364,7 @@ export type Database = {
           postal_code?: string | null;
           probation_end_date?: string | null;
           province?: string | null;
+          termination_reason?: string | null;
           updated_at?: string;
           user_id?: string;
           work_arrangement?: Database['public']['Enums']['work_arrangement'];

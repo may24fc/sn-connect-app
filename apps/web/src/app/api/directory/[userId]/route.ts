@@ -63,6 +63,17 @@ export async function GET(
       return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
     }
 
+    // The termination comment is HR-sensitive and kept out of the employee_directory view.
+    let terminationReason: string | null = null;
+    if (directoryEntry.status === 'terminated' && directoryEntry.employee_id) {
+      const { data: reasonRow } = await supabase
+        .from('employees')
+        .select('termination_reason')
+        .eq('id', directoryEntry.employee_id)
+        .maybeSingle();
+      terminationReason = reasonRow?.termination_reason ?? null;
+    }
+
     // Get the auth user email as fallback
     const { data: authUserData } = await supabase.auth.admin.getUserById(userId);
 
@@ -118,6 +129,7 @@ export async function GET(
     return NextResponse.json({
       data: {
         ...directoryEntry,
+        termination_reason: terminationReason,
         full_name: getPersonDisplayName(
           directoryEntry.full_name,
           directoryEntry.email ?? authUserData?.user?.email

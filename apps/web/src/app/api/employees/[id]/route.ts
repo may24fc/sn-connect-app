@@ -70,7 +70,12 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       }
     }
 
-    return NextResponse.json({ data: withResolvedIdentity(data) });
+    // The termination comment is HR-sensitive: only admins / super admins may read it, not the
+    // employee or their manager.
+    const canReadTerminationReason = role === 'admin' || role === 'super_admin';
+    const visibleData = canReadTerminationReason ? data : { ...data, termination_reason: null };
+
+    return NextResponse.json({ data: withResolvedIdentity(visibleData) });
   } catch (error) {
     console.error('Unexpected error in GET /api/employees/[id]:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

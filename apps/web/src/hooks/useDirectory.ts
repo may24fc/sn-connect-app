@@ -68,6 +68,8 @@ export interface DirectoryEntry {
   program: string | null;
   pending_changes_count: number | null;
   date_terminated: string | null;
+  /** Admin-entered comment on a terminated entry; only set for terminated rows. */
+  termination_reason?: string | null;
 }
 
 export interface DirectoryResponse {

@@ -10,6 +10,7 @@ const ADMIN_ROLES = ['admin', 'super_admin'];
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface DirectoryRow {
+  employee_id: string | null;
   full_name: string | null;
   email: string | null;
   position: string | null;
@@ -264,10 +265,29 @@ export async function GET(request: NextRequest) {
       availableRoles,
     };
 
+    // The termination comment is HR-sensitive, so it is not part of the employee_directory
+    // view: this admin-only route attaches it to the terminated rows on the current page.
+    const terminatedEmployeeIds = (data || [])
+      .filter((entry: DirectoryRow) => entry.status === 'terminated' && entry.employee_id)
+      .map((entry: DirectoryRow) => entry.employee_id as string);
+    const terminationReasonByEmployeeId = new Map<string, string | null>();
+    if (terminatedEmployeeIds.length > 0) {
+      const { data: reasonRows } = await supabase
+        .from('employees')
+        .select('id, termination_reason')
+        .in('id', terminatedEmployeeIds);
+      for (const row of reasonRows || []) {
+        terminationReasonByEmployeeId.set(row.id, row.termination_reason);
+      }
+    }
+
     return NextResponse.json({
       data: (data || []).map((entry: DirectoryRow) => ({
         ...entry,
         full_name: getPersonDisplayName(entry.full_name, entry.email),
+        ...(entry.status === 'terminated' && entry.employee_id
+          ? { termination_reason: terminationReasonByEmployeeId.get(entry.employee_id) ?? null }
+          : {}),
       })),
       metadata,
       pagination: {

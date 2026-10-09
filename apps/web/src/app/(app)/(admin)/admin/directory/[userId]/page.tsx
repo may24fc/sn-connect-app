@@ -181,11 +181,14 @@ function DetailRow({
   value,
   icon,
   isLink,
+  multiline,
 }: {
   label: string;
   value: string | null;
   icon?: ReactNode;
   isLink?: boolean;
+  /** Preserve line breaks in free-text values. */
+  multiline?: boolean;
 }): ReactNode {
   return (
     <div className="flex items-start gap-3 py-2.5">
@@ -203,7 +206,15 @@ function DetailRow({
             <ExternalLink className="h-3 w-3" strokeWidth={1.5} />
           </a>
         ) : (
-          <p className="text-sm text-zinc-900 dark:text-zinc-100">{value || '—'}</p>
+          <p
+            className={
+              multiline
+                ? 'whitespace-pre-wrap break-words text-sm text-zinc-900 dark:text-zinc-100'
+                : 'text-sm text-zinc-900 dark:text-zinc-100'
+            }
+          >
+            {value || '—'}
+          </p>
         )}
       </div>
     </div>
@@ -541,6 +552,20 @@ export default function DirectoryDetailPage({
                     value={formatDisplayLabel(entry.employment_type)}
                   />
                   <DetailRow label="Status" value={formatDisplayLabel(entry.status)} />
+                  {entry.status === 'terminated' && (
+                    <>
+                      <DetailRow
+                        label="Terminated On"
+                        value={formatDate(entry.date_terminated)}
+                        icon={<Calendar className="h-3.5 w-3.5" strokeWidth={1.5} />}
+                      />
+                      <DetailRow
+                        label="Termination Comment"
+                        value={entry.termination_reason ?? null}
+                        multiline
+                      />
+                    </>
+                  )}
                   {hasInternshipDetails && (
                     <>
                       <Separator className="my-1" />
