@@ -1,22 +1,9 @@
 import { NOTIFICATION_PREFERENCES_ROLE_TYPE } from '@/lib/settings/notification-preferences';
-import { getNormalizedMetadataRole, normalizeDbRoleClaim } from '@/lib/auth/role';
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
 const ADMIN_ROLES = ['admin', 'super_admin'];
-
-async function getUserRole(
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
-  userId: string
-): Promise<string | null> {
-  const { data: userData } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', userId)
-    .is('deleted_at', null)
-    .maybeSingle();
-  return normalizeDbRoleClaim(userData?.role ?? null);
-}
 
 /**
  * GET /api/users/[id]/metadata
@@ -36,13 +23,11 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     }
 
     // Check authorization: self or admin
+    const role = await getActiveUserRole(user.id);
+    if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const isSelf = user.id === targetUserId;
     if (!isSelf) {
-      let role: string | null = getNormalizedMetadataRole(user.app_metadata);
-      if (!role) {
-        role = await getUserRole(supabase, user.id);
-      }
-      if (!role || !ADMIN_ROLES.includes(role)) {
+      if (!ADMIN_ROLES.includes(role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
     }
@@ -91,13 +76,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Check authorization: self or admin
+    const role = await getActiveUserRole(user.id);
+    if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const isSelf = user.id === targetUserId;
     if (!isSelf) {
-      let role: string | null = getNormalizedMetadataRole(user.app_metadata);
-      if (!role) {
-        role = await getUserRole(supabase, user.id);
-      }
-      if (!role || !['admin', 'super_admin'].includes(role)) {
+      if (!['admin', 'super_admin'].includes(role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
     }
@@ -207,13 +190,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const role = await getActiveUserRole(user.id);
+    if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const isSelf = user.id === targetUserId;
     if (!isSelf) {
-      let role = user.app_metadata?.db_role as string | undefined;
-      if (!role) {
-        role = (await getUserRole(supabase, user.id)) ?? undefined;
-      }
-      if (!role || !['admin', 'super_admin'].includes(role)) {
+      if (!['admin', 'super_admin'].includes(role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
     }

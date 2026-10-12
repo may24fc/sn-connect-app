@@ -8,7 +8,7 @@ The [2026-10-12 dry audit](../../apps/web/dry-audit-2026-10-12.md) found duplica
 
 | Area | Code and validation |
 | --- | --- |
-| Authorization and audit | [standup roles](../../../apps/web/src/app/api/standups/_lib.ts), [employee API](../../../apps/web/src/app/api/employees/route.ts), [audit helper](../../../apps/web/src/lib/audit.ts), [active role tests](../../../tests/api/active-role-resolution.test.ts), [approval route tests](../../../tests/api/deleted-admin-approval.test.ts), [regression tests](../../../tests/lib/dry-audit-regressions.test.ts) |
+| Authorization and audit | [active role resolver](../../../apps/web/src/lib/auth/active-role.ts), [employee API](../../../apps/web/src/app/api/employees/route.ts), [directory API](../../../apps/web/src/app/api/directory/route.ts), [reports API](../../../apps/web/src/app/api/reports/route.ts), [self-service metadata API](../../../apps/web/src/app/api/users/[id]/metadata/route.ts), [storage API](../../../apps/web/src/app/api/reports/content-images/route.ts), [audit helper](../../../apps/web/src/lib/audit.ts), [inline route tests](../../../tests/api/inline-active-role.test.ts), [active role tests](../../../tests/api/active-role-resolution.test.ts), [approval route tests](../../../tests/api/deleted-admin-approval.test.ts) |
 | CSV exports | [shared CSV](../../../apps/web/src/lib/csv.ts), [finance CSV](../../../apps/web/src/lib/finance/csv.ts), [directory export](../../../apps/web/src/app/api/directory/export/route.ts), [expense export](../../../apps/web/src/app/api/expenses/export/route.ts), [tests](../../../tests/lib/dry-audit-regressions.test.ts) |
 | Pagination | [parser](../../../apps/web/src/lib/api/pagination.ts), [tasks API](../../../apps/web/src/app/api/tasks/route.ts), [employees API](../../../apps/web/src/app/api/employees/route.ts), [tests](../../../tests/lib/dry-audit-regressions.test.ts) |
 | Attachments | [shared signer](../../../apps/web/src/app/api/internships/[id]/logs/_lib.ts), [internship detail API](../../../apps/web/src/app/api/internships/[id]/route.ts), [tests](../../../tests/lib/dry-audit-regressions.test.ts) |
@@ -31,7 +31,7 @@ The [2026-10-12 dry audit](../../apps/web/dry-audit-2026-10-12.md) found duplica
 
 ### Audit log inserts and deleted account authorization
 
-**Status: Planned.** Evidence: B2 and B4 in the audit. Specific malformed inserts were corrected and checked against the explicit local `audit_logs` schema and insert RLS policy; a representative three-row insert succeeded in a rolled-back transaction. The password-reset route uses a stable keyed audit UUID and stops before generating a link if audit lookup or insertion fails. Twenty originally flagged current-user role lookups filter deleted rows, and 20 domain role helpers now read active database rows rather than trusting metadata. Five focused deleted-account cases pass, including invoice and report approval routes that stop before writes. Remaining inline metadata authorization variants need migration to a common helper.
+**Status: Implemented.** Evidence: B2 and B4 in the audit. Specific malformed inserts were corrected and checked against the explicit local `audit_logs` schema and insert RLS policy; a representative three-row insert succeeded in a rolled-back transaction. The password-reset route uses a stable keyed audit UUID and stops before generating a link if audit lookup or insertion fails. Twenty originally flagged current-user role lookups filter deleted rows, 20 domain role helpers read active database rows, and 32 inline API route files now use the shared active-role resolver rather than trusting metadata. The resolver rejects absent or soft-deleted rows and normalizes the current database role. This also covers self-service settings and content-image storage paths. Validation: 18 focused assertions passed, including deleted self-access, deleted approval routes, and a stale super-admin claim after demotion; full web typecheck and `git diff --check` passed. The latency measurement below is inconclusive because the unchanged control drifted substantially at p95.
 
 ### Broader duplicate families
 
@@ -67,6 +67,17 @@ The tasks route also received an active-role database check, while the control r
 
 For pending B5 candidate-query work, a local baseline was captured on 2026-10-12 at dirty commit `4bbee970`, admin role, 30 samples and 3 warmups: `/api/directory?page=1&pageSize=100` total p50 298.8 ms, p95 473.0 ms; `/api/notifications?limit=1` control p50 247.9 ms, p95 580.3 ms. File: `perf-results/dry-consolidation/2026-10-12T03-57-21-936Z-before.json`. The candidate-query change has not been made, so no after result or delta exists yet.
 
+On 2026-10-12, B4 used the same dirty checkout, sample admin role, local Supabase, and `next dev` at port 3001 before and after the inline authorization edits. Each read-only target had 30 samples and 3 warmups; all 240 target responses returned 200. The command was `pnpm performance:latency --feature dry-consolidation --targets "/api/employees,/api/directory?page=1&pageSize=100,/api/reports,/api/tasks" --label before` and the identical command with `--label after`. Raw files: `perf-results/dry-consolidation/2026-10-12T06-45-38-576Z-before.json` and `perf-results/dry-consolidation/2026-10-12T06-51-47-939Z-after.json`; comparison used `pnpm performance:latency --compare` with those files.
+
+| B4 total response time | Before p50/p95 ms | After p50/p95 ms | Delta p50/p95 ms |
+| --- | ---: | ---: | ---: |
+| `/api/employees` | 151.4 / 258.0 | 148.8 / 279.0 | -2.6 / +21.0 |
+| `/api/directory?page=1&pageSize=100` | 145.9 / 218.8 | 146.7 / 225.1 | +0.8 / +6.3 |
+| `/api/reports` | 134.4 / 204.3 | 147.9 / 279.3 | +13.5 / +75.0 |
+| `/api/tasks` control | 134.1 / 224.3 | 141.0 / 301.6 | +7.0 / +77.3 |
+
+The report p50 increase is 6.5 ms above control drift, while its p95 change is within control drift. Local dev-server variation prevents attributing an overall latency change to B4; no speed claim is made.
+
 ## Visual Guide
 
 ```mermaid
@@ -79,6 +90,7 @@ flowchart LR
 
 ## Change Log
 
+- 2026-10-12: Completed B4 inline API role migration across 32 route files, verified deleted-account and stale-claim denial with 18 focused assertions and a web typecheck, and measured local p50/p95 before and after against a tasks control. The control drift makes the latency effect inconclusive.
 - 2026-10-12: Reviewed the audit, implemented focused defects, ran fourteen regression assertions and the full web typecheck, and recorded the local measurement gap and remaining verification.
 - 2026-10-12: Generated current local database types, audited the role enum, removed obsolete administrative grants, and passed 57 focused role/audit tests plus web/database/UI typechecks and desktop/mobile Playwright checks. Captured a B5 local latency baseline before any candidate-query edit; that work remains pending. Rechecked the candidate-list claim against the current directory API, which already excludes terminated rows by default.
 - 2026-10-12: Completed B11 error feedback and repaired offboarding list rollback after a browser test exposed a template-cache collision. Four Chromium failure-path cases passed at desktop light and mobile dark for admin and employee roles. Reviewed screenshots and corrected offboarding form control colors in dark mode. No latency change or improvement is claimed.

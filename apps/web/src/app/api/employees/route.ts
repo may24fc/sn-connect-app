@@ -1,3 +1,4 @@
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import { logActivity } from '@/lib/audit';
 import { parsePagination } from '@/lib/api/pagination';
 import { employeeApiCreateSchema } from '@/lib/schemas/employee.schema';
@@ -25,7 +26,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Resolve role for authorization scoping
-    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const role = await getActiveUserRole(user.id);
+    if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const isAdmin = ['admin', 'super_admin'].includes(role ?? '');
 
     // Parse query parameters

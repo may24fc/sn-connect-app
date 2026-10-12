@@ -1,3 +1,4 @@
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import { logActivity } from '@/lib/audit';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -24,7 +25,8 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const role = await getActiveUserRole(user.id);
+    if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const isPrivileged = ['admin', 'super_admin'].includes(role ?? '');
 
     const { data: existingReport, error: existingReportError } = await supabaseAdmin

@@ -1,3 +1,4 @@
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import { logActivity } from '@/lib/audit';
 import {
   notifyMarketingSubmissionWebhook,
@@ -38,7 +39,8 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const role = await getActiveUserRole(user.id);
+    if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const isAdmin = ['admin', 'super_admin'].includes(role ?? '');
 
     const { data, error } = await supabaseAdmin
@@ -88,7 +90,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const role = await getActiveUserRole(user.id);
+    if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const isPrivileged = ['admin', 'super_admin'].includes(role ?? '');
 
     const { data: existingReport, error: existingReportError } = await supabaseAdmin
@@ -315,7 +318,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const role = await getActiveUserRole(user.id);
+    if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const isPrivileged = ['admin', 'super_admin'].includes(role ?? '');
 
     const { data: existingReport, error: existingReportError } = await supabaseAdmin

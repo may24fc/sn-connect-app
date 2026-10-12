@@ -2,7 +2,7 @@ import {
   EXPENSE_IMPORT_TEMPLATE_HEADERS,
   EXPENSE_IMPORT_TEMPLATE_SAMPLE_ROWS,
 } from '@/lib/import/expense-template';
-import { getNormalizedMetadataRole, normalizeDbRoleClaim } from '@/lib/auth/role';
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { escapeCsvValue } from '@/lib/csv';
 import ExcelJS from 'exceljs';
@@ -11,17 +11,6 @@ import { type NextRequest, NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 
 const ALLOWED_ROLES = new Set(['admin', 'super_admin', 'associate']);
-
-async function resolveRole(user: { id: string; app_metadata?: Record<string, unknown> }): Promise<string | null> {
-  const roleFromMetadata = getNormalizedMetadataRole(user.app_metadata);
-  if (roleFromMetadata) {
-    return roleFromMetadata;
-  }
-
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.from('users').select('role').eq('id', user.id).is('deleted_at', null).maybeSingle();
-  return normalizeDbRoleClaim(data?.role ?? null);
-}
 
 function toCsv(): string {
   const rows = [
@@ -63,8 +52,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const role = await resolveRole(user);
-    if (!role || !ALLOWED_ROLES.has(role)) {
+    const role = await getActiveUserRole(user.id);
+    if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!ALLOWED_ROLES.has(role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

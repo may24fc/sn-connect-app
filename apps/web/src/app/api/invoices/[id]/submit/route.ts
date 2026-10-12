@@ -1,3 +1,4 @@
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import { logActivity } from '@/lib/audit';
 import {
   createNotificationsForUsers,
@@ -44,7 +45,8 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     }
 
     // Non-admin users can only submit their own invoices
-    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const role = await getActiveUserRole(user.id);
+    if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const isAdmin = ['admin', 'super_admin'].includes(role ?? '');
     const employeeRecord = invoice.employees as unknown as { user_id: string } | null;
 

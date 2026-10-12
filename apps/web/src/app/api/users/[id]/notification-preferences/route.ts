@@ -1,3 +1,4 @@
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import {
   DEFAULT_STORED_NOTIFICATION_PREFERENCES,
   normalizeNotificationPreferencesUpdate,
@@ -9,20 +10,6 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
 const ADMIN_ROLES = ['admin', 'super_admin'];
-
-async function getUserRole(
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
-  userId: string
-): Promise<string | null> {
-  const { data: userData } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', userId)
-    .is('deleted_at', null)
-    .maybeSingle();
-
-  return userData?.role ?? null;
-}
 
 async function authorizeTargetUser(targetUserId: string): Promise<
   | { supabase: Awaited<ReturnType<typeof createSupabaseServerClient>> }
@@ -39,13 +26,10 @@ async function authorizeTargetUser(targetUserId: string): Promise<
   }
 
   const isSelf = user.id === targetUserId;
+  const role = await getActiveUserRole(user.id);
+  if (!role) return { response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
   if (!isSelf) {
-    let role = user.app_metadata?.db_role as string | undefined;
-    if (!role) {
-      role = (await getUserRole(supabase, user.id)) ?? undefined;
-    }
-
-    if (!role || !ADMIN_ROLES.includes(role)) {
+    if (!ADMIN_ROLES.includes(role)) {
       return { response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
     }
   }

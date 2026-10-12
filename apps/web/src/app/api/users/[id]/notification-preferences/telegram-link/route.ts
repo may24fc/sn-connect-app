@@ -1,3 +1,4 @@
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import { createTelegramLinkToken, getStoredNotificationPreferencesForUser, buildTelegramStartUrl } from '@/lib/settings/notification-preferences.server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { NOTIFICATION_PREFERENCES_ROLE_TYPE, toClientNotificationPreferences } from '@/lib/settings/notification-preferences';
@@ -5,20 +6,6 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 const ADMIN_ROLES = ['admin', 'super_admin'];
 const TELEGRAM_LINK_TTL_MS = 15 * 60 * 1000;
-
-async function getUserRole(
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
-  userId: string
-): Promise<string | null> {
-  const { data } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', userId)
-    .is('deleted_at', null)
-    .maybeSingle();
-
-  return data?.role ?? null;
-}
 
 async function authorizeTargetUser(targetUserId: string): Promise<
   | { supabase: Awaited<ReturnType<typeof createSupabaseServerClient>> }
@@ -34,13 +21,10 @@ async function authorizeTargetUser(targetUserId: string): Promise<
     return { response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
   }
 
+  const role = await getActiveUserRole(user.id);
+  if (!role) return { response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
   if (user.id !== targetUserId) {
-    let role = user.app_metadata?.db_role as string | undefined;
-    if (!role) {
-      role = (await getUserRole(supabase, user.id)) ?? undefined;
-    }
-
-    if (!role || !ADMIN_ROLES.includes(role)) {
+    if (!ADMIN_ROLES.includes(role)) {
       return { response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
     }
   }

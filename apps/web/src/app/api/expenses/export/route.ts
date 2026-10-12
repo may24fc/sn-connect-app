@@ -1,3 +1,4 @@
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { escapeCsvValue } from '@/lib/csv';
 import ExcelJS from 'exceljs';
@@ -25,17 +26,6 @@ type ExpenseExportRow = {
     department: string | null;
   } | null;
 };
-
-async function resolveRole(user: { id: string; app_metadata?: Record<string, unknown> }): Promise<string | null> {
-  const roleFromMetadata = user.app_metadata?.db_role;
-  if (typeof roleFromMetadata === 'string') {
-    return roleFromMetadata;
-  }
-
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.from('users').select('role').eq('id', user.id).is('deleted_at', null).maybeSingle();
-  return data?.role ?? null;
-}
 
 function mapRecordToRow(record: ExpenseExportRow) {
   const fullName = [record.employee?.first_name, record.employee?.last_name].filter(Boolean).join(' ');
@@ -68,7 +58,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const role = await resolveRole(user);
+    const role = await getActiveUserRole(user.id);
+    if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     let hasAccess = Boolean(role && ALLOWED_ROLES.has(role));
 
     if (!hasAccess && role && ACCOUNTING_ELIGIBLE_ROLES.has(role)) {

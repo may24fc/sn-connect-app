@@ -1,3 +1,4 @@
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import { expandEmployeeEquivalentRoles } from '@/lib/roles';
 import { escapeCsvValue } from '@/lib/csv';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -31,19 +32,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Check role
-    let role: string | null = null;
-    if (typeof user.app_metadata?.db_role === 'string') {
-      role = user.app_metadata.db_role;
-    }
-    if (!role) {
-      const { data: roleData } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', user.id)
-        .is('deleted_at', null)
-        .maybeSingle();
-      role = roleData?.role ?? null;
-    }
+    const role = await getActiveUserRole(user.id);
+    if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     if (!role || !ADMIN_ROLES.includes(role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

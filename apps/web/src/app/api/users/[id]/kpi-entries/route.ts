@@ -1,3 +1,4 @@
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -22,19 +23,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Authorization: self or admin
+    const role = await getActiveUserRole(user.id);
+    if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const isSelf = user.id === targetUserId;
     if (!isSelf) {
-      let role = user.app_metadata?.db_role as string | undefined;
-      if (!role) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', user.id)
-          .is('deleted_at', null)
-          .maybeSingle();
-        role = userData?.role ?? undefined;
-      }
-      if (!role || !ADMIN_ROLES.includes(role)) {
+      if (!ADMIN_ROLES.includes(role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
     }

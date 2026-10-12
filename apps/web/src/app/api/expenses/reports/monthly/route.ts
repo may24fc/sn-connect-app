@@ -1,3 +1,4 @@
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import { buildMonthlyExpenseReport } from '@/lib/expenses/monthly-report';
 import { renderMonthlyExpenseReportPdf } from '@/lib/expenses/monthly-report-pdf';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
@@ -29,20 +30,8 @@ async function hasInteractiveAccess(): Promise<boolean> {
     return false;
   }
 
-  let role: string | null = null;
-  if (typeof user.app_metadata?.db_role === 'string') {
-    role = user.app_metadata.db_role;
-  }
-
-  if (!role) {
-    const { data: roleData } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .is('deleted_at', null)
-      .maybeSingle();
-    role = roleData?.role ?? null;
-  }
+  const role = await getActiveUserRole(user.id);
+  if (!role) return false;
 
   if (role && ADMIN_ROLES.has(role)) {
     return true;

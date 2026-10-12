@@ -1,4 +1,5 @@
 import { logActivity } from '@/lib/audit';
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -46,41 +47,13 @@ export async function DELETE(
     }
 
     // Check permission: uploader or admin
-    const role =
-      typeof user.app_metadata?.db_role === 'string'
-        ? user.app_metadata.db_role
-        : null;
-
-    if (!role) {
-      const { data: roleData } = await supabaseAdmin
-        .from('users')
-        .select('role')
-        .eq('id', user.id)
-        .is('deleted_at', null)
-        .maybeSingle();
-      if (roleData?.role) {
-        // use resolved role below
-        const resolvedRole = roleData.role;
-        const isAdmin = ['admin', 'super_admin'].includes(resolvedRole);
-        const isUploader = document.uploaded_by === user.id;
-
-        if (!isAdmin && !isUploader) {
-          return NextResponse.json(
-            { error: 'You can only delete documents you uploaded' },
-            { status: 403 }
-          );
-        }
-      }
-    } else {
-      const isAdmin = ['admin', 'super_admin'].includes(role);
-      const isUploader = document.uploaded_by === user.id;
-
-      if (!isAdmin && !isUploader) {
-        return NextResponse.json(
-          { error: 'You can only delete documents you uploaded' },
-          { status: 403 }
-        );
-      }
+    const role = await getActiveUserRole(user.id);
+    if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!['admin', 'super_admin'].includes(role) && document.uploaded_by !== user.id) {
+      return NextResponse.json(
+        { error: 'You can only delete documents you uploaded' },
+        { status: 403 }
+      );
     }
 
     // Invoices and expense entries read their file from this document; deleting it here

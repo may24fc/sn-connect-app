@@ -1,3 +1,4 @@
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -74,30 +75,8 @@ async function getAuthedChecklistTemplateContext() {
     return { supabase, user: null, role: null, error: 'Unauthorized' as const };
   }
 
-  let role: string | null = null;
-  if (typeof user.app_metadata?.db_role === 'string') {
-    role = user.app_metadata.db_role;
-  }
-
-  if (!role) {
-    const { data: roleData, error: roleError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .is('deleted_at', null)
-      .maybeSingle();
-
-    if (roleError) {
-      return {
-        supabase,
-        user,
-        role: null,
-        error: 'Failed to resolve user role' as const,
-      };
-    }
-
-    role = roleData?.role ?? null;
-  }
+  const role = await getActiveUserRole(user.id);
+  if (!role) return { supabase, user: null, role: null, error: 'Unauthorized' as const };
 
   return { supabase, user, role, error: null };
 }

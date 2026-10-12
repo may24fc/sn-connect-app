@@ -1,5 +1,5 @@
 import { logActivity } from '@/lib/audit';
-import { getNormalizedMetadataRole } from '@/lib/auth/role';
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import { marketingDeliverablesReminderRecipientSchema } from '@/lib/schemas/report.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -36,24 +36,9 @@ async function requireSuperAdmin(): Promise<SuperAdminAuthResult> {
     return { ok: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
   }
 
-  let role = getNormalizedMetadataRole(user.app_metadata);
+  const role = await getActiveUserRole(user.id);
   if (!role) {
-    const { data: userRow, error: userError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .is('deleted_at', null)
-      .maybeSingle();
-
-    if (userError) {
-      console.error('Failed to resolve Marketing reminder administrator role:', userError);
-      return {
-        ok: false,
-        response: NextResponse.json({ error: 'Failed to verify permissions' }, { status: 500 }),
-      };
-    }
-
-    role = getNormalizedMetadataRole({ db_role: userRow?.role });
+    return { ok: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
   }
 
   if (role !== 'super_admin') {

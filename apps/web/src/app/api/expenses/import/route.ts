@@ -1,3 +1,4 @@
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import { resolveStagedFormData } from '@/lib/storage/upload-staging.server';
 import { logActivity } from '@/lib/audit';
 import { convertExpenseAmountsToAud, detectExpenseCurrency } from '@/lib/fx/expense-conversion';
@@ -14,25 +15,6 @@ const ALLOWED_TYPES = new Set([
   'application/csv',
 ]);
 const ALLOWED_ROLES = new Set(['admin', 'super_admin', 'associate']);
-
-async function resolveRole(
-  adminClient: ReturnType<typeof createSupabaseAdminClient>,
-  user: { id: string; app_metadata?: Record<string, unknown> }
-): Promise<string | null> {
-  const roleFromMetadata = user.app_metadata?.db_role;
-  if (typeof roleFromMetadata === 'string') {
-    return roleFromMetadata;
-  }
-
-  const { data } = await adminClient
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
-    .is('deleted_at', null)
-    .maybeSingle();
-
-  return data?.role ?? null;
-}
 
 async function resolveEmployeeId(
   adminClient: ReturnType<typeof createSupabaseAdminClient>,
@@ -123,8 +105,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const role = await resolveRole(adminClient, user);
-    if (!role || !ALLOWED_ROLES.has(role)) {
+    const role = await getActiveUserRole(user.id);
+    if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!ALLOWED_ROLES.has(role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

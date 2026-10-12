@@ -1,3 +1,4 @@
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import { logActivity } from '@/lib/audit';
 import { extractAmountFromInvoiceDocument } from '@/lib/payroll/invoiceDocumentOcr';
 import { invoiceLineItemSchema, invoiceUpdateSchema } from '@/lib/schemas/invoice.schema';
@@ -36,7 +37,8 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
     }
 
-    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const role = await getActiveUserRole(user.id);
+    if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const isAdmin = ['admin', 'super_admin'].includes(role ?? '');
     const employeeRecord = invoice.employees as unknown as { user_id: string } | null;
 

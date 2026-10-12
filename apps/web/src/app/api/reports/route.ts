@@ -1,3 +1,4 @@
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import { parsePagination } from '@/lib/api/pagination';
 import { logActivity } from '@/lib/audit';
 import {
@@ -50,6 +51,10 @@ export async function GET(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const role = await getActiveUserRole(user.id);
+    if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const isAdmin = ['admin', 'super_admin'].includes(role);
 
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
@@ -128,9 +133,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Role-based scoping: non-admins only see their own reports
-    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
-    const isAdmin = ['admin', 'super_admin'].includes(role ?? '');
-
     // Department filtering (case-insensitive match on employee's department)
     if (department && department !== 'all') {
       // Get employee IDs matching department first
@@ -283,7 +285,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Ownership check: non-admins can only create reports for themselves
-    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const role = await getActiveUserRole(user.id);
+    if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const isAdmin = ['admin', 'super_admin'].includes(role ?? '');
 
     if (!isAdmin && employeeId !== employeeData?.id) {

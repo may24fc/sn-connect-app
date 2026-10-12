@@ -1,3 +1,4 @@
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import { parsePagination } from '@/lib/api/pagination';
 import { logActivity } from '@/lib/audit';
 import { extractAmountFromInvoiceDocument } from '@/lib/payroll/invoiceDocumentOcr';
@@ -89,7 +90,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Resolve user role for authorization scoping
-    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const role = await getActiveUserRole(user.id);
+    if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const adminRoles = ['admin', 'super_admin'];
     const isAdmin = adminRoles.includes(role ?? '');
 
@@ -289,7 +291,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the employee actually belongs to the authenticated user (unless admin)
-    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const role = await getActiveUserRole(user.id);
+    if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const isAdmin = ['admin', 'super_admin'].includes(role ?? '');
 
     if (!isAdmin && resolvedEmployeeId !== employeeData?.id) {

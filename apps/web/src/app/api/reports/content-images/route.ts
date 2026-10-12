@@ -1,3 +1,4 @@
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import { resolveStagedFormData } from '@/lib/storage/upload-staging.server';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -15,7 +16,8 @@ const deleteImageSchema = z.object({
 async function getAuthenticatedUser(): Promise<{ id: string } | null> {
   const supabase = await createSupabaseServerClient();
   const { data: { user }, error } = await supabase.auth.getUser();
-  return error || !user ? null : user;
+  if (error || !user) return null;
+  return (await getActiveUserRole(user.id)) ? user : null;
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -25,7 +27,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const path = request.nextUrl.searchParams.get('path') || '';
-    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : '';
+    const role = await getActiveUserRole(user.id);
+    if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const isAdmin = role === 'admin' || role === 'super_admin';
     if (!path.startsWith(`${user.id}/`) && !isAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
