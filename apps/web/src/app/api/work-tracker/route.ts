@@ -68,6 +68,7 @@ interface TaskRow {
   status: string;
   priority: string;
   due_date: string | null;
+  completed_at: string | null;
   created_at: string;
   updated_at: string;
   project_id: string | null;
@@ -134,11 +135,14 @@ export async function GET(request: NextRequest) {
       )
       .is('deleted_at', null),
     supabaseAdmin.from('project_contributors').select('project_id, user_id, role'),
-    supabaseAdmin.from('project_milestones').select('id, title').is('deleted_at', null),
+    supabaseAdmin
+      .from('project_milestones')
+      .select('id, project_id, title, due_date, status')
+      .is('deleted_at', null),
     supabaseAdmin
       .from('tasks')
       .select(
-        'id, title, description, assigned_to, status, priority, due_date, created_at, updated_at, project_id, milestone_id, blocked_reason'
+        'id, title, description, assigned_to, status, priority, due_date, completed_at, created_at, updated_at, project_id, milestone_id, blocked_reason'
       )
       .is('deleted_at', null),
     supabaseAdmin
@@ -157,7 +161,7 @@ export async function GET(request: NextRequest) {
     const legacyTasksResult = await supabaseAdmin
       .from('tasks')
       .select(
-        'id, title, description, assigned_to, status, priority, due_date, created_at, updated_at'
+        'id, title, description, assigned_to, status, priority, due_date, completed_at, created_at, updated_at'
       )
       .is('deleted_at', null);
 
@@ -199,6 +203,13 @@ export async function GET(request: NextRequest) {
   const milestoneById = new Map(
     (milestonesResult.data ?? []).map((milestone) => [milestone.id, milestone.title])
   );
+  const milestones = (milestonesResult.data ?? []) as Array<{
+    id: string;
+    project_id: string;
+    title: string;
+    due_date: string;
+    status: string;
+  }>;
   const projectMembers = new Map<string, Map<string, 'lead' | 'contributor'>>();
 
   for (const project of projects) {
@@ -266,12 +277,14 @@ export async function GET(request: NextRequest) {
     const activeProjects = projectItems.filter(
       (item) => !['completed', 'archived'].includes(item.status)
     );
-    const periodTasks = taskItems.filter((item) => {
-      const comparisonDate = item.dueDate ?? tasks.find((task) => task.id === item.id)?.created_at;
-      return comparisonDate ? comparisonDate.slice(0, 10) >= rangeStart(days) : false;
-    });
-    const measurableTasks = periodTasks.filter((item) => item.status !== 'cancelled');
-    const completedTasks = measurableTasks.filter((item) => item.status === 'completed').length;
+    const periodStart = rangeStart(days);
+    const completedTasks = tasks.filter(
+      (task) =>
+        task.assigned_to === staffMember.user_id &&
+        task.status === 'completed' &&
+        !!task.completed_at &&
+        manilaDate(new Date(task.completed_at)) >= periodStart
+    ).length;
     const usageRows = usage.filter((entry) => entry.user_id === staffMember.user_id);
 
     return {
@@ -290,9 +303,6 @@ export async function GET(request: NextRequest) {
         ['pending', 'in_progress', 'blocked'].includes(item.status)
       ).length,
       completedTaskCount: completedTasks,
-      taskCompletionRate: measurableTasks.length
-        ? Math.round((completedTasks / measurableTasks.length) * 100)
-        : 0,
       blockedCount: taskItems.filter((item) => item.status === 'blocked').length,
       overdueCount: taskItems.filter(
         (item) =>
@@ -329,6 +339,9 @@ export async function GET(request: NextRequest) {
     const projectTasks = tasks.filter(
       (task) => task.project_id === project.id && task.status !== 'cancelled'
     );
+    const nextMilestone = milestones
+      .filter((milestone) => milestone.project_id === project.id && milestone.status !== 'approved')
+      .sort((left, right) => left.due_date.localeCompare(right.due_date))[0];
     return {
       id: project.id,
       name: project.name,
@@ -337,6 +350,9 @@ export async function GET(request: NextRequest) {
       health: project.health,
       progressPct: Number(project.progress_pct ?? 0),
       dueDate: project.target_end_date,
+      nextMilestone: nextMilestone
+        ? { title: nextMilestone.title, dueDate: nextMilestone.due_date }
+        : null,
       leadUserId: project.lead_user_id,
       leadName: leadStaff?.full_name?.trim() || leadPerson?.name || null,
       leadAvatarUrl: leadStaff?.avatar_url?.trim() || leadPerson?.avatarUrl || null,
@@ -372,14 +388,7 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const people = staff
-    .map(buildSummary)
-    .sort(
-      (left, right) =>
-        right.activeDays - left.activeDays ||
-        right.sessionCount - left.sessionCount ||
-        left.name.localeCompare(right.name)
-    );
+  const people = staff.map(buildSummary).sort((left, right) => left.name.localeCompare(right.name));
 
   return NextResponse.json({
     scope,
@@ -388,6 +397,8 @@ export async function GET(request: NextRequest) {
     usageAvailable,
     people,
     projects: visibleProjects.map(buildProjectSummary),
-    unassignedTaskCount: tasks.filter((task) => !task.assigned_to).length,
+    unassignedTaskCount: tasks.filter(
+      (task) => !task.assigned_to && ['pending', 'in_progress', 'blocked'].includes(task.status)
+    ).length,
   });
 }

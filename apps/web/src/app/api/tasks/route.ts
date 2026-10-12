@@ -1,3 +1,4 @@
+import { parsePagination } from '@/lib/api/pagination';
 import { logActivity } from '@/lib/audit';
 import { createNotification, getUserDisplayName } from '@/lib/notifications/create-notification';
 import { taskCreateSchema } from '@/lib/schemas/task.schema';
@@ -56,6 +57,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status') || '';
+    const excludeCancelled = searchParams.get('excludeCancelled') === 'true';
     const priority = searchParams.get('priority') || '';
     const category = searchParams.get('category') || '';
     const tags = (searchParams.get('tags') || '')
@@ -65,8 +67,9 @@ export async function GET(request: NextRequest) {
     const assigneeId = searchParams.get('assigneeId') || '';
     const projectId = searchParams.get('projectId') || '';
     const milestoneId = searchParams.get('milestoneId') || '';
-    const page = Number.parseInt(searchParams.get('page') || '1', 10);
-    const pageSize = Number.parseInt(searchParams.get('pageSize') || '10', 10);
+    const pagination = parsePagination(searchParams, 10);
+    if (!pagination) return NextResponse.json({ error: 'Invalid pagination' }, { status: 400 });
+    const { page, pageSize } = pagination;
 
     // Use admin client to bypass RLS cross-table subquery failures.
     // Auth is already validated above via getTaskAuthedContext().
@@ -88,6 +91,8 @@ export async function GET(request: NextRequest) {
 
     if (status) {
       query = query.eq('status', status);
+    } else if (excludeCancelled) {
+      query = query.neq('status', 'cancelled');
     }
 
     if (priority) {
@@ -102,7 +107,9 @@ export async function GET(request: NextRequest) {
       query = query.overlaps('tags', tags);
     }
 
-    if (assigneeId) {
+    if (assigneeId === 'unassigned') {
+      query = query.is('assigned_to', null);
+    } else if (assigneeId) {
       query = query.eq('assigned_to', assigneeId);
     }
 

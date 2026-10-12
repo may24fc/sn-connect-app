@@ -68,6 +68,7 @@ export function useTasks(filters: TaskFilters = {}, options: UseTasksOptions = {
 
       if (filters.search) params.append('search', filters.search);
       if (filters.status) params.append('status', filters.status);
+      if (filters.excludeCancelled) params.append('excludeCancelled', 'true');
       if (filters.priority) params.append('priority', filters.priority);
       if (filters.category) params.append('category', filters.category);
       if (filters.tags && filters.tags.length > 0) params.append('tags', filters.tags.join(','));

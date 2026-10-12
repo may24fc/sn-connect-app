@@ -3,6 +3,7 @@
 import { cn } from '@/lib/utils';
 import { FolderKanban, LayoutDashboard, ListTodo } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 type WorkTrackerSection = 'overview' | 'projects' | 'tasks';
 
@@ -12,23 +13,21 @@ interface WorkTrackerSectionNavProps {
 }
 
 export function WorkTrackerSectionNav({ current, className }: WorkTrackerSectionNavProps) {
+  const searchParams = useSearchParams();
   const sections = [
     {
       id: 'overview' as const,
       label: 'Team Workload',
-      href: '/work-tracker?view=team',
       icon: LayoutDashboard,
     },
     {
       id: 'projects' as const,
       label: 'Project Roadmap',
-      href: '/work-tracker?view=roadmap',
       icon: FolderKanban,
     },
     {
       id: 'tasks' as const,
       label: 'Execution Board',
-      href: '/work-tracker?view=execution',
       icon: ListTodo,
     },
   ];
@@ -44,11 +43,16 @@ export function WorkTrackerSectionNav({ current, className }: WorkTrackerSection
       {sections.map((section) => {
         const Icon = section.icon;
         const isActive = section.id === current;
+        const params = new URLSearchParams(searchParams.toString());
+        params.set(
+          'view',
+          section.id === 'overview' ? 'team' : section.id === 'projects' ? 'roadmap' : 'execution'
+        );
 
         return (
           <Link
             key={section.id}
-            href={section.href}
+            href={`/work-tracker?${params.toString()}`}
             aria-current={isActive ? 'page' : undefined}
             className={cn(
               'inline-flex h-8 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors',

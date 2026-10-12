@@ -41,14 +41,23 @@ type TaskListAuthContext = {
 
 function createTaskListAdminClient() {
   const eqCalls: Array<[string, string]> = [];
+  const neqCalls: Array<[string, string]> = [];
+  const isCalls: Array<[string, string | null]> = [];
   const result = { data: [], error: null, count: 0 };
 
   const query = {
     select: vi.fn(() => query),
-    is: vi.fn(() => query),
+    is: vi.fn((column: string, value: string | null) => {
+      isCalls.push([column, value]);
+      return query;
+    }),
     order: vi.fn(() => query),
     eq: vi.fn((column: string, value: string) => {
       eqCalls.push([column, value]);
+      return query;
+    }),
+    neq: vi.fn((column: string, value: string) => {
+      neqCalls.push([column, value]);
       return query;
     }),
     or: vi.fn(() => query),
@@ -69,7 +78,7 @@ function createTaskListAdminClient() {
     return query;
   });
 
-  return { client: { from }, eqCalls };
+  return { client: { from }, eqCalls, neqCalls, isCalls };
 }
 
 describe('/api/tasks GET route', () => {
@@ -152,5 +161,25 @@ describe('/api/tasks GET route', () => {
     });
     expect(eqCalls).toContainEqual(['assigned_to', 'employee-1']);
     expect(eqCalls).not.toContainEqual(['assigned_by', 'employee-1']);
+  });
+
+  it('excludes cancelled work and can show an unassigned board queue', async () => {
+    const { client, neqCalls, isCalls } = createTaskListAdminClient();
+    vi.mocked(getTaskAuthedContext).mockResolvedValue({
+      ok: true,
+      context: {
+        supabaseAdmin: client,
+        user: { id: 'admin-1' },
+        role: 'admin',
+      } satisfies TaskListAuthContext,
+    });
+
+    const response = await GET(
+      new NextRequest('http://localhost/api/tasks?excludeCancelled=true&assigneeId=unassigned')
+    );
+
+    expect(response.status).toBe(200);
+    expect(neqCalls).toContainEqual(['status', 'cancelled']);
+    expect(isCalls).toContainEqual(['assigned_to', null]);
   });
 });

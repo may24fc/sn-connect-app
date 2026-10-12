@@ -285,4 +285,79 @@ describe('/api/work-tracker GET route', () => {
     expect(response.status).toBe(200);
     expect((await response.json()).projects).toEqual([]);
   });
+
+  it('counts work by completion date and does not rank staff by Hub sessions', async () => {
+    const now = new Date().toISOString();
+    const from = vi.fn((table: string) => {
+      if (table === 'employee_directory') {
+        return query({
+          data: [
+            {
+              user_id: 'user-b',
+              full_name: 'Bryn',
+              department_name: null,
+              role: 'employee',
+              status: 'active',
+            },
+            {
+              user_id: 'user-a',
+              full_name: 'Alex',
+              department_name: null,
+              role: 'employee',
+              status: 'active',
+            },
+          ],
+          error: null,
+        });
+      }
+      if (table === 'tasks') {
+        return query({
+          data: [
+            {
+              id: 'task-old',
+              title: 'Finished old task',
+              description: null,
+              assigned_to: 'user-a',
+              status: 'completed',
+              priority: 'medium',
+              due_date: '2025-01-01',
+              completed_at: now,
+              created_at: '2025-01-01T00:00:00.000Z',
+              updated_at: now,
+              project_id: null,
+              milestone_id: null,
+              blocked_reason: null,
+            },
+          ],
+          error: null,
+        });
+      }
+      if (table === 'hub_usage_daily') {
+        return query({
+          data: [
+            {
+              user_id: 'user-b',
+              activity_date: now.slice(0, 10),
+              last_seen_at: now,
+              session_count: 99,
+            },
+          ],
+          error: null,
+        });
+      }
+      return query({ data: [], error: null });
+    });
+    vi.mocked(getProjectAuthedContext).mockResolvedValue({
+      ok: true,
+      context: { supabaseAdmin: { from }, user: { id: 'admin-1' }, role: 'admin' } as never,
+    });
+
+    const response = await GET(
+      new NextRequest('http://localhost/api/work-tracker?scope=team&days=7')
+    );
+    const body = await response.json();
+
+    expect(body.people.map((person: { name: string }) => person.name)).toEqual(['Alex', 'Bryn']);
+    expect(body.people[0].completedTaskCount).toBe(1);
+  });
 });

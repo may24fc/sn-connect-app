@@ -77,24 +77,75 @@ function formatLastActive(value: string | null): string {
   }).format(new Date(value));
 }
 
-function withWorkTrackerReturn(href: string): string {
+function formatDueDate(value: string | null): string {
+  if (!value) return 'No target date';
+  return new Intl.DateTimeFormat('en-PH', {
+    dateStyle: 'medium',
+    timeZone: 'Asia/Manila',
+  }).format(new Date(`${value.slice(0, 10)}T12:00:00+08:00`));
+}
+
+function withWorkTrackerReturn(href: string, returnTo: string): string {
   const separator = href.includes('?') ? '&' : '?';
-  return `${href}${separator}returnTo=${encodeURIComponent('/work-tracker')}`;
+  return `${href}${separator}returnTo=${encodeURIComponent(returnTo)}`;
+}
+
+function workTrackerViewHref(
+  returnTo: string,
+  view: WorkTrackerView,
+  changes: Record<string, string>
+): string {
+  const params = new URLSearchParams(returnTo.split('?')[1] ?? '');
+  params.set('view', view);
+  for (const [key, value] of Object.entries(changes)) params.set(key, value);
+  return `/work-tracker?${params.toString()}`;
+}
+
+function workItemPriority(item: WorkItem): number {
+  if (item.source === 'task') {
+    if (item.status === 'blocked') return 0;
+    if (
+      item.dueDate &&
+      item.dueDate.slice(0, 10) < new Date().toISOString().slice(0, 10) &&
+      !['completed', 'cancelled'].includes(item.status)
+    )
+      return 1;
+    if (item.status === 'in_progress') return 2;
+    if (item.status === 'pending') return 3;
+    return 6;
+  }
+  if (item.health === 'blocked' || item.health === 'overdue') return 1;
+  if (item.health === 'at_risk') return 2;
+  return 4;
 }
 
 export default function WorkTrackerPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const requestedView = searchParams.get('view');
   const view: WorkTrackerView =
     requestedView === 'roadmap' || requestedView === 'execution' ? requestedView : 'team';
   const canViewTeam = user?.role === 'admin' || user?.role === 'super_admin';
-  const [scope, setScope] = useState<WorkTrackerScope>(canViewTeam ? 'team' : 'mine');
-  const [days, setDays] = useState<WorkTrackerRange>(30);
-  const [workType, setWorkType] = useState<'all' | 'project' | 'task'>('all');
+  const scope: WorkTrackerScope =
+    canViewTeam && searchParams.get('scope') !== 'mine' ? 'team' : 'mine';
+  const requestedDays = Number(searchParams.get('days'));
+  const days: WorkTrackerRange = requestedDays === 7 || requestedDays === 90 ? requestedDays : 30;
+  const requestedWorkType = searchParams.get('type');
+  const workType: 'all' | 'project' | 'task' =
+    requestedWorkType === 'project' || requestedWorkType === 'task' ? requestedWorkType : 'all';
+  const returnTo = `/work-tracker?${searchParams.toString()}`;
+  const updateParams = (changes: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(changes)) {
+      if (value) params.set(key, value);
+      else params.delete(key);
+    }
+    router.replace(`/work-tracker?${params.toString()}`, { scroll: false });
+  };
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [personDialogOpen, setPersonDialogOpen] = useState(false);
-  const { data, isLoading, isError } = useWorkTracker(scope, days);
+  const { data, isLoading, isError, refetch } = useWorkTracker(scope, days);
   const hasLoadedData = !(isLoading || isError);
 
   const selectedPerson = useMemo(() => {
@@ -103,9 +154,13 @@ export default function WorkTrackerPage() {
     return people.find((person) => person.userId === selectedUserId) ?? people[0] ?? null;
   }, [data, scope, selectedUserId]);
 
-  const items = (selectedPerson?.items ?? []).filter(
-    (item) => workType === 'all' || item.source === workType
-  );
+  const items = (selectedPerson?.items ?? [])
+    .filter((item) => workType === 'all' || item.source === workType)
+    .sort(
+      (left, right) =>
+        workItemPriority(left) - workItemPriority(right) ||
+        right.updatedAt.localeCompare(left.updatedAt)
+    );
   const canEditTasks = scope === 'mine' || user?.role === 'super_admin' || user?.role === 'admin';
 
   return (
@@ -124,12 +179,6 @@ export default function WorkTrackerPage() {
               New project
             </Link>
           </Button>
-          <Button asChild>
-            <Link href="/work-tracker?view=execution">
-              <Plus className="mr-2 h-4 w-4" />
-              Execution board
-            </Link>
-          </Button>
         </div>
       </header>
 
@@ -143,7 +192,7 @@ export default function WorkTrackerPage() {
             <Button
               size="sm"
               variant={scope === 'mine' ? 'default' : 'outline'}
-              onClick={() => setScope('mine')}
+              onClick={() => updateParams({ scope: 'mine' })}
             >
               My work
             </Button>
@@ -151,26 +200,26 @@ export default function WorkTrackerPage() {
               <Button
                 size="sm"
                 variant={scope === 'team' ? 'default' : 'outline'}
-                onClick={() => setScope('team')}
+                onClick={() => updateParams({ scope: 'team' })}
               >
                 <Users className="mr-2 h-4 w-4" />
                 Team visibility
               </Button>
             ) : null}
           </div>
-          <Select
-            value={String(days)}
-            onValueChange={(value) => setDays(Number(value) as WorkTrackerRange)}
-          >
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7">Last 7 days</SelectItem>
-              <SelectItem value="30">Last 30 days</SelectItem>
-              <SelectItem value="90">Last 90 days</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Activity and completed work</span>
+            <Select value={String(days)} onValueChange={(value) => updateParams({ days: value })}>
+              <SelectTrigger className="w-40" aria-label="Activity and completion period">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7">Last 7 days</SelectItem>
+                <SelectItem value="30">Last 30 days</SelectItem>
+                <SelectItem value="90">Last 90 days</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       ) : null}
 
@@ -180,19 +229,32 @@ export default function WorkTrackerPage() {
           icon={<AlertTriangle className="h-10 w-10" />}
           title="Work tracker unavailable"
           description="The combined work and activity summary could not be loaded."
+          action={{ label: 'Try again', onClick: () => void refetch() }}
         />
       ) : null}
 
       {view === 'team' && hasLoadedData && scope === 'team' ? (
-        <TeamTable
-          people={data?.people ?? []}
-          usageAvailable={data?.usageAvailable ?? true}
-          selectedUserId={selectedPerson?.userId ?? null}
-          onSelect={(userId) => {
-            setSelectedUserId(userId);
-            setPersonDialogOpen(true);
-          }}
-        />
+        <>
+          {(data?.unassignedTaskCount ?? 0) > 0 ? (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm dark:border-amber-900 dark:bg-amber-950/30">
+              <span>{data?.unassignedTaskCount} tasks need an assignee.</span>
+              <Button asChild size="sm" variant="outline">
+                <Link href="/work-tracker?view=execution&scope=team&assignee=unassigned">
+                  Review unassigned tasks
+                </Link>
+              </Button>
+            </div>
+          ) : null}
+          <TeamTable
+            people={data?.people ?? []}
+            usageAvailable={data?.usageAvailable ?? true}
+            selectedUserId={selectedPerson?.userId ?? null}
+            onSelect={(userId) => {
+              setSelectedUserId(userId);
+              setPersonDialogOpen(true);
+            }}
+          />
+        </>
       ) : null}
 
       {view === 'team' && hasLoadedData && selectedPerson && scope === 'mine' ? (
@@ -212,7 +274,7 @@ export default function WorkTrackerPage() {
               </div>
               <Select
                 value={workType}
-                onValueChange={(value) => setWorkType(value as typeof workType)}
+                onValueChange={(value) => updateParams({ type: value === 'all' ? null : value })}
               >
                 <SelectTrigger className="w-40">
                   <SelectValue />
@@ -231,6 +293,7 @@ export default function WorkTrackerPage() {
                     key={`${item.source}-${item.id}`}
                     item={item}
                     canEditTask={canEditTasks}
+                    returnTo={returnTo}
                   />
                 ))}
               </div>
@@ -279,7 +342,7 @@ export default function WorkTrackerPage() {
                 </div>
                 <Select
                   value={workType}
-                  onValueChange={(value) => setWorkType(value as typeof workType)}
+                  onValueChange={(value) => updateParams({ type: value === 'all' ? null : value })}
                 >
                   <SelectTrigger className="w-36">
                     <SelectValue />
@@ -298,6 +361,7 @@ export default function WorkTrackerPage() {
                       key={`${item.source}-${item.id}`}
                       item={item}
                       canEditTask={canEditTasks}
+                      returnTo={returnTo}
                     />
                   ))
                 ) : (
@@ -314,7 +378,13 @@ export default function WorkTrackerPage() {
       </Dialog>
 
       {view === 'roadmap' ? (
-        <RoadmapView projects={data?.projects ?? []} isLoading={isLoading} isError={isError} />
+        <RoadmapView
+          projects={data?.projects ?? []}
+          isLoading={isLoading}
+          isError={isError}
+          onRetry={() => void refetch()}
+          returnTo={returnTo}
+        />
       ) : null}
       {view === 'execution' ? (
         <ExecutionView
@@ -323,6 +393,7 @@ export default function WorkTrackerPage() {
           initialAssigneeId={searchParams.get('assignee') ?? ''}
           initialSearch={searchParams.get('search') ?? ''}
           projectOptions={data?.projects ?? []}
+          returnTo={returnTo}
         />
       ) : null}
     </div>
@@ -348,7 +419,7 @@ function SummaryCards({
     {
       label: 'Open tasks',
       value: person.openTaskCount,
-      detail: `${person.taskCompletionRate}% completed in ${days} days`,
+      detail: `${person.completedTaskCount} completed in the last ${days} days`,
       icon: ClipboardCheck,
     },
     {
@@ -420,10 +491,10 @@ function TeamTable({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Staff visibility</CardTitle>
+        <CardTitle className="text-base">Current staff workload</CardTitle>
         <p className="text-xs text-muted-foreground">
           {usageAvailable
-            ? 'Activity indicates Control Hub use, not employee productivity.'
+            ? 'Listed alphabetically. Hub activity indicates use, not productivity or reward eligibility.'
             : 'Work data is available, but activity tracking is temporarily unavailable.'}
         </p>
       </CardHeader>
@@ -471,7 +542,7 @@ function TeamTable({
                 <td className="px-4 py-3">
                   <p>{person.openTaskCount} open</p>
                   <p className="text-xs text-muted-foreground">
-                    {person.taskCompletionRate}% completed
+                    {person.completedTaskCount} completed in selected period
                   </p>
                 </td>
                 <td className="px-4 py-3">
@@ -505,7 +576,11 @@ function TeamTable({
   );
 }
 
-function WorkItemCard({ item, canEditTask }: { item: WorkItem; canEditTask: boolean }) {
+function WorkItemCard({
+  item,
+  canEditTask,
+  returnTo,
+}: { item: WorkItem; canEditTask: boolean; returnTo: string }) {
   if (item.source === 'project') {
     return (
       <Card>
@@ -514,7 +589,7 @@ function WorkItemCard({ item, canEditTask }: { item: WorkItem; canEditTask: bool
             <div>
               <Badge variant="outline">Project · {formatLabel(item.projectRole)}</Badge>
               <Link
-                href={withWorkTrackerReturn(item.href)}
+                href={withWorkTrackerReturn(item.href, returnTo)}
                 className="mt-2 block font-semibold hover:underline"
               >
                 {item.title}
@@ -534,17 +609,21 @@ function WorkItemCard({ item, canEditTask }: { item: WorkItem; canEditTask: bool
     );
   }
 
-  return <TaskWorkItemCard item={item} canEdit={canEditTask} />;
+  return <TaskWorkItemCard item={item} canEdit={canEditTask} returnTo={returnTo} />;
 }
 
 function TaskWorkItemCard({
   item,
   canEdit,
+  returnTo,
 }: {
   item: Extract<WorkItem, { source: 'task' }>;
   canEdit: boolean;
+  returnTo: string;
 }) {
   const updateTask = useUpdateTask(item.id);
+  const [blockerOpen, setBlockerOpen] = useState(false);
+  const [blockerReason, setBlockerReason] = useState(item.blockedReason ?? '');
   return (
     <Card>
       <CardContent className="space-y-3 pt-5">
@@ -552,7 +631,7 @@ function TaskWorkItemCard({
           <div className="min-w-0">
             <Badge variant="outline">Task · {formatLabel(item.priority)}</Badge>
             <Link
-              href={withWorkTrackerReturn(item.href)}
+              href={withWorkTrackerReturn(item.href, returnTo)}
               className="mt-2 block truncate font-semibold hover:underline"
             >
               {item.title}
@@ -584,12 +663,11 @@ function TaskWorkItemCard({
                 | 'blocked'
                 | 'completed'
                 | 'cancelled';
-              const blockedReason =
-                nextStatus === 'blocked'
-                  ? window.prompt('What is blocking this task?')?.trim() || null
-                  : undefined;
-              if (nextStatus === 'blocked' && !blockedReason) return;
-              updateTask.mutate({ status: nextStatus, blockedReason });
+              if (nextStatus === 'blocked') {
+                setBlockerOpen(true);
+                return;
+              }
+              updateTask.mutate({ status: nextStatus, blockedReason: null });
             }}
           >
             <SelectTrigger aria-label={`Update ${item.title} status`}>
@@ -606,6 +684,43 @@ function TaskWorkItemCard({
         ) : (
           <Badge variant="secondary">{formatLabel(item.status)}</Badge>
         )}
+        {updateTask.error ? (
+          <p role="alert" className="text-xs text-destructive">
+            {updateTask.error.message}
+          </p>
+        ) : null}
+        <Dialog open={blockerOpen} onOpenChange={setBlockerOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>What is blocking this task?</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label htmlFor={`blocker-${item.id}`}>Blocker reason</Label>
+              <Textarea
+                id={`blocker-${item.id}`}
+                value={blockerReason}
+                maxLength={500}
+                onChange={(event) => setBlockerReason(event.target.value)}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setBlockerOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                disabled={!blockerReason.trim() || updateTask.isPending}
+                onClick={() => {
+                  updateTask.mutate(
+                    { status: 'blocked', blockedReason: blockerReason.trim() },
+                    { onSuccess: () => setBlockerOpen(false) }
+                  );
+                }}
+              >
+                Move to Blocked
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
@@ -615,14 +730,35 @@ function RoadmapView({
   projects,
   isLoading,
   isError,
+  onRetry,
+  returnTo,
 }: {
   projects: Array<ProjectWorkSummary>;
   isLoading: boolean;
   isError: boolean;
+  onRetry: () => void;
+  returnTo: string;
 }) {
   const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = Math.max(Math.ceil(projects.length / TRACKER_PAGE_SIZE), 1);
-  const visibleProjects = projects.slice(
+  const [healthFilter, setHealthFilter] = useState('all');
+  const [ownerFilter, setOwnerFilter] = useState('all');
+  const visibleByHealth = projects.filter(
+    (project) =>
+      (healthFilter === 'all' || project.health === healthFilter) &&
+      (ownerFilter === 'all' || project.leadUserId === ownerFilter)
+  );
+  const ownerOptions = Array.from(
+    new Map(projects.map((project) => [project.leadUserId, project.leadName ?? 'Unknown lead']))
+  );
+  const healthOrder: Record<string, number> = { blocked: 0, overdue: 1, at_risk: 2, on_track: 3 };
+  const sortedProjects = [...visibleByHealth].sort(
+    (left, right) =>
+      (healthOrder[left.health] ?? 4) - (healthOrder[right.health] ?? 4) ||
+      (left.dueDate ?? '9999').localeCompare(right.dueDate ?? '9999') ||
+      left.name.localeCompare(right.name)
+  );
+  const totalPages = Math.max(Math.ceil(sortedProjects.length / TRACKER_PAGE_SIZE), 1);
+  const visibleProjects = sortedProjects.slice(
     (currentPage - 1) * TRACKER_PAGE_SIZE,
     currentPage * TRACKER_PAGE_SIZE
   );
@@ -638,6 +774,7 @@ function RoadmapView({
         icon={<AlertTriangle className="h-10 w-10" />}
         title="Project roadmap unavailable"
         description="Project health and task rollups could not be loaded."
+        action={{ label: 'Try again', onClick: onRetry }}
       />
     );
   }
@@ -653,95 +790,159 @@ function RoadmapView({
 
   return (
     <section className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold">Project Roadmap</h2>
-        <p className="text-sm text-muted-foreground">
-          Progress and health are computed from each project's child tasks.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Project Roadmap</h2>
+          <p className="text-sm text-muted-foreground">
+            Projects needing attention appear first. Progress and health come from child tasks.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Select
+            value={healthFilter}
+            onValueChange={(value) => {
+              setHealthFilter(value);
+              setCurrentPage(1);
+            }}
+          >
+            <SelectTrigger className="w-44" aria-label="Filter projects by health">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All health states</SelectItem>
+              <SelectItem value="blocked">Blocked</SelectItem>
+              <SelectItem value="overdue">Overdue</SelectItem>
+              <SelectItem value="at_risk">At risk</SelectItem>
+              <SelectItem value="on_track">On track</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            value={ownerFilter}
+            onValueChange={(value) => {
+              setOwnerFilter(value);
+              setCurrentPage(1);
+            }}
+          >
+            <SelectTrigger className="w-44" aria-label="Filter projects by owner">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All owners</SelectItem>
+              {ownerOptions.map(([id, name]) => (
+                <SelectItem key={id} value={id}>
+                  {name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-      <div className="overflow-x-auto rounded-lg border bg-card">
-        <table className="w-full min-w-[860px] text-sm">
-          <thead className="border-b bg-muted/50 text-left text-xs uppercase text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3">Project</th>
-              <th className="px-4 py-3">Owner</th>
-              <th className="px-4 py-3">Health</th>
-              <th className="px-4 py-3">Execution</th>
-              <th className="px-4 py-3">Progress</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {visibleProjects.map((project) => (
-              <tr key={project.id} className="hover:bg-muted/30">
-                <td className="px-4 py-3">
-                  <Link
-                    href={withWorkTrackerReturn(`/projects/${project.id}`)}
-                    className="font-medium hover:underline"
-                  >
-                    {project.name}
-                  </Link>
-                  <p className="mt-1 max-w-md truncate text-xs text-muted-foreground">
-                    {project.description || 'No description'}
-                  </p>
-                </td>
-                <td className="px-4 py-3">
-                  {project.leadName ? (
-                    <span className="flex min-w-0 items-center gap-2">
-                      <UserAvatar
-                        name={project.leadName}
-                        avatarUrl={project.leadAvatarUrl}
-                        size="xs"
-                      />
-                      <span className="truncate">{project.leadName}</span>
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">
-                      {project.leadUserId ? 'Unknown lead' : 'Unassigned'}
-                    </span>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  {project.totalTasks ? (
-                    <HealthPill
-                      health={project.health as 'on_track' | 'at_risk' | 'overdue' | 'blocked'}
-                    />
-                  ) : (
-                    <Badge variant="outline">No tasks</Badge>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  <Link
-                    href={`/work-tracker?view=execution&project=${project.id}`}
-                    className="font-medium hover:underline"
-                  >
-                    {project.completedTasks}/{project.totalTasks} tasks
-                  </Link>
-                  <p className="text-xs text-muted-foreground">
-                    {project.blockedTasks} blocked · {project.overdueTasks} overdue
-                  </p>
-                </td>
-                <td className="px-4 py-3">
-                  {project.totalTasks ? (
-                    <div className="flex min-w-40 items-center gap-3">
-                      <Progress value={project.progressPct} />
-                      <span className="w-10 text-right text-xs font-medium">
-                        {Math.round(project.progressPct)}%
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">No tasks</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <TrackerPagination
-          page={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
+      {!sortedProjects.length ? (
+        <EmptyState
+          title="No projects match"
+          description="Choose another health state."
+          action={{
+            label: 'Clear filters',
+            onClick: () => {
+              setHealthFilter('all');
+              setOwnerFilter('all');
+            },
+          }}
         />
-      </div>
+      ) : null}
+      {sortedProjects.length ? (
+        <div className="overflow-x-auto rounded-lg border bg-card">
+          <table className="w-full min-w-[980px] text-sm">
+            <thead className="border-b bg-muted/50 text-left text-xs uppercase text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3">Project</th>
+                <th className="px-4 py-3">Owner</th>
+                <th className="px-4 py-3">Target date</th>
+                <th className="px-4 py-3">Health</th>
+                <th className="px-4 py-3">Execution</th>
+                <th className="px-4 py-3">Progress</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {visibleProjects.map((project) => (
+                <tr key={project.id} className="hover:bg-muted/30">
+                  <td className="px-4 py-3">
+                    <Link
+                      href={withWorkTrackerReturn(`/projects/${project.id}`, returnTo)}
+                      className="font-medium hover:underline"
+                    >
+                      {project.name}
+                    </Link>
+                    <p className="mt-1 max-w-md truncate text-xs text-muted-foreground">
+                      {project.description || 'No description'}
+                    </p>
+                    {project.nextMilestone ? (
+                      <p className="mt-1 max-w-md truncate text-xs text-muted-foreground">
+                        Next milestone: {project.nextMilestone.title} ·{' '}
+                        {formatDueDate(project.nextMilestone.dueDate)}
+                      </p>
+                    ) : null}
+                  </td>
+                  <td className="px-4 py-3">
+                    {project.leadName ? (
+                      <span className="flex min-w-0 items-center gap-2">
+                        <UserAvatar
+                          name={project.leadName}
+                          avatarUrl={project.leadAvatarUrl}
+                          size="xs"
+                        />
+                        <span className="truncate">{project.leadName}</span>
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">
+                        {project.leadUserId ? 'Unknown lead' : 'Unassigned'}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-sm">{formatDueDate(project.dueDate)}</td>
+                  <td className="px-4 py-3">
+                    {project.totalTasks ? (
+                      <HealthPill
+                        health={project.health as 'on_track' | 'at_risk' | 'overdue' | 'blocked'}
+                      />
+                    ) : (
+                      <Badge variant="outline">No tasks</Badge>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <Link
+                      href={workTrackerViewHref(returnTo, 'execution', { project: project.id })}
+                      className="font-medium hover:underline"
+                    >
+                      {project.completedTasks}/{project.totalTasks} tasks
+                    </Link>
+                    <p className="text-xs text-muted-foreground">
+                      {project.blockedTasks} blocked · {project.overdueTasks} overdue
+                    </p>
+                  </td>
+                  <td className="px-4 py-3">
+                    {project.totalTasks ? (
+                      <div className="flex min-w-40 items-center gap-3">
+                        <Progress value={project.progressPct} />
+                        <span className="w-10 text-right text-xs font-medium">
+                          {Math.round(project.progressPct)}%
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">No tasks</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <TrackerPagination
+            page={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -752,15 +953,19 @@ function ExecutionView({
   initialAssigneeId,
   initialSearch,
   projectOptions,
+  returnTo,
 }: {
   canManageAll: boolean;
   initialProjectId: string;
   initialAssigneeId: string;
   initialSearch: string;
   projectOptions: Array<ProjectWorkSummary>;
+  returnTo: string;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState(initialSearch);
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [projectId, setProjectId] = useState(initialProjectId || 'all');
   const [assigneeId, setAssigneeId] = useState(initialAssigneeId || 'all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -776,13 +981,14 @@ function ExecutionView({
     () => ({
       page: currentPage,
       pageSize: TRACKER_PAGE_SIZE,
-      ...(search ? { search } : {}),
+      excludeCancelled: true,
+      ...(debouncedSearch ? { search: debouncedSearch } : {}),
       ...(projectId !== 'all' ? { projectId } : {}),
       ...(assigneeId !== 'all' ? { assigneeId } : {}),
     }),
-    [assigneeId, currentPage, projectId, search]
+    [assigneeId, currentPage, debouncedSearch, projectId]
   );
-  const { data, isLoading, isError } = useTasks(filters);
+  const { data, isLoading, isError, refetch } = useTasks(filters);
   const { data: assigneesData } = useTaskAssignees(canManageAll);
   const { data: milestonesData } = useProjectMilestones(newProjectId || null);
   const createTask = useCreateTask();
@@ -791,17 +997,35 @@ function ExecutionView({
   const totalPages = Math.max(data?.pagination?.totalPages ?? 1, 1);
 
   useEffect(() => {
-    setCurrentPage((page) => Math.min(page, totalPages));
-  }, [totalPages]);
+    const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    setSearch(initialSearch);
+    setProjectId(initialProjectId || 'all');
+    setAssigneeId(initialAssigneeId || 'all');
+    setCurrentPage(1);
+  }, [initialSearch, initialProjectId, initialAssigneeId]);
+
+  useEffect(() => {
+    if (data?.pagination) {
+      setCurrentPage((page) => Math.min(page, Math.max(data.pagination.totalPages, 1)));
+    }
+  }, [data?.pagination]);
   const replaceExecutionUrl = (
     nextProjectId: string,
     nextAssigneeId: string,
     nextSearch: string
   ) => {
-    const params = new URLSearchParams({ view: 'execution' });
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('view', 'execution');
     if (nextProjectId !== 'all') params.set('project', nextProjectId);
+    else params.delete('project');
     if (nextAssigneeId !== 'all') params.set('assignee', nextAssigneeId);
+    else params.delete('assignee');
     if (nextSearch.trim()) params.set('search', nextSearch.trim());
+    else params.delete('search');
     router.replace(`/work-tracker?${params.toString()}`, { scroll: false });
   };
   const handleStatusChange = useCallback(
@@ -861,7 +1085,7 @@ function ExecutionView({
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
-                maxLength={200}
+            maxLength={200}
             onChange={(event) => {
               setSearch(event.target.value);
               setCurrentPage(1);
@@ -906,6 +1130,7 @@ function ExecutionView({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All assignees</SelectItem>
+              <SelectItem value="unassigned">Unassigned</SelectItem>
               {(assigneesData?.data ?? []).map((assignee) => (
                 <SelectItem key={assignee.id} value={assignee.id}>
                   {assignee.name}
@@ -917,12 +1142,31 @@ function ExecutionView({
           <div />
         )}
       </div>
+      {projectId !== 'all' || assigneeId !== 'all' || search ? (
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <span>Filtered view</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setSearch('');
+              setProjectId('all');
+              setAssigneeId('all');
+              setCurrentPage(1);
+              replaceExecutionUrl('all', 'all', '');
+            }}
+          >
+            Clear filters
+          </Button>
+        </div>
+      ) : null}
       {isLoading ? <TrackerSkeleton /> : null}
       {isError ? (
         <EmptyState
           icon={<AlertTriangle className="h-10 w-10" />}
           title="Execution board unavailable"
           description="Tasks could not be loaded."
+          action={{ label: 'Try again', onClick: () => void refetch() }}
         />
       ) : null}
       {!isLoading && !isError && !tasks.length ? (
@@ -930,16 +1174,35 @@ function ExecutionView({
           icon={<ListTodo className="h-10 w-10" />}
           title="No matching tasks"
           description="Adjust the filters or create a task."
+          {...(projectId !== 'all' || assigneeId !== 'all' || search
+            ? {
+                action: {
+                  label: 'Clear filters',
+                  onClick: () => {
+                    setSearch('');
+                    setProjectId('all');
+                    setAssigneeId('all');
+                    setCurrentPage(1);
+                    replaceExecutionUrl('all', 'all', '');
+                  },
+                },
+              }
+            : {})}
         />
       ) : null}
       {!isLoading && !isError && tasks.length ? (
         <div className="overflow-hidden rounded-lg border bg-card">
+          <p className="border-b px-4 py-2 text-xs text-muted-foreground">
+            Showing {(currentPage - 1) * TRACKER_PAGE_SIZE + 1}–
+            {Math.min(currentPage * TRACKER_PAGE_SIZE, data?.pagination.total ?? 0)} of{' '}
+            {data?.pagination.total ?? 0} active tasks. Column counts describe this page.
+          </p>
           <div className="p-4">
             <TaskKanbanBoard
               tasks={tasks}
               onStatusChange={handleStatusChange}
               linkPrefix={canManageAll ? '/super-admin/tasks' : '/tasks'}
-              returnTo={`/work-tracker?view=execution${projectId !== 'all' ? `&project=${projectId}` : ''}${assigneeId !== 'all' ? `&assignee=${assigneeId}` : ''}`}
+              returnTo={returnTo}
               includeCancelled={false}
             />
           </div>

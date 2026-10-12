@@ -1,12 +1,16 @@
-const fs = require('fs');
-const path = require('path');
-const { spawn } = require('child_process');
+const fs = require('node:fs');
+const path = require('node:path');
+const { spawn } = require('node:child_process');
 
 const rootDir = process.cwd();
-const webCacheDir = path.join(rootDir, 'apps', 'web', '.next');
+const webDistDir = process.env.NEXT_DIST_DIR || '.next';
+if (path.isAbsolute(webDistDir) || webDistDir.includes('..') || webDistDir.includes('\\')) {
+  throw new Error('NEXT_DIST_DIR must be a relative directory inside apps/web');
+}
+const webCacheDir = path.join(rootDir, 'apps', 'web', webDistDir);
 const webPort = process.env.PLAYWRIGHT_WEB_PORT ?? '3002';
 
-if (fs.existsSync(webCacheDir)) {
+if (webDistDir === '.next' && fs.existsSync(webCacheDir)) {
   fs.rmSync(webCacheDir, { recursive: true, force: true });
 }
 

@@ -46,7 +46,6 @@ export interface PersonWorkSummary {
   averageProjectProgress: number;
   openTaskCount: number;
   completedTaskCount: number;
-  taskCompletionRate: number;
   blockedCount: number;
   overdueCount: number;
   lastActiveAt: string | null;
@@ -63,6 +62,7 @@ export interface ProjectWorkSummary {
   health: string;
   progressPct: number;
   dueDate: string | null;
+  nextMilestone: { title: string; dueDate: string } | null;
   leadUserId: string;
   leadName: string | null;
   leadAvatarUrl: string | null;

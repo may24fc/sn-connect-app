@@ -299,10 +299,10 @@ export default function MyTasksPage() {
 
   // Handler for status change in Kanban board
   const handleStatusChange = useCallback(
-    async (taskId: string, newStatus: TaskStatusDB) => {
+    async (taskId: string, newStatus: TaskStatusDB, blockedReason?: string | null) => {
       setUpdatingTaskId(taskId);
       try {
-        await updateTaskStatus.mutateAsync({ taskId, status: newStatus });
+        await updateTaskStatus.mutateAsync({ taskId, status: newStatus, blockedReason });
         addToast({
           title: 'Task status updated',
           description: `Changed to ${newStatus.replace('_', ' ')}`,
@@ -314,6 +314,7 @@ export default function MyTasksPage() {
           description: err instanceof Error ? err.message : 'An error occurred',
           variant: 'error',
         });
+        throw err;
       } finally {
         setUpdatingTaskId(null);
       }
@@ -863,7 +864,9 @@ function TaskListView({ tasks, onStatusChange, updatingTaskId }: TaskListViewPro
                 <TableCell>
                   <Select
                     value={task.status}
-                    onValueChange={(value) => onStatusChange(task.id, value as TaskStatusDB)}
+                    onValueChange={(value) => {
+                      void onStatusChange(task.id, value as TaskStatusDB).catch(() => undefined);
+                    }}
                     disabled={updatingTaskId === task.id}
                   >
                     <SelectTrigger className="w-[140px] h-8 text-xs border-0 bg-transparent shadow-none hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:ring-0 px-1">

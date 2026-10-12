@@ -348,6 +348,7 @@ export default function TaskManagementPage() {
           description: error instanceof Error ? error.message : 'An error occurred',
           variant: 'error',
         });
+        throw error;
       }
     },
     [addToast, updateTaskStatus]

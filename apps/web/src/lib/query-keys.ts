@@ -39,6 +39,7 @@ export interface DivisionFilters {
 export interface TaskFilters {
   search?: string;
   status?: 'pending' | 'in_progress' | 'blocked' | 'completed' | 'cancelled';
+  excludeCancelled?: boolean;
   assigneeId?: string;
   projectId?: string;
   milestoneId?: string;
@@ -702,6 +703,10 @@ export const queryKeys = {
       [...queryKeys.projects.all, 'documentation', projectId] as const,
     milestones: (projectId: string) =>
       [...queryKeys.projects.all, 'milestones', projectId] as const,
+    contributorCandidatesFor: (projectId: string) =>
+      [...queryKeys.projects.all, 'contributor-candidates', projectId] as const,
+    contributorCandidates: (projectId: string, search: string) =>
+      [...queryKeys.projects.contributorCandidatesFor(projectId), search] as const,
     checklist: (milestoneId: string) =>
       [...queryKeys.projects.all, 'checklist', milestoneId] as const,
     pools: () => [...queryKeys.projects.all, 'pool'] as const,

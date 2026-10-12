@@ -51,8 +51,10 @@
   "include": [
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts",
     ".next-perf/types/**/*.ts",
+    ".next-playwright-audit/types/**/*.ts",
+    ".next-playwright-kanban/types/**/*.ts",
+    ".next/types/**/*.ts",
     "next-env.d.ts"
   ],
   "exclude": [
