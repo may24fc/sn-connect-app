@@ -1,10 +1,8 @@
+import { normalizeDbRoleClaim } from '@/lib/auth/role';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const PROJECT_ADMIN_ROLES: readonly string[] = [
   'admin',
-  'hr',
-  'cos',
-  'ceo',
   'super_admin',
 ] as const;
 
@@ -33,22 +31,20 @@ export async function getProjectAuthedContext(): Promise<
     return { ok: false, status: 401, error: 'Unauthorized' };
   }
 
-  let role: string | null =
-    typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+  const { data: roleData, error: roleError } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', user.id)
+    .is('deleted_at', null)
+    .maybeSingle();
 
+  if (roleError) {
+    return { ok: false, status: 500, error: 'Failed to resolve user role' };
+  }
+
+  const role = normalizeDbRoleClaim(roleData?.role ?? null);
   if (!role) {
-    const { data: roleData, error: roleError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .is('deleted_at', null)
-      .maybeSingle();
-
-    if (roleError) {
-      return { ok: false, status: 500, error: 'Failed to resolve user role' };
-    }
-
-    role = (roleData?.role as string | null | undefined) ?? null;
+    return { ok: false, status: 401, error: 'Unauthorized' };
   }
 
   return {

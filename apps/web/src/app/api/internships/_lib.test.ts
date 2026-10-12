@@ -66,12 +66,12 @@ describe('isInternshipAdmin', () => {
   it('allows privileged internship roles', () => {
     expect(isInternshipAdmin('admin')).toBe(true);
     expect(isInternshipAdmin('super_admin')).toBe(true);
-    expect(isInternshipAdmin('hr')).toBe(true);
-    expect(isInternshipAdmin('cos')).toBe(true);
-    expect(isInternshipAdmin('ceo')).toBe(true);
   });
 
   it('rejects non-privileged roles', () => {
+    expect(isInternshipAdmin('hr')).toBe(false);
+    expect(isInternshipAdmin('cos')).toBe(false);
+    expect(isInternshipAdmin('ceo')).toBe(false);
     expect(isInternshipAdmin('employee')).toBe(false);
     expect(isInternshipAdmin('associate')).toBe(false);
     expect(isInternshipAdmin(null)).toBe(false);

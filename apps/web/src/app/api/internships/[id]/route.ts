@@ -10,6 +10,7 @@ import {
 } from '@/lib/people/directory-people';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { signDailyLogAttachments } from './logs/_lib';
 import { updateInternshipSchema } from '@/lib/schemas/internship.schema';
 import { validatePersonAssignment } from '@/lib/people/assignment-validation';
 import { resolveDepartmentById } from '@/app/api/users/_organization';
@@ -52,27 +53,6 @@ function readJoinedAvatarUrl(joined: unknown): string | null {
 
 function textOrNull(value: unknown): string | null {
   return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
-}
-
-const DAILY_LOG_ATTACHMENT_BUCKET = 'associate-daily-log-attachments';
-const DAILY_LOG_ATTACHMENT_SIGNED_URL_TTL_SECONDS = 60 * 10;
-
-async function signDailyLogAttachments(attachments: unknown) {
-  const adminClient = createSupabaseAdminClient();
-  const normalizedAttachments = normalizeAttachmentRecords(attachments);
-
-  return Promise.all(
-    normalizedAttachments.map(async (attachment) => {
-      const { data, error } = await adminClient.storage
-        .from(DAILY_LOG_ATTACHMENT_BUCKET)
-        .createSignedUrl(attachment.filePath, DAILY_LOG_ATTACHMENT_SIGNED_URL_TTL_SECONDS);
-
-      return {
-        ...attachment,
-        signedUrl: error ? null : data?.signedUrl ?? null,
-      };
-    })
-  );
 }
 
 function getWeekRange(dateValue: Date): { start: string; end: string; label: string } {
@@ -166,7 +146,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
         projectEntries: normalizeProjectEntries(log.project_entries, log.tasks_completed),
         blockers: normalizeStringList(undefined, log.challenges),
         nextSteps: normalizeStringList(undefined, log.learnings),
-        attachments: await signDailyLogAttachments(log.attachments),
+        attachments: await signDailyLogAttachments(
+          createSupabaseAdminClient(),
+          normalizeAttachmentRecords(log.attachments)
+        ),
         supervisorFeedback: log.supervisor_notes || undefined,
         status: log.status === 'draft' ? 'draft' : log.is_approved ? 'reviewed' : 'submitted',
         submittedAt: log.created_at,
@@ -379,6 +362,7 @@ export async function DELETE(
       .from('users')
       .select('role')
       .eq('id', user.id)
+      .is('deleted_at', null)
       .single();
 
     if (userError || !userData) {

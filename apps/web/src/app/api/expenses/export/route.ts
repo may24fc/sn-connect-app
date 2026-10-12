@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { escapeCsvValue } from '@/lib/csv';
 import ExcelJS from 'exceljs';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -34,19 +35,6 @@ async function resolveRole(user: { id: string; app_metadata?: Record<string, unk
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.from('users').select('role').eq('id', user.id).is('deleted_at', null).maybeSingle();
   return data?.role ?? null;
-}
-
-function escapeCsv(value: string | number | null | undefined): string {
-  if (value === null || value === undefined) {
-    return '';
-  }
-
-  const text = String(value);
-  if (text.includes(',') || text.includes('"') || text.includes('\n')) {
-    return `"${text.replace(/"/g, '""')}"`;
-  }
-
-  return text;
 }
 
 function mapRecordToRow(record: ExpenseExportRow) {
@@ -234,18 +222,18 @@ export async function GET(request: NextRequest) {
 
     const rows = mappedRows.map((row) =>
       [
-        escapeCsv(row.transaction_date),
-        escapeCsv(row.vendor_name),
-        escapeCsv(row.department),
-        escapeCsv(row.submitted_by),
-        escapeCsv(row.processing_status),
-        escapeCsv(row.risk_bucket),
-        escapeCsv(row.currency),
-        escapeCsv(row.total_amount),
-        escapeCsv(row.tax_amount),
-        escapeCsv(row.exchange_rate_to_aud),
-        escapeCsv(row.total_amount_aud),
-        escapeCsv(row.business_justification),
+        escapeCsvValue(row.transaction_date),
+        escapeCsvValue(row.vendor_name),
+        escapeCsvValue(row.department),
+        escapeCsvValue(row.submitted_by),
+        escapeCsvValue(row.processing_status),
+        escapeCsvValue(row.risk_bucket),
+        escapeCsvValue(row.currency),
+        escapeCsvValue(row.total_amount),
+        escapeCsvValue(row.tax_amount),
+        escapeCsvValue(row.exchange_rate_to_aud),
+        escapeCsvValue(row.total_amount_aud),
+        escapeCsvValue(row.business_justification),
       ].join(',')
     );
 

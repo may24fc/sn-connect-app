@@ -45,7 +45,7 @@ export async function PATCH(request: NextRequest, context: any) {
     if (!commitment) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
     const isOwner = commitment.user_id === user.id;
-    const { data: roleRow } = await supabaseAdmin.from('users').select('role').eq('id', user.id).maybeSingle();
+    const { data: roleRow } = await supabaseAdmin.from('users').select('role').eq('id', user.id).is('deleted_at', null).maybeSingle();
     const role = roleRow?.role ?? null;
     const isAdmin = role === 'admin' || role === 'super_admin';
 
@@ -252,7 +252,7 @@ export async function DELETE(_request: NextRequest, context: any) {
     if (!commitment) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
     const isOwner = commitment.user_id === user.id;
-    const { data: roleRow } = await supabaseAdmin.from('users').select('role').eq('id', user.id).maybeSingle();
+    const { data: roleRow } = await supabaseAdmin.from('users').select('role').eq('id', user.id).is('deleted_at', null).maybeSingle();
     const role = roleRow?.role ?? null;
     const isAdmin = role === 'admin' || role === 'super_admin';
 

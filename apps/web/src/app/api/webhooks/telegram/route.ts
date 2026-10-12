@@ -28,7 +28,7 @@ interface LinkedTelegramUserRow {
 }
 
 /** Roles allowed to dispatch project intake from Telegram. */
-const INTAKE_ALLOWED_ROLES = new Set(['admin', 'super_admin', 'hr', 'cos', 'ceo']);
+const INTAKE_ALLOWED_ROLES = new Set(['admin', 'super_admin']);
 
 function isAuthorizedWebhook(secretHeader: string | null): boolean {
   const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();

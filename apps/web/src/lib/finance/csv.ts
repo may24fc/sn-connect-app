@@ -38,7 +38,7 @@ export function writeCsv(rows: readonly (readonly string[])[]): string {
     .map((row) =>
       row
         .map((field) => {
-          const safe = /^[=+@-]/.test(field) ? `'${field}` : field;
+          const safe = /^[\s\uFEFF]*[=+@-]/.test(field) ? `'${field}` : field;
           return /[",\r\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
         })
         .join(',')

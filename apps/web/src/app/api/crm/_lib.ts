@@ -1,5 +1,5 @@
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
-import { getNormalizedMetadataRole, normalizeDbRoleClaim } from '@/lib/auth/role';
+import { normalizeDbRoleClaim } from '@/lib/auth/role';
 
 export const CRM_TRACKER_VALUES = ['meta_leads', 'google_ads_leads', 'sn_tech_inquiries'] as const;
 export type CrmTrackerKey = (typeof CRM_TRACKER_VALUES)[number];
@@ -20,12 +20,6 @@ async function resolveUserRole(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
   user: { id: string; app_metadata?: Record<string, unknown> }
 ): Promise<string | null> {
-  const metadataRole = getNormalizedMetadataRole(user.app_metadata);
-
-  if (metadataRole) {
-    return metadataRole;
-  }
-
   const { data, error } = await supabase
     .from('users')
     .select('role')
@@ -204,6 +198,9 @@ export async function getCrmAuthedContext(): Promise<
     }
 
     const role = await resolveUserRole(supabase, user);
+    if (!role) {
+      return { ok: false, status: 401, error: 'Unauthorized' };
+    }
     const grantedTrackers = canAccessCrm(role) ? [] : await resolveCrmGrants(supabase, user.id);
 
     if (!canAccessCrm(role) && grantedTrackers.length === 0) {

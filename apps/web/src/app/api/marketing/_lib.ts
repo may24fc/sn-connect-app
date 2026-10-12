@@ -1,3 +1,4 @@
+import { normalizeDbRoleClaim } from '@/lib/auth/role';
 import { logActivity } from '@/lib/audit';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -30,24 +31,20 @@ export async function getMarketingAuthedContext(): Promise<MarketingAuthedContex
       return { ok: false, status: 401, error: 'Unauthorized' };
     }
 
-    let role: string | null = null;
-    if (typeof user.app_metadata?.db_role === 'string') {
-      role = user.app_metadata.db_role;
+    const { data: roleRow, error: roleError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (roleError) {
+      return { ok: false, status: 500, error: 'Failed to resolve user role' };
     }
 
+    const role = normalizeDbRoleClaim(roleRow?.role ?? null);
     if (!role) {
-      const { data: roleRow, error: roleError } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', user.id)
-        .is('deleted_at', null)
-        .maybeSingle();
-
-      if (roleError) {
-        return { ok: false, status: 500, error: 'Failed to resolve user role' };
-      }
-
-      role = roleRow?.role ?? null;
+      return { ok: false, status: 401, error: 'Unauthorized' };
     }
 
     const hasAccessGrant = await resolveMarketingGrant(supabase, user.id);

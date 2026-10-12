@@ -58,7 +58,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
     // Authorization: non-admin users can only view their own record or their reports
     const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
-    const isAdmin = ['admin', 'super_admin', 'hr', 'cos', 'ceo'].includes(role ?? '');
+    const isAdmin = ['admin', 'super_admin'].includes(role ?? '');
 
     if (!isAdmin) {
       const employeeUserId = (data as { user_id?: string }).user_id;
@@ -135,6 +135,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         .from('users')
         .select('role')
         .eq('id', user.id)
+        .is('deleted_at', null)
         .single();
 
       if (userError || !userData) {
@@ -330,6 +331,7 @@ export async function DELETE(
       .from('users')
       .select('role')
       .eq('id', user.id)
+      .is('deleted_at', null)
       .single();
 
     if (userError || !userData) {

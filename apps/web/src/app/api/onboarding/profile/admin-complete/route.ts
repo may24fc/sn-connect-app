@@ -7,7 +7,7 @@ import { WiseApiError, createRecipient } from '@/lib/wise/client';
 import { type NextRequest, NextResponse } from 'next/server';
 
 /** Roles that may use this self-service profile completion endpoint. */
-const ALLOWED_ROLES = ['admin', 'super_admin', 'hr', 'cos', 'ceo'];
+const ALLOWED_ROLES = ['admin', 'super_admin'];
 
 /** Undo the completion flag so the dashboard keeps prompting when the employee record can't be saved. */
 async function reopenProfileSetup(
@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
       .from('users')
       .select('role, status, department_id')
       .eq('id', user.id)
+      .is('deleted_at', null)
       .single();
 
     if (userError || !userRecord) {

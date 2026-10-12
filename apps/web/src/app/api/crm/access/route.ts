@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { canAccessCrm, CRM_TRACKER_VALUES } from '@/app/api/crm/_lib';
+import { normalizeDbRoleClaim } from '@/lib/auth/role';
 
 export async function GET() {
   try {
@@ -14,23 +15,19 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Resolve role from app metadata or users table
-    let role: string | null = null;
-    if (typeof user.app_metadata?.db_role === 'string') {
-      role = user.app_metadata.db_role;
+    const { data: roleData, error: roleError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (roleError) {
+      return NextResponse.json({ error: 'Failed to resolve user role' }, { status: 500 });
     }
-
+    const role = normalizeDbRoleClaim(roleData?.role ?? null);
     if (!role) {
-      const { data: roleData, error: roleError } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', user.id)
-        .is('deleted_at', null)
-        .maybeSingle();
-
-      if (!roleError && roleData) {
-        role = roleData.role ?? null;
-      }
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (canAccessCrm(role)) {

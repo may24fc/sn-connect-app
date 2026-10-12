@@ -146,6 +146,7 @@ export default function NotificationsPage(): ReactNode {
               onClick={() => {
                 markAllRead.mutate(undefined, {
                   onSuccess: () => addToast({ title: 'All notifications marked as read', variant: 'success' }),
+                  onError: () => addToast({ title: 'Failed to mark all as read', variant: 'error' }),
                 });
               }}
               disabled={markAllRead.isPending}
@@ -406,7 +407,9 @@ export default function NotificationsPage(): ReactNode {
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          deleteNotification.mutate(notification.id);
+                          deleteNotification.mutate(notification.id, {
+                            onError: () => addToast({ title: 'Failed to delete notification', variant: 'error' }),
+                          });
                         }}
                         className="p-1.5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700"
                         aria-label="Delete notification"

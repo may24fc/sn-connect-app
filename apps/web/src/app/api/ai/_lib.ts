@@ -1,8 +1,8 @@
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
-import { getNormalizedMetadataRole, normalizeDbRoleClaim } from '@/lib/auth/role';
+import { normalizeDbRoleClaim } from '@/lib/auth/role';
 
-export const AI_ADMIN_ROLES = ['admin', 'super_admin', 'hr'];
-export const AI_KNOWLEDGE_ACCESS_ROLES = ['admin', 'super_admin', 'hr', 'cos', 'ceo'] as const;
+export const AI_ADMIN_ROLES = ['admin', 'super_admin'];
+export const AI_KNOWLEDGE_ACCESS_ROLES = ['admin', 'super_admin'] as const;
 export type KnowledgeAccessLevel = 'all' | 'admin';
 
 export async function getAuthedSupabase() {
@@ -16,21 +16,20 @@ export async function getAuthedSupabase() {
     return { supabase, user: null, role: null, error: 'Unauthorized' as const };
   }
 
-  let role: string | null = getNormalizedMetadataRole(user.app_metadata);
+  const { data: roleData, error: roleError } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', user.id)
+    .is('deleted_at', null)
+    .maybeSingle();
 
+  if (roleError) {
+    return { supabase, user, role: null, error: 'Failed to resolve user role' as const };
+  }
+
+  const role = normalizeDbRoleClaim(roleData?.role ?? null);
   if (!role) {
-    const { data: roleData, error: roleError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .is('deleted_at', null)
-      .maybeSingle();
-
-    if (roleError) {
-      return { supabase, user, role: null, error: 'Failed to resolve user role' as const };
-    }
-
-    role = normalizeDbRoleClaim(roleData?.role ?? null);
+    return { supabase, user: null, role: null, error: 'Unauthorized' as const };
   }
 
   return { supabase, user, role, error: null };

@@ -3,7 +3,7 @@ import { resolveDepartmentName } from '@/lib/people/directory-people';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
-const ADMIN_ROLES = new Set(['admin', 'super_admin', 'hr', 'cos', 'ceo']);
+const ADMIN_ROLES = new Set(['admin', 'super_admin']);
 const ACCOUNTING_ELIGIBLE_ROLES = new Set(['employee', 'associate']);
 
 type ExpenseAnalyticsRow = {

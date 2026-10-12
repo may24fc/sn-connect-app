@@ -1,3 +1,4 @@
+import { normalizeDbRoleClaim } from '@/lib/auth/role';
 import { type DirectoryPerson, normalizeDepartmentName } from '@/lib/people/directory-people';
 import { EMPLOYEE_EQUIVALENT_ROLES } from '@/lib/roles';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
@@ -5,9 +6,6 @@ import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/sup
 export const PERFORMANCE_ADMIN_ROLES: readonly string[] = ['admin', 'super_admin'];
 export const PERFORMANCE_MANAGER_ROLES: readonly string[] = [
   'admin',
-  'hr',
-  'cos',
-  'ceo',
   'super_admin',
 ] as const;
 
@@ -200,30 +198,26 @@ export async function getAuthedPerformanceContext() {
     return { supabase, supabaseAdmin, user: null, role: null, error: 'Unauthorized' as const };
   }
 
-  let role: string | null = null;
-  if (typeof user.app_metadata?.db_role === 'string') {
-    role = user.app_metadata.db_role;
+  const { data: roleData, error: roleError } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', user.id)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (roleError) {
+    return {
+      supabase,
+      supabaseAdmin,
+      user,
+      role: null,
+      error: 'Failed to resolve user role' as const,
+    };
   }
 
+  const role = normalizeDbRoleClaim(roleData?.role ?? null);
   if (!role) {
-    const { data: roleData, error: roleError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .is('deleted_at', null)
-      .maybeSingle();
-
-    if (roleError) {
-      return {
-        supabase,
-        supabaseAdmin,
-        user,
-        role: null,
-        error: 'Failed to resolve user role' as const,
-      };
-    }
-
-    role = roleData?.role ?? null;
+    return { supabase, supabaseAdmin, user: null, role: null, error: 'Unauthorized' as const };
   }
 
   return { supabase, supabaseAdmin, user, role, error: null };

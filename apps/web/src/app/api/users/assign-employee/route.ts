@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
       .from('users')
       .select('role')
       .eq('id', user.id)
+      .is('deleted_at', null)
       .single();
 
     if (userError || !userRecord) {

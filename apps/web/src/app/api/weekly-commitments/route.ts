@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
         .from('users')
         .select('role')
         .eq('id', user.id)
+        .is('deleted_at', null)
         .maybeSingle();
       const role = roleRow?.role ?? null;
       if (role === 'admin' || role === 'super_admin') {

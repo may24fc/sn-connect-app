@@ -185,11 +185,12 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Failed to remove application' }, { status: 500 });
     }
 
-    await supabase.from('audit_logs').insert({
-      user_id: user.id,
+    const { error: auditError } = await supabase.from('audit_logs').insert({
+      performed_by: user.id,
       action: 'remove_job_application',
       table_name: 'job_applications',
       record_id: id,
+      operation: 'DELETE',
       metadata: {
         applicantName: data.full_name,
         applicantEmail: data.email,
@@ -201,6 +202,7 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
             : null,
       },
     });
+    if (auditError) console.error('Failed to audit application removal:', auditError);
 
     return NextResponse.json({
       data: {

@@ -244,9 +244,11 @@ export async function POST(request: NextRequest) {
     await adminClient
       .from('audit_logs')
       .insert({
-        user_id: user.id,
+        performed_by: user.id,
         action: 'ats_bulk_import',
         table_name: 'job_applications',
+        record_id: jobPostingId,
+        operation: 'INSERT',
         metadata: {
           jobPostingId,
           jobTitle: posting.title,

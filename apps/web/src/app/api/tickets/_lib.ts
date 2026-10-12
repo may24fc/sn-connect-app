@@ -1,6 +1,6 @@
 import { loadDirectoryPeople } from '@/lib/people/directory-people';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
-import { getNormalizedMetadataRole, normalizeDbRoleClaim } from '@/lib/auth/role';
+import { normalizeDbRoleClaim } from '@/lib/auth/role';
 
 export const TICKET_TEAMS = ['hr', 'it'] as const;
 export const TICKET_PRIORITIES = ['low', 'medium', 'high', 'urgent'] as const;
@@ -50,12 +50,6 @@ async function resolveUserRole(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
   user: { id: string; app_metadata?: Record<string, unknown> }
 ): Promise<string | null> {
-  const metadataRole = getNormalizedMetadataRole(user.app_metadata);
-
-  if (metadataRole) {
-    return metadataRole;
-  }
-
   const { data, error } = await supabase
     .from('users')
     .select('role')
@@ -105,6 +99,9 @@ export async function getTicketAuthedContext(): Promise<
     }
 
     const role = await resolveUserRole(supabase, user);
+    if (!role) {
+      return { ok: false, status: 401, error: 'Unauthorized' };
+    }
     const isItHandler = await isActiveItHandler(supabaseAdmin, user.id).catch(() => false);
 
     return {

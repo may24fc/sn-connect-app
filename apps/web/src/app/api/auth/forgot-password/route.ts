@@ -3,6 +3,7 @@ import { Resend } from 'resend';
 import { z } from 'zod';
 
 import { normaliseRecoveryActionLink } from '@/lib/auth/recovery-link';
+import { passwordResetAuditRecordId } from '@/lib/auth/password-reset-audit';
 import { getPasswordResetRedirectUrl } from '@/lib/auth/redirect-config';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 
@@ -116,20 +117,37 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   const adminClient = createSupabaseAdminClient();
+  const auditRecordId = passwordResetAuditRecordId(email, process.env.SUPABASE_SERVICE_ROLE_KEY ?? '');
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
   // Rate-limit: max 3 attempts per email per hour using audit_logs
-  const { count: recentAttempts } = await adminClient
+  const { count: recentAttempts, error: rateLimitError } = await adminClient
     .from('audit_logs')
     .select('id', { count: 'exact', head: true })
-    .eq('operation', 'PASSWORD_RESET_REQUEST')
+    .eq('action', 'password_reset_request')
     .eq('table_name', 'auth')
-    .gte('created_at', oneHourAgo)
-    .contains('new_values', { email });
+    .eq('record_id', auditRecordId)
+    .gte('performed_at', oneHourAgo);
+
+  if (rateLimitError) {
+    console.error('[forgot-password] Rate limit lookup failed:', rateLimitError);
+    return NextResponse.json({ success: true });
+  }
 
   if ((recentAttempts ?? 0) >= MAX_ATTEMPTS_PER_HOUR) {
-    console.warn(`[forgot-password] Rate limit reached for email: ${email}`);
+    console.warn('[forgot-password] Rate limit reached');
     // Still return success to prevent email enumeration
+    return NextResponse.json({ success: true });
+  }
+
+  const { error: auditError } = await adminClient.from('audit_logs').insert({
+    table_name: 'auth',
+    record_id: auditRecordId,
+    operation: 'INSERT',
+    action: 'password_reset_request',
+  });
+  if (auditError) {
+    console.error('[forgot-password] Audit write failed:', auditError);
     return NextResponse.json({ success: true });
   }
 
@@ -147,9 +165,6 @@ export async function POST(request: Request): Promise<NextResponse> {
     ? normaliseRecoveryActionLink(linkData.properties.action_link, redirectTo)
     : null;
 
-  let emailSent = false;
-  let emailError: string | null = null;
-
   // Only attempt to send if the user exists (linkData will be null for unknown emails).
   // We still return success either way — no email enumeration.
   if (!linkError && recoveryActionLink) {
@@ -164,39 +179,18 @@ export async function POST(request: Request): Promise<NextResponse> {
           html: buildResetEmailHtml(recoveryActionLink),
         });
         if (sendError) {
-          emailError = sendError.message;
           console.error('[forgot-password] Resend send error:', sendError);
-        } else {
-          emailSent = true;
         }
       } catch (err) {
-        emailError = err instanceof Error ? err.message : 'Unknown send error';
-        console.error('[forgot-password] Resend exception:', emailError);
+        console.error('[forgot-password] Resend exception:', err);
       }
     } else {
       console.warn('[forgot-password] RESEND_API_KEY not configured — email not sent.');
-      emailError = 'RESEND_API_KEY not configured';
     }
   } else if (linkError) {
     // User not found or other Supabase error — silent fail (no enumeration)
     console.warn('[forgot-password] generateLink error (may be unknown email):', linkError.message);
   }
-
-  // Log the attempt to audit_logs regardless of outcome
-  await adminClient.from('audit_logs').insert({
-    table_name: 'auth',
-    record_id: null,
-    operation: 'PASSWORD_RESET_REQUEST',
-    new_values: {
-      email,
-      redirect_to: redirectTo,
-      generated_action_link: linkData?.properties?.action_link ?? null,
-      email_action_link: recoveryActionLink,
-      email_sent: emailSent,
-      error: emailError,
-    },
-    created_by: null,
-  });
 
   // Always return success (no email enumeration)
   return NextResponse.json({ success: true });

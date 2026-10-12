@@ -2,7 +2,7 @@ import { recordAuthTiming, startAuthTiming } from '@/lib/auth/timing';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
-const ADMIN_ROLES = ['admin', 'super_admin', 'hr', 'cos', 'ceo'];
+const ADMIN_ROLES = ['admin', 'super_admin'];
 
 /**
  * GET /api/dashboard/stats

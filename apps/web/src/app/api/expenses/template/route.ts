@@ -4,6 +4,7 @@ import {
 } from '@/lib/import/expense-template';
 import { getNormalizedMetadataRole, normalizeDbRoleClaim } from '@/lib/auth/role';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { escapeCsvValue } from '@/lib/csv';
 import ExcelJS from 'exceljs';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -26,7 +27,7 @@ function toCsv(): string {
   const rows = [
     EXPENSE_IMPORT_TEMPLATE_HEADERS.join(','),
     ...EXPENSE_IMPORT_TEMPLATE_SAMPLE_ROWS.map((row) =>
-      EXPENSE_IMPORT_TEMPLATE_HEADERS.map((header) => escapeCsv(row[header])).join(',')
+      EXPENSE_IMPORT_TEMPLATE_HEADERS.map((header) => escapeCsvValue(row[header])).join(',')
     ),
   ];
 
@@ -48,14 +49,6 @@ async function toXlsxBuffer(): Promise<ArrayBuffer> {
   }
 
   return workbook.xlsx.writeBuffer();
-}
-
-function escapeCsv(value: string): string {
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-    return `"${value.replace(/"/g, '""')}"`;
-  }
-
-  return value;
 }
 
 export async function GET(request: NextRequest) {

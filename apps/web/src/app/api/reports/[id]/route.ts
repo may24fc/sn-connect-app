@@ -39,7 +39,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     }
 
     const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
-    const isAdmin = ['admin', 'super_admin', 'hr', 'cos', 'ceo'].includes(role ?? '');
+    const isAdmin = ['admin', 'super_admin'].includes(role ?? '');
 
     const { data, error } = await supabaseAdmin
       .from('reports')
@@ -89,7 +89,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
-    const isPrivileged = ['admin', 'super_admin', 'hr', 'cos', 'ceo'].includes(role ?? '');
+    const isPrivileged = ['admin', 'super_admin'].includes(role ?? '');
 
     const { data: existingReport, error: existingReportError } = await supabaseAdmin
       .from('reports')
@@ -316,7 +316,7 @@ export async function DELETE(
     }
 
     const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
-    const isPrivileged = ['admin', 'super_admin', 'hr', 'cos', 'ceo'].includes(role ?? '');
+    const isPrivileged = ['admin', 'super_admin'].includes(role ?? '');
 
     const { data: existingReport, error: existingReportError } = await supabaseAdmin
       .from('reports')

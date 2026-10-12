@@ -3,7 +3,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { NOTIFICATION_PREFERENCES_ROLE_TYPE, toClientNotificationPreferences } from '@/lib/settings/notification-preferences';
 import { type NextRequest, NextResponse } from 'next/server';
 
-const ADMIN_ROLES = ['admin', 'super_admin', 'hr', 'ceo', 'cos'];
+const ADMIN_ROLES = ['admin', 'super_admin'];
 const TELEGRAM_LINK_TTL_MS = 15 * 60 * 1000;
 
 async function getUserRole(

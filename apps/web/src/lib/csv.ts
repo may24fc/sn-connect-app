@@ -10,7 +10,9 @@
 export function escapeCsvValue(value: unknown): string {
   if (value === null || value === undefined) return '';
 
-  const str = String(value);
+  const raw = String(value);
+  // Spreadsheet applications interpret these prefixes as formulas, even in quoted cells.
+  const str = /^[\s\uFEFF]*[=+@-]/.test(raw) ? `'${raw}` : raw;
 
   // If the value contains commas, quotes, or newlines, wrap in quotes and escape internal quotes
   if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {

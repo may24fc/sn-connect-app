@@ -47,9 +47,6 @@ export function resolveUiRole(role: string | null | undefined): UserRoleType {
     case 'super_admin':
       return 'super_admin';
     case 'admin':
-    case 'hr':
-    case 'cos':
-    case 'ceo':
       return 'admin';
     case 'associate':
       return 'associate';

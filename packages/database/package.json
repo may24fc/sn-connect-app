@@ -18,7 +18,7 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist .turbo",
-    "generate": "supabase gen types typescript --local > src/types/database.types.ts",
+    "generate": "supabase gen types typescript --local --workdir ../.. > src/database.types.ts",
     "migrate": "supabase db push --workdir ../..",
     "seed": "tsx src/seed.ts"
   },

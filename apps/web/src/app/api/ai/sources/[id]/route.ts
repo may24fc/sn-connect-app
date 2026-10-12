@@ -123,13 +123,15 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Failed to update knowledge source' }, { status: 500 });
     }
 
-    await adminClient.from('audit_logs').insert({
-      user_id: user.id,
+    const { error: auditError } = await adminClient.from('audit_logs').insert({
+      performed_by: user.id,
       action: 'update_knowledge_source',
-      resource_type: 'knowledge_source',
-      resource_id: id,
-      details: { updated_fields: Object.keys(payload) },
+      table_name: 'knowledge_sources',
+      record_id: id,
+      operation: 'UPDATE',
+      metadata: { updated_fields: Object.keys(payload) },
     });
+    if (auditError) console.error('Failed to audit knowledge source update:', auditError);
 
     // If content was updated, mark embeddings as stale so they get regenerated
     if (payload.content !== undefined) {
@@ -181,13 +183,15 @@ export async function DELETE(_: NextRequest, context: RouteContext) {
       .delete()
       .contains('source_citations', JSON.stringify([{ sourceId: id }]));
 
-    await adminClient.from('audit_logs').insert({
-      user_id: user.id,
+    const { error: auditError } = await adminClient.from('audit_logs').insert({
+      performed_by: user.id,
       action: 'delete_knowledge_source',
-      resource_type: 'knowledge_source',
-      resource_id: id,
-      details: {},
+      table_name: 'knowledge_sources',
+      record_id: id,
+      operation: 'DELETE',
+      metadata: {},
     });
+    if (auditError) console.error('Failed to audit knowledge source deletion:', auditError);
 
     return NextResponse.json({ success: true });
   } catch (error) {

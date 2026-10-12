@@ -1,3 +1,4 @@
+import { normalizeDbRoleClaim } from '@/lib/auth/role';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { resolveUserDisplayName } from '@/lib/user-display';
 
@@ -28,10 +29,6 @@ async function resolveUserRole(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
   user: { id: string; app_metadata?: Record<string, unknown> }
 ): Promise<string | null> {
-  if (typeof user.app_metadata?.db_role === 'string') {
-    return user.app_metadata.db_role;
-  }
-
   const { data, error } = await supabase
     .from('users')
     .select('role')
@@ -44,7 +41,7 @@ async function resolveUserRole(
     return null;
   }
 
-  return data?.role ?? null;
+  return normalizeDbRoleClaim(data?.role ?? null);
 }
 
 async function resolveRevenueForecastGrant(
@@ -90,6 +87,9 @@ export async function getRevenueForecastAuthedContext(): Promise<
     }
 
     const role = await resolveUserRole(supabase, user);
+    if (!role) {
+      return { ok: false, status: 401, error: 'Unauthorized' };
+    }
     const hasGrant = isRevenueForecastAdmin(role)
       ? false
       : await resolveRevenueForecastGrant(supabase, user.id);

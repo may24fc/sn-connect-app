@@ -52,5 +52,30 @@ export const employeeBaseSchema = z.object({
 export const employeeCreateSchema = employeeBaseSchema;
 export const employeeUpdateSchema = employeeBaseSchema.partial();
 
+/** Columns accepted by POST /api/employees. Server-managed fields are intentionally absent. */
+export const employeeApiCreateSchema = z.object({
+  user_id: z.string().uuid(),
+  employee_number: z.string().trim().min(1).max(50),
+  first_name: employeeBaseSchema.shape.firstName,
+  middle_name: employeeBaseSchema.shape.middleName,
+  last_name: employeeBaseSchema.shape.lastName,
+  birthday: employeeBaseSchema.shape.birthday,
+  date_hired: employeeBaseSchema.shape.dateHired,
+  employment_type: employeeBaseSchema.shape.employmentType,
+  work_arrangement: employeeBaseSchema.shape.workArrangement,
+  position: employeeBaseSchema.shape.position.optional(),
+  department: employeeBaseSchema.shape.department,
+  probation_end_date: employeeBaseSchema.shape.probationEndDate,
+  phone: employeeBaseSchema.shape.phone,
+  personal_email: employeeBaseSchema.shape.personalEmail,
+  company_email: employeeBaseSchema.shape.companyEmail,
+  address: employeeBaseSchema.shape.address,
+  city: employeeBaseSchema.shape.city,
+  province: employeeBaseSchema.shape.province,
+  postal_code: employeeBaseSchema.shape.postalCode,
+  emergency_contact_name: employeeBaseSchema.shape.emergencyContactName,
+  emergency_contact_number: employeeBaseSchema.shape.emergencyContactNumber,
+});
+
 export type EmployeeCreateInput = z.infer<typeof employeeCreateSchema>;
 export type EmployeeUpdateInput = z.infer<typeof employeeUpdateSchema>;

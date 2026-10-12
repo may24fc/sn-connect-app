@@ -1,3 +1,4 @@
+import { parsePagination } from '@/lib/api/pagination';
 import { logActivity } from '@/lib/audit';
 import { createNotification, getUserDisplayName, getUserIdsByRoles } from '@/lib/notifications/create-notification';
 import {
@@ -59,8 +60,9 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') || '';
     const priority = searchParams.get('priority') || '';
     const scope = searchParams.get('scope') || (isSuperAdminRole(role) ? 'triage' : 'submitter');
-    const page = Number.parseInt(searchParams.get('page') || '1', 10);
-    const pageSize = Number.parseInt(searchParams.get('pageSize') || '20', 10);
+    const pagination = parsePagination(searchParams, 20);
+    if (!pagination) return NextResponse.json({ error: 'Invalid pagination' }, { status: 400 });
+    const { page, pageSize } = pagination;
 
     let query = supabaseAdmin
       .from('tickets')

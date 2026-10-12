@@ -191,7 +191,7 @@ export default function EmployeeNewResourcePage() {
               {!isPublic && (
                 <>
                   <div className="border-t border-border">
-                    <button type="button" onClick={() => setShowTargeting((v) => !v)} className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 transition-colors">
+                    <button type="button" onClick={() => setShowTargeting((v) => !v)} className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
                       <span className="text-xs font-medium text-muted-foreground flex items-center gap-2"><Target className="w-3.5 h-3.5" />Who can access this?</span>
                       {showTargeting ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                     </button>

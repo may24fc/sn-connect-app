@@ -41,15 +41,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     try {
-      await supabase.from('audit_logs').insert({
+      const { error: auditError } = await supabase.from('audit_logs').insert({
         action: 'intern_self_initialize_blocked',
         table_name: 'internships',
         record_id: user.id,
-        user_id: user.id,
+        operation: 'UPDATE',
+        performed_by: user.id,
         new_values: {
           reason: 'Associate self-initialization disabled',
         },
       });
+      if (auditError) console.warn('Failed to write audit log for associate initialization:', auditError);
     } catch (auditError) {
       console.warn('Failed to write audit log for associate initialization:', auditError);
     }

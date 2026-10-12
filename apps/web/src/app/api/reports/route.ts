@@ -1,3 +1,4 @@
+import { parsePagination } from '@/lib/api/pagination';
 import { logActivity } from '@/lib/audit';
 import {
   notifyMarketingSubmissionWebhook,
@@ -69,8 +70,9 @@ export async function GET(request: NextRequest) {
       ? requestedMarketingReportType
       : '';
     const department = searchParams.get('department') || '';
-    const page = Number.parseInt(searchParams.get('page') || '1', 10);
-    const pageSize = Number.parseInt(searchParams.get('pageSize') || '10', 10);
+    const pagination = parsePagination(searchParams, 10);
+    if (!pagination) return NextResponse.json({ error: 'Invalid pagination' }, { status: 400 });
+    const { page, pageSize } = pagination;
 
     // Use admin client to avoid nested RLS failures on cross-table subqueries
     let query = supabaseAdmin

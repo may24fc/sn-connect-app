@@ -175,16 +175,18 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     // Audit log
-    await adminClient.from('audit_logs').insert({
-      user_id: user.id,
+    const { error: auditError } = await adminClient.from('audit_logs').insert({
+      performed_by: user.id,
       action: 'restore_knowledge_source_version',
-      resource_type: 'knowledge_source',
-      resource_id: id,
-      details: {
+      table_name: 'knowledge_sources',
+      record_id: id,
+      operation: 'UPDATE',
+      metadata: {
         restored_version: versionNumber,
         new_version: updated.current_version,
       },
     });
+    if (auditError) console.error('Failed to audit knowledge source restoration:', auditError);
 
     // Clear stale embeddings since content changed
     await adminClient.from('knowledge_embeddings').delete().eq('source_id', id);

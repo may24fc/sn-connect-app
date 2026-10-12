@@ -3,7 +3,7 @@ import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/sup
 import { type NextRequest, NextResponse } from 'next/server';
 import { type OkrStateTargetRow, applyComputedOkrState } from '../../_okr-state';
 
-const ADMIN_ROLES = ['admin', 'super_admin', 'hr', 'cos', 'ceo'];
+const ADMIN_ROLES = ['admin', 'super_admin'];
 
 interface EvaluatorIdentity {
   firstName: string | null;

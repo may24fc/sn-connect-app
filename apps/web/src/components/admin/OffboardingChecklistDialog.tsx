@@ -58,6 +58,7 @@ const DEFAULT_TASK_DRAFT: TaskDraft = {
 };
 
 const TEMPLATE_RECORD_ID = '__template__';
+const OFFBOARDING_LIST_QUERY_KEY = [...queryKeys.offboarding.all, 'list'] as const;
 
 function formatDateLabel(value: string | null): string {
   if (!value) {
@@ -227,7 +228,7 @@ export function OffboardingChecklistManager({
     recordId: string,
     update: (tasks: OffboardingTaskRecord[]) => OffboardingTaskRecord[]
   ) => {
-    queryClient.setQueriesData<OffboardingResponse>({ queryKey: queryKeys.offboarding.all }, (current) =>
+    queryClient.setQueriesData<OffboardingResponse>({ queryKey: OFFBOARDING_LIST_QUERY_KEY }, (current) =>
       current
         ? {
             ...current,
@@ -302,8 +303,8 @@ export function OffboardingChecklistManager({
     onMutate: async () => {
       if (!currentRecord) return {};
       const payload = normalizeDraft();
-      await queryClient.cancelQueries({ queryKey: queryKeys.offboarding.all });
-      const previousRecords = queryClient.getQueriesData<OffboardingResponse>({ queryKey: queryKeys.offboarding.all });
+      await queryClient.cancelQueries({ queryKey: OFFBOARDING_LIST_QUERY_KEY });
+      const previousRecords = queryClient.getQueriesData<OffboardingResponse>({ queryKey: OFFBOARDING_LIST_QUERY_KEY });
       const now = new Date().toISOString();
       updateOffboardingTasks(currentRecord.id, (tasks) => [
         ...tasks,
@@ -329,6 +330,7 @@ export function OffboardingChecklistManager({
     },
     onError: (_error, _variables, context) => {
       context?.previousRecords?.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
+      addToast({ title: 'Failed to add offboarding task', variant: 'error' });
     },
     onSuccess: async () => {
       setTaskDraft(DEFAULT_TASK_DRAFT);
@@ -362,8 +364,8 @@ export function OffboardingChecklistManager({
     onMutate: async (taskId) => {
       if (!currentRecord) return {};
       const payload = normalizeDraft();
-      await queryClient.cancelQueries({ queryKey: queryKeys.offboarding.all });
-      const previousRecords = queryClient.getQueriesData<OffboardingResponse>({ queryKey: queryKeys.offboarding.all });
+      await queryClient.cancelQueries({ queryKey: OFFBOARDING_LIST_QUERY_KEY });
+      const previousRecords = queryClient.getQueriesData<OffboardingResponse>({ queryKey: OFFBOARDING_LIST_QUERY_KEY });
       updateOffboardingTasks(currentRecord.id, (tasks) => tasks.map((task) =>
         task.id === taskId
           ? {
@@ -413,8 +415,8 @@ export function OffboardingChecklistManager({
     },
     onMutate: async (taskId) => {
       if (!currentRecord) return {};
-      await queryClient.cancelQueries({ queryKey: queryKeys.offboarding.all });
-      const previousRecords = queryClient.getQueriesData<OffboardingResponse>({ queryKey: queryKeys.offboarding.all });
+      await queryClient.cancelQueries({ queryKey: OFFBOARDING_LIST_QUERY_KEY });
+      const previousRecords = queryClient.getQueriesData<OffboardingResponse>({ queryKey: OFFBOARDING_LIST_QUERY_KEY });
       updateOffboardingTasks(currentRecord.id, (tasks) => tasks.filter((task) => task.id !== taskId));
       return { previousRecords };
     },
@@ -452,8 +454,8 @@ export function OffboardingChecklistManager({
     },
     onMutate: async () => {
       if (!currentRecord) return {};
-      await queryClient.cancelQueries({ queryKey: queryKeys.offboarding.all });
-      const previousRecords = queryClient.getQueriesData<OffboardingResponse>({ queryKey: queryKeys.offboarding.all });
+      await queryClient.cancelQueries({ queryKey: OFFBOARDING_LIST_QUERY_KEY });
+      const previousRecords = queryClient.getQueriesData<OffboardingResponse>({ queryKey: OFFBOARDING_LIST_QUERY_KEY });
       updateOffboardingTasks(currentRecord.id, () => []);
       return { previousRecords };
     },
@@ -567,8 +569,8 @@ export function OffboardingChecklistManager({
       const tasksToInsert = templateTasks.filter(
         (task) => !existingKeys.has(`${task.category.toLowerCase()}::${task.title.trim().toLowerCase()}`)
       );
-      await queryClient.cancelQueries({ queryKey: queryKeys.offboarding.all });
-      const previousRecords = queryClient.getQueriesData<OffboardingResponse>({ queryKey: queryKeys.offboarding.all });
+      await queryClient.cancelQueries({ queryKey: OFFBOARDING_LIST_QUERY_KEY });
+      const previousRecords = queryClient.getQueriesData<OffboardingResponse>({ queryKey: OFFBOARDING_LIST_QUERY_KEY });
       const now = new Date().toISOString();
       updateOffboardingTasks(currentRecord.id, (tasks) => [
         ...tasks,
@@ -638,7 +640,7 @@ export function OffboardingChecklistManager({
       <div className="space-y-2">
         <Label htmlFor="offboarding-record-selector">Checklist target</Label>
         <Select value={selectedRecordId ?? TEMPLATE_RECORD_ID} onValueChange={onSelectedRecordChange}>
-          <SelectTrigger id="offboarding-record-selector" className="bg-white">
+          <SelectTrigger id="offboarding-record-selector" className="bg-background">
             <SelectValue placeholder="Select checklist target" />
           </SelectTrigger>
           <SelectContent>
@@ -878,7 +880,7 @@ export function OffboardingChecklistManager({
               <Input
                 id="offboarding-task-title"
                 maxLength={300}
-                className="bg-white"
+                className="bg-background"
                 value={taskDraft.title}
                 onChange={(event) =>
                   setTaskDraft((current) => ({ ...current, title: event.target.value }))
@@ -892,7 +894,7 @@ export function OffboardingChecklistManager({
               <Textarea
                 id="offboarding-task-description"
                 maxLength={3000}
-                className="bg-white"
+                className="bg-background"
                 rows={4}
                 value={taskDraft.description}
                 onChange={(event) =>
@@ -908,7 +910,7 @@ export function OffboardingChecklistManager({
                 <Input
                   id="offboarding-task-category"
                 maxLength={100}
-                  className="bg-white"
+                  className="bg-background"
                   value={taskDraft.category}
                   onChange={(event) =>
                     setTaskDraft((current) => ({ ...current, category: event.target.value }))
@@ -923,7 +925,7 @@ export function OffboardingChecklistManager({
                 </Label>
                 <Input
                   id="offboarding-task-due-date"
-                  className="bg-white"
+                  className="bg-background"
                   type="date"
                   value={taskDraft.dueDate}
                   onChange={(event) =>
@@ -944,7 +946,7 @@ export function OffboardingChecklistManager({
                   }))
                 }
               >
-                <SelectTrigger id="offboarding-task-owner-type" className="bg-white">
+                <SelectTrigger id="offboarding-task-owner-type" className="bg-background">
                   <SelectValue placeholder="Choose task owner" />
                 </SelectTrigger>
                 <SelectContent>

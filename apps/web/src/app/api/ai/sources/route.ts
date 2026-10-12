@@ -146,13 +146,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create knowledge source' }, { status: 500 });
     }
 
-    await adminClient.from('audit_logs').insert({
-      user_id: user.id,
+    const { error: auditError } = await adminClient.from('audit_logs').insert({
+      performed_by: user.id,
       action: 'create_knowledge_source',
-      resource_type: 'knowledge_source',
-      resource_id: data.id,
-      details: { title: payload.title, source_type: payload.sourceType },
+      table_name: 'knowledge_sources',
+      record_id: data.id,
+      operation: 'INSERT',
+      metadata: { title: payload.title, source_type: payload.sourceType },
     });
+    if (auditError) console.error('Failed to audit knowledge source creation:', auditError);
 
     return NextResponse.json({ data: toKnowledgeSource(data as Record<string, unknown>) }, { status: 201 });
   } catch (error) {

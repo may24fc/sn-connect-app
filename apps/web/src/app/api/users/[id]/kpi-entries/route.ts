@@ -1,7 +1,7 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
-const ADMIN_ROLES = ['admin', 'super_admin', 'hr', 'ceo', 'cos'];
+const ADMIN_ROLES = ['admin', 'super_admin'];
 
 /**
  * GET /api/users/[id]/kpi-entries

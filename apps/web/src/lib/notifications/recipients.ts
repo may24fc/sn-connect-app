@@ -19,7 +19,7 @@ interface EmployeeNotificationIdentityRow {
   personal_email?: string | null;
 }
 
-const ADMIN_NOTIFICATION_ROLES = ['admin', 'super_admin', 'hr', 'cos', 'ceo'] as const;
+const ADMIN_NOTIFICATION_ROLES = ['admin', 'super_admin'] as const;
 
 export function getProfilePathForRole(role: string | null): string {
   return role === 'associate' ? '/associate/profile' : '/profile';
@@ -30,7 +30,7 @@ export function getAdminNotificationsPathForRole(role: string | null): string {
 }
 
 export function getPerformancePathForRole(role: string | null): string {
-  return role === 'admin' || role === 'super_admin' || role === 'hr' || role === 'cos' || role === 'ceo'
+  return role === 'admin' || role === 'super_admin'
     ? '/admin/performance'
     : '/performance';
 }

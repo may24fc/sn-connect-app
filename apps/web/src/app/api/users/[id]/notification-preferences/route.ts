@@ -8,7 +8,7 @@ import {
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
-const ADMIN_ROLES = ['admin', 'super_admin', 'hr', 'ceo', 'cos'];
+const ADMIN_ROLES = ['admin', 'super_admin'];
 
 async function getUserRole(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,

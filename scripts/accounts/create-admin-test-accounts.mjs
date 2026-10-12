@@ -231,12 +231,7 @@ async function main() {
   console.log('\n📝 Test Account Summary:\n');
 
   for (const account of ADMIN_ACCOUNTS) {
-    const uiRole =
-      account.role === 'cos'
-        ? 'super_admin (via option-b)'
-        : ['admin', 'hr', 'ceo'].includes(account.role)
-          ? 'admin'
-          : account.role;
+    const uiRole = account.role;
     console.log(
       `  • ${account.email.padEnd(25)} | DB role: ${account.role.padEnd(6)} | UI role: ${uiRole}`
     );
@@ -244,7 +239,7 @@ async function main() {
 
   console.log('\n🔑 Password for all accounts: password');
   console.log('\n💡 These accounts can now:');
-  console.log('  - View all reports from all employees (RLS allows admin/hr/cos/ceo)');
+  console.log('  - View all reports from all employees (admin and super_admin)');
   console.log('  - Approve/reject reports');
   console.log('  - Access admin dashboards');
   console.log('  - Manage employees and resources');

@@ -94,18 +94,20 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     // Create audit log entry
-    await supabase.from('audit_logs').insert({
-      user_id: user.id,
+    const { error: auditError } = await supabase.from('audit_logs').insert({
+      performed_by: user.id,
       action: 'internship_extended',
-      entity_type: 'internship',
-      entity_id: id,
-      details: {
+      table_name: 'internships',
+      record_id: id,
+      operation: 'UPDATE',
+      metadata: {
         previous_end_date: previousEndDate,
         new_end_date: newEndDate,
         reason,
         employee_id: internship.employee_id,
       },
     });
+    if (auditError) console.error('Failed to audit internship extension:', auditError);
 
     return NextResponse.json({
       data: updated,

@@ -1,6 +1,7 @@
+import { normalizeDbRoleClaim } from '@/lib/auth/role';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-export const STANDUP_ADMIN_ROLES = ['admin', 'hr', 'cos', 'ceo'];
+export const STANDUP_ADMIN_ROLES = ['admin', 'super_admin'];
 
 export async function getAuthedSupabase() {
   const supabase = await createSupabaseServerClient();
@@ -13,26 +14,20 @@ export async function getAuthedSupabase() {
     return { supabase, user: null, role: null, error: 'Unauthorized' as const };
   }
 
-  // Primary: read role from app_metadata (embedded in JWT, no DB call needed)
-  let role: string | null = null;
-  if (typeof user.app_metadata?.db_role === 'string') {
-    role = user.app_metadata.db_role;
+  const { data: roleData, error: roleError } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', user.id)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (roleError) {
+    return { supabase, user, role: null, error: 'Failed to resolve user role' as const };
   }
 
-  // Fallback: query public.users table
+  const role = normalizeDbRoleClaim(roleData?.role ?? null);
   if (!role) {
-    const { data: roleData, error: roleError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .is('deleted_at', null)
-      .maybeSingle();
-
-    if (roleError) {
-      return { supabase, user, role: null, error: 'Failed to resolve user role' as const };
-    }
-
-    role = roleData?.role ?? null;
+    return { supabase, user: null, role: null, error: 'Unauthorized' as const };
   }
 
   return { supabase, user, role, error: null };

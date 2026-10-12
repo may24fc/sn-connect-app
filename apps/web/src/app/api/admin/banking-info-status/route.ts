@@ -25,13 +25,14 @@ export async function GET() {
       .from('users')
       .select('role')
       .eq('id', user.id)
+      .is('deleted_at', null)
       .single();
 
     if (userError || !userRecord) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const allowedRoles = ['admin', 'super_admin', 'hr'];
+    const allowedRoles = ['admin', 'super_admin'];
     if (!allowedRoles.includes(userRecord.role)) {
       return NextResponse.json(
         { error: 'Forbidden: Only admins can view banking info status' },

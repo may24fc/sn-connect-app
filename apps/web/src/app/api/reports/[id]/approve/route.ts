@@ -34,13 +34,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .from('users')
       .select('role')
       .eq('id', user.id)
+      .is('deleted_at', null)
       .single();
 
     if (roleError || !roleData) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const approverRoles = ['admin', 'super_admin', 'hr', 'cos', 'ceo'];
+    const approverRoles = ['admin', 'super_admin'];
 
     if (!approverRoles.includes(roleData.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

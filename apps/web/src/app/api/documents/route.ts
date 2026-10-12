@@ -1,3 +1,4 @@
+import { parsePagination } from '@/lib/api/pagination';
 import { logActivity } from '@/lib/audit';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { DocumentInsert } from '@hr-portal/database';
@@ -27,8 +28,9 @@ export async function GET(request: NextRequest) {
     const employeeId = searchParams.get('employeeId');
     const documentType = searchParams.get('documentType');
     const isConfidential = searchParams.get('isConfidential');
-    const page = Number.parseInt(searchParams.get('page') || '1', 10);
-    const pageSize = Number.parseInt(searchParams.get('pageSize') || '20', 10);
+    const pagination = parsePagination(searchParams, 20);
+    if (!pagination) return NextResponse.json({ error: 'Invalid pagination' }, { status: 400 });
+    const { page, pageSize } = pagination;
 
     // Build query
     let query = supabase

@@ -1,6 +1,7 @@
 import { logActivity } from '@/lib/audit';
+import { parsePagination } from '@/lib/api/pagination';
+import { employeeApiCreateSchema } from '@/lib/schemas/employee.schema';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import type { EmployeeInsert } from '@hr-portal/database';
 import { type NextRequest, NextResponse } from 'next/server';
 import { LINKED_DEPARTMENT_EMBED, withResolvedIdentity } from './_identity';
 
@@ -25,15 +26,16 @@ export async function GET(request: NextRequest) {
 
     // Resolve role for authorization scoping
     const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
-    const isAdmin = ['admin', 'super_admin', 'hr', 'cos', 'ceo'].includes(role ?? '');
+    const isAdmin = ['admin', 'super_admin'].includes(role ?? '');
 
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
     const department = searchParams.get('department') || '';
     const status = searchParams.get('status') || '';
-    const page = Number.parseInt(searchParams.get('page') || '1', 10);
-    const pageSize = Number.parseInt(searchParams.get('pageSize') || '10', 10);
+    const pagination = parsePagination(searchParams, 10);
+    if (!pagination) return NextResponse.json({ error: 'Invalid pagination' }, { status: 400 });
+    const { page, pageSize } = pagination;
 
     // Build query with explicit foreign key relationships and limited fields.
     // Excludes sensitive payroll/PII fields (payroll_account_name,
@@ -136,6 +138,7 @@ export async function POST(request: NextRequest) {
       .from('users')
       .select('role')
       .eq('id', user.id)
+      .is('deleted_at', null)
       .single();
 
     if (userError || !userData) {
@@ -148,13 +151,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse request body
-    const body: EmployeeInsert = await request.json();
+    const body = await request.json().catch(() => null);
+    const parsed = employeeApiCreateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid request body', details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
 
     // Insert employee
     const { data, error } = await supabase
       .from('employees')
       .insert({
-        ...body,
+        ...parsed.data,
         created_by: user.id,
       })
       .select()

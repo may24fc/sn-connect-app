@@ -3,7 +3,7 @@ import { getNormalizedMetadataRole, normalizeDbRoleClaim } from '@/lib/auth/role
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
-const ADMIN_ROLES = ['admin', 'super_admin', 'hr', 'ceo', 'cos'];
+const ADMIN_ROLES = ['admin', 'super_admin'];
 
 async function getUserRole(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
@@ -97,7 +97,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       if (!role) {
         role = await getUserRole(supabase, user.id);
       }
-      if (!role || !['admin', 'super_admin', 'hr'].includes(role)) {
+      if (!role || !['admin', 'super_admin'].includes(role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
     }
@@ -213,7 +213,7 @@ export async function DELETE(
       if (!role) {
         role = (await getUserRole(supabase, user.id)) ?? undefined;
       }
-      if (!role || !['admin', 'super_admin', 'hr'].includes(role)) {
+      if (!role || !['admin', 'super_admin'].includes(role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
     }

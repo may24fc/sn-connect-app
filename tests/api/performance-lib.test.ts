@@ -6,12 +6,12 @@ import {
 } from '../../apps/web/src/app/api/performance/_lib';
 
 describe('performance access helpers', () => {
-  it('allows HR leadership roles to manage performance data', () => {
+  it('allows admin and super admin to manage performance data', () => {
     expect(canManagePerformance('admin')).toBe(true);
     expect(canManagePerformance('super_admin')).toBe(true);
-    expect(canManagePerformance('hr')).toBe(true);
-    expect(canManagePerformance('cos')).toBe(true);
-    expect(canManagePerformance('ceo')).toBe(true);
+    expect(canManagePerformance('hr')).toBe(false);
+    expect(canManagePerformance('cos')).toBe(false);
+    expect(canManagePerformance('ceo')).toBe(false);
   });
 
   it('keeps destructive admin access limited to admin roles', () => {

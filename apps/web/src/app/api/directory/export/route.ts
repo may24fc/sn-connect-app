@@ -1,4 +1,5 @@
 import { expandEmployeeEquivalentRoles } from '@/lib/roles';
+import { escapeCsvValue } from '@/lib/csv';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import ExcelJS from 'exceljs';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -17,7 +18,6 @@ interface DirectoryExportRow {
   email: string | null;
   contact_number: string | null;
 }
-
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
@@ -115,16 +115,16 @@ export async function GET(request: NextRequest) {
 
       const csvRows = rows.map((row) =>
         [
-          escapeCsv(row.full_name),
-          escapeCsv(row.role),
-          escapeCsv(row.department_name),
-          escapeCsv(row.division_name),
-          escapeCsv(row.position),
-          escapeCsv(row.status),
-          escapeCsv(row.employment_type),
-          escapeCsv(row.start_date),
-          escapeCsv(row.email),
-          escapeCsv(row.contact_number),
+          escapeCsvValue(row.full_name),
+          escapeCsvValue(row.role),
+          escapeCsvValue(row.department_name),
+          escapeCsvValue(row.division_name),
+          escapeCsvValue(row.position),
+          escapeCsvValue(row.status),
+          escapeCsvValue(row.employment_type),
+          escapeCsvValue(row.start_date),
+          escapeCsvValue(row.email),
+          escapeCsvValue(row.contact_number),
         ].join(',')
       );
 
@@ -188,13 +188,4 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
-
-function escapeCsv(value: string | null | undefined): string {
-  if (value === null || value === undefined) return '';
-  const str = String(value);
-  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
 }

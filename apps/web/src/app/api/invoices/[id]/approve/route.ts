@@ -29,6 +29,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .from('users')
       .select('role')
       .eq('id', user.id)
+      .is('deleted_at', null)
       .single();
 
     if (roleError || !roleData) {

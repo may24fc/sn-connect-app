@@ -1,3 +1,4 @@
+import { normalizeDbRoleClaim } from '@/lib/auth/role';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { resolveUserDisplayName } from '@/lib/user-display';
 
@@ -19,24 +20,20 @@ export async function getAuthedSupabase() {
     return { supabase, user: null, role: null, error: 'Unauthorized' as const };
   }
 
-  let role: string | null = null;
-  if (typeof user.app_metadata?.db_role === 'string') {
-    role = user.app_metadata.db_role;
+  const { data: roleData, error: roleError } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', user.id)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (roleError) {
+    return { supabase, user, role: null, error: 'Failed to resolve user role' as const };
   }
 
+  const role = normalizeDbRoleClaim(roleData?.role ?? null);
   if (!role) {
-    const { data: roleData, error: roleError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .is('deleted_at', null)
-      .maybeSingle();
-
-    if (roleError) {
-      return { supabase, user, role: null, error: 'Failed to resolve user role' as const };
-    }
-
-    role = roleData?.role ?? null;
+    return { supabase, user: null, role: null, error: 'Unauthorized' as const };
   }
 
   const hasAtsGrant =

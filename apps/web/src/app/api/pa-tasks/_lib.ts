@@ -1,3 +1,4 @@
+import { normalizeDbRoleClaim } from '@/lib/auth/role';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { resolveUserDisplayName } from '@/lib/user-display';
 
@@ -78,23 +79,21 @@ export async function getPaTaskAuthedContext(): Promise<
     return { ok: false, status: 401, error: 'Unauthorized' };
   }
 
-  let role: string | null =
-    typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+  const { data: roleData, error: roleError } = await supabaseAdmin
+    .from('users')
+    .select('role')
+    .eq('id', user.id)
+    .is('deleted_at', null)
+    .maybeSingle();
 
+  if (roleError) {
+    console.error('Failed to resolve user role for PA tasks:', roleError);
+    return { ok: false, status: 500, error: 'Failed to resolve user role' };
+  }
+
+  const role = normalizeDbRoleClaim(roleData?.role ?? null);
   if (!role) {
-    const { data: roleData, error: roleError } = await supabaseAdmin
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .is('deleted_at', null)
-      .maybeSingle();
-
-    if (roleError) {
-      console.error('Failed to resolve user role for PA tasks:', roleError);
-      return { ok: false, status: 500, error: 'Failed to resolve user role' };
-    }
-
-    role = roleData?.role ?? null;
+    return { ok: false, status: 401, error: 'Unauthorized' };
   }
 
   const { data: grantRow, error: grantError } = await supabaseAdmin

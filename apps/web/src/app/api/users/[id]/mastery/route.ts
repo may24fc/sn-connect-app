@@ -30,6 +30,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       .from('users')
       .select('role')
       .eq('id', user.id)
+      .is('deleted_at', null)
       .maybeSingle();
 
     const role = requester?.role ?? '';
