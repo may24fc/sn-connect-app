@@ -38,6 +38,7 @@ interface TaskRow {
   project_id: string | null;
   milestone_id: string | null;
   blocked_reason: string | null;
+  position: number;
 }
 
 /**

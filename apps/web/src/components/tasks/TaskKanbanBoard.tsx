@@ -80,12 +80,22 @@ interface TaskKanbanBoardProps {
   onStatusChange: (
     taskId: string,
     newStatus: TaskStatusDB,
-    blockedReason?: string | null
+    blockedReason?: string | null,
+    orderedTaskIds?: Array<string>
   ) => Promise<void>;
   linkPrefix?: string;
   returnTo?: string;
-  isUpdating?: boolean;
   includeCancelled?: boolean;
+}
+
+interface DropTarget {
+  status: TaskStatusDB;
+  index: number;
+}
+
+interface BlockedMove {
+  taskId: string;
+  orderedTaskIds?: Array<string>;
 }
 
 const formatDate = (value: string | null | undefined): string => {
@@ -107,13 +117,12 @@ export function TaskKanbanBoard({
   onStatusChange,
   linkPrefix = '/tasks',
   returnTo = linkPrefix,
-  isUpdating = false,
   includeCancelled = true,
 }: TaskKanbanBoardProps) {
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
-  const [dragOverColumn, setDragOverColumn] = useState<TaskStatusDB | null>(null);
-  const [movingTaskId, setMovingTaskId] = useState<string | null>(null);
-  const [blockedMove, setBlockedMove] = useState<string | null>(null);
+  const [draggedCardHeight, setDraggedCardHeight] = useState(0);
+  const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
+  const [blockedMove, setBlockedMove] = useState<BlockedMove | null>(null);
   const [blockedReason, setBlockedReason] = useState('');
   const [announcement, setAnnouncement] = useState('');
   const [moveError, setMoveError] = useState('');
@@ -139,97 +148,155 @@ export function TaskKanbanBoard({
       }
     }
 
+    for (const group of Object.values(groups)) {
+      group.sort((left, right) => {
+        const positionDifference = left.position - right.position;
+        if (positionDifference !== 0) return positionDifference;
+        return new Date(right.created_at).getTime() - new Date(left.created_at).getTime();
+      });
+    }
+
     return groups;
   }, [tasks]);
 
   const moveTask = useCallback(
-    async (taskId: string, newStatus: TaskStatusDB, reason?: string) => {
+    async (
+      taskId: string,
+      newStatus: TaskStatusDB,
+      reason?: string,
+      orderedTaskIds?: Array<string>
+    ) => {
       const task = tasks.find((item) => item.id === taskId);
-      if (!task || task.status === newStatus || movingTaskId || isUpdating) return;
+      if (!task) return;
 
-      setMovingTaskId(taskId);
       setMoveError('');
       setAnnouncement(
-        `Moving ${task.title} to ${STATUS_COLUMNS.find((column) => column.value === newStatus)?.label}.`
+        `${task.status === newStatus ? 'Reordering' : 'Moving'} ${task.title} in ${STATUS_COLUMNS.find((column) => column.value === newStatus)?.label}.`
       );
       try {
-        await onStatusChange(taskId, newStatus, newStatus === 'blocked' ? reason : null);
+        await onStatusChange(
+          taskId,
+          newStatus,
+          newStatus === 'blocked' ? reason : null,
+          orderedTaskIds
+        );
         setAnnouncement(
-          `${task.title} moved to ${STATUS_COLUMNS.find((column) => column.value === newStatus)?.label}.`
+          `${task.title} ${task.status === newStatus ? 'reordered in' : 'moved to'} ${STATUS_COLUMNS.find((column) => column.value === newStatus)?.label}.`
         );
       } catch {
         const message = `Could not move ${task.title}. It remains in ${STATUS_COLUMNS.find((column) => column.value === task.status)?.label ?? task.status}. Try again.`;
         setAnnouncement(message);
         setMoveError(message);
-      } finally {
-        setMovingTaskId(null);
       }
     },
-    [isUpdating, movingTaskId, onStatusChange, tasks]
+    [onStatusChange, tasks]
   );
 
   const requestMove = useCallback(
-    (taskId: string, newStatus: TaskStatusDB) => {
+    (taskId: string, newStatus: TaskStatusDB, orderedTaskIds?: Array<string>) => {
       const task = tasks.find((item) => item.id === taskId);
-      if (!task || task.status === newStatus || movingTaskId || isUpdating) return;
-      if (newStatus === 'blocked') {
-        setBlockedMove(taskId);
+      if (!task) return;
+      if (task.status === newStatus && !orderedTaskIds) return;
+      const destinationOrder =
+        orderedTaskIds ??
+        [...tasksByStatus[newStatus].filter((item) => item.id !== taskId), task].map(
+          (item) => item.id
+        );
+      const currentOrder = tasksByStatus[newStatus].map((item) => item.id);
+      if (
+        task.status === newStatus &&
+        currentOrder.every((currentTaskId, index) => currentTaskId === destinationOrder[index])
+      ) {
+        return;
+      }
+      if (newStatus === 'blocked' && task.status !== 'blocked') {
+        setBlockedMove({ taskId, orderedTaskIds: destinationOrder });
         setBlockedReason(task.blocked_reason ?? '');
         return;
       }
-      void moveTask(taskId, newStatus);
+      void moveTask(taskId, newStatus, undefined, destinationOrder);
     },
-    [isUpdating, moveTask, movingTaskId, tasks]
+    [moveTask, tasks, tasksByStatus]
   );
 
-  const handleDragStart = useCallback(
-    (e: DragEvent<HTMLDivElement>, taskId: string) => {
-      if (movingTaskId || isUpdating) {
-        e.preventDefault();
-        return;
-      }
-      setDraggedTaskId(taskId);
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('application/x-sn-task', taskId);
-      const card = e.currentTarget.closest('[data-kanban-card]');
-      if (card) e.dataTransfer.setDragImage(card, 20, 20);
-    },
-    [isUpdating, movingTaskId]
-  );
+  const handleDragStart = useCallback((e: DragEvent<HTMLDivElement>, taskId: string) => {
+    setDraggedTaskId(taskId);
+    setDraggedCardHeight(e.currentTarget.getBoundingClientRect().height);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('application/x-sn-task', taskId);
+    const card = e.currentTarget.closest('[data-kanban-card]');
+    if (card) e.dataTransfer.setDragImage(card, 20, 20);
+  }, []);
 
   const handleDragEnd = useCallback(() => {
     setDraggedTaskId(null);
-    setDragOverColumn(null);
+    setDropTarget(null);
+    setDraggedCardHeight(0);
   }, []);
 
   const handleDragOver = useCallback(
     (e: DragEvent<HTMLDivElement>, status: TaskStatusDB) => {
       const draggedTask = tasks.find((task) => task.id === draggedTaskId);
-      if (!draggedTask || draggedTask.status === status) return;
+      if (!draggedTask) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
-      setDragOverColumn((current) => (current === status ? current : status));
+      const destinationTasks = tasksByStatus[status].filter((task) => task.id !== draggedTask.id);
+      const hoveredCard = (e.target as HTMLElement).closest<HTMLElement>('[data-kanban-card]');
+      const hoveredTaskId = hoveredCard?.dataset.taskId;
+      const hoveredIndex = hoveredTaskId
+        ? destinationTasks.findIndex((task) => task.id === hoveredTaskId)
+        : -1;
+      const index =
+        hoveredIndex < 0
+          ? destinationTasks.length
+          : hoveredIndex +
+            (e.clientY >
+            (hoveredCard?.getBoundingClientRect().top ?? 0) +
+              (hoveredCard?.getBoundingClientRect().height ?? 0) / 2
+              ? 1
+              : 0);
+      setDropTarget((current) =>
+        current?.status === status && current.index === index ? current : { status, index }
+      );
     },
-    [draggedTaskId, tasks]
+    [draggedTaskId, tasks, tasksByStatus]
   );
 
   const handleDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
     if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
-      setDragOverColumn(null);
+      setDropTarget(null);
     }
   }, []);
 
   const handleDrop = useCallback(
     (e: DragEvent<HTMLDivElement>, newStatus: TaskStatusDB) => {
       e.preventDefault();
-      setDragOverColumn(null);
-      if (draggedTaskId && e.dataTransfer.getData('application/x-sn-task') === draggedTaskId) {
-        requestMove(draggedTaskId, newStatus);
+      const taskId = e.dataTransfer.getData('application/x-sn-task') || draggedTaskId;
+      if (taskId) {
+        const destinationTaskIds = tasksByStatus[newStatus]
+          .filter((task) => task.id !== taskId)
+          .map((task) => task.id);
+        const insertionIndex =
+          dropTarget?.status === newStatus ? dropTarget.index : destinationTaskIds.length;
+        destinationTaskIds.splice(insertionIndex, 0, taskId);
+        requestMove(taskId, newStatus, destinationTaskIds);
       }
       setDraggedTaskId(null);
+      setDraggedCardHeight(0);
+      setDropTarget(null);
     },
-    [draggedTaskId, requestMove]
+    [draggedTaskId, dropTarget, requestMove, tasksByStatus]
   );
+
+  const renderDropIndicator = (status: TaskStatusDB, index: number) =>
+    dropTarget?.status === status && dropTarget.index === index ? (
+      <div
+        data-testid={`kanban-drop-indicator-${status}`}
+        aria-hidden="true"
+        style={{ height: Math.max(draggedCardHeight, 64) }}
+        className="rounded-lg border-2 border-dashed border-primary/70 bg-primary/10 shadow-inner transition-[height,opacity] duration-150"
+      />
+    ) : null;
 
   return (
     <div>
@@ -250,7 +317,8 @@ export function TaskKanbanBoard({
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {visibleColumns.map((column) => {
           const columnTasks = tasksByStatus[column.value] || [];
-          const isDropTarget = dragOverColumn === column.value;
+          const isDropTarget = dropTarget?.status === column.value;
+          let destinationIndex = 0;
 
           return (
             <div key={column.value} className="flex flex-col">
@@ -285,25 +353,28 @@ export function TaskKanbanBoard({
                   </div>
                 ) : (
                   <>
-                    {isDropTarget ? (
-                      <p className="rounded border border-dashed border-primary p-2 text-center text-xs font-medium text-primary">
-                        Drop in {column.label}
-                      </p>
-                    ) : null}
-                    {columnTasks.map((task) => (
-                      <TaskKanbanCard
-                        key={task.id}
-                        task={task}
-                        linkPrefix={linkPrefix}
-                        returnTo={returnTo}
-                        isDragging={draggedTaskId === task.id}
-                        isUpdating={isUpdating || movingTaskId !== null}
-                        availableStatuses={visibleColumns}
-                        onMove={requestMove}
-                        onDragStart={handleDragStart}
-                        onDragEnd={handleDragEnd}
-                      />
-                    ))}
+                    {columnTasks.map((task) => {
+                      const indicatorIndex = destinationIndex;
+                      if (task.id !== draggedTaskId) destinationIndex += 1;
+                      return (
+                        <div key={task.id} className="contents">
+                          {task.id !== draggedTaskId
+                            ? renderDropIndicator(column.value, indicatorIndex)
+                            : null}
+                          <TaskKanbanCard
+                            task={task}
+                            linkPrefix={linkPrefix}
+                            returnTo={returnTo}
+                            isDragging={draggedTaskId === task.id}
+                            availableStatuses={visibleColumns}
+                            onMove={requestMove}
+                            onDragStart={handleDragStart}
+                            onDragEnd={handleDragEnd}
+                          />
+                        </div>
+                      );
+                    })}
+                    {renderDropIndicator(column.value, destinationIndex)}
                   </>
                 )}
               </div>
@@ -339,10 +410,15 @@ export function TaskKanbanBoard({
               Cancel
             </Button>
             <Button
-              disabled={!blockedReason.trim() || movingTaskId !== null}
+              disabled={!blockedReason.trim()}
               onClick={() => {
                 if (blockedMove && blockedReason.trim()) {
-                  void moveTask(blockedMove, 'blocked', blockedReason.trim());
+                  void moveTask(
+                    blockedMove.taskId,
+                    'blocked',
+                    blockedReason.trim(),
+                    blockedMove.orderedTaskIds
+                  );
                   setBlockedMove(null);
                 }
               }}
@@ -361,9 +437,8 @@ interface TaskKanbanCardProps {
   linkPrefix: string;
   returnTo: string;
   isDragging: boolean;
-  isUpdating: boolean;
   availableStatuses: typeof STATUS_COLUMNS;
-  onMove: (taskId: string, status: TaskStatusDB) => void;
+  onMove: (taskId: string, status: TaskStatusDB, orderedTaskIds?: Array<string>) => void;
   onDragStart: (e: DragEvent<HTMLDivElement>, taskId: string) => void;
   onDragEnd: () => void;
 }
@@ -373,7 +448,6 @@ function TaskKanbanCard({
   linkPrefix,
   returnTo,
   isDragging,
-  isUpdating,
   availableStatuses,
   onMove,
   onDragStart,
@@ -382,11 +456,12 @@ function TaskKanbanCard({
   return (
     <div
       data-kanban-card
+      data-task-id={task.id}
       data-testid={`kanban-task-${task.id}`}
-      draggable={!isUpdating}
+      draggable
       onDragStart={(e) => onDragStart(e, task.id)}
       onDragEnd={onDragEnd}
-      className={`group cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-50' : ''}`}
+      className={`group cursor-grab transition-[transform,opacity] duration-150 active:cursor-grabbing ${isDragging ? 'opacity-40' : ''}`}
     >
       <Card className="transition-shadow hover:shadow-md">
         <CardContent className="p-3">
@@ -428,9 +503,8 @@ function TaskKanbanCard({
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  disabled={isUpdating}
                   aria-label={`Move ${task.title}`}
-                  className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-50"
+                  className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                 >
                   <MoreHorizontal className="h-4 w-4" />
                 </button>

@@ -1,6 +1,7 @@
 import { queryKeys } from '@/lib/query-keys';
 import type { TaskUpdateInput } from '@/lib/schemas/task.schema';
 import { type QueryClient, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRef } from 'react';
 import type { TaskRecord } from './useTasks';
 
 interface TaskMutationContext {
@@ -35,6 +36,9 @@ async function applyOptimisticTaskUpdate(
     ...(payload.milestoneId !== undefined ? { milestone_id: payload.milestoneId } : {}),
     ...(payload.blockedReason !== undefined ? { blocked_reason: payload.blockedReason } : {}),
   };
+  const orderedPositionByTaskId = new Map(
+    (payload.orderedTaskIds ?? []).map((orderedTaskId, index) => [orderedTaskId, index])
+  );
 
   queryClient.setQueryData(queryKeys.tasks.detail(taskId), (old: any) => {
     if (!old?.data) return old;
@@ -45,9 +49,14 @@ async function applyOptimisticTaskUpdate(
     if (!old?.data || !Array.isArray(old.data)) return old;
     return {
       ...old,
-      data: old.data.map((task: TaskRecord) =>
-        task.id === taskId ? { ...task, ...taskPatch, updated_at: updatedAt } : task
-      ),
+      data: old.data.map((task: TaskRecord) => {
+        const position = orderedPositionByTaskId.get(task.id);
+        return {
+          ...task,
+          ...(task.id === taskId ? { ...taskPatch, updated_at: updatedAt } : {}),
+          ...(position !== undefined ? { position } : {}),
+        };
+      }),
     };
   });
 
@@ -147,37 +156,70 @@ export function useUpdateTask(taskId: string) {
 
 export function useUpdateTaskStatus() {
   const queryClient = useQueryClient();
+  const taskQueues = useRef(new Map<string, Promise<void>>());
+  const latestMutationByTask = useRef(new Map<string, number>());
 
   return useMutation({
     mutationFn: async ({
       taskId,
       status,
       blockedReason,
+      orderedTaskIds,
     }: {
       taskId: string;
       status: TaskRecord['status'];
       blockedReason?: string | null | undefined;
+      orderedTaskIds?: Array<string> | undefined;
     }): Promise<{ data: TaskRecord }> => {
-      const response = await fetch(`/api/tasks/${taskId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status, blockedReason }),
+      const previousRequest = taskQueues.current.get(taskId) ?? Promise.resolve();
+      const request = previousRequest
+        .catch(() => undefined)
+        .then(async () => {
+          const response = await fetch(`/api/tasks/${taskId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status, blockedReason, orderedTaskIds }),
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to update task');
+          }
+
+          return response.json() as Promise<{ data: TaskRecord }>;
+        });
+      const settledRequest = request.then(
+        () => undefined,
+        () => undefined
+      );
+      taskQueues.current.set(taskId, settledRequest);
+
+      return request.finally(() => {
+        if (taskQueues.current.get(taskId) === settledRequest) {
+          taskQueues.current.delete(taskId);
+        }
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update task');
-      }
-
-      return response.json();
     },
-    onMutate: ({ taskId, status, blockedReason }) =>
-      applyOptimisticTaskUpdate(queryClient, taskId, { status, blockedReason }),
+    onMutate: async ({ taskId, status, blockedReason, orderedTaskIds }) => {
+      const mutationVersion = (latestMutationByTask.current.get(taskId) ?? 0) + 1;
+      latestMutationByTask.current.set(taskId, mutationVersion);
+      const context = await applyOptimisticTaskUpdate(queryClient, taskId, {
+        status,
+        blockedReason,
+        orderedTaskIds,
+      });
+      return { ...context, mutationVersion };
+    },
     onError: (_error, { taskId }, context) => {
-      rollbackOptimisticTaskUpdate(queryClient, taskId, context);
+      if (context?.mutationVersion === latestMutationByTask.current.get(taskId)) {
+        rollbackOptimisticTaskUpdate(queryClient, taskId, context);
+      }
     },
-    onSettled: (_data, _error, { taskId }) => {
-      invalidateTaskQueries(queryClient, taskId);
+    onSettled: (_data, _error, { taskId }, context) => {
+      if (context?.mutationVersion === latestMutationByTask.current.get(taskId)) {
+        latestMutationByTask.current.delete(taskId);
+        invalidateTaskQueries(queryClient, taskId);
+      }
     },
   });
 }

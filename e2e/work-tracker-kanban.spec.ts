@@ -21,6 +21,7 @@ type BoardTask = {
   project_id: null;
   milestone_id: null;
   blocked_reason: string | null;
+  position: number;
 };
 
 const initialTask: BoardTask = {
@@ -42,6 +43,7 @@ const initialTask: BoardTask = {
   project_id: null,
   milestone_id: null,
   blocked_reason: null,
+  position: 0,
 };
 
 test.beforeEach(async ({ page }) => {
@@ -98,7 +100,7 @@ test('moves a card by dragging its body and keeps its detail link', async ({ pag
   const card = page.getByTestId('kanban-task-task-kanban-1');
   await expect(
     page.getByTestId('kanban-column-pending').getByTestId('kanban-task-task-kanban-1')
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 30_000 });
   await expect(card.getByRole('link', { name: 'Prepare launch checklist' })).toHaveAttribute(
     'href',
     /\/tasks\/task-kanban-1/
@@ -158,7 +160,82 @@ test('supports keyboard moves and asks for a blocker reason', async ({ page }) =
   await expect(
     page.getByTestId('kanban-column-blocked').getByTestId('kanban-task-task-kanban-1')
   ).toBeVisible();
-  expect(lastPatch).toEqual({ status: 'blocked', blockedReason: 'Waiting for approval' });
+  expect(lastPatch).toEqual({
+    status: 'blocked',
+    blockedReason: 'Waiting for approval',
+    orderedTaskIds: ['task-kanban-1'],
+  });
+});
+
+test('shows an insertion gap and keeps the card draggable while its prior move saves', async ({
+  page,
+}) => {
+  let releaseFirstRequest: (() => void) | undefined;
+  const firstRequestGate = new Promise<void>((resolve) => {
+    releaseFirstRequest = resolve;
+  });
+  const targetTask: BoardTask = {
+    ...initialTask,
+    id: 'task-kanban-2',
+    title: 'Review launch assets',
+    status: 'in_progress',
+    position: 0,
+  };
+  let task = { ...initialTask };
+  const patches: Array<{ status: BoardTask['status']; orderedTaskIds?: Array<string> }> = [];
+
+  await page.route('**/api/tasks?**', async (route) => {
+    await route.fulfill({
+      json: {
+        data: [task, targetTask],
+        pagination: { page: 1, pageSize: 20, total: 2, totalPages: 1 },
+      },
+    });
+  });
+  await page.route('**/api/tasks/task-kanban-1', async (route) => {
+    const patch = route.request().postDataJSON() as {
+      status: BoardTask['status'];
+      orderedTaskIds?: Array<string>;
+    };
+    patches.push(patch);
+    if (patches.length === 1) await firstRequestGate;
+    task = { ...task, status: patch.status };
+    await route.fulfill({ json: { data: task } });
+  });
+
+  await page.goto('/work-tracker?view=execution', { waitUntil: 'domcontentloaded' });
+  const source = page.getByTestId('kanban-task-task-kanban-1');
+  const target = page.getByTestId('kanban-task-task-kanban-2');
+  const targetBefore = await target.boundingBox();
+  const dataTransfer = await page.evaluateHandle(() => new DataTransfer());
+  await source.dispatchEvent('dragstart', { dataTransfer });
+  await target.dispatchEvent('dragover', {
+    dataTransfer,
+    clientY: (targetBefore?.y ?? 0) + 1,
+  });
+
+  await expect(page.getByTestId('kanban-drop-indicator-in_progress')).toBeVisible();
+  await expect
+    .poll(async () => (await target.boundingBox())?.y ?? 0)
+    .toBeGreaterThan(targetBefore?.y ?? 0);
+  await target.dispatchEvent('drop', { dataTransfer });
+  await source.dispatchEvent('dragend', { dataTransfer });
+
+  const movedCard = page
+    .getByTestId('kanban-column-in_progress')
+    .getByTestId('kanban-task-task-kanban-1');
+  await expect(movedCard).toBeVisible();
+  await expect(movedCard).toHaveAttribute('draggable', 'true');
+  await movedCard.dragTo(page.getByTestId('kanban-column-completed'));
+  await expect(
+    page.getByTestId('kanban-column-completed').getByTestId('kanban-task-task-kanban-1')
+  ).toBeVisible();
+  expect(patches).toHaveLength(1);
+
+  releaseFirstRequest?.();
+  await expect.poll(() => patches.length).toBe(2);
+  expect(patches.map((patch) => patch.status)).toEqual(['in_progress', 'completed']);
+  expect(patches[0]?.orderedTaskIds).toEqual(['task-kanban-1', 'task-kanban-2']);
 });
 
 test('restores the card when a status update fails', async ({ page }) => {

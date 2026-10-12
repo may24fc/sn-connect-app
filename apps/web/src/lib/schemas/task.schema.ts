@@ -54,6 +54,7 @@ export const taskUpdateSchema = z.object({
   projectId: z.string().uuid().optional().nullable(),
   milestoneId: z.string().uuid().optional().nullable(),
   blockedReason: z.string().trim().max(500).optional().nullable(),
+  orderedTaskIds: z.array(z.string().uuid()).max(200).optional(),
 });
 
 export type TaskInput = z.infer<typeof taskSchema>;

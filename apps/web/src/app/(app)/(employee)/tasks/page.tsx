@@ -299,10 +299,20 @@ export default function MyTasksPage() {
 
   // Handler for status change in Kanban board
   const handleStatusChange = useCallback(
-    async (taskId: string, newStatus: TaskStatusDB, blockedReason?: string | null) => {
+    async (
+      taskId: string,
+      newStatus: TaskStatusDB,
+      blockedReason?: string | null,
+      orderedTaskIds?: Array<string>
+    ) => {
       setUpdatingTaskId(taskId);
       try {
-        await updateTaskStatus.mutateAsync({ taskId, status: newStatus, blockedReason });
+        await updateTaskStatus.mutateAsync({
+          taskId,
+          status: newStatus,
+          blockedReason,
+          orderedTaskIds,
+        });
         addToast({
           title: 'Task status updated',
           description: `Changed to ${newStatus.replace('_', ' ')}`,
@@ -506,7 +516,6 @@ export default function MyTasksPage() {
                 tasks={tasks}
                 onStatusChange={handleStatusChange}
                 linkPrefix="/tasks"
-                isUpdating={Boolean(updatingTaskId)}
               />
             )}
           </div>

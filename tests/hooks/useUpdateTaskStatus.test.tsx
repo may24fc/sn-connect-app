@@ -26,6 +26,8 @@ const task: TaskRecord = {
   deleted_at: null,
   project_id: null,
   milestone_id: null,
+  blocked_reason: null,
+  position: 0,
 };
 
 function setup() {
@@ -103,5 +105,81 @@ describe('useUpdateTaskStatus', () => {
     const filteredList = queryClient.getQueryData<{ data: Array<TaskRecord> }>(filteredListKey);
     expect(firstList?.data[0]?.status).toBe('pending');
     expect(filteredList?.data[0]?.status).toBe('pending');
+  });
+
+  it('applies a second move immediately while serializing requests for the same task', async () => {
+    const requestResolvers: Array<(value: unknown) => void> = [];
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          requestResolvers.push(resolve);
+        })
+    );
+    const { result, queryClient, listKey } = setup();
+
+    act(() => {
+      result.current.mutate({ taskId: task.id, status: 'in_progress' });
+    });
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+
+    act(() => {
+      result.current.mutate({ taskId: task.id, status: 'completed' });
+    });
+    await waitFor(() => {
+      const list = queryClient.getQueryData<{ data: Array<TaskRecord> }>(listKey);
+      expect(list?.data[0]?.status).toBe('completed');
+    });
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+
+    requestResolvers[0]?.({
+      ok: true,
+      json: async () => ({ data: { ...task, status: 'in_progress' } }),
+    });
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2));
+    requestResolvers[1]?.({
+      ok: true,
+      json: async () => ({ data: { ...task, status: 'completed' } }),
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    const requests = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.map(([, options]) =>
+      JSON.parse(String(options?.body))
+    );
+    expect(requests.map((request) => request.status)).toEqual(['in_progress', 'completed']);
+  });
+
+  it('optimistically applies the destination card order', async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ data: { ...task, status: 'in_progress', position: 1 } }),
+    });
+    const { result, queryClient, listKey } = setup();
+    const destinationTask: TaskRecord = {
+      ...task,
+      id: 'task-2',
+      title: 'Review launch assets',
+      status: 'in_progress',
+      position: 0,
+    };
+    queryClient.setQueryData(listKey, {
+      data: [task, destinationTask],
+      pagination: { page: 1, pageSize: 100, total: 2, totalPages: 1 },
+    });
+
+    act(() => {
+      result.current.mutate({
+        taskId: task.id,
+        status: 'in_progress',
+        orderedTaskIds: [destinationTask.id, task.id],
+      });
+    });
+
+    await waitFor(() => {
+      const list = queryClient.getQueryData<{ data: Array<TaskRecord> }>(listKey);
+      expect(list?.data.map(({ id, position, status }) => ({ id, position, status }))).toEqual([
+        { id: task.id, position: 1, status: 'in_progress' },
+        { id: destinationTask.id, position: 0, status: 'in_progress' },
+      ]);
+    });
   });
 });

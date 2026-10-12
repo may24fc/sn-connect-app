@@ -89,7 +89,41 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'Task update access denied' }, { status: 403 });
     }
 
-    const updates: Record<string, string | Array<string> | null> = {};
+    const orderedTaskIds = parsed.data.orderedTaskIds;
+    if (orderedTaskIds) {
+      const uniqueTaskIds = new Set(orderedTaskIds);
+      if (
+        !parsed.data.status ||
+        uniqueTaskIds.size !== orderedTaskIds.length ||
+        !uniqueTaskIds.has(id)
+      ) {
+        return NextResponse.json({ error: 'Invalid task order' }, { status: 400 });
+      }
+
+      const { data: orderedTasks, error: orderedTasksError } = await supabaseAdmin
+        .from('tasks')
+        .select('id, status, assigned_to, assigned_by')
+        .in('id', orderedTaskIds)
+        .is('deleted_at', null);
+      if (orderedTasksError || orderedTasks?.length !== orderedTaskIds.length) {
+        return NextResponse.json({ error: 'Could not validate task order' }, { status: 400 });
+      }
+
+      const canReorderEveryTask = orderedTasks.every(
+        (task) =>
+          task.id === id ||
+          ((task.status === parsed.data.status || task.id === id) &&
+            (role === TASK_ASSIGNER_ROLE ||
+              role === 'admin' ||
+              task.assigned_to === user.id ||
+              task.assigned_by === user.id))
+      );
+      if (!canReorderEveryTask) {
+        return NextResponse.json({ error: 'Task reorder access denied' }, { status: 403 });
+      }
+    }
+
+    const updates: Record<string, string | number | Array<string> | null> = {};
 
     if (parsed.data.title !== undefined) updates.title = parsed.data.title;
     if (parsed.data.description !== undefined) {
@@ -118,6 +152,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
     if (parsed.data.priority !== undefined) updates.priority = parsed.data.priority;
     if (parsed.data.status !== undefined) updates.status = parsed.data.status;
+    if (orderedTaskIds) updates.position = orderedTaskIds.indexOf(id);
     if (parsed.data.blockedReason !== undefined) {
       updates.blocked_reason = parsed.data.blockedReason || null;
     }
@@ -182,6 +217,29 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       .eq('id', id)
       .is('deleted_at', null)
       .single();
+
+    if (orderedTaskIds) {
+      const movedTaskIndex = orderedTaskIds.indexOf(id);
+      const reorderResults = await Promise.all(
+        orderedTaskIds
+          .filter((taskId) => taskId !== id)
+          .map((taskId, index) => {
+            const position = index >= movedTaskIndex ? index + 1 : index;
+            return supabaseAdmin
+              .from('tasks')
+              .update({ position })
+              .eq('id', taskId)
+              .is('deleted_at', null);
+          })
+      );
+      if (reorderResults.some((result) => result.error)) {
+        console.error(
+          'Error reordering tasks:',
+          reorderResults.find((result) => result.error)?.error
+        );
+        return NextResponse.json({ error: 'Could not save task order' }, { status: 500 });
+      }
+    }
 
     const { data, error } = await supabase
       .from('tasks')

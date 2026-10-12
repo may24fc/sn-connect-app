@@ -53,7 +53,7 @@ The initial rollout added optimistic updates with rollback and reconciliation to
 | Announcement experience | Star/unstar, mark read, pin, add comment |
 | Information hub | Add/remove bookmark |
 | Preferences | Update notification preferences |
-| Tasks and support | Add task/ticket comments; add/remove task proofs; task status, including Kanban moves, across task and Work Tracker views; update/delete PA tasks. Parent project progress and health are server-computed and reconciled after the optimistic task mutation settles. |
+| Tasks and support | Add task/ticket comments; add/remove task proofs; task status and persisted Kanban order across task and Work Tracker views; update/delete PA tasks. Repeated moves of one card apply immediately while their PATCH requests are delivered in intent order, and stale failures cannot roll back a newer move. Parent project progress and health are server-computed and reconciled after the latest optimistic task mutation settles. |
 | Checklists | Employee onboarding and offboarding completion; project checklist update/delete with immediate milestone, project, and Work Tracker progress propagation |
 | Wellness Bingo | Board tiles/custom habit, partner, weekly recording |
 | Recruitment | Application status update and removal |

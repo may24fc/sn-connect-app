@@ -38,6 +38,7 @@ export interface TaskRecord {
   project_id: string | null;
   milestone_id: string | null;
   blocked_reason: string | null;
+  position: number;
   project_name?: string | null;
   milestone_name?: string | null;
   assignee_name?: string | null;

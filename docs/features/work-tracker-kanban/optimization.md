@@ -15,7 +15,10 @@
 
 ```mermaid
 flowchart LR
-    A[Drag card or use Move menu] --> B{Blocked?}
+    A[Drag card] --> I[Compute hovered index]
+    I --> J[Reserve card-height gap]
+    J --> B{Blocked?}
+    K[Move menu] --> B
     B -- Yes --> C[Reason dialog]
     B -- No --> D[Status mutation]
     C --> D
@@ -48,22 +51,23 @@ flowchart LR
 - Code paths: Playwright launcher and browser tests in the Relevant Code Map.
 - Validation: `node --check` and focused Biome check passed; Chromium browser tests reached and exercised the board with `NEXT_DIST_DIR=.next-playwright-kanban`.
 
-### 2026-10-12: In-column ordering — Deferred
+### 2026-10-12: Precise insertion and immediate repeated moves — Implemented
 
-- Problem/evidence: Reference Kanban boards support card ordering within a list, but the current status-move API does not accept a persisted order; a UI-only reorder would disappear on refresh and conflict between users.
-- Proposed solution: Define persistent ordering and concurrency behavior first, then add same-column drag targets and an API update with browser tests.
-- Code paths: shared board and task API in the Relevant Code Map.
-- Resume condition: Product and data-model agreement on ordering semantics.
+- Problem/evidence: The board displayed one generic drop banner at the top of a column and disabled all cards until a status request settled. Users could not see the exact insertion point and could not immediately move the same card again.
+- Delivered solution: Calculate the destination index from the pointer and target-card midpoint, reserve a placeholder equal to the dragged card height so following cards move down, persist the visible order using the existing `tasks.position` column, and optimistically apply each move. Same-task PATCH requests are serialized in intent order; mutation versions prevent an older failure from rolling back a newer optimistic move.
+- Code paths: shared board, task API/schema/hooks, three board hosts, focused hook tests, and browser tests in the Relevant Code Map.
+- Validation: web typecheck passed; focused hook tests passed 4/4; the new Chromium scenario verified the insertion gap, downward displacement, persisted ID order payload, and a second drag before the first delayed PATCH completed. The existing basic drag, blocker, and rollback scenarios also passed across the focused browser runs.
 
 ## Measurements
 
 - Status: Deferred. No p50/p95 values or delta are available, and no speed claim is made.
 - Date: 2026-10-12; commit: `4bbee970`; environment: local Windows development; role: employee; intended sample count: 30 per target with 3 warmups.
-- Before command: `pnpm performance:latency --feature work-tracker-kanban --targets "/work-tracker?view=execution,/dashboard" --label before` — failed because local Supabase Auth at `127.0.0.1:55321` refused connections; `pnpm exec supabase status` reported a missing Docker Desktop Linux-engine pipe.
-- After command: `pnpm performance:latency --feature work-tracker-kanban --targets "/work-tracker?view=execution,/dashboard" --label after` — failed with `fetch failed` because the required local services were unavailable.
-- Resume condition: Start Docker Desktop, local Supabase, and the local web server, then rerun the identical before/after targets and `pnpm performance:latency --feature work-tracker-kanban --compare`. Since the baseline could not be captured before this edit, compare against a pre-change checkout if a true change delta is required.
+- Before command: `pnpm performance:latency --feature work-tracker-kanban --targets "/work-tracker?view=execution,/api/tasks?page=1&pageSize=10,/dashboard" --label before` — failed with `fetch failed` because the local app was unavailable at `http://localhost:3001`.
+- After command: `pnpm performance:latency --feature work-tracker-kanban --targets "/work-tracker?view=execution,/api/tasks?page=1&pageSize=10,/dashboard" --label after` — failed with the same connection error.
+- Resume condition: Start local Supabase and the local web server on port 3001, rerun the identical before/after targets, then run `pnpm performance:latency --feature work-tracker-kanban --compare`. Use a pre-change checkout for a valid baseline.
 
 ## Change Log
 
+- 2026-10-12: Added exact insertion-position feedback, persisted task order using the existing schema, and allowed immediate repeated moves with ordered request delivery and version-safe rollback. Browser and hook checks passed; latency sampling remained unavailable.
 - 2026-10-12: Expanded the drag activator from the grip to the full card, kept interactive navigation and the Move fallback, and passed desktop/mobile browser verification.
 - 2026-10-12: Audited Kanban interaction friction, implemented accessible status moves and failure feedback, isolated the Playwright build, passed focused browser validation, and deferred measurements and persisted intra-column ordering.

@@ -1029,8 +1029,13 @@ function ExecutionView({
     router.replace(`/work-tracker?${params.toString()}`, { scroll: false });
   };
   const handleStatusChange = useCallback(
-    async (taskId: string, status: TaskStatusDB, blockedReason?: string | null) => {
-      await updateStatus.mutateAsync({ taskId, status, blockedReason });
+    async (
+      taskId: string,
+      status: TaskStatusDB,
+      blockedReason?: string | null,
+      orderedTaskIds?: Array<string>
+    ) => {
+      await updateStatus.mutateAsync({ taskId, status, blockedReason, orderedTaskIds });
     },
     [updateStatus]
   );
