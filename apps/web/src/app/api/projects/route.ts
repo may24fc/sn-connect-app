@@ -268,13 +268,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error?.message ?? 'Failed to create project' }, { status: 500 });
   }
 
-  // Auto-add lead as a contributor (idempotent due to PK)
-  await supabaseAdmin
+  // Auto-add lead as a contributor (idempotent due to PK). Without this row the lead's membership is
+  // incomplete, so a failure here removes the just-created project instead of leaving it half-made.
+  const { error: leadContributorError } = await supabaseAdmin
     .from('project_contributors')
     .upsert(
       { project_id: created.id, user_id: input.leadUserId, role: 'lead' },
       { onConflict: 'project_id,user_id' }
     );
+
+  if (leadContributorError) {
+    console.error('POST /api/projects failed to add the lead contributor:', leadContributorError.message);
+    const { error: rollbackError } = await supabaseAdmin.from('projects').delete().eq('id', created.id);
+    if (rollbackError) {
+      console.error('POST /api/projects failed to roll back the project:', rollbackError.message);
+    }
+    return NextResponse.json({ error: 'Failed to create project' }, { status: 500 });
+  }
 
   logActivity(supabase, {
     userId: user.id,

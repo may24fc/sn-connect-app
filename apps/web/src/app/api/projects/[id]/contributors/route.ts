@@ -1,12 +1,29 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { logActivity } from '@/lib/audit';
+import { normalizeDepartmentName, normalizePersonName } from '@/lib/people/directory-people';
 import { contributorAddSchema } from '@/lib/schemas/project.schema';
 import { getProjectAuthedContext, isProjectAdmin } from '../../_lib';
 
 export const dynamic = 'force-dynamic';
 
+const CANDIDATE_PAGE_SIZE = 25;
+
 interface RouteParams {
   params: Promise<{ id: string }>;
+}
+
+interface CandidateRow {
+  user_id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  position: string | null;
+  department_name: string | null;
+  role: string | null;
+}
+
+/** Escapes LIKE wildcards so a search for "50%" matches literally. */
+function escapeLikePattern(value: string): string {
+  return value.replace(/[\\%_]/g, (character) => `\\${character}`);
 }
 
 async function ensureCanManageContributors(
@@ -25,6 +42,69 @@ async function ensureCanManageContributors(
     .maybeSingle();
   if (!data) return false;
   return data.lead_user_id === userId || data.supervisor_id === userId;
+}
+
+/**
+ * GET /api/projects/[id]/contributors?search=
+ * People who can be added as contributors, for whoever may manage this project's contributors.
+ * Project leads are usually associates without directory access, so this returns only the
+ * identity the picker shows (no email or contact details) and excludes current contributors.
+ */
+export async function GET(request: NextRequest, { params }: RouteParams) {
+  const { id: projectId } = await params;
+  const auth = await getProjectAuthedContext();
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
+  const { supabaseAdmin, user, role } = auth.context;
+  if (!(await ensureCanManageContributors(supabaseAdmin, projectId, user.id, role))) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  const search = (request.nextUrl.searchParams.get('search') ?? '').trim().slice(0, 100);
+
+  const { data: existing, error: existingError } = await supabaseAdmin
+    .from('project_contributors')
+    .select('user_id')
+    .eq('project_id', projectId);
+
+  if (existingError) {
+    return NextResponse.json({ error: 'Failed to load contributors' }, { status: 500 });
+  }
+
+  let query = supabaseAdmin
+    .from('employee_directory')
+    .select('user_id, full_name, avatar_url, position, department_name, role', { count: 'exact' })
+    .not('user_id', 'is', null)
+    .neq('status', 'terminated');
+
+  const existingIds = (existing ?? []).map((row: { user_id: string }) => row.user_id);
+  if (existingIds.length > 0) {
+    query = query.filter('user_id', 'not.in', `(${existingIds.join(',')})`);
+  }
+
+  if (search) {
+    query = query.ilike('full_name', `%${escapeLikePattern(search)}%`);
+  }
+
+  const { data, error, count } = await query
+    .order('full_name', { ascending: true })
+    .range(0, CANDIDATE_PAGE_SIZE - 1);
+
+  if (error) {
+    return NextResponse.json({ error: 'Failed to load people' }, { status: 500 });
+  }
+
+  return NextResponse.json({
+    data: ((data ?? []) as Array<CandidateRow>).map((row) => ({
+      user_id: row.user_id,
+      full_name: normalizePersonName(row.full_name) ?? 'Unnamed account',
+      avatar_url: row.avatar_url,
+      position: row.position?.trim() || null,
+      department_name: normalizeDepartmentName(row.department_name),
+      role: row.role,
+    })),
+    total: count ?? 0,
+  });
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {

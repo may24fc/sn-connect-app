@@ -1,3 +1,4 @@
+import { normalizeDbRoleClaim } from '@/lib/auth/role';
 import { type DirectoryPerson, loadDirectoryPeople } from '@/lib/people/directory-people';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -27,22 +28,20 @@ export async function getTaskAuthedContext(): Promise<
     return { ok: false, status: 401, error: 'Unauthorized' };
   }
 
-  let role: string | null =
-    typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+  const { data: roleData, error: roleError } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', user.id)
+    .is('deleted_at', null)
+    .maybeSingle();
 
+  if (roleError) {
+    return { ok: false, status: 500, error: 'Failed to resolve user role' };
+  }
+
+  const role = normalizeDbRoleClaim(roleData?.role ?? null);
   if (!role) {
-    const { data: roleData, error: roleError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .is('deleted_at', null)
-      .maybeSingle();
-
-    if (roleError) {
-      return { ok: false, status: 500, error: 'Failed to resolve user role' };
-    }
-
-    role = roleData?.role ?? null;
+    return { ok: false, status: 401, error: 'Unauthorized' };
   }
 
   return {
@@ -126,7 +125,7 @@ export async function validateTaskProjectLink(
   if (error) return { ok: false, status: 500, error: 'Failed to validate project' };
   if (!project) return { ok: false, status: 400, error: 'Project was not found' };
 
-  const hasAdminAccess = ['admin', 'hr', 'cos', 'ceo', 'super_admin'].includes(role ?? '');
+  const hasAdminAccess = ['admin', 'super_admin'].includes(role ?? '');
   let canAccess =
     hasAdminAccess ||
     project.lead_user_id === userId ||
@@ -161,7 +160,7 @@ export async function validateTaskProjectLink(
 }
 
 /** Roles that may read and comment on any task, mirroring the task_comments RLS policies. */
-export const TASK_OVERSIGHT_ROLES = ['admin', 'hr', 'cos', 'ceo', TASK_ASSIGNER_ROLE] as const;
+export const TASK_OVERSIGHT_ROLES = ['admin', TASK_ASSIGNER_ROLE] as const;
 
 /**
  * Resolve whether the caller may view (and therefore comment on) a task.

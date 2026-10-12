@@ -1,9 +1,9 @@
 'use client';
 
-import { useDirectory } from '@/hooks/useDirectory';
 import {
   type ProjectContributorRecord,
   useAddProjectContributor,
+  useProjectContributorCandidates,
   useRemoveProjectContributor,
 } from '@/hooks/useProjects';
 import {
@@ -30,8 +30,6 @@ import {
 import { AlertCircle, Loader2, Plus, Trash2, Users } from 'lucide-react';
 import { type ReactNode, useMemo, useState } from 'react';
 
-const DIRECTORY_PAGE_SIZE = 25;
-
 interface ManageContributorsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -56,39 +54,26 @@ export function ManageContributorsDialog({
   const addContributor = useAddProjectContributor();
   const removeContributor = useRemoveProjectContributor();
 
-  // Server-side search keeps this usable beyond the first directory page.
+  // Server-side search keeps this usable beyond the first page. This project-scoped endpoint works
+  // for leads and supervisors, who usually can't read the admin directory.
   const {
-    data: directoryData,
+    data: candidatesData,
     isLoading: directoryLoading,
     error: directoryError,
-  } = useDirectory({
-    ...(search.trim() ? { search: search.trim() } : {}),
-    page: 1,
-    pageSize: DIRECTORY_PAGE_SIZE,
-    excludeTerminated: true,
-  });
+  } = useProjectContributorCandidates(projectId, search, { enabled: open });
 
-  const contributorIds = useMemo(
-    () => new Set(contributors.map((contributor) => contributor.user_id)),
-    [contributors]
-  );
-
-  // Contributor identities come from the project detail; the directory page is only a fallback.
+  // Contributor identities come from the project detail; candidate rows are only a fallback.
   const directoryPeopleByUserId = useMemo(() => {
     const map = new Map<string, { name: string; avatarUrl: string | null }>();
-    for (const entry of directoryData?.data ?? []) {
+    for (const entry of candidatesData?.data ?? []) {
       map.set(entry.user_id, { name: entry.full_name, avatarUrl: entry.avatar_url });
     }
     return map;
-  }, [directoryData?.data]);
+  }, [candidatesData?.data]);
 
-  const candidates = useMemo(
-    () => (directoryData?.data ?? []).filter((entry) => !contributorIds.has(entry.user_id)),
-    [directoryData?.data, contributorIds]
-  );
-
-  const directoryTotal = directoryData?.pagination?.total ?? 0;
-  const hasMoreThanShown = directoryTotal > (directoryData?.data?.length ?? 0);
+  const candidates = candidatesData?.data ?? [];
+  const directoryTotal = candidatesData?.total ?? 0;
+  const hasMoreThanShown = directoryTotal > candidates.length;
 
   const handleAdd = async (userId: string): Promise<void> => {
     setPendingUserId(userId);
@@ -247,7 +232,7 @@ export function ManageContributorsDialog({
                 description={
                   search.trim()
                     ? 'Try a different name.'
-                    : 'Everyone in the first page of the directory is already a contributor.'
+                    : 'Everyone available is already a contributor.'
                 }
                 size="sm"
               />
@@ -294,8 +279,8 @@ export function ManageContributorsDialog({
 
             {hasMoreThanShown && (
               <p className="text-xs text-muted-foreground">
-                Showing {candidates.length} of {directoryTotal} directory entries. Refine the search
-                to find someone not listed.
+                Showing {candidates.length} of {directoryTotal} people. Refine the search to find
+                someone not listed.
               </p>
             )}
           </section>

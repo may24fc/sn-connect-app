@@ -207,7 +207,7 @@ describe('/api/tasks/[id]/comments', () => {
   });
 
   it('lists comments for an oversight role that is not on the task', async () => {
-    mockContext({ userId: 'hr-1', role: 'hr', task: TASK });
+    mockContext({ userId: 'admin-1', role: 'admin', task: TASK });
 
     const response = await GET(undefined as never, {
       params: Promise.resolve({ id: 'task-1' }),

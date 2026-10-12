@@ -713,6 +713,9 @@ export function useAddProjectContributor() {
     onSuccess: (_data, vars) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.projects.contributorCandidatesFor(vars.projectId),
+      });
     },
   });
 }
@@ -729,6 +732,43 @@ export function useRemoveProjectContributor() {
     onSuccess: (_data, vars) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.projects.contributorCandidatesFor(vars.projectId),
+      });
+    },
+  });
+}
+
+/** A person who can be added to a project, as returned by GET /api/projects/[id]/contributors. */
+export interface ProjectContributorCandidate {
+  user_id: string;
+  full_name: string;
+  avatar_url: string | null;
+  position: string | null;
+  department_name: string | null;
+  role: string | null;
+}
+
+/**
+ * Searchable list of people who can be added as contributors. Works for project leads and
+ * supervisors as well as admins (the general directory API is admin-only).
+ */
+export function useProjectContributorCandidates(
+  projectId: string,
+  search: string,
+  options: { enabled?: boolean } = {}
+) {
+  const trimmed = search.trim();
+  return useQuery({
+    queryKey: queryKeys.projects.contributorCandidates(projectId, trimmed),
+    enabled: (options.enabled ?? true) && Boolean(projectId),
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (trimmed) params.set('search', trimmed);
+      const query = params.toString();
+      return jsonFetch<{ data: Array<ProjectContributorCandidate>; total: number }>(
+        `/api/projects/${projectId}/contributors${query ? `?${query}` : ''}`
+      );
     },
   });
 }
