@@ -15,7 +15,7 @@
 
 ```mermaid
 flowchart LR
-    A[Drag handle or Move menu] --> B{Blocked?}
+    A[Drag card or use Move menu] --> B{Blocked?}
     B -- Yes --> C[Reason dialog]
     B -- No --> D[Status mutation]
     C --> D
@@ -26,6 +26,13 @@ flowchart LR
 ```
 
 ## Entries
+
+### 2026-10-12: Full-card drag target — Implemented
+
+- Problem/evidence: Direct user feedback showed that requiring a precise grab on the small six-dot handle made the board feel as though cards were not draggable. [Trello](https://support.atlassian.com/trello/docs/moving-cards-or-lists/) and [Asana](https://help.asana.com/s/article/board-view?language=en_US) document board movement as dragging the card/task itself.
+- Delivered solution: Move the native drag activator to the task-card wrapper, retain the grip as a visual affordance, prevent native link dragging so the card can start the gesture from its title area, and preserve the detail link plus keyboard/touch Move menu.
+- Code paths: shared board and browser tests in the Relevant Code Map.
+- Validation: Focused Biome check and web typecheck passed. Chromium Playwright passed 3/3 with `NEXT_DIST_DIR=.next-work-tracker-card-drag`, covering employee desktop whole-card drag, the 390px layout and Move menu, keyboard/blocker handling, failed-mutation rollback, console errors, and failed requests. Desktop and mobile screenshots were inspected; no clipping, overlap, or horizontal overflow was observed. This entry does not assert a latency improvement.
 
 ### 2026-10-12: Status-move interaction reliability — Implemented
 
@@ -58,4 +65,5 @@ flowchart LR
 
 ## Change Log
 
+- 2026-10-12: Expanded the drag activator from the grip to the full card, kept interactive navigation and the Move fallback, and passed desktop/mobile browser verification.
 - 2026-10-12: Audited Kanban interaction friction, implemented accessible status moves and failure feedback, isolated the Playwright build, passed focused browser validation, and deferred measurements and persisted intra-column ordering.

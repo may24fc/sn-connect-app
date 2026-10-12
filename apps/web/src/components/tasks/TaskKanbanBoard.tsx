@@ -183,7 +183,7 @@ export function TaskKanbanBoard({
   );
 
   const handleDragStart = useCallback(
-    (e: DragEvent<HTMLSpanElement>, taskId: string) => {
+    (e: DragEvent<HTMLDivElement>, taskId: string) => {
       if (movingTaskId || isUpdating) {
         e.preventDefault();
         return;
@@ -234,7 +234,7 @@ export function TaskKanbanBoard({
   return (
     <div>
       <p className="mb-3 text-xs text-muted-foreground">
-        Drag a card by its handle, or use its Move menu to change status.
+        Drag a card to another column, or use its Move menu to change status.
       </p>
       <div data-testid="kanban-announcement" aria-live="polite" className="sr-only">
         {announcement}
@@ -364,7 +364,7 @@ interface TaskKanbanCardProps {
   isUpdating: boolean;
   availableStatuses: typeof STATUS_COLUMNS;
   onMove: (taskId: string, status: TaskStatusDB) => void;
-  onDragStart: (e: DragEvent<HTMLSpanElement>, taskId: string) => void;
+  onDragStart: (e: DragEvent<HTMLDivElement>, taskId: string) => void;
   onDragEnd: () => void;
 }
 
@@ -383,23 +383,23 @@ function TaskKanbanCard({
     <div
       data-kanban-card
       data-testid={`kanban-task-${task.id}`}
-      className={`group ${isDragging ? 'opacity-50' : ''}`}
+      draggable={!isUpdating}
+      onDragStart={(e) => onDragStart(e, task.id)}
+      onDragEnd={onDragEnd}
+      className={`group cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-50' : ''}`}
     >
       <Card className="transition-shadow hover:shadow-md">
         <CardContent className="p-3">
           <div className="flex items-start gap-2">
-            <span
-              draggable={!isUpdating}
-              onDragStart={(e) => onDragStart(e, task.id)}
-              onDragEnd={onDragEnd}
-              aria-hidden="true"
-              title="Drag to move"
-              className="mt-0.5 shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
-            >
+            <span aria-hidden="true" className="mt-0.5 shrink-0 text-muted-foreground">
               <GripVertical className="h-4 w-4" />
             </span>
             <div className="flex-1 min-w-0">
-              <Link href={getTaskDetailPath(task.id, linkPrefix, returnTo)} className="block">
+              <Link
+                href={getTaskDetailPath(task.id, linkPrefix, returnTo)}
+                draggable={false}
+                className="block"
+              >
                 <p className="text-sm font-medium leading-tight hover:text-slate-700 dark:hover:text-slate-400 line-clamp-2">
                   {task.title}
                 </p>

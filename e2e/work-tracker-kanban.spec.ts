@@ -57,13 +57,32 @@ test.beforeEach(async ({ page }) => {
       })
     );
   });
+  await page.route('**/api/**', async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === '/api/notifications') {
+      await route.fulfill({
+        json: {
+          data: [],
+          unreadCount: 0,
+          pagination: { page: 1, pageSize: 5, total: 0, totalPages: 0 },
+        },
+      });
+      return;
+    }
+    await route.fulfill({ json: { data: [] } });
+  });
   await page.route('**/api/work-tracker?**', async (route) => {
     await route.fulfill({ json: { scope: 'mine', days: 30, projects: [], person: null } });
   });
 });
-
-test('moves a card by drag handle and keeps its detail link', async ({ page }) => {
+test('moves a card by dragging its body and keeps its detail link', async ({ page }, testInfo) => {
   let task = { ...initialTask };
+  const consoleErrors: Array<string> = [];
+  const failedRequests: Array<string> = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  page.on('requestfailed', (request) => failedRequests.push(request.url()));
   await page.route('**/api/tasks?**', async (route) => {
     await route.fulfill({
       json: { data: [task], pagination: { page: 1, pageSize: 20, total: 1, totalPages: 1 } },
@@ -85,11 +104,28 @@ test('moves a card by drag handle and keeps its detail link', async ({ page }) =
     /\/tasks\/task-kanban-1/
   );
 
-  await card.locator('[draggable="true"]').dragTo(page.getByTestId('kanban-column-in_progress'));
+  await expect(card).toHaveAttribute('draggable', 'true');
+  await card.dragTo(page.getByTestId('kanban-column-in_progress'));
   await expect(
     page.getByTestId('kanban-column-in_progress').getByTestId('kanban-task-task-kanban-1')
   ).toBeVisible();
   await expect(page.getByTestId('kanban-announcement')).toContainText('moved to In Progress');
+  await page.screenshot({
+    path: testInfo.outputPath('whole-card-drag-desktop.png'),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Move Prepare launch checklist' }).click();
+  await expect(page.getByRole('menuitem', { name: 'Move to Completed' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
+    .toBe(true);
+  expect(consoleErrors).toEqual([]);
+  expect(failedRequests).toEqual([]);
+  await page.screenshot({
+    path: testInfo.outputPath('whole-card-drag-mobile.png'),
+  });
 });
 
 test('supports keyboard moves and asks for a blocker reason', async ({ page }) => {
