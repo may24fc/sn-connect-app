@@ -644,11 +644,12 @@ export default function ProjectDetailPage() {
               ) : null}
               {canManageContributors ? (
                 <Button
-                  variant="ghost"
-                  size="xs"
+                  variant="outline"
+                  size="sm"
+                  className="border-primary/40 bg-primary/5 font-semibold text-primary shadow-sm hover:bg-primary/10 hover:text-primary"
                   onClick={() => setManageContributorsOpen(true)}
                 >
-                  <Users className="mr-1.5 h-3.5 w-3.5" />
+                  <Users className="mr-2 h-4 w-4" />
                   Manage contributors
                 </Button>
               ) : null}

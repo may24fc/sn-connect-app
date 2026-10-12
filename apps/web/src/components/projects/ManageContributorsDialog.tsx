@@ -7,6 +7,7 @@ import {
   useRemoveProjectContributor,
 } from '@/hooks/useProjects';
 import {
+  Badge,
   Button,
   Dialog,
   DialogContent,
@@ -115,17 +116,25 @@ export function ManageContributorsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent
+        className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0"
+        style={{ width: '36rem', maxWidth: 'calc(100vw - 2rem)' }}
+      >
+        <DialogHeader className="shrink-0 border-b px-6 py-5 pr-12">
           <DialogTitle>Manage Contributors</DialogTitle>
           <DialogDescription>
             Project leads, supervisors, and administrators can add or remove contributors.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5">
-          <section className="space-y-2">
-            <h3 className="text-sm font-semibold">Current contributors</h3>
+        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-6 py-5">
+          <section className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold">Current contributors</h3>
+              <Badge variant="secondary" className="tabular-nums">
+                {contributors.length}
+              </Badge>
+            </div>
             {contributors.length === 0 ? (
               <EmptyState
                 icon={Users}
@@ -134,7 +143,7 @@ export function ManageContributorsDialog({
                 size="sm"
               />
             ) : (
-              <div className="space-y-1 rounded-md border border-zinc-200 p-2 dark:border-zinc-800">
+              <div className="max-h-48 divide-y overflow-y-auto overscroll-contain rounded-lg border bg-muted/20 px-3">
                 {contributors.map((contributor) => {
                   const isLead = contributor.user_id === leadUserId;
                   const isBusy = pendingUserId === contributor.user_id;
@@ -144,7 +153,7 @@ export function ManageContributorsDialog({
                   return (
                     <div
                       key={contributor.user_id}
-                      className="flex items-center justify-between gap-2 rounded p-1.5"
+                      className="flex min-h-16 items-center justify-between gap-3 py-2.5"
                     >
                       <div className="flex min-w-0 items-center gap-2.5">
                         <UserAvatar
@@ -155,27 +164,30 @@ export function ManageContributorsDialog({
                         <div className="flex min-w-0 flex-col">
                           <p className="truncate text-sm">{name}</p>
                           <PersonMeta
-                            parts={[
-                              formatPersonRole(contributor.role),
-                              isLead ? 'Project lead' : null,
-                            ]}
+                            parts={[isLead ? 'Project lead' : formatPersonRole(contributor.role)]}
                           />
                         </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label="Remove contributor"
-                        className="text-muted-foreground hover:text-rose-600"
-                        disabled={isLead || isBusy || removeContributor.isPending}
-                        onClick={() => void handleRemove(contributor.user_id)}
-                      >
-                        {isBusy ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-3.5 w-3.5" />
-                        )}
-                      </Button>
+                      {isLead ? (
+                        <Badge variant="outline" className="shrink-0">
+                          Lead
+                        </Badge>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`Remove ${name}`}
+                          className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                          disabled={isBusy || removeContributor.isPending}
+                          onClick={() => void handleRemove(contributor.user_id)}
+                        >
+                          {isBusy ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      )}
                     </div>
                   );
                 })}
@@ -183,17 +195,28 @@ export function ManageContributorsDialog({
             )}
           </section>
 
-          <section className="space-y-2">
-            <h3 className="text-sm font-semibold">Add a contributor</h3>
-            <div className="flex gap-2">
-              <Input
-                value={search}
-              maxLength={200}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search the directory by name..."
-                className="flex-1"
-              />
-              <div className="w-40">
+          <section className="space-y-3">
+            <div>
+              <h3 className="text-sm font-semibold">Add a contributor</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Search for a teammate, then choose the access they should have.
+              </p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_10rem]">
+              <div className="min-w-0">
+                <Label className="sr-only" htmlFor="contributor-search">
+                  Search people
+                </Label>
+                <Input
+                  id="contributor-search"
+                  value={search}
+                  maxLength={200}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search by name or email"
+                  className="w-full"
+                />
+              </div>
+              <div className="min-w-0">
                 <Label className="sr-only" htmlFor="contributor-role">
                   Role
                 </Label>
@@ -237,14 +260,14 @@ export function ManageContributorsDialog({
                 size="sm"
               />
             ) : (
-              <div className="max-h-56 space-y-1 overflow-y-auto rounded-md border border-zinc-200 p-2 dark:border-zinc-800">
+              <div className="max-h-[min(18rem,40dvh)] divide-y overflow-y-auto overscroll-contain rounded-lg border bg-background px-3">
                 {candidates.map((entry) => {
                   const isBusy = pendingUserId === entry.user_id;
 
                   return (
                     <div
                       key={entry.user_id}
-                      className="flex items-center justify-between gap-2 rounded p-1.5"
+                      className="flex min-h-16 items-center justify-between gap-3 py-2.5"
                     >
                       <div className="flex min-w-0 items-center gap-2.5">
                         <UserAvatar name={entry.full_name} avatarUrl={entry.avatar_url} size="sm" />
@@ -261,6 +284,7 @@ export function ManageContributorsDialog({
                       <Button
                         variant="outline"
                         size="sm"
+                        className="shrink-0"
                         disabled={isBusy || addContributor.isPending}
                         onClick={() => void handleAdd(entry.user_id)}
                       >
