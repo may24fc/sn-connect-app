@@ -89,3 +89,25 @@ Measured numbers are required evidence for any change that can affect latency, l
 - Instrument narrower phases with `apps/web/src/lib/observability/timing.ts` (`recordTiming`, `appendServerTiming`) when totals are not specific enough. Never log PII or record IDs.
 - Do not describe a change as faster without numbers. If measurement is impossible, record why and the exact command to run later; the task stays `Deferred` or `Blocked`, not `Done`.
 - Measure against local services only, unless the user explicitly requests production measurement.
+
+## UI/UX Reference Review
+
+For a UI/UX audit, plan, or material change to a user-facing screen or workflow, read and use `.github/skills/ui-ux-reference-review/SKILL.md`. Ground recommendations in the current app and verified, relevant product references; keep review-only requests read-only. This complements, and does not replace, the Playwright verification rules below.
+
+## UI Verification With Playwright
+
+Every UI change (anything under `apps/web` or `apps/www` that alters rendered output, layout, styling, copy, or client interaction) must be audited and verified in a real browser with Playwright before it is reported as done. Type-checks and unit tests do not count as UI verification.
+
+- Agents may start a local dev server when that is the most direct way to run Playwright. Do not target production or staging; use local Supabase.
+  - Control Hub: `pnpm dev:web` (port 3001) or `pnpm dev:web:e2e` (port 3002, mock auth enabled). Public site: `pnpm dev` (port 3000).
+  - `pnpm dev:web:e2e` deletes `apps/web/.next` on start; do not run it while another web dev server is using that directory.
+  - Reuse a server that is already running on the port. Stop any server you started before ending the session.
+- Drive the changed screen with the Playwright tool or MCP available in the session, or with a spec under `e2e/` run via `pnpm test:e2e:local` (for example `pnpm exec playwright test --config playwright.local.config.ts <spec>`). Existing audit specs: `e2e/web-ui-audit.spec.ts`, `e2e/www-ui-audit.spec.ts`, `e2e/ui-consistency-agent/`.
+- Audit, not just smoke-test:
+  - Load the changed route as each affected role and confirm there are no console errors or failed network requests.
+  - Exercise the changed interaction end to end, including empty, loading, error, and long-content states.
+  - Check desktop (about 1440px) and mobile (about 390px) viewports for overflow, clipping, and overlap, and check dark mode if the screen supports it.
+  - Take screenshots of the changed states and look at them before concluding. Save them under the Playwright output or scratch directory, not in tracked source folders.
+- When a change adds or alters a critical user flow, add or update a Playwright spec in `e2e/` instead of relying on a one-off manual run.
+- If a change cannot be verified in the browser (missing credentials, a blocked local stack, an unavailable route), say so explicitly, state the reason and the exact command to run later, and do not mark the task `Done`.
+- Record the verification in the feature's `task-tracker.md`: routes and roles checked, viewports, the spec or command used, and the result.

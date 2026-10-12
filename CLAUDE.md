@@ -23,6 +23,17 @@ SN Connect is a pnpm + Turborepo monorepo for the Control Hub internal portal (`
 - Backfill scripts are dry-run by default. Never run an `:apply` command against production without explicit approval.
 - Before changing client mutation or cache behavior, read `docs/apps/web/architecture/optimistic-ui.md` and classify the mutation as optimistic or server-confirmed.
 
+## UI Verification With Playwright
+
+Every UI change must be audited and verified in a real browser with Playwright before it is reported as done. Type-checks and unit tests do not count. Full procedure: "UI Verification With Playwright" in `AGENTS.md`.
+
+- Agents may spawn a local dev server to run Playwright (`pnpm dev:web` :3001, `pnpm dev:web:e2e` :3002 with mock auth, `pnpm dev` :3000). Local Supabase only. Reuse a server already on the port, and stop any server you started.
+- `pnpm dev:web:e2e` deletes `apps/web/.next` on start; do not run it while another web dev server is using that directory.
+- Audit the changed route per affected role: no console errors or failed requests, the changed interaction end to end (including empty, loading, and error states), desktop and mobile viewports, and screenshots you actually look at.
+- Add or update a spec in `e2e/` when a critical user flow changes; run with `pnpm test:e2e:local`.
+- If browser verification is impossible, state why and the command to run later. Do not mark the task `Done`.
+- Record routes, roles, viewports, and the spec or command used in the feature's `task-tracker.md`.
+
 ## Feature Task Tracking
 
 For every feature that is implemented, investigated, or deferred, maintain `docs/features/<feature-slug>/task-tracker.md`.
