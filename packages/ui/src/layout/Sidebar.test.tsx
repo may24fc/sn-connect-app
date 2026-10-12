@@ -111,6 +111,7 @@ describe('Sidebar workspaces', () => {
   it.each([
     ['/admin/resources', 'Resources'],
     ['/admin/announcements', 'Announcements'],
+    ['/super-admin/tickets', 'Tickets'],
   ] as const)(
     'keeps the super-admin %s route active and canonical',
     (currentPath, label) => {

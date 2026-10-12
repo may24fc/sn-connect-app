@@ -272,7 +272,7 @@ export async function POST(request: NextRequest) {
         type: 'system',
         title: 'New support ticket submitted',
         message: `${submitterName} submitted a ${parsed.data.team.toUpperCase()} ticket: "${parsed.data.title}"`,
-        link: '/super-admin/tasks?tab=tickets',
+        link: '/super-admin/tickets',
         metadata: { ticketId: data.id, team: parsed.data.team },
       });
     }

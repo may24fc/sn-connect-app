@@ -247,6 +247,7 @@ const superAdminNavItems: Array<NavItem> = [
     icon: Megaphone,
     activeFor: ['/super-admin/announcements'],
   },
+  { label: 'Tickets', href: '/super-admin/tickets', icon: LifeBuoy },
 ];
 
 const exactOnlyNavHrefs = new Set([
@@ -309,6 +310,7 @@ const adminInternalSectionConfig: ReadonlyArray<{
       '/admin/announcements',
       '/super-admin/announcements',
       '/admin/tickets',
+      '/super-admin/tickets',
     ],
   },
 ];

@@ -16,7 +16,12 @@ type TicketStatusFilter = 'all' | 'new' | 'triaged' | 'assigned' | 'in_progress'
 
 const PAGE_SIZE = 25;
 
-export function SuperAdminTicketsPanel(): ReactNode {
+export function SuperAdminTicketsPanel({
+  headingLevel = 'h2',
+}: {
+  headingLevel?: 'h1' | 'h2';
+}): ReactNode {
+  const Heading = headingLevel;
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [team, setTeam] = useState<'all' | 'hr' | 'it'>('all');
@@ -57,7 +62,7 @@ export function SuperAdminTicketsPanel(): ReactNode {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-foreground">Ticket Intake</h2>
+          <Heading className="text-xl font-semibold text-foreground">Ticket Intake</Heading>
           <p className="text-sm text-muted-foreground">
             Triage employee HR and IT tickets, then dispatch them to the correct handler.
           </p>
