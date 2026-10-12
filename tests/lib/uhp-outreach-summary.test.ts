@@ -58,6 +58,23 @@ describe('summarizeUhpOutreach', () => {
     });
   });
 
+  it('counts a filled WE form status milestone once with an evaluation appointment', () => {
+    const summary = summarizeUhpOutreach(
+      [
+        row({
+          client_id: 'colleen',
+          title: 'Status changed to WE form Filled; Interest marked interested',
+        }),
+        row({ client_id: 'colleen', appointment_type: 'wellness_evaluation' }),
+        row({ client_id: 'pricila', title: 'Status changed to WE form Filled' }),
+        row({ client_id: 'other', title: 'Status changed to WE Presented' }),
+      ],
+      0
+    );
+
+    expect(summary.wellnessEvaluationsScheduled).toBe(2);
+  });
+
   it('counts timestamp-filtered manual replies and activity replies once per client', () => {
     const ticked = { interest_state: 'unknown', replied: true };
     const unticked = { interest_state: 'unknown', replied: false };

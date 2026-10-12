@@ -32,7 +32,7 @@
       "typeVersion": 2,
       "position": [690, 300],
       "parameters": {
-        "jsCode": "const cfg = $json;\nconst now = $now.setZone('Asia/Manila');\nconst today = now.toFormat('yyyy-MM-dd');\nconst destinations = JSON.parse(cfg.destinationsJson || '[]');\nfunction deliveryFor(day) { const d = now.set({ day }); return d.weekday === 6 ? d.minus({ days: 1 }) : d.weekday === 7 ? d.minus({ days: 2 }) : d; }\nconst definitions = [\n  { type: 'ten_customer_form', day: 5, label: 'Complete the 10-customer form' },\n  { type: 'checks_deposits', day: 16, label: 'Complete checks and deposits' },\n];\nif (now.weekday === 1) definitions.push({ type: 'ro_group_report', day: now.day, label: 'Complete the weekly Monday RO group report' });\nconst due = definitions.filter((item) => deliveryFor(item.day).toFormat('yyyy-MM-dd') === today);\nreturn due.flatMap((item) => destinations.map((destination) => ({ json: { ...cfg, reminderType: item.type, deadlineDate: now.set({ day: item.day }).toFormat('yyyy-MM-dd'), destinationKey: destination.key, chatId: destination.chatId, scheduledFor: now.toISO(), idempotencyKey: `${item.type}:${today}:${destination.key}`, telegramText: `UHP reminder: ${item.label}.` } })));"
+        "jsCode": "const cfg = $json;\nconst now = $now.setZone('Asia/Manila');\nconst today = now.toFormat('yyyy-MM-dd');\nconst destinations = JSON.parse(cfg.destinationsJson || '[]');\nfunction deliveryFor(day) { const d = now.set({ day }); return d.weekday === 6 ? d.minus({ days: 1 }) : d.weekday === 7 ? d.minus({ days: 2 }) : d; }\nconst definitions = [\n  { type: 'ten_customer_form', day: 5, label: 'Complete the 10-customer form' },\n  { type: 'checks_deposits', day: 16, label: 'Complete checks and deposits' },\n];\nif (now.weekday === 1) definitions.push({ type: 'ro_group_report', day: now.day, label: 'Complete the weekly Monday RO group report' });\nconst due = definitions.filter((item) => deliveryFor(item.day).toFormat('yyyy-MM-dd') === today);\nfunction messageFor(item) {\n  const deadline = now.set({ day: item.day });\n  const earlyNotice = deadline.toFormat('yyyy-MM-dd') === today ? '' : '\\nSent early because the deadline falls on a weekend.';\n  return `🔔 UHP reminder\\n\\n${item.label}\\n\\nDue: ${deadline.toFormat('ccc, d LLL yyyy')}${earlyNotice}`;\n}\nreturn due.flatMap((item) => destinations.map((destination) => ({ json: { ...cfg, reminderType: item.type, deadlineDate: now.set({ day: item.day }).toFormat('yyyy-MM-dd'), destinationKey: destination.key, chatId: destination.chatId, scheduledFor: now.toUTC().toISO(), idempotencyKey: `${item.type}:${today}:${destination.key}`, telegramText: messageFor(item) } })));"
       }
     },
     {
@@ -50,6 +50,9 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [1170, 300],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
       "parameters": {
         "method": "POST",
         "url": "={{ $('Configure Telegram Destinations').first().json.controlHubUrl + '/api/uhp/reminders/runs' }}",
@@ -57,7 +60,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { reminderType: $('Build Today\\'s Reminders').item.json.reminderType, deadlineDate: $('Build Today\\'s Reminders').item.json.deadlineDate, scheduledFor: $('Build Today\\'s Reminders').item.json.scheduledFor, destinationKey: $('Build Today\\'s Reminders').item.json.destinationKey, idempotencyKey: $('Build Today\\'s Reminders').item.json.idempotencyKey, status: 'sent', n8nExecutionId: $execution.id, telegramMessageId: $json.message_id || $json.result?.message_id ? String($json.message_id ?? $json.result.message_id) : undefined, metadata: {}, sentAt: $now.toISO() } }}",
+        "jsonBody": "={{ { reminderType: $('Build Today\\'s Reminders').item.json.reminderType, deadlineDate: $('Build Today\\'s Reminders').item.json.deadlineDate, scheduledFor: $('Build Today\\'s Reminders').item.json.scheduledFor, destinationKey: $('Build Today\\'s Reminders').item.json.destinationKey, idempotencyKey: $('Build Today\\'s Reminders').item.json.idempotencyKey, status: 'sent', n8nExecutionId: $execution.id, telegramMessageId: $json.message_id || $json.result?.message_id ? String($json.message_id ?? $json.result.message_id) : undefined, metadata: {}, sentAt: $now.toUTC().toISO() } }}",
         "options": {}
       },
       "credentials": {
@@ -73,6 +76,9 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [1170, 460],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
       "parameters": {
         "method": "POST",
         "url": "={{ $('Configure Telegram Destinations').first().json.controlHubUrl + '/api/uhp/reminders/runs' }}",

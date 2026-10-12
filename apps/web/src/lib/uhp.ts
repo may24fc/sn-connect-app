@@ -123,6 +123,7 @@ export function isUhpAttachmentMimeType(
 export type UhpOutreachActivityRow = {
   client_id: string | null;
   occurred_at?: string | null;
+  title?: string | null;
   direction: string | null;
   reply_received: boolean;
   prospect_outcome: string | null;
@@ -237,9 +238,14 @@ export function summarizeUhpOutreach(
     interested: clientsWhere((row) => outcomeStillCurrent(row, 'interested')).size,
     declined: declined.size,
     noResponse,
-    wellnessEvaluationsScheduled: rows.filter(
-      (row) => row.appointment_type === 'wellness_evaluation'
-    ).length,
+    // A completed WE form is logged as a status-change activity, not as an appointment.
+    // Count the client once when both that milestone and an appointment were logged.
+    wellnessEvaluationsScheduled: clientsWhere(
+      (row) =>
+        row.appointment_type === 'wellness_evaluation' ||
+        row.title === 'Status changed to WE form Filled' ||
+        row.title?.startsWith('Status changed to WE form Filled; ') === true
+    ).size,
     callsScheduled: rows.filter((row) => row.appointment_type === 'call').length,
     newClients,
   };

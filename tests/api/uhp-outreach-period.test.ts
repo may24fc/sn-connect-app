@@ -54,6 +54,7 @@ describe('fetchUhpOutreachRows period filtering', () => {
         ['lte', 'occurred_at', to],
       ])
     );
+    expect(activities.query.select).toHaveBeenCalledWith(expect.stringContaining('title'));
     expect(manualReplies.calls).toEqual(
       expect.arrayContaining([
         ['gte', 'replied_at', from],

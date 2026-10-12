@@ -52,7 +52,7 @@
       "typeVersion": 2,
       "position": [930, 300],
       "parameters": {
-        "jsCode": "const digest = $json.data;\nconst s = digest.summary;\nconst cfg = $('Configure Telegram Destinations').first().json;\nconst destinations = JSON.parse(cfg.destinationsJson || '[]');\nconst range = `${digest.intervalStartedAt.slice(0, 10)} to ${digest.intervalEndedAt.slice(0, 10)}`;\nconst text = [\n  `UHP Outreach Summary (${range})`,\n  `Clients reached out to: ${s.clientsReachedOut} (${s.outreachAttempts} messages)`,\n  `Replied: ${s.clientsReplied}`,\n  `Response rate: ${s.responseRate}%`,\n  `Interested: ${s.interested} | Declined: ${s.declined}`,\n  `No response yet: ${s.noResponse}`,\n  `New clients added: ${s.newClients}`,\n  `Wellness evaluations booked: ${s.wellnessEvaluationsScheduled} | Calls booked: ${s.callsScheduled}`,\n].join('\\n');\nreturn destinations.map((destination) => ({ json: { ...digest, controlHubUrl: cfg.controlHubUrl, destinationKey: destination.key, chatId: destination.chatId, telegramText: text, idempotencyKey: `outreach-digest:${digest.intervalEndedAt.slice(0, 10)}:${destination.key}` } }));"
+        "jsCode": "const digest = $json.data;\nconst s = digest.summary;\nconst cfg = $('Configure Telegram Destinations').first().json;\nconst destinations = JSON.parse(cfg.destinationsJson || '[]');\nconst formatDate = (value) => new Date(value).toLocaleDateString('en-US', { day: 'numeric', month: 'short', timeZone: 'Asia/Manila' });\nconst range = `${formatDate(digest.intervalStartedAt)} – ${formatDate(digest.intervalEndedAt)}`;\nconst text = [\n  '📣 UHP outreach',\n  `Weekly summary · ${range}`,\n  '',\n  'REACH & RESPONSE',\n  `• Clients contacted: ${s.clientsReachedOut} (${s.outreachAttempts} messages)`,\n  `• Replied: ${s.clientsReplied} · Response rate: ${s.responseRate}%`,\n  `• No response yet: ${s.noResponse}`,\n  '',\n  'PROSPECTS',\n  `• Interested: ${s.interested} · Declined: ${s.declined}`,\n  `• New clients added: ${s.newClients}`,\n  '',\n  'BOOKINGS',\n  `• Wellness evaluations: ${s.wellnessEvaluationsScheduled} · Calls: ${s.callsScheduled}`,\n].join('\\n');\nreturn destinations.map((destination) => ({ json: { ...digest, controlHubUrl: cfg.controlHubUrl, destinationKey: destination.key, chatId: destination.chatId, telegramText: text, idempotencyKey: `outreach-digest:${digest.intervalEndedAt.slice(0, 10)}:${destination.key}` } }));"
       }
     },
     {
@@ -76,6 +76,9 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [1410, 300],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
       "parameters": {
         "method": "POST",
         "url": "={{ $('Build Weekly Summary').item.json.controlHubUrl + '/api/uhp/clients/digest' }}",
@@ -83,7 +86,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { intervalStartedAt: $('Build Weekly Summary').item.json.intervalStartedAt, intervalEndedAt: $('Build Weekly Summary').item.json.intervalEndedAt, destinationKey: $('Build Weekly Summary').item.json.destinationKey, idempotencyKey: $('Build Weekly Summary').item.json.idempotencyKey, status: 'sent', summary: $('Build Weekly Summary').item.json.summary, n8nExecutionId: $execution.id, telegramMessageId: $json.message_id || $json.result?.message_id ? String($json.message_id ?? $json.result.message_id) : undefined, sentAt: $now.toISO() } }}",
+        "jsonBody": "={{ { intervalStartedAt: $('Build Weekly Summary').item.json.intervalStartedAt, intervalEndedAt: $('Build Weekly Summary').item.json.intervalEndedAt, destinationKey: $('Build Weekly Summary').item.json.destinationKey, idempotencyKey: $('Build Weekly Summary').item.json.idempotencyKey, status: 'sent', summary: $('Build Weekly Summary').item.json.summary, n8nExecutionId: $execution.id, telegramMessageId: $json.message_id || $json.result?.message_id ? String($json.message_id ?? $json.result.message_id) : undefined, sentAt: $now.toUTC().toISO() } }}",
         "options": {}
       },
       "credentials": {
@@ -99,6 +102,9 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [1410, 460],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
       "parameters": {
         "method": "POST",
         "url": "={{ $('Build Weekly Summary').item.json.controlHubUrl + '/api/uhp/clients/digest' }}",

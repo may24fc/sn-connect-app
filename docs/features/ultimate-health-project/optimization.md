@@ -6,6 +6,7 @@
 - [Authenticated n8n callback route](../../../apps/web/src/app/api/uhp/reminders/runs/route.ts)
 - [Callback secret validation](../../../apps/web/src/app/api/uhp/_lib.ts)
 - [Reminder workflow definition](../../../n8n/workflows/uhp-herbalife-portal-reminders.json)
+- [Volume Points digest workflow](../../../n8n/workflows/uhp-volume-points-daily-digest.json) and [Outreach summary workflow](../../../n8n/workflows/uhp-outreach-weekly-summary.json) - Telegram message layout.
 - [Workflow regression tests](../../../n8n/workflows/uhp-workflows.test.ts)
 - [Reminder-date calculation tests](../../../apps/web/src/lib/uhp-reminders.test.ts)
 - [Outreach Tracker period selector](../../../apps/web/src/components/uhp/UhpClientTrackerPage.tsx)
@@ -19,8 +20,57 @@
 - [Application-wide dropdown regression test](../../../tests/components/uhp-modern-selects.test.ts)
 - [Shared calendar bounds](../../../apps/web/src/lib/metrics-period.ts), [period request guard](../../../apps/web/src/hooks/usePeriodRequestGuard.ts), and [Volume Points page](../../../apps/web/src/components/uhp/UhpVolumePointsPage.tsx) - viewer-local period boundaries and latest-response safety.
 - [Cohort metrics route](../../../apps/web/src/app/api/uhp/clients/metrics/route.ts), [cohort calculation](../../../apps/web/src/lib/uhp.ts), [cohort API test](../../../tests/api/uhp-outreach-cohort-route.test.ts), [calendar-boundary tests](../../../tests/lib/metrics-period.test.ts), and [cohort summary tests](../../../tests/lib/uhp-outreach-summary.test.ts) - late replies attributed to the selected outreach period.
+- [WE form status activity query](../../../apps/web/src/app/api/uhp/_lib.ts), [deduplicated evaluation summary](../../../apps/web/src/lib/uhp.ts), [summary tests](../../../tests/lib/uhp-outreach-summary.test.ts), [period query test](../../../tests/api/uhp-outreach-period.test.ts), and [browser regression](../../../e2e/uhp-wellness-evaluation.spec.ts) - status milestone and appointment attribution.
 
 ## Records
+
+### Audited - 2026-10-12: Notification activation readiness
+
+- Problem/evidence: A successful single-recipient test does not establish that the final audience receives all three workflows or that failure reporting survives Telegram or callback outages.
+- Proposed solution: Before broader activation, confirm each intended Telegram destination and bot access, run a controlled delivery to the final audience, then enable the two inactive digest schedules. Follow up with an intentional failure-branch test and callback retry/idempotency policy.
+- Code paths: The three n8n workflow definitions, callback routes, and workflow tests in Relevant Code Map.
+- Validation/resume condition: Live success executions `544639`, `544641`, and `544654` reached Telegram and Control Hub callbacks with the personal test chat; 13 workflow tests passed. Final-audience delivery and negative-path resilience remain unverified. Resume activation after recipient IDs and rollout approval are confirmed.
+
+### Implemented - 2026-10-12: Repeat VP digest callback reliability
+
+- Problem/evidence: Post-layout live execution `544640` sent the VP Telegram message but its callback returned HTTP 400. After a prior successful run, Control Hub returned `intervalStartedAt` as `2026-10-12T02:41:00.41+00:00`; the callback schema requires UTC `Z` form.
+- Delivered solution: Normalize the prior-run start timestamp to `toISOString()` in the VP builder before either callback branch consumes it. No message content, schedule, or recipient changed.
+- Code paths: [VP digest workflow](../../../n8n/workflows/uhp-volume-points-daily-digest.json) and [workflow tests](../../../n8n/workflows/uhp-workflows.test.ts).
+- Validation: 13 focused tests passed, including the offset-timestamp case. Live retest `544654` completed both `Send Telegram Digest` and `Record Digest Run` successfully. The workflow was restored to its inactive daily-noon schedule. The initial failed callback left no successful run record for `544640`, but the successful retry recorded the latest digest state.
+
+### Implemented - 2026-10-12: Telegram notification readability
+
+- Problem/evidence: The three live test messages arrived as dense, nearly uninterrupted Telegram text; totals, date context, and action items were difficult to scan in a chat bubble.
+- Delivered solution: Give reminders a clear action and due date (including a weekend-advance explanation), put the VP total before its category breakdown, and group outreach statistics under response, prospects, and bookings. Use plain text with modest emoji and blank lines; no Telegram parse-mode dependency or metric/schedule change.
+- Code paths: The three workflow definitions and formatter regression tests in Relevant Code Map.
+- Validation: 13 focused workflow tests passed. Live post-format Telegram sends succeeded in reminder `544639`, outreach `544641`, and VP `544640`/`544654`; the latter required the callback fix documented above. Original schedules and active states were restored. Digest activation remains deferred until its audience is approved.
+
+```mermaid
+flowchart LR
+  A[Control Hub digest or reminder date] --> B[n8n message formatter]
+  B --> C[Telegram message]
+  C --> D[Control Hub delivery callback]
+```
+
+### Implemented - 2026-10-12: WE form milestone missing from Wellness evaluations
+
+- Problem/evidence: Updating a client's status to `WE form Filled` writes a dated `uhp_client_activities` Task titled `Status changed to WE form Filled`, but the metric reads only rows with `appointment_type = wellness_evaluation`. The screenshot shows Colleen's status set while the card remains zero.
+- Delivered solution: Include exact WE form status-change milestones in the existing period-filtered activity summary and count unique clients across milestone and appointment evidence. This avoids treating unrelated `updated_at` edits as evaluation dates and avoids counting the same client's appointment and completed form twice. No migration or client mutation change is needed.
+- Code paths: WE form status query, summary, focused tests, and browser regression in Relevant Code Map.
+- Validation: 15 focused tests, local production build, and two Playwright tests passed against the local production bundle and local Supabase. Admin and employee checked `/uhp/clients` at 1440px and 390px, including status update, long list, loading, empty/error state, and mobile overflow; screenshots were inspected. Dark-mode emulation did not change this screen's light palette. The temporary employee access grant was revoked and confirmed absent. Full web typecheck currently fails in untouched Marketing Ad Spend chart tooltip code; keep this distinct from UHP validation.
+
+#### Measurements
+
+- Before: 2026-10-12, commit `4bbee970` with dirty unrelated worktree; local Next.js production build on port 3101, local Supabase, admin role, 30 samples and 3 warmups per target. File `perf-results/uhp-wellness-evaluation/2026-10-12T02-44-39-635Z-before.json`. All targets HTTP 200. Total-response p50/p95: Outreach page 232.2/526.7 ms; metrics API 163.2/282.5 ms; unaffected notifications control 139.5/245.6 ms.
+- After: 2026-10-12, same commit, local production build and Supabase, admin role, 30 samples and 3 warmups per target; file `perf-results/uhp-wellness-evaluation/2026-10-12T03-03-40-388Z-after.json`. All targets HTTP 200. Total-response p50/p95: Outreach page 151.9/636.3 ms; metrics API 152.8/757.3 ms; notifications control 167.7/429.7 ms.
+- Delta (after minus before): Outreach page -80.3/+109.6 ms p50/p95; metrics API -10.4/+474.8 ms; control +28.2/+184.1 ms. The control and p95 drifted substantially, so these samples do not establish a performance improvement or regression attributable to the change.
+
+### Implemented - 2026-10-12: UHP notification callback reliability
+
+- Problem/evidence: The active reminder sent a Telegram message but its callback received HTTP 400 because `scheduledFor` and `sentAt` used `+08:00` timestamps while the Control Hub schema accepts UTC `Z` timestamps. The Volume Points and Outreach workflows also had their personal test destination nested one array too deep and were inactive.
+- Delivered solution: Emit UTC timestamps from the reminder builder and each success callback; flatten the configured live destination in all three workflows. Preserve the original schedules and inactive state of the two digests after controlled tests.
+- Code paths: [reminder workflow](../../../n8n/workflows/uhp-herbalife-portal-reminders.json), [Volume Points workflow](../../../n8n/workflows/uhp-volume-points-daily-digest.json), [Outreach workflow](../../../n8n/workflows/uhp-outreach-weekly-summary.json), and [workflow tests](../../../n8n/workflows/uhp-workflows.test.ts).
+- Validation: `pnpm exec vitest run n8n/workflows/uhp-workflows.test.ts` passed (11 tests). Live n8n executions `544608`, `544609`, and `544610` each completed with one successful Telegram item and a Control Hub callback response containing a persisted `sent` record. Failure callback branches and callback retries remain untested end to end. Both digest workflows remain inactive pending the intended audience and activation decision.
 
 ### Implemented - 2026-10-08: Outreach-period response cohorts
 
@@ -57,12 +107,22 @@ flowchart LR
 - Code paths: reminder workflow and callback API listed above.
 - Validation/resume condition: Live inspection confirmed 08:00 PHT scheduling, Header Auth on both callbacks, a connected failure branch, and zero destinations/executions. Resume when a chat ID is configured; validate a sent or failed delivery record after a due-date test.
 
-### Planned: Callback resilience
+### Implemented - 2026-10-12: Telegram failure recording and callback retries
 
-- Problem/evidence: A Telegram failure is recorded, but callback HTTP requests have no configured retry policy; a transient Control Hub outage could leave a send unrecorded.
-- Proposed solution: Define and test an n8n retry/error-handling policy for the two callback nodes before increasing recipient volume.
-- Code paths: [reminder workflow](../../../n8n/workflows/uhp-herbalife-portal-reminders.json).
-- Validation/resume condition: Resume after the first successful production delivery establishes baseline behavior; verify retries do not create duplicate history records because `idempotency_key` is already used.
+- Problem/evidence: All three workflows had Telegram error branches, but none had been exercised live. Their six callback HTTP nodes made only one attempt, so a transient Control Hub outage could leave a delivery unrecorded.
+- Delivered solution: Configure both sent and failed callbacks in each workflow for three total attempts, five seconds apart. Keep Telegram sends single-attempt because retrying an ambiguous send timeout could deliver duplicate messages. Keep callback failures visible as failed n8n executions after retries; the three Control Hub routes upsert on `idempotency_key`, making callback retries idempotent.
+- Code paths: The three n8n workflow definitions and workflow tests in Relevant Code Map; [reminder callback](../../../apps/web/src/app/api/uhp/reminders/runs/route.ts), [VP callback](../../../apps/web/src/app/api/uhp/volume-points/digest/route.ts), and [outreach callback](../../../apps/web/src/app/api/uhp/clients/digest/route.ts).
+- Validation: 16 focused workflow tests passed. Live executions `544744`, `544746`, and `544745` each took the Telegram error output and received a persisted `failed` callback response under an isolated test key. Live callback settings read back as `retryOnFail: true`, `maxTries: 3`, `waitBetweenTries: 5000`; original schedules, recipients, and activation states were restored. A transient 5xx-to-success recovery has not been induced; that remains deferred until a controlled endpoint or maintenance window is available.
+
+```mermaid
+flowchart LR
+  A[Telegram send] -->|Success| S[Record sent callback]
+  A -->|Error output| F[Record failed callback]
+  S --> R[Up to 3 callback attempts]
+  F --> R
+  R -->|Success| H[Idempotent Control Hub run record]
+  R -->|Exhausted| E[Visible failed n8n execution]
+```
 
 ### Implemented — 2026-10-07: Strict metric-period filtering
 
@@ -160,6 +220,8 @@ flowchart LR
 
 ## Change Log
 
+- 2026-10-12: Audited WE form status versus appointment-only metric, implemented milestone-aware deduplication, passed focused and local Playwright tests, and inspected desktop/mobile screenshots. Recorded before/after local latency samples; p95/control drift prevents attributing the delta.
+- 2026-10-12: Fixed UTC timestamp contract and nested live test destinations; verified Telegram and saved Control Hub delivery records for all three workflows, then restored normal schedules and activation states.
 - 2026-10-08: Added outreach-week cohorts and Last week selection, with late replies and later-follow-up attribution. Validated 23 focused tests and local build; recorded 30-sample before/after and control-route drift, with no causal speed claim.
 - 2026-10-08: Made reply-derived cards optimistic with exact activity-aware deduplication and rollback; decoupled metrics-period refresh from the client-list debounce; recorded local production-build latency evidence.
 - 2026-10-08: Reconciled legacy checked Replied rows with period metrics through a locally validated timestamp backfill; production dry-run listed only the backfill migration, then the approved push and migration history confirmed deployment. Recorded the invalid latency attempt and deferred a valid isolated comparison.

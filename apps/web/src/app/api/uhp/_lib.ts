@@ -1,5 +1,5 @@
 import { timingSafeEqual } from 'node:crypto';
-import { getNormalizedMetadataRole, normalizeDbRoleClaim } from '@/lib/auth/role';
+import { normalizeDbRoleClaim } from '@/lib/auth/role';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import {
   UHP_ATTACHMENT_MAX_FILE_SIZE,
@@ -34,16 +34,15 @@ export async function getUhpAuthedContext(): Promise<
     const { data: authData, error } = await supabase.auth.getUser();
     if (error || !authData.user) return { ok: false, status: 401, error: 'Unauthorized' };
 
-    let role = getNormalizedMetadataRole(authData.user.app_metadata);
-    if (!role) {
-      const { data } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', authData.user.id)
-        .is('deleted_at', null)
-        .maybeSingle();
-      role = normalizeDbRoleClaim(data?.role ?? null);
-    }
+    const { data: roleData, error: roleError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', authData.user.id)
+      .is('deleted_at', null)
+      .maybeSingle();
+    if (roleError) return { ok: false, status: 500, error: 'Failed to resolve user role' };
+    const role = normalizeDbRoleClaim(roleData?.role ?? null);
+    if (!role) return { ok: false, status: 401, error: 'Unauthorized' };
 
     let grantedModules: UhpModule[] = [];
     if (!isUhpAdmin(role)) {
@@ -109,7 +108,7 @@ export async function fetchUhpOutreachRows(
     const { data, error } = await admin
       .from('uhp_client_activities')
       .select(
-        'client_id, occurred_at, direction, reply_received, prospect_outcome, appointment_type, client:uhp_clients!inner(interest_state, replied, deleted_at, migration_review_required)'
+        'client_id, occurred_at, title, direction, reply_received, prospect_outcome, appointment_type, client:uhp_clients!inner(interest_state, replied, deleted_at, migration_review_required)'
       )
       .is('deleted_at', null)
       .eq('migration_review_required', false)

@@ -52,7 +52,7 @@
       "typeVersion": 2,
       "position": [930, 300],
       "parameters": {
-        "jsCode": "const digest = $json.data;\nconst cfg = $('Configure Telegram Destinations').first().json;\nconst destinations = JSON.parse(cfg.destinationsJson || '[]');\nconst lines = digest.categories.map((row) => `${row.label}: ${row.actualVp} VP (target ${row.targetVp})`);\nconst changeLine = digest.changeCount === 0 ? 'No changes since the previous digest.' : `${digest.changeCount} updated entr${digest.changeCount === 1 ? 'y' : 'ies'} since the previous digest.`;\nconst text = [`UHP Volume Points - ${digest.reportingMonth.slice(0, 7)}`, ...lines, `Total: ${digest.totalActualVp} VP`, changeLine].join('\\n');\nreturn destinations.map((destination) => ({ json: { ...digest, controlHubUrl: cfg.controlHubUrl, destinationKey: destination.key, chatId: destination.chatId, telegramText: text, idempotencyKey: `vp-digest:${digest.intervalEndedAt.slice(0, 10)}:${destination.key}` } }));"
+        "jsCode": "const digest = $json.data;\nconst cfg = $('Configure Telegram Destinations').first().json;\nconst destinations = JSON.parse(cfg.destinationsJson || '[]');\nconst month = new Date(`${digest.reportingMonth.slice(0, 7)}-01T00:00:00Z`).toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });\nconst categories = digest.categories.map((row) => `• ${row.label}: ${row.actualVp} VP / target ${row.targetVp} VP`);\nconst changeLine = digest.changeCount === 0 ? 'No changes since the previous digest.' : `${digest.changeCount} updated entr${digest.changeCount === 1 ? 'y' : 'ies'} since the previous digest.`;\nconst text = [`📊 UHP volume points`, month, '', `TOTAL  ${digest.totalActualVp} VP`, '', 'BREAKDOWN', ...categories, '', changeLine].join('\\n');\nreturn destinations.map((destination) => ({ json: { ...digest, intervalStartedAt: new Date(digest.intervalStartedAt).toISOString(), controlHubUrl: cfg.controlHubUrl, destinationKey: destination.key, chatId: destination.chatId, telegramText: text, idempotencyKey: `vp-digest:${digest.intervalEndedAt.slice(0, 10)}:${destination.key}` } }));"
       }
     },
     {
@@ -70,6 +70,9 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [1410, 300],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
       "parameters": {
         "method": "POST",
         "url": "={{ $('Build Daily Digest').item.json.controlHubUrl + '/api/uhp/volume-points/digest' }}",
@@ -77,7 +80,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { intervalStartedAt: $('Build Daily Digest').item.json.intervalStartedAt, intervalEndedAt: $('Build Daily Digest').item.json.intervalEndedAt, reportingMonth: $('Build Daily Digest').item.json.reportingMonth, destinationKey: $('Build Daily Digest').item.json.destinationKey, idempotencyKey: $('Build Daily Digest').item.json.idempotencyKey, status: 'sent', summary: { changeCount: $('Build Daily Digest').item.json.changeCount, categories: $('Build Daily Digest').item.json.categories, totalActualVp: $('Build Daily Digest').item.json.totalActualVp }, n8nExecutionId: $execution.id, telegramMessageId: $json.message_id || $json.result?.message_id ? String($json.message_id ?? $json.result.message_id) : undefined, sentAt: $now.toISO() } }}",
+        "jsonBody": "={{ { intervalStartedAt: $('Build Daily Digest').item.json.intervalStartedAt, intervalEndedAt: $('Build Daily Digest').item.json.intervalEndedAt, reportingMonth: $('Build Daily Digest').item.json.reportingMonth, destinationKey: $('Build Daily Digest').item.json.destinationKey, idempotencyKey: $('Build Daily Digest').item.json.idempotencyKey, status: 'sent', summary: { changeCount: $('Build Daily Digest').item.json.changeCount, categories: $('Build Daily Digest').item.json.categories, totalActualVp: $('Build Daily Digest').item.json.totalActualVp }, n8nExecutionId: $execution.id, telegramMessageId: $json.message_id || $json.result?.message_id ? String($json.message_id ?? $json.result.message_id) : undefined, sentAt: $now.toUTC().toISO() } }}",
         "options": {}
       },
       "credentials": {
@@ -93,6 +96,9 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [1410, 460],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
       "parameters": {
         "method": "POST",
         "url": "={{ $('Build Daily Digest').item.json.controlHubUrl + '/api/uhp/volume-points/digest' }}",
