@@ -2,12 +2,13 @@ import { Sidebar } from '@hr-portal/ui';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-describe('Finance Properties navigation', () => {
+describe('Property Development navigation', () => {
   it('appears for administrators but not employees with only department expense access', () => {
     const { unmount } = render(
-      <Sidebar variant="admin" currentPath="/finance/properties" onNavigate={vi.fn()} />
+      <Sidebar variant="admin" currentPath="/property/properties" onNavigate={vi.fn()} />
     );
     expect(screen.getByRole('button', { name: 'Properties' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Current workspace: Property Development' })).toBeInTheDocument();
     unmount();
     render(
       <Sidebar
@@ -24,7 +25,7 @@ describe('Finance Properties navigation', () => {
     render(
       <Sidebar
         variant="employee"
-        currentPath="/finance/properties"
+        currentPath="/property/properties"
         onNavigate={vi.fn()}
         showExpenseDeskAccess
         showFinancePropertiesAccess

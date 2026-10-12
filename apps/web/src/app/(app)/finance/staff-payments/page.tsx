@@ -1,7 +1,7 @@
 import AdminInvoicePage from '@/app/(app)/(admin)/admin/invoice/page';
 import PayrollApprovalsPage from '@/app/(app)/(admin)/super-admin/payroll-approvals/page';
-import { FinanceInvoiceRegister } from '@/components/finance/FinanceInvoiceRegister';
-import { FinanceWiseBatches } from '@/components/finance/FinanceWiseBatches';
+import { FinanceDetailDisclosure } from '@/components/finance/FinanceDetailDisclosure';
+import { FinancePaymentWorkspace } from '@/components/finance/FinancePaymentWorkspace';
 import { canReviewFinance, getFinanceContext } from '@/lib/finance/auth';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -35,7 +35,7 @@ export default async function StaffPaymentsPage() {
     throw new Error('Could not load invoice status counts');
 
   return (
-    <main className="mx-auto max-w-7xl space-y-5 bg-[#f5f6f4] p-4 text-[#10191c] md:p-8">
+    <main className="mx-auto max-w-7xl space-y-5 bg-[#f5f6f4] p-4 text-[#10191c] dark:bg-[#0a1e26] dark:text-slate-100 md:p-8">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-[#1f6a7c]">Finance</p>
@@ -61,9 +61,6 @@ export default async function StaffPaymentsPage() {
         </Link>
         <Link href="/finance/reports" className="rounded-md border bg-card px-3 py-2">
           Reports
-        </Link>
-        <Link href="/finance/properties" className="rounded-md border bg-card px-3 py-2">
-          Properties
         </Link>
       </nav>
       {leadership ? (
@@ -103,20 +100,13 @@ export default async function StaffPaymentsPage() {
               </div>
             ))}
           </section>
-          <FinanceWiseBatches key={`${counts[0]?.count}-${counts[1]?.count}`} />
-          <FinanceInvoiceRegister />
-          <details className="rounded-xl border bg-card p-5">
-            <summary className="cursor-pointer text-sm font-semibold text-[#16505f]">
-              Open employee invoice administration
-            </summary>
+          <FinancePaymentWorkspace queueKey={`${counts[0]?.count}-${counts[1]?.count}`} />
+          <FinanceDetailDisclosure title="Open employee invoice administration">
             <AdminInvoicePage />
-          </details>
-          <details className="rounded-xl border bg-card p-5">
-            <summary className="cursor-pointer text-sm font-semibold text-[#16505f]">
-              Open detailed approval history
-            </summary>
+          </FinanceDetailDisclosure>
+          <FinanceDetailDisclosure title="Open detailed approval history">
             <PayrollApprovalsPage />
-          </details>
+          </FinanceDetailDisclosure>
         </>
       ) : (
         <section className="rounded-xl border bg-card p-5 text-sm">

@@ -13,11 +13,16 @@ const filters: Array<{ value: StatusFilter; label: string }> = [
   { value: 'rejected', label: 'Rejected' },
 ];
 
-export function FinanceInvoiceRegister() {
+export function FinanceInvoiceRegister({
+  hiddenAmounts,
+  onToggleAmounts,
+}: { hiddenAmounts?: boolean; onToggleAmounts?: () => void } = {}) {
   const router = useRouter();
   const [status, setStatus] = useState<StatusFilter>('all');
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [localHideAmounts, setLocalHideAmounts] = useState(false);
+  const hideAmounts = hiddenAmounts ?? localHideAmounts;
   const [review, setReview] = useState<InvoiceRecord | null>(null);
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
@@ -73,6 +78,14 @@ export function FinanceInvoiceRegister() {
         </p>
       ) : null}
       <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          aria-pressed={hideAmounts}
+          onClick={onToggleAmounts ?? (() => setLocalHideAmounts((hidden) => !hidden))}
+          className="rounded-md border px-3 py-2 text-sm font-medium"
+        >
+          {hideAmounts ? 'Show amounts' : 'Hide amounts'}
+        </button>
         <label className="text-sm">
           Search this page{' '}
           <input
@@ -125,10 +138,12 @@ export function FinanceInvoiceRegister() {
                   {invoice.period_start} – {invoice.period_end}
                 </td>
                 <td className="whitespace-nowrap p-3 tabular-nums">
-                  {new Intl.NumberFormat('en-AU', {
-                    style: 'currency',
-                    currency: invoice.source_currency || 'PHP',
-                  }).format(invoice.net_amount)}
+                  {hideAmounts
+                    ? '••••'
+                    : new Intl.NumberFormat('en-AU', {
+                        style: 'currency',
+                        currency: invoice.source_currency || 'PHP',
+                      }).format(invoice.net_amount)}
                 </td>
                 <td className="p-3">
                   <span

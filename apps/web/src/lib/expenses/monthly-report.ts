@@ -50,12 +50,21 @@ export interface MonthlyExpenseReport {
   previousDepartmentBreakdown: Array<{ departmentName: string; spendAud: number }>;
   pipelineStatus: PipelineStatusCounts;
   anomalies: AnomalyRow[];
+  unknownPayments: Array<{
+    vendorName: string;
+    transactionDate: string;
+    currency: string;
+    amount: number;
+  }>;
+  paymentStatusCounts: { unknown: number; unpaid: number; confirmed: number };
 }
 
 type MonthlyReportRow = {
   transaction_date: string;
   total_amount: number;
   total_amount_aud: number | null;
+  currency: string;
+  payment_status: string;
   expense_type: string | null;
   processing_status: string;
   match_status: string | null;
@@ -85,7 +94,7 @@ function lastDayOfMonthUtc(monthStart: Date): Date {
 }
 
 function amountOf(row: MonthlyReportRow): number {
-  return Number(row.total_amount_aud ?? row.total_amount ?? 0);
+  return Number(row.total_amount_aud ?? (row.currency === 'AUD' ? row.total_amount : 0));
 }
 
 function resolveDepartmentName(row: MonthlyReportRow): string {
@@ -94,7 +103,9 @@ function resolveDepartmentName(row: MonthlyReportRow): string {
     return canonical;
   }
 
-  const legacy = Array.isArray(row.employee) ? row.employee[0]?.department : row.employee?.department;
+  const legacy = Array.isArray(row.employee)
+    ? row.employee[0]?.department
+    : row.employee?.department;
   if (typeof legacy === 'string' && legacy.trim().length > 0) {
     return legacy;
   }
@@ -142,30 +153,39 @@ export async function buildMonthlyExpenseReport(
   adminClient: ReturnType<typeof createSupabaseAdminClient>,
   referenceDate: Date = new Date()
 ): Promise<MonthlyExpenseReport> {
-  const { currentStart, currentEnd, previousStart, previousEnd } = resolveMonthlyReportRange(referenceDate);
+  const { currentStart, currentEnd, previousStart, previousEnd } =
+    resolveMonthlyReportRange(referenceDate);
 
-  const { data, error } = await adminClient
-    .from('expense_entries')
-    .select(
-      'transaction_date, total_amount, total_amount_aud, expense_type, processing_status, match_status, risk_bucket, matched_variance_amount, vendor_name, department_id, department:departments(name), employee:employees!expense_entries_employee_id_fkey(department)'
-    )
-    .is('deleted_at', null)
-    .eq('source_type', 'direct_payment')
-    .gte('transaction_date', toIsoDate(previousStart))
-    .lte('transaction_date', toIsoDate(currentEnd))
-    .order('transaction_date', { ascending: true });
-
-  if (error) {
-    throw new Error(`Failed to load expense entries for monthly report: ${error.message}`);
+  const rows: MonthlyReportRow[] = [];
+  for (let offset = 0; offset <= 10_000; offset += 1000) {
+    const { data, error, count } = await adminClient
+      .from('expense_entries')
+      .select(
+        'transaction_date, total_amount, total_amount_aud, currency, payment_status, expense_type, processing_status, match_status, risk_bucket, matched_variance_amount, vendor_name, department_id, department:departments(name), employee:employees!expense_entries_employee_id_fkey(department)',
+        { count: 'exact' }
+      )
+      .is('deleted_at', null)
+      .eq('source_type', 'direct_payment')
+      .gte('transaction_date', toIsoDate(previousStart))
+      .lte('transaction_date', toIsoDate(currentEnd))
+      .order('transaction_date', { ascending: true })
+      .order('id', { ascending: true })
+      .range(offset, offset + 999);
+    if (error)
+      throw new Error(`Failed to load expense entries for monthly report: ${error.message}`);
+    if (count !== null && count > 10_000) throw new Error('Monthly report exceeds 10,000 entries');
+    rows.push(...((data ?? []) as MonthlyReportRow[]));
+    if (rows.length > 10_000) throw new Error('Monthly report exceeds 10,000 entries');
+    if (!data?.length || data.length < 1000 || (count !== null && rows.length >= count)) break;
   }
-
-  const rows = (data ?? []) as MonthlyReportRow[];
   const currentStartIso = toIsoDate(currentStart);
   const currentEndIso = toIsoDate(currentEnd);
   const previousStartIso = toIsoDate(previousStart);
   const previousEndIso = toIsoDate(previousEnd);
 
-  const currentRows = rows.filter((row) => row.transaction_date >= currentStartIso && row.transaction_date <= currentEndIso);
+  const currentRows = rows.filter(
+    (row) => row.transaction_date >= currentStartIso && row.transaction_date <= currentEndIso
+  );
   const previousRows = rows.filter(
     (row) => row.transaction_date >= previousStartIso && row.transaction_date <= previousEndIso
   );
@@ -246,25 +266,34 @@ export async function buildMonthlyExpenseReport(
 
   const pipelineStatus: PipelineStatusCounts = {
     autoApproved: currentRows.filter((row) => row.processing_status === 'auto_approved').length,
-    awaitingAssociateReview: currentRows.filter((row) => row.processing_status === 'awaiting_associate_review').length,
+    awaitingAssociateReview: currentRows.filter(
+      (row) => row.processing_status === 'awaiting_associate_review'
+    ).length,
     approved: currentRows.filter((row) => row.processing_status === 'approved').length,
     draftExtracted: currentRows.filter((row) => row.processing_status === 'draft_extracted').length,
   };
 
   const anomalies: AnomalyRow[] = currentRows
     .filter((row) => row.match_status === 'variance_flagged' || row.risk_bucket === 'price_spike')
-    .map((row): AnomalyRow => ({
-      vendorName: row.vendor_name,
-      transactionDate: row.transaction_date,
-      totalAmountAud: round2(amountOf(row)),
-      varianceAmountAud: row.matched_variance_amount !== null ? round2(Number(row.matched_variance_amount)) : null,
-      reason: row.match_status === 'variance_flagged' ? 'variance_flagged' : 'price_spike',
-    }))
+    .map(
+      (row): AnomalyRow => ({
+        vendorName: row.vendor_name,
+        transactionDate: row.transaction_date,
+        totalAmountAud: round2(amountOf(row)),
+        varianceAmountAud:
+          row.matched_variance_amount !== null ? round2(Number(row.matched_variance_amount)) : null,
+        reason: row.match_status === 'variance_flagged' ? 'variance_flagged' : 'price_spike',
+      })
+    )
     .sort((a, b) => Math.abs(b.varianceAmountAud ?? 0) - Math.abs(a.varianceAmountAud ?? 0));
 
   return {
     generatedAt: new Date().toISOString(),
-    reportMonthLabel: currentStart.toLocaleDateString('en-AU', { month: 'long', year: 'numeric', timeZone: 'UTC' }),
+    reportMonthLabel: currentStart.toLocaleDateString('en-AU', {
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'UTC',
+    }),
     currentRangeStart: currentStartIso,
     currentRangeEndInclusive: currentEndIso,
     previousRangeStart: previousStartIso,
@@ -276,5 +305,18 @@ export async function buildMonthlyExpenseReport(
     previousDepartmentBreakdown,
     pipelineStatus,
     anomalies,
+    unknownPayments: currentRows
+      .filter((row) => row.payment_status === 'unknown')
+      .map((row) => ({
+        vendorName: row.vendor_name,
+        transactionDate: row.transaction_date,
+        currency: row.currency,
+        amount: Number(row.total_amount),
+      })),
+    paymentStatusCounts: {
+      unknown: currentRows.filter((row) => row.payment_status === 'unknown').length,
+      unpaid: currentRows.filter((row) => row.payment_status === 'unpaid').length,
+      confirmed: currentRows.filter((row) => row.payment_status === 'confirmed').length,
+    },
   };
 }

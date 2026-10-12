@@ -58,8 +58,19 @@ describe('Finance invoice register', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Decision notes' }), {
       target: { value: 'Incorrect hours' },
     });
+
     fireEvent.click(screen.getByRole('button', { name: 'Reject invoice' }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Approval failed'));
     expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it('masks the real invoice amount until the reviewer shows it again', () => {
+    render(<FinanceInvoiceRegister />);
+    expect(screen.getByText('PHP 100.00')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Hide amounts' }));
+    expect(screen.queryByText('PHP 100.00')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Show amounts' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Show amounts' }));
+    expect(screen.getByText('PHP 100.00')).toBeInTheDocument();
   });
 });

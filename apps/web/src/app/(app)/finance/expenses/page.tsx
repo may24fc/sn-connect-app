@@ -33,6 +33,7 @@ type ExpenseRow = {
   source_system: string | null;
   source_type: string;
   business_justification: string | null;
+  receipt_document_id: string | null;
 };
 
 type Category = { code: string; name: string };
@@ -97,7 +98,7 @@ export default async function FinanceExpenses({
     let ledger = db
       .from('expense_entries')
       .select(
-        'id,transaction_date,vendor_name,category_code,expense_type,payment_source,payment_status,approval_state,match_status,total_amount,currency,total_amount_aud,source_system,source_type,business_justification',
+        'id,transaction_date,vendor_name,category_code,expense_type,payment_source,payment_status,approval_state,match_status,total_amount,currency,total_amount_aud,source_system,source_type,business_justification,receipt_document_id',
         { count: 'exact' }
       )
       .is('deleted_at', null)
@@ -133,7 +134,7 @@ export default async function FinanceExpenses({
   };
 
   return (
-    <main className="mx-auto max-w-7xl space-y-5 bg-[#f5f6f4] p-4 text-[#10191c] md:p-8">
+    <main className="mx-auto max-w-7xl space-y-5 bg-[#f5f6f4] p-4 text-[#10191c] dark:bg-[#0a1e26] dark:text-slate-100 md:p-8">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-[#1f6a7c]">Finance</p>
@@ -171,9 +172,6 @@ export default async function FinanceExpenses({
         </Link>
         <Link href="/finance/reports" className="rounded-md border bg-card px-3 py-2">
           Reports
-        </Link>
-        <Link href="/finance/properties" className="rounded-md border bg-card px-3 py-2">
-          Properties
         </Link>
       </nav>
       <section className="rounded-xl border bg-card px-4 pb-3 pt-1">
@@ -281,6 +279,7 @@ export default async function FinanceExpenses({
                     'Approval',
                     'Payment',
                     'Match',
+                    'Receipt',
                   ].map((title) => (
                     <th key={title} scope="col" className="p-3 font-semibold">
                       {title}
@@ -328,6 +327,7 @@ export default async function FinanceExpenses({
                     <td className="p-3">
                       <span className={badge}>{label(row.match_status)}</span>
                     </td>
+                    <td className="p-3">{row.receipt_document_id ? 'Attached' : 'Awaiting'}</td>
                   </tr>
                 ))}
               </tbody>

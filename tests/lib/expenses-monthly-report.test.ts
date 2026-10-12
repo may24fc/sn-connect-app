@@ -10,6 +10,8 @@ interface FakeRow {
   transaction_date: string;
   total_amount: number;
   total_amount_aud: number | null;
+  currency: string;
+  payment_status: string;
   expense_type: string | null;
   processing_status: string;
   match_status: string | null;
@@ -22,15 +24,16 @@ interface FakeRow {
 }
 
 function buildFakeAdminClient(rows: FakeRow[]) {
-  const queryResult = Promise.resolve({ data: rows, error: null });
-
   const builder = {
     select: vi.fn(() => builder),
     is: vi.fn(() => builder),
     eq: vi.fn(() => builder),
     gte: vi.fn(() => builder),
     lte: vi.fn(() => builder),
-    order: vi.fn(() => queryResult),
+    order: vi.fn(() => builder),
+    range: vi.fn((start: number, end: number) =>
+      Promise.resolve({ data: rows.slice(start, end + 1), error: null, count: rows.length })
+    ),
   };
 
   return {
@@ -43,6 +46,8 @@ function row(overrides: Partial<FakeRow>): FakeRow {
     transaction_date: '2026-06-15',
     total_amount: 100,
     total_amount_aud: 100,
+    currency: 'AUD',
+    payment_status: 'confirmed',
     expense_type: 'software',
     processing_status: 'approved',
     match_status: 'unmatched',
@@ -134,5 +139,38 @@ describe('buildMonthlyExpenseReport', () => {
     const report = await buildMonthlyExpenseReport(adminClient, referenceDate);
 
     expect(report.anomalies).toEqual([]);
+  });
+
+  it('lists unknown confirmations and excludes unconverted currency from AUD spend', async () => {
+    const report = await buildMonthlyExpenseReport(
+      buildFakeAdminClient([
+        row({
+          transaction_date: '2026-07-05',
+          total_amount_aud: null,
+          total_amount: 20,
+          currency: 'USD',
+          payment_status: 'unknown',
+        }),
+      ]),
+      referenceDate
+    );
+    expect(report.summary[0]?.currentMonth).toBe(0);
+    expect(report.unknownPayments).toEqual([
+      {
+        vendorName: 'Sample Vendor',
+        transactionDate: '2026-07-05',
+        currency: 'USD',
+        amount: 20,
+      },
+    ]);
+  });
+
+  it('includes direct payments beyond the first 1,000-row page', async () => {
+    const entries = Array.from({ length: 1001 }, () =>
+      row({ transaction_date: '2026-07-05', total_amount: 1, total_amount_aud: 1 })
+    );
+    const report = await buildMonthlyExpenseReport(buildFakeAdminClient(entries), referenceDate);
+    expect(report.summary[0]?.currentMonth).toBe(1001);
+    expect(report.paymentStatusCounts.confirmed).toBe(1001);
   });
 });

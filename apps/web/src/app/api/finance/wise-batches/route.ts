@@ -1,4 +1,5 @@
 import { canReviewFinance, getFinanceContext } from '@/lib/finance/auth';
+import { completeFinanceRows } from '@/lib/finance/report-pack';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -16,7 +17,7 @@ export async function GET() {
   if (!canReviewFinance(context.capabilities))
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   const db = context.admin as any;
-  const [invoices, batches] = await Promise.all([
+  const [invoices, batches, unresolvedExceptions] = await Promise.all([
     db
       .from('invoices')
       .select(
@@ -29,13 +30,40 @@ export async function GET() {
     db
       .from('wise_batches')
       .select(
-        'id,status,created_at,items:wise_batch_items(id,invoice_id,payment_reference,status,wise_transfer_id),import_rows:wise_batch_import_rows(id,payment_reference,wise_transfer_id,result,detail,imported_at)'
+        'id,status,created_at,items:wise_batch_items(id,invoice_id,payment_reference,status,wise_transfer_id),import_rows:wise_batch_import_rows(id,payment_reference,wise_transfer_id,result,detail,imported_at,resolved_at,resolution_note)'
       )
       .order('created_at', { ascending: false })
       .limit(30),
+    completeFinanceRows<{
+      id: string;
+      batch_id: string;
+      payment_reference: string | null;
+      result: string;
+      detail: string | null;
+      imported_at: string;
+      resolved_at: null;
+    }>((from, to) =>
+      db
+        .from('wise_batch_import_rows')
+        .select('id,batch_id,payment_reference,result,detail,imported_at,resolved_at', {
+          count: 'exact',
+        })
+        .neq('result', 'completed')
+        .is('resolved_at', null)
+        .order('imported_at', { ascending: false })
+        .order('id')
+        .range(from, to)
+    )
+      .then((rows) => ({ rows, error: null as string | null }))
+      .catch((error: Error) => ({ rows: null, error: error.message })),
   ]);
   if (invoices.error || batches.error)
     return NextResponse.json({ error: 'Could not load payment queue' }, { status: 500 });
+  if (!unresolvedExceptions.rows)
+    return NextResponse.json(
+      { error: unresolvedExceptions.error },
+      { status: unresolvedExceptions.error?.includes('10,000') ? 413 : 500 }
+    );
   const ids = (invoices.data ?? []).map((row: { id: string }) => row.id);
   const employeeIds = [
     ...new Set((invoices.data ?? []).map((row: { employee_id: string }) => row.employee_id)),
@@ -93,6 +121,8 @@ export async function GET() {
         }
       ),
       batches: batches.data ?? [],
+      canResolveExceptions: context.capabilities.isLeadership,
+      unresolvedExceptions: unresolvedExceptions.rows,
     },
   });
 }

@@ -26,17 +26,32 @@ type Batch = {
     payment_reference: string | null;
     result: string;
     detail: string | null;
+    resolved_at: string | null;
+    resolution_note: string | null;
   }>;
 };
-type Queue = { ready: Array<ReadyInvoice>; batches: Array<Batch> };
+type Queue = {
+  ready: Array<ReadyInvoice>;
+  batches: Array<Batch>;
+  canResolveExceptions: boolean;
+  unresolvedExceptions: Array<{
+    id: string;
+    batch_id: string;
+    payment_reference: string | null;
+    result: string;
+    detail: string | null;
+    imported_at: string;
+  }>;
+};
 type ImportResult = { reference: string; transferId: string; result: string; detail: string };
 
-export function FinanceWiseBatches() {
+export function FinanceWiseBatches({ hideAmounts = false }: { hideAmounts?: boolean } = {}) {
   const [queue, setQueue] = useState<Queue | null>(null);
   const [selected, setSelected] = useState<Array<string>>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [results, setResults] = useState<Array<ImportResult>>([]);
+  const [resolution, setResolution] = useState<{ id: string; note: string } | null>(null);
   const load = useCallback(async () => {
     try {
       const response = await fetch('/api/finance/wise-batches', { cache: 'no-store' });
@@ -97,6 +112,23 @@ export function FinanceWiseBatches() {
       } else setError(payload.error ?? 'Could not process CSV');
     }
     setBusy(false);
+  }
+  async function resolveException(id: string) {
+    if (!resolution || resolution.id !== id) return;
+    setBusy(true);
+    const response = await fetch(`/api/finance/wise-batches/import-exceptions/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note: resolution.note }),
+    });
+    const payload = await response.json();
+    setBusy(false);
+    if (!response.ok) {
+      setError(payload.error ?? 'Could not resolve Wise exception');
+      return;
+    }
+    setResolution(null);
+    void load();
   }
   return (
     <section className="space-y-5 rounded-xl border bg-gradient-to-r from-[#f1f8f9] to-white p-5">
@@ -163,7 +195,9 @@ export function FinanceWiseBatches() {
                     ? `${invoice.employee.first_name} ${invoice.employee.last_name}`
                     : 'Staff member'}
                 </td>
-                <td className="border-b p-2">{Number(invoice.net_amount).toFixed(2)}</td>
+                <td className="border-b p-2">
+                  {hideAmounts ? '••••' : Number(invoice.net_amount).toFixed(2)}
+                </td>
                 <td className="border-b p-2">
                   {invoice.source_currency} → {invoice.target_currency}
                 </td>
@@ -233,21 +267,36 @@ export function FinanceWiseBatches() {
           </div>
         ))}
       </div>
-      {queue?.batches.some((batch) =>
-        batch.import_rows?.some((row) => row.result !== 'completed')
-      ) ? (
+      {queue?.unresolvedExceptions.length ? (
         <section className="rounded-xl border border-amber-300 p-4">
           <h3 className="font-semibold">Wise import exceptions</h3>
-          {queue.batches.map((batch) =>
-            batch.import_rows
-              ?.filter((row) => row.result !== 'completed')
-              .map((row) => (
-                <p className="mt-1 text-sm" key={row.id}>
-                  {batch.id}: {row.payment_reference || 'Unknown reference'} · {row.result} ·{' '}
-                  {row.detail || 'Review required'}
-                </p>
-              ))
-          )}
+          {queue.unresolvedExceptions.map((row) => (
+            <div className="mt-2 space-y-2 text-sm" key={row.id}>
+              {row.batch_id}: {row.payment_reference || 'Unknown reference'} · {row.result} ·{' '}
+              {row.detail || 'Review required'}
+              {queue.canResolveExceptions ? (
+                <div className="flex flex-wrap gap-2">
+                  <input
+                    aria-label={`Resolution note for ${row.id}`}
+                    className="min-w-56 flex-1 rounded border px-2 py-1"
+                    placeholder="Document the verified resolution"
+                    value={resolution?.id === row.id ? resolution.note : ''}
+                    onChange={(event) => setResolution({ id: row.id, note: event.target.value })}
+                  />
+                  <button
+                    type="button"
+                    className="rounded border px-2 py-1"
+                    disabled={
+                      busy || resolution?.id !== row.id || resolution.note.trim().length < 10
+                    }
+                    onClick={() => void resolveException(row.id)}
+                  >
+                    Resolve exception
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ))}
         </section>
       ) : null}
       {results.length ? (

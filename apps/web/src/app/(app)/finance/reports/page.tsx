@@ -1,4 +1,5 @@
 import ExpenseAnalyticsDashboardPage from '@/app/(app)/(admin)/admin/expenses/analytics/page';
+import { FinanceDetailDisclosure } from '@/components/finance/FinanceDetailDisclosure';
 import { FinanceReportControls } from '@/components/finance/FinanceReportControls';
 import { canReviewFinance, getFinanceContext } from '@/lib/finance/auth';
 import { type FinanceOverviewData, summarizeFinanceOverview } from '@/lib/finance/overview';
@@ -15,12 +16,15 @@ const monthLabel = (month: string) =>
 
 export default async function FinanceReportsPage({
   searchParams,
-}: { searchParams: Promise<{ month?: string }> }) {
+}: { searchParams: Promise<{ month?: string; view?: string }> }) {
   const context = await getFinanceContext();
   if (!(context.ok && canReviewFinance(context.capabilities))) return notFound();
   const query = await searchParams;
   if (query.month !== undefined && !/^\d{4}-(0[1-9]|1[0-2])$/.test(query.month)) return notFound();
+  if (query.view !== undefined && !['month', 'week', 'quarter', 'year'].includes(query.view))
+    return notFound();
   const month = query.month ?? new Date().toISOString().slice(0, 7);
+  const view = query.view ?? 'month';
   const prior = new Date(`${month}-01T00:00:00Z`);
   prior.setUTCMonth(prior.getUTCMonth() - 1);
   const previous = prior.toISOString().slice(0, 7);
@@ -54,9 +58,26 @@ export default async function FinanceReportsPage({
     .sort((a, b) => b.current - a.current);
   const chartMax = Math.max(1, ...rows.flatMap((row) => [row.current, row.previous]));
   const largest = [...rows].sort((a, b) => b.current + b.previous - a.current - a.previous)[0];
+  type TrendRow = {
+    bucket_start: string;
+    bucket_end: string;
+    spend_aud: number;
+    converted_count: number;
+    unconverted_count: number;
+  };
+  const trendResult =
+    view === 'month'
+      ? null
+      : await (context.admin as any).rpc('finance_spend_trend', {
+          anchor_month: `${month}-01`,
+          granularity: view,
+        });
+  if (trendResult?.error) throw new Error('Could not load Finance spend trend');
+  const trendRows = (trendResult?.data ?? []) as Array<TrendRow>;
+  const trendMax = Math.max(1, ...trendRows.map((row) => Number(row.spend_aud)));
 
   return (
-    <main className="mx-auto max-w-7xl space-y-5 bg-[#f5f6f4] p-4 text-[#10191c] md:p-8">
+    <main className="mx-auto max-w-7xl space-y-5 bg-[#f5f6f4] p-4 text-[#10191c] dark:bg-[#0a1e26] dark:text-slate-100 md:p-8">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-[#1f6a7c]">Finance</p>
@@ -65,7 +86,7 @@ export default async function FinanceReportsPage({
             Compare converted spending and prepare an auditable month-end report.
           </p>
         </div>
-        <form action="/finance/reports" className="flex items-center gap-2 text-sm">
+        <form action="/finance/reports" className="flex flex-wrap items-center gap-2 text-sm">
           <label htmlFor="report-month">Month</label>
           <input
             id="report-month"
@@ -75,6 +96,18 @@ export default async function FinanceReportsPage({
             defaultValue={month}
             className="rounded-md border bg-card px-3 py-2"
           />
+          <label htmlFor="report-view">Trend</label>
+          <select
+            id="report-view"
+            name="view"
+            defaultValue={view}
+            className="rounded-md border bg-card px-3 py-2"
+          >
+            <option value="month">Month</option>
+            <option value="week">Weeks in month</option>
+            <option value="quarter">Quarters in year</option>
+            <option value="year">Last four years</option>
+          </select>
           <button type="submit" className="rounded-md border bg-card px-3 py-2 font-medium">
             View
           </button>
@@ -90,10 +123,50 @@ export default async function FinanceReportsPage({
         <Link href="/finance/staff-payments" className="rounded-md border bg-card px-3 py-2">
           Staff Payments
         </Link>
-        <Link href="/finance/properties" className="rounded-md border bg-card px-3 py-2">
-          Properties
-        </Link>
       </nav>
+      {view !== 'month' ? (
+        <section className="rounded-xl border bg-card p-5" aria-label="Finance spend trend">
+          <h2 className="font-semibold">
+            {view === 'week' ? 'Weekly' : view === 'quarter' ? 'Quarterly' : 'Yearly'} recorded
+            spend
+          </h2>
+          <p className="mb-4 text-xs text-muted-foreground">
+            Converted AUD direct payments only. The month-end report pack below remains for{' '}
+            {monthLabel(month)}.
+          </p>
+          <div className="space-y-3">
+            {trendRows.map((row) => (
+              <div
+                key={row.bucket_start}
+                className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 text-sm"
+              >
+                <span>
+                  {row.bucket_start} to{' '}
+                  {new Date(`${row.bucket_end}T00:00:00Z`).toISOString().slice(0, 10)} (end
+                  exclusive)
+                </span>
+                <span className="tabular-nums">
+                  {row.converted_count ? money(Number(row.spend_aud)) : 'No converted records'}
+                  {row.unconverted_count ? ` · ${row.unconverted_count} awaiting FX` : ''}
+                </span>
+                <div
+                  className="col-span-2 h-2 rounded-full bg-muted"
+                  role="meter"
+                  aria-label={`${row.bucket_start} spend`}
+                  aria-valuenow={Number(row.spend_aud)}
+                  aria-valuemin={0}
+                  aria-valuemax={trendMax}
+                >
+                  <div
+                    className="h-full rounded-full bg-[#2a78d6]"
+                    style={{ width: `${(Number(row.spend_aud) / trendMax) * 100}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
       <section
         aria-label="Monthly report highlights"
         className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
@@ -227,16 +300,12 @@ export default async function FinanceReportsPage({
         </section>
         <FinanceReportControls key={month} month={month} />
       </div>
-      <details className="rounded-xl border bg-card p-5">
-        <summary className="cursor-pointer text-sm font-semibold text-[#16505f]">
-          Open detailed expense analytics
-        </summary>
-        <p className="mt-2 text-xs text-muted-foreground">
-          Detailed analytics have their own date controls; they do not change the selected month-end
-          snapshot above.
-        </p>
+      <FinanceDetailDisclosure
+        title="Open detailed expense analytics"
+        description="Detailed analytics have their own date controls; they do not change the selected month-end snapshot above."
+      >
         <ExpenseAnalyticsDashboardPage />
-      </details>
+      </FinanceDetailDisclosure>
     </main>
   );
 }

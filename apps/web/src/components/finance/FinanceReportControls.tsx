@@ -3,7 +3,18 @@
 import { useCallback, useEffect, useState } from 'react';
 type Snapshot = { id: string; status: string; exception_count: number; created_at: string };
 type ReportData = {
-  report: { anomalies: Array<unknown> };
+  report: {
+    anomalies: Array<unknown>;
+    unknownPayments?: Array<{
+      vendorName: string;
+      transactionDate: string;
+      currency: string;
+      amount: number;
+    }>;
+    paymentStatusCounts?: { unknown: number; unpaid: number; confirmed: number };
+    subscriptionsAsOfSnapshot?: Array<{ id: string; vendor_name: string; active: boolean }>;
+    wiseImportRowsForMonth?: Array<{ result: string; resolved_at: string | null }>;
+  };
   snapshots: Array<Snapshot>;
 };
 
@@ -82,6 +93,36 @@ export function FinanceReportControls({ month }: { month: string }) {
             {data ? `${data.snapshots.length} dated snapshots` : 'Loading snapshots…'}
           </p>
         </div>
+        <div className="py-2">
+          <b>Subscription and Wise status</b>
+          <p className="text-xs text-muted-foreground">
+            {data
+              ? `${data.report.subscriptionsAsOfSnapshot?.length ?? 0} subscription records as of now · ${data.report.wiseImportRowsForMonth?.filter((row) => row.result !== 'completed' && !row.resolved_at).length ?? 0} unresolved Wise imports made in this month`
+              : 'Loading source records…'}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {data?.report.paymentStatusCounts
+              ? `${data.report.paymentStatusCounts.confirmed} confirmed · ${data.report.paymentStatusCounts.unpaid} unpaid · ${data.report.paymentStatusCounts.unknown} unknown direct payments`
+              : ''}
+          </p>
+        </div>
+        <div className="py-2">
+          <b>Unknown payment confirmations</b>
+          <p className="text-xs text-muted-foreground">
+            {data
+              ? `${data.report.unknownPayments?.length ?? 0} direct payments listed; these do not block finalization.`
+              : 'Loading payment statuses…'}
+          </p>
+          {data?.report.unknownPayments?.length ? (
+            <ul className="mt-2 max-h-40 overflow-y-auto text-xs">
+              {data.report.unknownPayments.map((row, index) => (
+                <li key={`${row.transactionDate}-${row.vendorName}-${index}`}>
+                  {row.transactionDate} · {row.vendorName} · {row.currency} {row.amount.toFixed(2)}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
       </div>
       <div className="flex flex-wrap gap-2">
         <button
@@ -125,6 +166,13 @@ export function FinanceReportControls({ month }: { month: string }) {
                 >
                   View saved snapshot
                 </a>
+                {' · '}
+                <a
+                  className="font-medium text-[#16505f] underline"
+                  href={`/api/finance/reports/export?month=${month}&snapshot=${item.id}`}
+                >
+                  Download {item.status} snapshot CSV
+                </a>
               </li>
             ))}
           </ul>
@@ -134,7 +182,8 @@ export function FinanceReportControls({ month }: { month: string }) {
       </div>
       <p className="rounded-lg bg-[#e6f0f1] p-3 text-xs text-[#0f3f4b]">
         A draft may record open exceptions. Final is only saved when the server confirms month-end
-        checks have cleared. The PDF is a live report, not the saved snapshot.
+        checks have cleared. Export a saved snapshot above for a retained CSV; the PDF is a live
+        report, not the saved snapshot.
       </p>
     </section>
   );

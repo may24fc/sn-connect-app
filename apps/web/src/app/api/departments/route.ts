@@ -1,3 +1,4 @@
+import { parsePagination } from '@/lib/api/pagination';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { DepartmentInsert } from '@hr-portal/database';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -24,8 +25,9 @@ export async function GET(request: NextRequest) {
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
-    const page = Number.parseInt(searchParams.get('page') || '1', 10);
-    const pageSize = Number.parseInt(searchParams.get('pageSize') || '50', 10);
+    const pagination = parsePagination(searchParams, 50, 200);
+    if (!pagination) return NextResponse.json({ error: 'Invalid pagination' }, { status: 400 });
+    const { page, pageSize } = pagination;
 
     // Build query
     // Note: head_id references auth.users, not public.users
@@ -93,6 +95,7 @@ export async function POST(request: NextRequest) {
       .from('users')
       .select('role')
       .eq('id', user.id)
+      .is('deleted_at', null)
       .single();
 
     if (userError || !userData) {

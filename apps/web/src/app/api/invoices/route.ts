@@ -1,3 +1,4 @@
+import { parsePagination } from '@/lib/api/pagination';
 import { logActivity } from '@/lib/audit';
 import { extractAmountFromInvoiceDocument } from '@/lib/payroll/invoiceDocumentOcr';
 import { invoiceCreateSchema } from '@/lib/schemas/invoice.schema';
@@ -55,8 +56,9 @@ export async function GET(request: NextRequest) {
       .map((value) => value.trim())
       .filter(Boolean);
     const employeeId = searchParams.get('employeeId') || '';
-    const page = Number.parseInt(searchParams.get('page') || '1', 10);
-    const pageSize = Number.parseInt(searchParams.get('pageSize') || '10', 10);
+    const pagination = parsePagination(searchParams, 10, 1000);
+    if (!pagination) return NextResponse.json({ error: 'Invalid pagination' }, { status: 400 });
+    const { page, pageSize } = pagination;
 
     // Use admin client to bypass RLS for the main data query.
     // RLS cross-table subqueries on the employees table silently return 0 rows
@@ -163,8 +165,9 @@ export async function GET(request: NextRequest) {
         pendingAmountQuery,
       ]);
 
-    const pendingAmount = ((pendingAmountRows.data ?? []) as Array<{ net_amount: number | null }>)
-      .reduce((sum, row) => sum + Number(row.net_amount ?? 0), 0);
+    const pendingAmount = (
+      (pendingAmountRows.data ?? []) as Array<{ net_amount: number | null }>
+    ).reduce((sum, row) => sum + Number(row.net_amount ?? 0), 0);
 
     return NextResponse.json({
       data,
@@ -222,7 +225,9 @@ export async function POST(request: NextRequest) {
     const normalizedBody = {
       ...body,
       periodStart:
-        typeof body?.periodStart === 'string' && body.periodStart.length > 0 ? body.periodStart : today,
+        typeof body?.periodStart === 'string' && body.periodStart.length > 0
+          ? body.periodStart
+          : today,
       periodEnd:
         typeof body?.periodEnd === 'string' && body.periodEnd.length > 0 ? body.periodEnd : today,
       grossAmount: normalizedBaseAmount,
@@ -231,8 +236,7 @@ export async function POST(request: NextRequest) {
       hourlyRate: toOptionalNumber(body?.hourlyRate),
       hoursWorked: toOptionalNumber(body?.hoursWorked),
       lineItems: Array.isArray(body?.lineItems) ? body.lineItems : [],
-      status:
-        typeof body?.status === 'string' && body.status.length > 0 ? body.status : 'draft',
+      status: typeof body?.status === 'string' && body.status.length > 0 ? body.status : 'draft',
       sourceCurrency:
         typeof body?.sourceCurrency === 'string' && body.sourceCurrency.length === 3
           ? body.sourceCurrency.toUpperCase()

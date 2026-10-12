@@ -54,7 +54,7 @@ interface NavSection {
   items: Array<NavItem>;
 }
 
-type WorkspaceId = 'internal' | 'pa' | 'sfo' | 'uhp';
+type WorkspaceId = 'internal' | 'pa' | 'sfo' | 'uhp' | 'property';
 
 interface WorkspaceOption {
   id: WorkspaceId | 'property';
@@ -111,7 +111,7 @@ const employeeNavItems: Array<NavItem> = [
   { label: 'Finance Overview', href: '/finance', icon: Wallet },
   { label: 'Finance Expenses', href: '/finance/expenses', icon: Receipt },
   { label: 'Finance Reports', href: '/finance/reports', icon: BarChart3 },
-  { label: 'Properties', href: '/finance/properties', icon: Store },
+  { label: 'Properties', href: '/property/properties', icon: Store },
   { label: 'Staff Payments', href: '/finance/staff-payments', icon: FileCheck },
   {
     label: 'Work Tracker',
@@ -140,7 +140,7 @@ const internNavItems: Array<NavItem> = [
   { label: 'Finance Overview', href: '/finance', icon: Wallet },
   { label: 'Finance Expenses', href: '/finance/expenses', icon: Receipt },
   { label: 'Finance Reports', href: '/finance/reports', icon: BarChart3 },
-  { label: 'Properties', href: '/finance/properties', icon: Store },
+  { label: 'Properties', href: '/property/properties', icon: Store },
   { label: 'Staff Payments', href: '/finance/staff-payments', icon: FileCheck },
   {
     label: 'Work Tracker',
@@ -169,7 +169,7 @@ const adminNavItems: Array<NavItem> = [
   { label: 'Expenses', href: '/finance/expenses', icon: Receipt },
   { label: 'Staff Payments', href: '/finance/staff-payments', icon: FileCheck },
   { label: 'Finance Reports', href: '/finance/reports', icon: BarChart3 },
-  { label: 'Properties', href: '/finance/properties', icon: Store },
+  { label: 'Properties', href: '/property/properties', icon: Store },
   {
     label: 'Work Tracker',
     href: '/work-tracker',
@@ -217,7 +217,7 @@ const superAdminNavItems: Array<NavItem> = [
   { label: 'Expenses', href: '/finance/expenses', icon: Receipt },
   { label: 'Staff Payments', href: '/finance/staff-payments', icon: FileCheck },
   { label: 'Finance Reports', href: '/finance/reports', icon: BarChart3 },
-  { label: 'Properties', href: '/finance/properties', icon: Store },
+  { label: 'Properties', href: '/property/properties', icon: Store },
   {
     label: 'Work Tracker',
     href: '/work-tracker',
@@ -299,7 +299,7 @@ const adminInternalSectionConfig: ReadonlyArray<{
   },
   {
     title: 'Finance',
-    hrefs: ['/finance', '/finance/expenses', '/finance/staff-payments', '/finance/reports', '/finance/properties'],
+    hrefs: ['/finance', '/finance/expenses', '/finance/staff-payments', '/finance/reports'],
   },
   {
     title: 'Knowledge & Support',
@@ -323,7 +323,7 @@ const selfServiceInternalSectionConfig: ReadonlyArray<{
   },
   {
     title: 'Finance',
-    hrefs: ['/invoice', '/expenses', '/finance', '/finance/expenses', '/finance/reports', '/finance/staff-payments', '/finance/properties'],
+    hrefs: ['/invoice', '/expenses', '/finance', '/finance/expenses', '/finance/reports', '/finance/staff-payments'],
   },
   {
     title: 'Knowledge & Support',
@@ -359,6 +359,10 @@ const uhpSectionConfig: ReadonlyArray<{ title: string; hrefs: ReadonlyArray<stri
   },
 ];
 
+const propertySectionConfig: ReadonlyArray<{ title: string; hrefs: ReadonlyArray<string> }> = [
+  { title: 'Property Development', hrefs: ['/property/properties'] },
+];
+
 const workspaceOptions: [WorkspaceOption, ...Array<WorkspaceOption>] = [
   {
     id: 'internal',
@@ -387,9 +391,8 @@ const workspaceOptions: [WorkspaceOption, ...Array<WorkspaceOption>] = [
   {
     id: 'property',
     label: 'Property Development',
-    description: 'Coming soon',
+    description: 'Properties, rent, and maintenance',
     icon: Building2,
-    comingSoon: true,
   },
 ];
 
@@ -397,6 +400,7 @@ function getWorkspaceForPath(path: string): WorkspaceId {
   const normalizedPath = normalizePath(path);
   if (normalizedPath === '/pa-tasks' || normalizedPath.startsWith('/pa-tasks/')) return 'pa';
   if (normalizedPath === '/uhp' || normalizedPath.startsWith('/uhp/')) return 'uhp';
+  if (normalizedPath === '/property/properties' || normalizedPath.startsWith('/property/properties/')) return 'property';
 
   const sfoPrefixes = [
     '/reports',
@@ -431,6 +435,8 @@ function createWorkspaceSections(
         ? paSectionConfig
         : workspace === 'uhp'
           ? uhpSectionConfig
+          : workspace === 'property'
+            ? propertySectionConfig
           : variant === 'admin' || variant === 'super_admin'
             ? adminInternalSectionConfig
             : selfServiceInternalSectionConfig;
@@ -494,10 +500,10 @@ export function Sidebar({
       return false;
     }
 
-    if (isSelfServiceRole(variant) && !showExpenseDeskAccess && ['/finance','/finance/expenses','/finance/reports','/finance/staff-payments','/finance/properties'].includes(item.href)) {
+    if (isSelfServiceRole(variant) && !showExpenseDeskAccess && ['/finance','/finance/expenses','/finance/reports','/finance/staff-payments'].includes(item.href)) {
       return false;
     }
-    if (isSelfServiceRole(variant) && !showFinancePropertiesAccess && item.href === '/finance/properties') {
+    if (isSelfServiceRole(variant) && !showFinancePropertiesAccess && item.href === '/property/properties') {
       return false;
     }
 
@@ -614,7 +620,7 @@ export function Sidebar({
   const workspaceItems = navItems.filter((item) => item !== dashboardItem);
   const requestedWorkspace = getWorkspaceForPath(currentPath);
   const availableWorkspaceOptions = workspaceOptions.filter((option) => {
-    if (option.id === 'property' || option.id === 'internal') return true;
+    if (option.id === 'internal') return true;
     if (option.id === 'uhp' && !isSelfServiceRole(variant)) return true;
     return createWorkspaceSections(variant, workspaceItems, option.id).length > 0;
   });
@@ -630,7 +636,6 @@ export function Sidebar({
   const navSections = createWorkspaceSections(variant, workspaceItems, activeWorkspace);
 
   const handleWorkspaceSelect = (workspace: WorkspaceOption): void => {
-    if (workspace.id === 'property') return;
     if (workspace.id === 'internal') {
       if (dashboardItem) onNavigate(dashboardItem.href);
       return;

@@ -119,9 +119,6 @@ export default async function FinanceOverview({
         >
           Reports
         </Link>
-        <Link className="rounded-md border bg-card px-3 py-2 hover:bg-muted" href="/finance/properties">
-          Properties
-        </Link>
       </nav>
       <p className="text-xs text-muted-foreground">Open items across all months</p>
       <section
@@ -181,6 +178,56 @@ export default async function FinanceOverview({
           </p>
         </div>
       </section>
+      <div className="grid gap-4 lg:grid-cols-12">
+        <section className="rounded-xl border bg-card p-5 lg:col-span-5">
+          <h2 className="font-semibold">Recorded spend by payment source</h2>
+          <p className="mb-3 text-xs text-muted-foreground">
+            {monthLabel(month)} · converted AUD direct payments
+          </p>
+          <dl className="space-y-2 text-sm">
+            {[
+              ['Personal card', summary.paymentSourceSpendAud?.personalCard ?? 0],
+              ['Company card', summary.paymentSourceSpendAud?.companyCard ?? 0],
+              ['Bank transfer', summary.paymentSourceSpendAud?.bankTransfer ?? 0],
+              ['Source unknown', summary.paymentSourceSpendAud?.unknown ?? 0],
+            ].map(([label, amount]) => (
+              <div key={label} className="flex justify-between gap-3 border-b py-1 last:border-0">
+                <dt>{label}</dt>
+                <dd className="tabular-nums">{money(Number(amount))}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+        <section className="rounded-xl border bg-card p-5 lg:col-span-7">
+          <h2 className="font-semibold">Scheduled subscription renewals</h2>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Dates recorded for {monthLabel(month)} · payment is not confirmed by this schedule
+          </p>
+          {summary.scheduledRenewals?.length ? (
+            <ul className="max-h-64 space-y-2 overflow-y-auto text-sm">
+              {summary.scheduledRenewals.map((item) => (
+                <li
+                  key={item.id}
+                  className="flex flex-wrap justify-between gap-2 border-b py-2 last:border-0"
+                >
+                  <span>
+                    {item.vendor_name} · {item.next_renewal}
+                  </span>
+                  <span className="tabular-nums">
+                    {item.monthly_amount_aud === null
+                      ? 'Amount not set'
+                      : money(item.monthly_amount_aud)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No subscription renewals dated this month.
+            </p>
+          )}
+        </section>
+      </div>
       <div className="grid gap-4 lg:grid-cols-12">
         <section className="rounded-xl border bg-card p-5 lg:col-span-7">
           <div className="mb-4 flex items-center justify-between gap-3">

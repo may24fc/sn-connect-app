@@ -45,6 +45,8 @@ import {
   BarChart,
   CartesianGrid,
   Legend,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -175,7 +177,11 @@ async function fetchRevenueComparison(period: string): Promise<RevenueComparison
 
   try {
     const years = [Number(period) - 1, Number(period)];
-    const responses = await Promise.all(years.map((year) => fetch(`/api/revenue-forecast/entries?year=${year}`, { cache: 'no-store' })));
+    const responses = await Promise.all(
+      years.map((year) =>
+        fetch(`/api/revenue-forecast/entries?year=${year}`, { cache: 'no-store' })
+      )
+    );
     if (responses.some((response) => response.status === 401 || response.status === 403)) {
       return { status: 'forbidden', entries: [] };
     }
@@ -192,11 +198,13 @@ async function fetchRevenueComparison(period: string): Promise<RevenueComparison
 
     return {
       status: 'ready',
-      entries: payloads.flatMap((payload) => payload.data ?? []).map((entry) => ({
-        year: entry.year,
-        month: entry.month,
-        actualRevenueAud: Number(entry.actual_revenue_aud ?? 0),
-      })),
+      entries: payloads
+        .flatMap((payload) => payload.data ?? [])
+        .map((entry) => ({
+          year: entry.year,
+          month: entry.month,
+          actualRevenueAud: Number(entry.actual_revenue_aud ?? 0),
+        })),
     };
   } catch {
     return { status: 'error', entries: [] };
@@ -269,7 +277,11 @@ function resolveInvoiceLabel(
   return extractLabelFromUrl(invoiceReference) ?? 'Open invoice';
 }
 
-export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfoView = false }: { initialTab?: string; sfoView?: boolean } = {}) {
+export function MarketingAdSpendDashboard({
+  initialTab = 'sales-comparison',
+  sfoView = false,
+  revenueComparisonAccess = true,
+}: { initialTab?: string; sfoView?: boolean; revenueComparisonAccess?: boolean } = {}) {
   const { user } = useAuth();
   const canManageMarketingAccess = user?.role === 'admin' || user?.role === 'super_admin';
   const currentYear = new Date().getFullYear();
@@ -335,12 +347,20 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
     const requestId = beginPeriodRequest();
     setIsLoading(true);
     setErrorText(null);
-    setRevenueComparisonStatus(requestedPeriod === 'all' ? 'not-applicable' : 'loading');
+    setRevenueComparisonStatus(
+      !revenueComparisonAccess
+        ? 'forbidden'
+        : requestedPeriod === 'all'
+          ? 'not-applicable'
+          : 'loading'
+    );
 
     try {
       const [response, revenueComparison] = await Promise.all([
         fetch(`/api/marketing/ad-spend?period=${requestedPeriod}`, { cache: 'no-store' }),
-        fetchRevenueComparison(requestedPeriod),
+        revenueComparisonAccess
+          ? fetchRevenueComparison(requestedPeriod)
+          : Promise.resolve({ status: 'forbidden' as const, entries: [] }),
       ]);
 
       if (!response.ok) {
@@ -374,13 +394,24 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
     setIsSavingEntry(true);
     setErrorText(null);
     try {
-      const response = await fetch('/api/marketing/ad-spend/import', { method: 'POST', headers: { 'Content-Type': 'text/csv' }, body: await file.text() });
+      const response = await fetch('/api/marketing/ad-spend/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/csv' },
+        body: await file.text(),
+      });
       const payload = await response.json();
-      if (!response.ok && response.status !== 207) throw new Error(payload.error ?? 'Billing import failed');
+      if (!response.ok && response.status !== 207)
+        throw new Error(payload.error ?? 'Billing import failed');
       await refreshPeriodData();
-      if (payload.data?.errors?.length) setErrorText(`${payload.data.inserted} imported; ${payload.data.errors.length} rows need attention.`);
-    } catch (error) { setErrorText(error instanceof Error ? error.message : 'Billing import failed'); }
-    finally { setIsSavingEntry(false); }
+      if (payload.data?.errors?.length)
+        setErrorText(
+          `${payload.data.inserted} imported; ${payload.data.errors.length} rows need attention.`
+        );
+    } catch (error) {
+      setErrorText(error instanceof Error ? error.message : 'Billing import failed');
+    } finally {
+      setIsSavingEntry(false);
+    }
   };
 
   useEffect(() => {
@@ -515,13 +546,61 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
   }, [entries, overviewRows, platforms, selectedMonthFilter]);
 
   const revenueByMonth = useMemo(
-    () => new Map(revenueActuals.filter((entry) => String(entry.year) === selectedPeriod).map((entry) => [entry.month, entry.actualRevenueAud])),
+    () =>
+      new Map(
+        revenueActuals
+          .filter((entry) => String(entry.year) === selectedPeriod)
+          .map((entry) => [entry.month, entry.actualRevenueAud])
+      ),
+    [revenueActuals, selectedPeriod]
+  );
+  const priorRevenueByMonth = useMemo(
+    () =>
+      new Map(
+        revenueActuals
+          .filter((entry) => entry.year === Number(selectedPeriod) - 1)
+          .map((entry) => [entry.month, entry.actualRevenueAud])
+      ),
     [revenueActuals, selectedPeriod]
   );
 
-  const salesForecast = useMemo(() => selectedPeriod === 'all' || revenueActuals.length === 0 ? null : computeRevenueForecast(
-    revenueActuals.map((entry) => ({ id: `${entry.year}-${entry.month}`, ...entry })), Number(selectedPeriod), 'average'
-  ), [revenueActuals, selectedPeriod]);
+  // Use only visible entry platforms: the platform list can include platforms outside a user's grant.
+  const sfoSpendPlatforms = useMemo(
+    () =>
+      Array.from(
+        new Map(entries.map((entry) => [entry.platformId, entry.platformName])).entries()
+      ).map(([id, name]) => ({ id, name, key: `spend-${id}` })),
+    [entries]
+  );
+  const sfoSpendRows = useMemo(
+    () =>
+      shortMonthNames.map((month, monthIndex) => {
+        const monthEntries = entries.filter(
+          (entry) => new Date(`${entry.entryDate}T00:00:00Z`).getUTCMonth() === monthIndex
+        );
+        const row: Record<string, string | number | null> = { month };
+        for (const platform of sfoSpendPlatforms) {
+          const platformEntries = monthEntries.filter((entry) => entry.platformId === platform.id);
+          row[platform.key] = platformEntries.length
+            ? platformEntries.reduce((sum, entry) => sum + entry.amount, 0)
+            : null;
+        }
+        return row;
+      }),
+    [entries, sfoSpendPlatforms]
+  );
+
+  const salesForecast = useMemo(
+    () =>
+      selectedPeriod === 'all' || revenueActuals.length === 0
+        ? null
+        : computeRevenueForecast(
+            revenueActuals.map((entry) => ({ id: `${entry.year}-${entry.month}`, ...entry })),
+            Number(selectedPeriod),
+            'average'
+          ),
+    [revenueActuals, selectedPeriod]
+  );
 
   const comparisonRows = useMemo(() => {
     const spendByMonth = Array.from({ length: 12 }, () => 0);
@@ -534,20 +613,28 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
     }
 
     return shortMonthNames.map((month, monthIndex) => {
-      const adSpend = entryCountByMonth[monthIndex] ? spendByMonth[monthIndex] ?? 0 : null;
+      const adSpend = entryCountByMonth[monthIndex] ? (spendByMonth[monthIndex] ?? 0) : null;
       const actualSales = revenueByMonth.get(monthIndex + 1) ?? null;
+      const priorSales = priorRevenueByMonth.get(monthIndex + 1) ?? null;
 
       return {
         month,
         adSpend,
         actualSales,
+        priorSales,
+        spendPercent:
+          adSpend !== null && actualSales !== null && actualSales > 0
+            ? (adSpend / actualSales) * 100
+            : null,
         hasAdEntry: adSpend !== null,
       };
     });
-  }, [entries, revenueByMonth]);
+  }, [entries, revenueByMonth, priorRevenueByMonth]);
 
   const comparisonSummary = useMemo(() => {
-    const rowsWithSales = comparisonRows.filter((row) => row.actualSales !== null && row.adSpend !== null);
+    const rowsWithSales = comparisonRows.filter(
+      (row) => row.actualSales !== null && row.adSpend !== null
+    );
     const comparableSales = rowsWithSales.reduce((sum, row) => sum + (row.actualSales ?? 0), 0);
     const salesMonths = comparisonRows.filter((row) => row.actualSales !== null);
     const totalActualSales = salesMonths.reduce((sum, row) => sum + (row.actualSales ?? 0), 0);
@@ -560,17 +647,28 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
         : firstReportedMonth === lastReportedMonth
           ? firstReportedMonth
           : `${firstReportedMonth}-${lastReportedMonth}`;
-    const salesRangeLabel = salesMonths.length === 0 ? 'No sales months' : salesMonths.length === 1 ? salesMonths[0]!.month : `${salesMonths[0]!.month}-${salesMonths.at(-1)!.month}`;
+    const salesRangeLabel =
+      salesMonths.length === 0
+        ? 'No sales months'
+        : salesMonths.length === 1
+          ? salesMonths[0]!.month
+          : `${salesMonths[0]!.month}-${salesMonths.at(-1)!.month}`;
 
     return {
       comparableAdSpend,
       comparableSales,
       totalActualSales,
+      hasSales: salesMonths.length > 0,
+      hasComparableMonths: rowsWithSales.length > 0,
       salesRangeLabel,
       averageMonthlySales: salesMonths.length ? totalActualSales / salesMonths.length : null,
       salesAdRatio: comparableAdSpend > 0 ? comparableSales / comparableAdSpend : null,
-      missingSpendMonths: comparisonRows.filter((row) => row.actualSales !== null && !row.hasAdEntry).map((row) => row.month),
-      missingSalesMonths: comparisonRows.filter((row) => row.actualSales === null && row.hasAdEntry).map((row) => row.month),
+      missingSpendMonths: comparisonRows
+        .filter((row) => row.actualSales !== null && !row.hasAdEntry)
+        .map((row) => row.month),
+      missingSalesMonths: comparisonRows
+        .filter((row) => row.actualSales === null && row.hasAdEntry)
+        .map((row) => row.month),
       spendSharePercent: comparableSales > 0 ? (comparableAdSpend / comparableSales) * 100 : null,
       reportedRangeLabel,
     };
@@ -710,7 +808,11 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
       <PageHeader
         eyebrow={sfoView ? 'SFO · Seafood Factory Outlet' : 'Marketing'}
         title={sfoView ? 'Performance' : 'Ad Spend'}
-        description={sfoView ? 'Sales and advertising side by side. Missing months remain unreported, not zero.' : 'Compare sales performance, review platform spend, and maintain invoice-backed entries.'}
+        description={
+          sfoView
+            ? 'Sales and advertising side by side. Missing months remain unreported, not zero.'
+            : 'Compare sales performance, review platform spend, and maintain invoice-backed entries.'
+        }
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {canManageMarketingAccess ? (
@@ -765,7 +867,9 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
         className={loadedPeriod === selectedPeriod ? 'space-y-6' : 'hidden'}
       >
         <TabsList className="w-fit max-w-full justify-start overflow-x-auto">
-          <TabsTrigger value="sales-comparison">{sfoView ? 'Performance' : 'Sales Comparison'}</TabsTrigger>
+          <TabsTrigger value="sales-comparison">
+            {sfoView ? 'Performance' : 'Sales Comparison'}
+          </TabsTrigger>
           <TabsTrigger value="overview">Spend Overview</TabsTrigger>
           <TabsTrigger value="manual-entry">Manual Entry Details</TabsTrigger>
         </TabsList>
@@ -803,18 +907,12 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
                         key={row.platform}
                         className={row.isTotal ? 'bg-primary-muted/60' : ''}
                       >
-                        <TableCell
-                          className={
-                            row.isTotal ? 'font-semibold text-foreground' : ''
-                          }
-                        >
+                        <TableCell className={row.isTotal ? 'font-semibold text-foreground' : ''}>
                           {row.platform}
                         </TableCell>
                         <TableCell
                           className={
-                            row.isTotal
-                              ? 'text-right font-semibold text-foreground'
-                              : 'text-right'
+                            row.isTotal ? 'text-right font-semibold text-foreground' : 'text-right'
                           }
                         >
                           {row.total}
@@ -895,7 +993,9 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
                       Ad Spend {comparisonSummary.reportedRangeLabel}
                     </CardDescription>
                     <CardTitle className="text-2xl text-emerald-500">
-                      {formatCurrency(comparisonSummary.comparableAdSpend)}
+                      {sfoView && !comparisonSummary.hasComparableMonths
+                        ? '—'
+                        : formatCurrency(comparisonSummary.comparableAdSpend)}
                     </CardTitle>
                   </CardHeader>
                 </Card>
@@ -905,7 +1005,9 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
                       Actual Sales {comparisonSummary.salesRangeLabel}
                     </CardDescription>
                     <CardTitle className="text-2xl text-blue-500">
-                      {formatCurrency(comparisonSummary.totalActualSales)}
+                      {sfoView && !comparisonSummary.hasSales
+                        ? '—'
+                        : formatCurrency(comparisonSummary.totalActualSales)}
                     </CardTitle>
                   </CardHeader>
                 </Card>
@@ -913,11 +1015,25 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
                   <CardHeader className="pb-2">
                     <CardDescription>Average monthly sales</CardDescription>
                     <CardTitle className="text-2xl text-emerald-500">
-                      {comparisonSummary.averageMonthlySales === null ? '—' : formatCurrency(comparisonSummary.averageMonthlySales)}
+                      {comparisonSummary.averageMonthlySales === null
+                        ? '—'
+                        : formatCurrency(comparisonSummary.averageMonthlySales)}
                     </CardTitle>
                   </CardHeader>
                 </Card>
-                <Card><CardHeader className="pb-2"><CardDescription>Sales ÷ ad spend</CardDescription><CardTitle className="text-2xl">{comparisonSummary.salesAdRatio === null ? '—' : `${comparisonSummary.salesAdRatio.toFixed(1)}×`}</CardTitle><p className="text-xs text-muted-foreground">Comparison only; not ROAS or profit</p></CardHeader></Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardDescription>Sales ÷ ad spend</CardDescription>
+                    <CardTitle className="text-2xl">
+                      {comparisonSummary.salesAdRatio === null
+                        ? '—'
+                        : `${comparisonSummary.salesAdRatio.toFixed(1)}×`}
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                      Comparison only; not ROAS or profit
+                    </p>
+                  </CardHeader>
+                </Card>
                 <Card>
                   <CardHeader className="pb-6">
                     <CardDescription>Ad Spend Rate</CardDescription>
@@ -930,77 +1046,336 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
                 </Card>
               </div>
 
-              {comparisonSummary.missingSpendMonths.length > 0 ? <div role="status" className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">No ad spend entry for {comparisonSummary.missingSpendMonths.join(', ')}. These months are excluded from comparable totals until billing data is confirmed.</div> : null}
-              {comparisonSummary.missingSalesMonths.length > 0 ? <div role="status" className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">No sales actual entry for {comparisonSummary.missingSalesMonths.join(', ')}. These months are excluded from sales-to-spend comparison.</div> : null}
-
-              <Card><CardHeader><CardTitle className="text-base">Actual versus forecast sales</CardTitle><CardDescription>Annual progress from Revenue Forecast entries. Forecast uses the average historical growth scenario.</CardDescription></CardHeader><CardContent className="grid gap-3 sm:grid-cols-3"><div><p className="text-sm text-muted-foreground">Recorded actual</p><p className="text-xl font-semibold">{formatCurrency(salesForecast?.earnedJanToDateAud ?? 0)}</p></div><div><p className="text-sm text-muted-foreground">Projected annual total</p><p className="text-xl font-semibold">{salesForecast ? formatCurrency(salesForecast.projectedTotalAud) : 'No forecast data'}</p></div><div><p className="text-sm text-muted-foreground">Actual as share of projection</p><p className="text-xl font-semibold">{salesForecast && salesForecast.projectedTotalAud > 0 ? `${((salesForecast.earnedJanToDateAud / salesForecast.projectedTotalAud) * 100).toFixed(1)}%` : 'No forecast data'}</p></div></CardContent></Card>
-
-              <div className="grid gap-4 lg:grid-cols-2"><Card className="lg:col-span-2">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-semibold">Spend-to-sales comparison</CardTitle>
-                  <CardDescription>
-                    Track ad expenses against actual sales for matching reported months.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex items-center justify-between gap-4 text-sm">
-                    <span className="text-zinc-600 dark:text-zinc-300">
-                      {formatCurrency(comparisonSummary.comparableAdSpend)} ad spend of{' '}
-                      {formatCurrency(comparisonSummary.comparableSales)} actual sales in comparable months
-                    </span>
-                    <span className="font-semibold text-emerald-500">
-                      {comparisonSummary.spendSharePercent === null
-                        ? '—'
-                        : `${comparisonSummary.spendSharePercent.toFixed(1)}%`}
-                    </span>
-                  </div>
-                  <Progress
-                    value={Math.min(comparisonSummary.spendSharePercent ?? 0, 100)}
-                    className="h-2"
-                  />
-                </CardContent>
-              </Card>
+              {comparisonSummary.missingSpendMonths.length > 0 ? (
+                <output className="block rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                  No ad spend entry for {comparisonSummary.missingSpendMonths.join(', ')}. These
+                  months are excluded from comparable totals until billing data is confirmed.
+                </output>
+              ) : null}
+              {comparisonSummary.missingSalesMonths.length > 0 ? (
+                <output className="block rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                  No sales actual entry for {comparisonSummary.missingSalesMonths.join(', ')}. These
+                  months are excluded from sales-to-spend comparison.
+                </output>
+              ) : null}
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="h-4 w-4" />
-                    Monthly actual sales
-                  </CardTitle>
+                  <CardTitle className="text-base">Actual versus forecast sales</CardTitle>
                   <CardDescription>
-                    Revenue Forecast actuals for {selectedPeriod}. Missing months have no bar.
+                    Annual progress from Revenue Forecast entries. Forecast uses the average
+                    historical growth scenario.
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={340}>
-                    <BarChart
-                      data={comparisonRows}
-                      margin={{ top: 16, right: 12, left: 8, bottom: 0 }}
-                    >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        className="stroke-zinc-200 dark:stroke-zinc-800"
-                      />
-                      <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                      <YAxis
-                        tickFormatter={(value: number) =>
-                          value >= 1000 ? `${Math.round(value / 1000)}K` : String(value)
-                        }
-                        tick={{ fontSize: 12 }}
-                      />
-                      <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                      <Legend />
-                      <Bar
-                        dataKey="actualSales"
-                        name="Actual sales"
-                        fill="#10b981"
-                        radius={[3, 3, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
+                <CardContent className="grid gap-3 sm:grid-cols-3">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Recorded actual</p>
+                    <p className="text-xl font-semibold">
+                      {sfoView && !comparisonSummary.hasSales
+                        ? '—'
+                        : formatCurrency(salesForecast?.earnedJanToDateAud ?? 0)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Projected annual total</p>
+                    <p className="text-xl font-semibold">
+                      {salesForecast
+                        ? formatCurrency(salesForecast.projectedTotalAud)
+                        : 'No forecast data'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Actual as share of projection</p>
+                    <p className="text-xl font-semibold">
+                      {salesForecast && salesForecast.projectedTotalAud > 0
+                        ? `${((salesForecast.earnedJanToDateAud / salesForecast.projectedTotalAud) * 100).toFixed(1)}%`
+                        : 'No forecast data'}
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
-              <Card><CardHeader><CardTitle className="text-sm font-semibold">Monthly ad spend</CardTitle><CardDescription>Separate scale. No entry is left blank, not treated as zero.</CardDescription></CardHeader><CardContent><ResponsiveContainer width="100%" height={340}><BarChart data={comparisonRows} margin={{ top: 16, right: 12, left: 8, bottom: 0 }}><CartesianGrid strokeDasharray="3 3" className="stroke-zinc-200 dark:stroke-zinc-800" /><XAxis dataKey="month" tick={{ fontSize: 12 }} /><YAxis tickFormatter={(value: number) => value >= 1000 ? `${Math.round(value / 1000)}K` : String(value)} tick={{ fontSize: 12 }} /><Tooltip formatter={(value: number) => formatCurrency(value)} /><Bar dataKey="adSpend" name="Ad spend" fill="#3b82f6" radius={[3, 3, 0, 0]} /></BarChart></ResponsiveContainer></CardContent></Card></div>
+
+              {sfoView ? (
+                <div className="space-y-4">
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>
+                          Monthly sales · {selectedPeriod} vs {Number(selectedPeriod) - 1}
+                        </CardTitle>
+                        <CardDescription>
+                          Recorded SFO sales actuals only. Missing months have no bar; a recorded $0
+                          remains zero.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {comparisonRows.some(
+                          (row) => row.actualSales !== null || row.priorSales !== null
+                        ) ? (
+                          <ResponsiveContainer width="100%" height={340}>
+                            <BarChart data={comparisonRows}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="month" />
+                              <YAxis
+                                tickFormatter={(value: number) => `${Math.round(value / 1000)}K`}
+                              />
+                              <Tooltip
+                                formatter={(value) =>
+                                  typeof value === 'number' ? formatCurrency(value) : 'Not reported'
+                                }
+                              />
+                              <Legend />
+                              <Bar
+                                dataKey="priorSales"
+                                name={`${Number(selectedPeriod) - 1} sales`}
+                                fill="#94a3b8"
+                              />
+                              <Bar
+                                dataKey="actualSales"
+                                name={`${selectedPeriod} sales`}
+                                fill="#10b981"
+                              />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            No sales actuals reported for either year.
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Monthly ad spend by platform</CardTitle>
+                        <CardDescription>
+                          Stacked recorded entries only. No entry is unreported, not $0; totals may
+                          be incomplete where billing is missing.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {sfoSpendPlatforms.length ? (
+                          <ResponsiveContainer width="100%" height={340}>
+                            <BarChart data={sfoSpendRows}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="month" />
+                              <YAxis
+                                tickFormatter={(value: number) => `${Math.round(value / 1000)}K`}
+                              />
+                              <Tooltip
+                                formatter={(value) =>
+                                  typeof value === 'number' ? formatCurrency(value) : 'Not reported'
+                                }
+                              />
+                              <Legend />
+                              {sfoSpendPlatforms.map((platform, index) => (
+                                <Bar
+                                  key={platform.id}
+                                  dataKey={platform.key}
+                                  name={platform.name}
+                                  stackId="platforms"
+                                  fill={['#3b82f6', '#f59e0b', '#8b5cf6', '#14b8a6'][index % 4]}
+                                />
+                              ))}
+                            </BarChart>
+                          </ResponsiveContainer>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            No ad spend entries reported for this year.
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Monthly ad spend as % of sales</CardTitle>
+                      <CardDescription>
+                        Recorded ad spend ÷ recorded sales for the same month. No percentage when
+                        either month is unreported or sales are $0. This is not ROAS or profit.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {comparisonRows.some((row) => row.spendPercent !== null) ? (
+                        <ResponsiveContainer width="100%" height={250}>
+                          <LineChart data={comparisonRows}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="month" />
+                            <YAxis tickFormatter={(value: number) => `${value}%`} />
+                            <Tooltip
+                              formatter={(value) =>
+                                typeof value === 'number'
+                                  ? `${value.toFixed(1)}%`
+                                  : 'Not comparable'
+                              }
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="spendPercent"
+                              name="Spend / sales"
+                              stroke="#0f766e"
+                              connectNulls={false}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          No months have both recorded spend and positive recorded sales.
+                        </p>
+                      )}
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Month</TableHead>
+                              <TableHead>Sales</TableHead>
+                              <TableHead>Ad spend</TableHead>
+                              <TableHead>Spend / sales</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {comparisonRows.map((row) => (
+                              <TableRow key={row.month}>
+                                <TableCell>{row.month}</TableCell>
+                                <TableCell>
+                                  {row.actualSales === null
+                                    ? 'Not reported'
+                                    : formatCurrency(row.actualSales)}
+                                </TableCell>
+                                <TableCell>
+                                  {row.adSpend === null
+                                    ? 'Not reported'
+                                    : formatCurrency(row.adSpend)}
+                                </TableCell>
+                                <TableCell>
+                                  {row.spendPercent === null
+                                    ? '—'
+                                    : `${row.spendPercent.toFixed(1)}%`}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Gross-margin what-if · unavailable</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-sm text-muted-foreground">
+                      No verified cost-of-goods-sold or gross-margin data is available in the SFO
+                      sales and ad-spend sources. A margin or profit scenario cannot be calculated
+                      from sales and advertising spend alone.
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <Card className="lg:col-span-2">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-semibold">
+                        Spend-to-sales comparison
+                      </CardTitle>
+                      <CardDescription>
+                        Track ad expenses against actual sales for matching reported months.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="flex items-center justify-between gap-4 text-sm">
+                        <span className="text-zinc-600 dark:text-zinc-300">
+                          {formatCurrency(comparisonSummary.comparableAdSpend)} ad spend of{' '}
+                          {formatCurrency(comparisonSummary.comparableSales)} actual sales in
+                          comparable months
+                        </span>
+                        <span className="font-semibold text-emerald-500">
+                          {comparisonSummary.spendSharePercent === null
+                            ? '—'
+                            : `${comparisonSummary.spendSharePercent.toFixed(1)}%`}
+                        </span>
+                      </div>
+                      <Progress
+                        value={Math.min(comparisonSummary.spendSharePercent ?? 0, 100)}
+                        className="h-2"
+                      />
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <BarChart3 className="h-4 w-4" />
+                        Monthly actual sales
+                      </CardTitle>
+                      <CardDescription>
+                        Revenue Forecast actuals for {selectedPeriod}. Missing months have no bar.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={340}>
+                        <BarChart
+                          data={comparisonRows}
+                          margin={{ top: 16, right: 12, left: 8, bottom: 0 }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            className="stroke-zinc-200 dark:stroke-zinc-800"
+                          />
+                          <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                          <YAxis
+                            tickFormatter={(value: number) =>
+                              value >= 1000 ? `${Math.round(value / 1000)}K` : String(value)
+                            }
+                            tick={{ fontSize: 12 }}
+                          />
+                          <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                          <Legend />
+                          <Bar
+                            dataKey="actualSales"
+                            name="Actual sales"
+                            fill="#10b981"
+                            radius={[3, 3, 0, 0]}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm font-semibold">Monthly ad spend</CardTitle>
+                      <CardDescription>
+                        Separate scale. No entry is left blank, not treated as zero.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={340}>
+                        <BarChart
+                          data={comparisonRows}
+                          margin={{ top: 16, right: 12, left: 8, bottom: 0 }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            className="stroke-zinc-200 dark:stroke-zinc-800"
+                          />
+                          <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                          <YAxis
+                            tickFormatter={(value: number) =>
+                              value >= 1000 ? `${Math.round(value / 1000)}K` : String(value)
+                            }
+                            tick={{ fontSize: 12 }}
+                          />
+                          <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                          <Bar
+                            dataKey="adSpend"
+                            name="Ad spend"
+                            fill="#3b82f6"
+                            radius={[3, 3, 0, 0]}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
             </>
           ) : null}
 
@@ -1031,7 +1406,27 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
         </TabsContent>
 
         <TabsContent value="manual-entry" className="space-y-6">
-          <div className="rounded-lg border bg-card p-4 text-sm"><label className="cursor-pointer rounded border px-3 py-2 font-medium">Import billing CSV<input className="sr-only" type="file" accept=".csv,text/csv" disabled={isSavingEntry} onChange={(event) => { const file = event.target.files?.[0]; if (file) void importBillingCsv(file); event.target.value = ''; }} /></label><p className="mt-3 text-muted-foreground">CSV columns: date, platform (meta/google/email/seo), transactionId, amount, currency (AUD). Optional: paymentMethod, invoiceReference, invoiceFileName, notes. Existing platform transaction IDs are skipped.</p></div>
+          <div className="rounded-lg border bg-card p-4 text-sm">
+            <label className="cursor-pointer rounded border px-3 py-2 font-medium">
+              Import billing CSV
+              <input
+                className="sr-only"
+                type="file"
+                accept=".csv,text/csv"
+                disabled={isSavingEntry}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void importBillingCsv(file);
+                  event.target.value = '';
+                }}
+              />
+            </label>
+            <p className="mt-3 text-muted-foreground">
+              CSV columns: date, platform (meta/google/email/seo), transactionId, amount, currency
+              (AUD). Optional: paymentMethod, invoiceReference, invoiceFileName, notes. Existing
+              platform transaction IDs are skipped.
+            </p>
+          </div>
           <Tabs
             value={manualPlatformTab}
             onValueChange={(value) => {
@@ -1076,9 +1471,7 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead className="min-w-[120px]">
-                              Date
-                            </TableHead>
+                            <TableHead className="min-w-[120px]">Date</TableHead>
                             <TableHead>Category</TableHead>
                             <TableHead>Transaction ID</TableHead>
                             <TableHead>Payment Method</TableHead>
@@ -1100,9 +1493,7 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
                             </TableRow>
                           ) : (
                             displayedEntries.map((row) => (
-                              <TableRow
-                                key={row.id}
-                              >
+                              <TableRow key={row.id}>
                                 <TableCell>
                                   {new Date(`${row.entryDate}T00:00:00Z`).toLocaleDateString(
                                     'en-AU'
@@ -1260,7 +1651,7 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
                         </label>
                         <Input
                           id={`ad-spend-${platform.value}-transaction-id`}
-                  maxLength={120}
+                          maxLength={120}
                           type="text"
                           value={quickAdd.transactionId}
                           onChange={(event) =>
@@ -1282,7 +1673,7 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
                         </label>
                         <Input
                           id={`ad-spend-${platform.value}-payment-method`}
-                  maxLength={80}
+                          maxLength={80}
                           type="text"
                           value={quickAdd.paymentMethod}
                           onChange={(event) =>
@@ -1324,7 +1715,7 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
                         </label>
                         <Input
                           id={`ad-spend-${platform.value}-invoice-link`}
-                  maxLength={2048}
+                          maxLength={2048}
                           type="url"
                           value={quickAdd.invoiceReference}
                           onChange={(event) =>
@@ -1346,7 +1737,7 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
                         </label>
                         <Input
                           id={`ad-spend-${platform.value}-invoice-file-name`}
-                  maxLength={255}
+                          maxLength={255}
                           type="text"
                           value={quickAdd.invoiceFileName}
                           onChange={(event) =>
@@ -1364,7 +1755,7 @@ export function MarketingAdSpendDashboard({ initialTab = 'sales-comparison', sfo
                     <div className="flex items-center justify-between gap-3">
                       <Textarea
                         value={quickAdd.notes}
-                  maxLength={2000}
+                        maxLength={2000}
                         onChange={(event) =>
                           setQuickAdd((current) => ({ ...current, notes: event.target.value }))
                         }

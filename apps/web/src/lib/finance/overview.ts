@@ -13,6 +13,19 @@ export type FinanceOverviewData = {
   pendingApprovals: number;
   submittedInvoices: number;
   subscriptionRunRateAud: number;
+  paymentSourceSpendAud?: {
+    personalCard: number;
+    companyCard: number;
+    bankTransfer: number;
+    unknown: number;
+  };
+  scheduledRenewals?: Array<{
+    id: string;
+    vendor_name: string;
+    next_renewal: string;
+    monthly_amount_aud: number | null;
+    payment_source: string;
+  }>;
 };
 
 export function summarizeFinanceOverview(

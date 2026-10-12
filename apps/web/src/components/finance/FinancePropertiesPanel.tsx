@@ -570,6 +570,7 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                           'Due date',
                           'Rent due',
                           'Received',
+                          'Last paid on',
                           'Outstanding',
                           'Status',
                         ].map((label) => (
@@ -590,6 +591,13 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                             </td>
                             <td className="px-5 py-3">{money(due)}</td>
                             <td className="px-5 py-3">{money(received)}</td>
+                            <td className="px-5 py-3">
+                              {register.payments
+                                .filter((payment) => payment.property_id === property.id && !payment.voided_at)
+                                .map((payment) => payment.received_on)
+                                .sort()
+                                .at(-1) ?? '—'}
+                            </td>
                             <td className="px-5 py-3">{money(outstanding)}</td>
                             <td className="px-5 py-3">{status}</td>
                           </tr>

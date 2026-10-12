@@ -21,7 +21,8 @@ vi.mock('@/components/finance/FinancePropertiesPanel', () => ({
 }));
 
 import FinanceExpenses from '@/app/(app)/finance/expenses/page';
-import FinancePropertiesPage from '@/app/(app)/finance/properties/page';
+import FinanceOverviewPage from '@/app/(app)/finance/page';
+import FinancePropertiesPage from '@/app/(app)/property/properties/page';
 import FinanceReportsPage from '@/app/(app)/finance/reports/page';
 import { getFinanceContext } from '@/lib/finance/auth';
 
@@ -45,12 +46,14 @@ describe('Finance redesign pages', () => {
 
   it('shows the selected month in the live properties register with no prototype figures', async () => {
     vi.mocked(getFinanceContext).mockResolvedValue({
-      ok: true, capabilities: { isLeadership: true },
+      ok: true,
+      capabilities: { isLeadership: true },
     } as never);
     const html = renderToStaticMarkup(
       await FinancePropertiesPage({ searchParams: Promise.resolve({ month: '2026-06' }) })
     );
     expect(html).toContain('Live properties 2026-06');
+    expect(html).toContain('Property Development');
     expect(html).toContain('Live rent collection and maintenance register');
     expect(html).not.toContain('Phase 2');
   });
@@ -73,6 +76,74 @@ describe('Finance redesign pages', () => {
     expect(html).toContain('Report pack 2026-06');
     expect(html).toContain('50.0%');
     expect(html).toContain('Open detailed expense analytics');
+  });
+
+  it('labels a quarter trend while retaining the selected monthly report pack', async () => {
+    const rpc = vi.fn(async (name: string, args: { target_month?: string }) =>
+      name === 'finance_spend_trend'
+        ? {
+            data: [
+              {
+                bucket_start: '2026-04-01',
+                bucket_end: '2026-07-01',
+                spend_aud: 42,
+                converted_count: 1,
+                unconverted_count: 0,
+              },
+            ],
+            error: null,
+          }
+        : { data: overview(args.target_month ?? '2026-06-01', 42), error: null }
+    );
+    vi.mocked(getFinanceContext).mockResolvedValue({
+      ok: true,
+      capabilities: { isLeadership: true },
+      admin: { rpc },
+    } as never);
+    const html = renderToStaticMarkup(
+      await FinanceReportsPage({
+        searchParams: Promise.resolve({ month: '2026-06', view: 'quarter' }),
+      })
+    );
+    expect(html).toContain('Quarterly recorded spend');
+    expect(html).toContain('2026-04-01');
+    expect(html).toContain('month-end report pack below remains for June 2026');
+    expect(html).toContain('Report pack 2026-06');
+  });
+
+  it('shows real payment sources and dated renewals without claiming payment', async () => {
+    const rpc = vi.fn(async (_name: string, args: { target_month: string }) => ({
+      data: {
+        ...overview(args.target_month, 25),
+        paymentSourceSpendAud: { personalCard: 0, companyCard: 25, bankTransfer: 0, unknown: 0 },
+        scheduledRenewals:
+          args.target_month === '2026-06-01'
+            ? [
+                {
+                  id: 'sub-1',
+                  vendor_name: 'Canva',
+                  next_renewal: '2026-06-20',
+                  monthly_amount_aud: 25,
+                  payment_source: 'company_card',
+                },
+              ]
+            : [],
+      },
+      error: null,
+    }));
+    vi.mocked(getFinanceContext).mockResolvedValue({
+      ok: true,
+      capabilities: { isLeadership: true },
+      admin: { rpc },
+    } as never);
+    const html = renderToStaticMarkup(
+      await FinanceOverviewPage({ searchParams: Promise.resolve({ month: '2026-06' }) })
+    );
+    expect(html).toContain('Recorded spend by payment source');
+    expect(html).toContain('Company card');
+    expect(html).toContain('Scheduled subscription renewals');
+    expect(html).toContain('Canva');
+    expect(html).toContain('payment is not confirmed by this schedule');
   });
 
   it('preserves selected filters and distinguishes currency and approval states', async () => {

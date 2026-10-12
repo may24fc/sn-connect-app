@@ -1,5 +1,6 @@
 'use client';
 
+import { subscriptionChecks } from '@/lib/finance/subscription-checks';
 import { useCallback, useEffect, useState } from 'react';
 
 type Category = { code: string; name: string; example: string };
@@ -10,6 +11,8 @@ type Subscription = {
   category_code: string;
   payment_source: string;
   monthly_amount_aud: number | null;
+  seats: number | null;
+  last_charged: string | null;
   next_renewal: string | null;
   active: boolean;
 };
@@ -27,6 +30,8 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
   const [saving, setSaving] = useState(false);
   const [vendor, setVendor] = useState('');
   const [amount, setAmount] = useState('');
+  const [seats, setSeats] = useState('');
+  const [nextRenewal, setNextRenewal] = useState('');
   const [category, setCategory] = useState('software');
   const [source, setSource] = useState('unknown');
   const active = catalog?.subscriptions.filter((item) => item.active) ?? [];
@@ -67,6 +72,10 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
   }
   async function addSubscription(event: React.FormEvent) {
     event.preventDefault();
+    if (seats.trim() && (!Number.isInteger(Number(seats)) || Number(seats) < 0)) {
+      setError('Enter a valid seat count');
+      return;
+    }
     setSaving(true);
     setError('');
     const monthlyAmountAud = amount.trim() ? Number(amount) : null;
@@ -79,8 +88,8 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
         categoryCode: category,
         paymentSource: source,
         monthlyAmountAud,
-        seats: null,
-        nextRenewal: null,
+        seats: seats.trim() ? Number(seats) : null,
+        nextRenewal: nextRenewal || null,
         notes: null,
       }),
     });
@@ -88,6 +97,8 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
     if (response.ok) {
       setVendor('');
       setAmount('');
+      setSeats('');
+      setNextRenewal('');
       void load();
     } else setError('Could not save subscription');
   }
@@ -121,7 +132,7 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
           {
             title: 'Need a look',
             value: String(unknownAmounts),
-            detail: 'Active tools without a known price',
+            detail: 'Active tools without a known price; unlinked charges cannot be checked',
           },
         ].map((item) => (
           <div key={item.title} className="rounded-xl border bg-card p-5">
@@ -138,17 +149,19 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
           expenses. Run rate includes active records with known amounts only.
         </p>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[730px] text-left text-sm">
+          <table className="w-full min-w-[980px] text-left text-sm">
             <thead className="bg-[#fafbf9] text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
                 {[
                   'Service',
                   'Category',
                   'Paid with',
+                  'Seats',
                   'Monthly',
                   'Yearly',
+                  'Last charged',
                   'Next renewal',
-                  'Status',
+                  'Check',
                 ].map((label) => (
                   <th className="border-b p-3" key={label}>
                     {label}
@@ -167,6 +180,9 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
                   <td className="border-b p-3 capitalize">
                     {item.payment_source.replaceAll('_', ' ')}
                   </td>
+                  <td className="border-b p-3">
+                    {item.seats === null ? 'Not recorded' : item.seats}
+                  </td>
                   <td className="border-b p-3 tabular-nums">
                     {item.monthly_amount_aud === null
                       ? 'Unknown'
@@ -177,13 +193,23 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
                       ? 'Unknown'
                       : money(Number(item.monthly_amount_aud) * 12)}
                   </td>
+                  <td className="border-b p-3">{item.last_charged ?? 'No linked charge'}</td>
                   <td className="border-b p-3">{item.next_renewal ?? 'Not set'}</td>
                   <td className="border-b p-3">
                     <span
                       className={`rounded-full px-2 py-1 text-xs font-semibold ${item.active ? 'bg-[#e5f4ea] text-[#0f8a3c]' : 'bg-muted text-muted-foreground'}`}
                     >
-                      {item.active ? 'Active' : 'Inactive'}
+                      {item.active ? 'Active · charge not verified' : 'Inactive'}
                     </span>
+                    {subscriptionChecks(
+                      item,
+                      catalog.subscriptions,
+                      new Date().toISOString().slice(0, 10)
+                    ).map((check) => (
+                      <p key={check} className="mt-1 text-xs text-amber-700">
+                        {check}
+                      </p>
+                    ))}
                   </td>
                 </tr>
               ))}
@@ -242,6 +268,26 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
               value={amount}
               onChange={(event) => setAmount(event.target.value)}
               className="ml-2 w-28 rounded border p-2"
+            />
+          </label>
+          <label>
+            Seats
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={seats}
+              onChange={(event) => setSeats(event.target.value)}
+              className="ml-2 w-20 rounded border p-2"
+            />
+          </label>
+          <label>
+            Next renewal
+            <input
+              type="date"
+              value={nextRenewal}
+              onChange={(event) => setNextRenewal(event.target.value)}
+              className="ml-2 rounded border p-2"
             />
           </label>
           <button
