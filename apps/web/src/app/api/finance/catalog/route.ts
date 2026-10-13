@@ -1,5 +1,5 @@
 import { canReviewFinance, getFinanceContext } from '@/lib/finance/auth';
-import { NextResponse, type NextRequest } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const categoryCode = z.enum([
@@ -51,7 +51,12 @@ const mutation = z.discriminatedUnion('kind', [
     kind: z.literal('budget'),
     categoryCode,
     month: z.string().regex(monthPattern),
-    amountAud: z.number().nonnegative().max(1e10),
+    amountAud: z.number().positive().max(1e10),
+  }),
+  z.object({
+    kind: z.literal('budget_clear'),
+    categoryCode,
+    month: z.string().regex(monthPattern),
   }),
   z.object({
     kind: z.literal('subscription'),
@@ -145,6 +150,15 @@ export async function POST(request: NextRequest) {
       .single();
     if (error) return NextResponse.json({ error: 'Could not save budget' }, { status: 500 });
     return NextResponse.json({ data });
+  }
+  if (parsed.data.kind === 'budget_clear') {
+    const { error } = await db
+      .from('finance_budgets')
+      .delete()
+      .eq('category_code', parsed.data.categoryCode)
+      .eq('month', parsed.data.month);
+    if (error) return NextResponse.json({ error: 'Could not clear budget' }, { status: 500 });
+    return NextResponse.json({ data: null });
   }
   const { data, error } = await db
     .from('finance_subscriptions')

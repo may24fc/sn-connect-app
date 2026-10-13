@@ -52,12 +52,16 @@ export default async function FinanceOverview({
       href: '/finance/expenses?tab=review',
       color: 'text-red-700 bg-red-50',
     },
-    {
-      label: 'Budgets over limit',
-      count: comparison.overBudgetCount,
-      href: '#budgets',
-      color: 'text-red-700 bg-red-50',
-    },
+    ...(comparison.budgetedCategories.length
+      ? [
+          {
+            label: 'Budgets over limit',
+            count: comparison.overBudgetCount,
+            href: '#budgets',
+            color: 'text-red-700 bg-red-50',
+          },
+        ]
+      : []),
     {
       label: 'Pending expense approvals',
       count: summary.pendingApprovals,
@@ -73,12 +77,16 @@ export default async function FinanceOverview({
   ];
 
   return (
-    <main className="mx-auto max-w-7xl space-y-5 p-4 md:p-8">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+    <main className="h-full space-y-6">
+      <header className="flex flex-col gap-4 border-b border-border/80 pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-teal-700">Finance</p>
-          <h1 className="text-3xl font-bold">Overview</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-primary">
+            Finance
+          </p>
+          <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground lg:text-3xl">
+            Overview
+          </h1>
+          <p className="mt-1 max-w-3xl text-sm text-muted-foreground lg:text-base">
             What needs your attention, and where the money went this month.
           </p>
         </div>
@@ -123,7 +131,7 @@ export default async function FinanceOverview({
       <p className="text-xs text-muted-foreground">Open items across all months</p>
       <section
         aria-label="Finance action queue"
-        className="grid overflow-hidden rounded-xl border bg-card sm:grid-cols-2 lg:grid-cols-5"
+        className={`grid overflow-hidden rounded-xl border bg-card sm:grid-cols-2 ${tasks.length === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}
       >
         {tasks.map((task) => (
           <Link
@@ -229,7 +237,9 @@ export default async function FinanceOverview({
         </section>
       </div>
       <div className="grid gap-4 lg:grid-cols-12">
-        <section className="rounded-xl border bg-card p-5 lg:col-span-7">
+        <section
+          className={`rounded-xl border bg-card p-5 ${comparison.budgetedCategories.length ? 'lg:col-span-7' : 'lg:col-span-12'}`}
+        >
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h2 className="font-semibold">Spend by category</h2>
@@ -280,31 +290,29 @@ export default async function FinanceOverview({
             </p>
           )}
         </section>
-        <section id="budgets" className="rounded-xl border bg-card p-5 lg:col-span-5">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="font-semibold">Budgets</h2>
-              <p className="text-xs text-muted-foreground">Monthly limits · {monthLabel(month)}</p>
+        {comparison.budgetedCategories.length ? (
+          <section id="budgets" className="rounded-xl border bg-card p-5 lg:col-span-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="font-semibold">Budgets</h2>
+                <p className="text-xs text-muted-foreground">
+                  Monthly limits · {monthLabel(month)}
+                </p>
+              </div>
+              <Link
+                className="text-sm font-medium text-teal-700 hover:underline"
+                href={`/finance/expenses?tab=subscriptions&month=${month}`}
+              >
+                Edit limits
+              </Link>
             </div>
-            <Link
-              className="text-sm font-medium text-teal-700 hover:underline"
-              href={`/finance/expenses?tab=subscriptions&month=${month}`}
-            >
-              Edit limits
-            </Link>
-          </div>
-          {comparison.budgetedCategories.length ? (
             <div className="space-y-5">
               {comparison.budgetedCategories.map((row) => (
                 <BudgetMeter key={row.code} row={row} />
               ))}
             </div>
-          ) : (
-            <p className="py-6 text-sm text-muted-foreground">
-              No monthly budgets set. Add limits in Expenses → Subscriptions.
-            </p>
-          )}
-        </section>
+          </section>
+        ) : null}
       </div>
       <section className="rounded-xl border bg-card p-5">
         <h2 className="font-semibold">Biggest changes vs {monthLabel(previous)}</h2>

@@ -9,7 +9,7 @@ import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 
 const money = (value: number) =>
   new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(value);
-type FormKind = 'property' | 'rent' | 'maintenance';
+type FormKind = 'property' | 'rent' | 'maintenance' | 'terms' | 'expected_rent';
 type Tab = 'rent' | 'maintenance';
 type Correction =
   | { kind: 'rent_void'; id: string }
@@ -24,6 +24,7 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('rent');
   const [formKind, setFormKind] = useState<FormKind | null>(null);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [correction, setCorrection] = useState<Correction | null>(null);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -89,16 +90,34 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
               amountAud: Number(text('amountAud')),
               reference: optional('reference'),
             }
-          : {
-              kind: 'maintenance',
-              propertyId: text('propertyId'),
-              jobDate: text('jobDate'),
-              description: text('description'),
-              contractor: optional('contractor'),
-              costAud: Number(text('costAud')),
-              invoiceReference: optional('invoiceReference'),
-              status: text('status'),
-            };
+          : formKind === 'maintenance'
+            ? {
+                kind: 'maintenance',
+                propertyId: text('propertyId'),
+                jobDate: text('jobDate'),
+                description: text('description'),
+                contractor: optional('contractor'),
+                costAud: Number(text('costAud')),
+                invoiceReference: optional('invoiceReference'),
+                status: text('status'),
+              }
+            : formKind === 'terms'
+              ? {
+                  kind: 'terms',
+                  propertyId: text('propertyId'),
+                  effectiveMonth: month,
+                  tenantName: optional('tenantName'),
+                  occupancy: text('occupancy'),
+                  weeklyRentAud: Number(text('weeklyRentAud')),
+                  dueDay: Number(text('dueDay')),
+                }
+              : {
+                  kind: 'expected_rent',
+                  propertyId: text('propertyId'),
+                  month,
+                  expectedRentAud: text('expectedRentAud') ? Number(text('expectedRentAud')) : null,
+                  calculationNote: optional('calculationNote'),
+                };
     setSaving(true);
     setError(null);
     setNotice(null);
@@ -111,12 +130,19 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? 'Could not save record');
       setFormKind(null);
+      setSelectedPropertyId(null);
       setNotice(
         formKind === 'property'
           ? 'Property added'
           : formKind === 'rent'
             ? 'Rent recorded'
-            : 'Maintenance logged'
+            : formKind === 'maintenance'
+              ? 'Maintenance logged'
+              : formKind === 'terms'
+                ? `Property terms saved from ${month}; earlier months are unchanged`
+                : payload.expectedRentAud === null
+                  ? `Expected rent reset to the monthly default for ${month}`
+                  : `Expected rent saved for ${month}`
       );
       await load();
     } catch (cause) {
@@ -126,6 +152,16 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
     } finally {
       setSaving(false);
     }
+  }
+
+  const selectedProperty = register.properties.find(
+    (property) => property.id === selectedPropertyId
+  );
+  function openPropertyForm(kind: 'terms' | 'expected_rent', propertyId: string) {
+    setError(null);
+    setNotice(null);
+    setSelectedPropertyId(propertyId);
+    setFormKind(kind);
   }
 
   async function saveCorrection(event: FormEvent<HTMLFormElement>) {
@@ -165,8 +201,9 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          Recorded property data only; no sample records. Rent due uses current property terms,
-          including for earlier months. Payment and maintenance statuses are manually recorded.
+          Terms take effect from the first of the selected month with no daily proration. A monthly
+          expected-rent override can record Finance's weekly total; later term changes leave prior
+          months unchanged.
         </p>
         <div className="flex flex-wrap gap-2">
           <button
@@ -204,7 +241,7 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
         </div>
       </div>
       {notice && (
-        <output className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+        <output className="block w-full break-words rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
           {notice}
         </output>
       )}
@@ -227,11 +264,18 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                 ? 'Add property'
                 : formKind === 'rent'
                   ? 'Record rent received'
-                  : 'Log maintenance'}
+                  : formKind === 'maintenance'
+                    ? 'Log maintenance'
+                    : formKind === 'terms'
+                      ? `Change terms from ${month}`
+                      : `Expected rent for ${month}`}
             </h2>
             <button
               type="button"
-              onClick={() => setFormKind(null)}
+              onClick={() => {
+                setFormKind(null);
+                setSelectedPropertyId(null);
+              }}
               disabled={saving}
               className="text-sm underline"
             >
@@ -290,6 +334,95 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                     required
                   />
                 </label>
+              </>
+            ) : formKind === 'terms' && selectedProperty ? (
+              <>
+                <input type="hidden" name="propertyId" value={selectedProperty.id} />
+                <p className="self-center text-sm font-semibold">{selectedProperty.name}</p>
+                <label className={labelClass}>
+                  Occupancy from {month}
+                  <select
+                    className={inputClass}
+                    name="occupancy"
+                    defaultValue={selectedProperty.occupancy}
+                  >
+                    <option value="occupied">Occupied</option>
+                    <option value="vacant">Vacant</option>
+                  </select>
+                </label>
+                <label className={labelClass}>
+                  Tenant (optional)
+                  <input
+                    className={inputClass}
+                    name="tenantName"
+                    maxLength={180}
+                    defaultValue={selectedProperty.tenant_name ?? ''}
+                  />
+                </label>
+                <label className={labelClass}>
+                  Weekly rent (AUD)
+                  <input
+                    className={inputClass}
+                    name="weeklyRentAud"
+                    type="number"
+                    min="0"
+                    max="1000000000"
+                    step="0.01"
+                    defaultValue={selectedProperty.weekly_rent_aud}
+                    required
+                  />
+                </label>
+                <label className={labelClass}>
+                  Due day of month (1–28)
+                  <input
+                    className={inputClass}
+                    name="dueDay"
+                    type="number"
+                    min="1"
+                    max="28"
+                    defaultValue={selectedProperty.due_day}
+                    required
+                  />
+                </label>
+                <p className="self-center text-xs text-muted-foreground">
+                  Saved from the first of {month}. No past month is recalculated.
+                </p>
+              </>
+            ) : formKind === 'expected_rent' && selectedProperty ? (
+              <>
+                <input type="hidden" name="propertyId" value={selectedProperty.id} />
+                <p className="self-center text-sm font-semibold">{selectedProperty.name}</p>
+                <label className={labelClass}>
+                  Expected rent for {month} (AUD)
+                  <input
+                    className={inputClass}
+                    name="expectedRentAud"
+                    type="number"
+                    min="0"
+                    max="1000000000"
+                    step="0.01"
+                    defaultValue={
+                      selectedProperty.has_expected_rent_override
+                        ? selectedProperty.expected_rent_aud
+                        : ''
+                    }
+                    placeholder={String(selectedProperty.default_expected_rent_aud ?? 0)}
+                  />
+                </label>
+                <label className={labelClass}>
+                  Calculation note (optional)
+                  <input
+                    className={inputClass}
+                    name="calculationNote"
+                    maxLength={500}
+                    defaultValue={selectedProperty.expected_rent_note ?? ''}
+                    placeholder="e.g. 2 weeks × $650 + 2 weeks × $700"
+                  />
+                </label>
+                <p className="self-center text-xs text-muted-foreground">
+                  Leave the amount blank to use the default of{' '}
+                  {money(selectedProperty.default_expected_rent_aud ?? 0)}.
+                </p>
               </>
             ) : (
               <>
@@ -460,7 +593,7 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
             className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
           >
             {[
-              ['Rent due', summary.due, 'Occupied properties · monthly equivalent'],
+              ['Expected rent', summary.due, 'Monthly defaults plus Finance overrides'],
               ['Rent received', summary.received, `Payments allocated to ${month}`],
               ['Overdue rent', summary.overdue, 'Past due date and still outstanding'],
               [
@@ -507,8 +640,13 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                         <dd className="font-semibold">{money(Number(property.weekly_rent_aud))}</dd>
                       </div>
                       <div>
-                        <dt className="text-muted-foreground">Monthly due</dt>
+                        <dt className="text-muted-foreground">Expected rent</dt>
                         <dd className="font-semibold">{money(due)}</dd>
+                        <p className="text-xs text-muted-foreground">
+                          {property.has_expected_rent_override
+                            ? `Manual override${property.expected_rent_note ? ` · ${property.expected_rent_note}` : ''}`
+                            : 'Monthly default'}
+                        </p>
                       </div>
                       <div>
                         <dt className="text-muted-foreground">Received</dt>
@@ -529,6 +667,22 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                         </dd>
                       </div>
                     </dl>
+                    <div className="mt-4 flex flex-wrap gap-2 border-t pt-4 text-sm">
+                      <button
+                        type="button"
+                        onClick={() => openPropertyForm('expected_rent', property.id)}
+                        className="rounded-md border px-3 py-2 font-medium"
+                      >
+                        Edit expected rent
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openPropertyForm('terms', property.id)}
+                        className="rounded-md border px-3 py-2 font-medium"
+                      >
+                        Change terms from {month}
+                      </button>
+                    </div>
                   </article>
                 )
               )
@@ -568,7 +722,7 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                           'Property',
                           'Tenant',
                           'Due date',
-                          'Rent due',
+                          'Expected rent',
                           'Received',
                           'Last paid on',
                           'Outstanding',
@@ -593,7 +747,10 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                             <td className="px-5 py-3">{money(received)}</td>
                             <td className="px-5 py-3">
                               {register.payments
-                                .filter((payment) => payment.property_id === property.id && !payment.voided_at)
+                                .filter(
+                                  (payment) =>
+                                    payment.property_id === property.id && !payment.voided_at
+                                )
                                 .map((payment) => payment.received_on)
                                 .sort()
                                 .at(-1) ?? '—'}

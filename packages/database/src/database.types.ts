@@ -2425,6 +2425,62 @@ export type Database = {
           },
         ]
       }
+      finance_property_monthly_expected_rent: {
+        Row: {
+          calculation_note: string | null
+          expected_rent_aud: number
+          period_month: string
+          property_id: string
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          calculation_note?: string | null
+          expected_rent_aud: number
+          period_month: string
+          property_id: string
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          calculation_note?: string | null
+          expected_rent_aud?: number
+          period_month?: string
+          property_id?: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_property_monthly_expected_rent_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "finance_properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_property_monthly_expected_rent_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "finance_property_monthly_expected_rent_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "finance_property_monthly_expected_rent_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       finance_property_rent_payments: {
         Row: {
           amount_aud: number
@@ -2513,6 +2569,68 @@ export type Database = {
             columns: ["voided_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_property_terms: {
+        Row: {
+          changed_at: string
+          changed_by: string
+          due_day: number
+          effective_month: string
+          occupancy: string
+          property_id: string
+          tenant_name: string | null
+          weekly_rent_aud: number
+        }
+        Insert: {
+          changed_at?: string
+          changed_by: string
+          due_day: number
+          effective_month: string
+          occupancy: string
+          property_id: string
+          tenant_name?: string | null
+          weekly_rent_aud: number
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string
+          due_day?: number
+          effective_month?: string
+          occupancy?: string
+          property_id?: string
+          tenant_name?: string | null
+          weekly_rent_aud?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_property_terms_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "finance_property_terms_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "finance_property_terms_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_property_terms_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "finance_properties"
             referencedColumns: ["id"]
           },
         ]
@@ -11569,7 +11687,6 @@ export type Database = {
     }
   }
 }
-
 type PublicSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<

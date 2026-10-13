@@ -13,14 +13,16 @@ export default async function FinancePropertiesPage({
   if (query.month !== undefined && !/^\d{4}-(0[1-9]|1[0-2])$/.test(query.month)) return notFound();
   const month = query.month ?? new Date().toISOString().slice(0, 7);
   return (
-    <main className="mx-auto max-w-7xl space-y-5 bg-[#f5f6f4] p-4 text-[#10191c] dark:bg-[#0a1e26] dark:text-slate-100 md:p-8">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+    <main className="h-full space-y-6">
+      <header className="flex flex-col gap-4 border-b border-border/80 pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#1f6a7c]">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-primary">
             Property Development
           </p>
-          <h1 className="text-3xl font-bold">Properties</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground lg:text-3xl">
+            Properties
+          </h1>
+          <p className="mt-1 max-w-3xl text-sm text-muted-foreground lg:text-base">
             Live rent collection and maintenance register · AUD
           </p>
         </div>

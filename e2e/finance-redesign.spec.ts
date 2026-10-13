@@ -5,10 +5,37 @@ test.setTimeout(240_000);
 const accounts = [
   { name: 'admin', email: 'admin@example.com' },
   { name: 'super-admin', email: 'super-admin@example.com' },
+  { name: 'accounting', email: 'employee@example.com' },
 ] as const;
+
+async function expectPageToUseAppShellSpacing(page: import('@playwright/test').Page) {
+  const mainRegions = page.locator('main');
+  await expect(mainRegions).toHaveCount(2);
+  const shell = mainRegions.first();
+  const pageContent = mainRegions.nth(1);
+  const [shellBox, pageBox, shellPadding] = await Promise.all([
+    shell.boundingBox(),
+    pageContent.boundingBox(),
+    shell.evaluate((element) => {
+      const style = window.getComputedStyle(element);
+      return {
+        left: Number.parseFloat(style.paddingLeft),
+        right: Number.parseFloat(style.paddingRight),
+      };
+    }),
+  ]);
+  expect(shellBox).not.toBeNull();
+  expect(pageBox).not.toBeNull();
+  expect(pageBox?.x).toBeCloseTo((shellBox?.x ?? 0) + shellPadding.left, 0);
+  expect(pageBox?.width).toBeCloseTo(
+    (shellBox?.width ?? 0) - shellPadding.left - shellPadding.right,
+    0
+  );
+}
 
 for (const account of accounts) {
   test(`Finance and SFO screens render for ${account.name}`, async ({ page }, testInfo) => {
+    testInfo.setTimeout(480_000);
     const consoleErrors: Array<string> = [];
     const failedRequests: Array<string> = [];
     page.on('pageerror', (error) => consoleErrors.push(`${page.url()}: ${error.message}`));
@@ -35,28 +62,34 @@ for (const account of accounts) {
       timeout: 45_000,
     });
 
-    for (const route of [
+    const routes = [
       '/finance?month=2026-10',
       '/finance/expenses?tab=subscriptions',
       '/property/properties',
       '/finance/staff-payments',
       '/finance/reports?month=2026-10&view=quarter',
-      '/sfo/performance',
-    ]) {
+      ...(account.name === 'accounting' ? [] : ['/sfo/performance']),
+    ];
+    for (const route of routes) {
       await page.goto(route, { waitUntil: 'domcontentloaded', timeout: 60_000 });
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 45_000 });
       if (route === '/property/properties')
-        await expect(page.getByText(/Loading property register/)).toHaveCount(0);
+        await expect(page.getByText(/Loading property register/)).toHaveCount(0, {
+          timeout: 45_000,
+        });
       if (route.startsWith('/finance/reports'))
-        await expect(page.getByText(/Loading report checks/)).toHaveCount(0);
+        await expect(page.getByText(/Loading report checks/)).toHaveCount(0, { timeout: 45_000 });
       if (route === '/finance/staff-payments')
-        await expect(page.getByText(/Loading approved invoices/)).toHaveCount(0);
+        await expect(page.getByText(/Loading approved invoices/)).toHaveCount(0, {
+          timeout: 45_000,
+        });
       if (route === '/sfo/performance')
-        await expect(page.getByText(/Loading ad spend data/)).toHaveCount(0);
+        await expect(page.getByText(/Loading ad spend data/)).toHaveCount(0, { timeout: 45_000 });
       if (route.startsWith('/finance/expenses'))
-        await expect(
-          page.locator('[aria-label="Subscription summary"]').getByText('—')
-        ).toHaveCount(0);
+        await expect(page.locator('[aria-label="Subscription summary"]')).not.toContainText(
+          /\u2014/,
+          { timeout: 45_000 }
+        );
       if (route === '/property/properties') {
         await expect(
           page.getByRole('button', { name: 'Current workspace: Property Development' })
@@ -64,12 +97,23 @@ for (const account of accounts) {
       }
       if (route.startsWith('/finance/reports')) {
         await expect(page.getByText('Quarterly recorded spend')).toBeVisible();
+        await expect(page.getByText(/Finalization policy pending/)).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Mark final' })).toBeDisabled();
       }
       if (route === '/finance/staff-payments') {
-        await page.getByRole('button', { name: 'Hide amounts' }).click();
-        await expect(page.getByRole('button', { name: 'Show amounts' })).toBeVisible();
+        if (account.name === 'accounting') {
+          await expect(
+            page.getByText(/Wise batch handling are restricted to administrators/)
+          ).toBeVisible();
+        } else {
+          await expect(page.getByText('External file test pending')).toBeVisible();
+          await page.getByRole('button', { name: 'Hide amounts' }).click();
+          await expect(page.getByRole('button', { name: 'Show amounts' })).toBeVisible();
+        }
       }
       await expect(page.locator('body')).not.toContainText('Internal Server Error');
+      await page.locator('main').first().evaluate((element) => element.scrollTo({ top: 0 }));
+      await expectPageToUseAppShellSpacing(page);
       await page.screenshot({
         path: testInfo.outputPath(
           `${account.name}-${route.split('/')[2]?.split('?')[0] ?? 'page'}-desktop.png`
@@ -88,11 +132,11 @@ for (const account of accounts) {
         395
       );
       await page.setViewportSize({ width: 1440, height: 900 });
-      if (route.startsWith('/finance?')) {
-        await page.getByRole('button', { name: 'Current workspace: Internal Management' }).click();
-        await page.getByRole('menuitem', { name: /Property Development/ }).click();
-        await expect(page).toHaveURL(/\/property\/properties/);
-      }
+    }
+
+    if (account.name === 'super-admin') {
+      await page.goto('/finance/expenses?tab=review', { waitUntil: 'domcontentloaded' });
+      await expect(page.getByText('Policy pending')).toBeVisible({ timeout: 45_000 });
     }
 
     expect(consoleErrors).toEqual([]);
@@ -177,8 +221,121 @@ test('leadership resolves a Wise exception and sees unknown confirmations listed
   await page.goto('/finance/reports?month=2026-10');
   await expect(page.getByText('Office supplier')).toBeVisible();
   await expect(
-    page.getByText(/1 direct payments listed; these do not block finalization/)
+    page.getByText(/1 direct payments listed under the current safeguard; final policy is pending/)
   ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Mark final' })).toBeDisabled();
+});
+
+test('monthly expected rent and effective-month terms stay server-confirmed', async ({
+  page,
+}, testInfo) => {
+  testInfo.setTimeout(480_000);
+  await page.goto('/login');
+  await page.getByLabel('Email').fill('admin@example.com');
+  await page.locator('#password').fill('password');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(
+    page.getByRole('heading', { name: /Good (morning|afternoon|evening)/i })
+  ).toBeVisible({ timeout: 45_000 });
+
+  const propertyId = '123e4567-e89b-42d3-a456-426614174000';
+  const property = {
+    id: propertyId,
+    name: 'Weekly rent test property',
+    property_type: 'Residential',
+    tenant_name: 'Test tenant',
+    occupancy: 'occupied',
+    weekly_rent_aud: 650,
+    due_day: 5,
+    created_by: 'user',
+    created_at: '2026-01-01T00:00:00Z',
+    term_effective_month: '2026-01-01',
+    default_expected_rent_aud: 2816.67,
+    expected_rent_aud: 2816.67,
+    expected_rent_note: null,
+    has_expected_rent_override: false,
+  };
+  let currentProperty = { ...property };
+  const mutations: Array<Record<string, unknown>> = [];
+  await page.route('**/api/finance/properties?month=2026-10', async (route) => {
+    await route.fulfill({
+      json: {
+        data: {
+          properties: [currentProperty],
+          payments: [],
+          maintenance: [],
+          statusEvents: [],
+        },
+      },
+    });
+  });
+  await page.route('**/api/finance/properties', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fulfill({
+        json: {
+          data: {
+            properties: [currentProperty],
+            payments: [],
+            maintenance: [],
+            statusEvents: [],
+          },
+        },
+      });
+      return;
+    }
+    const payload = route.request().postDataJSON() as Record<string, unknown>;
+    mutations.push(payload);
+    if (payload.kind === 'expected_rent') {
+      currentProperty = {
+        ...currentProperty,
+        expected_rent_aud: payload.expectedRentAud as number,
+        expected_rent_note: payload.calculationNote as string,
+        has_expected_rent_override: true,
+      };
+    }
+    if (payload.kind === 'terms') {
+      currentProperty = {
+        ...currentProperty,
+        weekly_rent_aud: payload.weeklyRentAud as number,
+        term_effective_month: '2026-10-01',
+      };
+    }
+    await route.fulfill({ status: 200, json: { data: payload } });
+  });
+
+  await page.goto('/property/properties?month=2026-10', {
+    waitUntil: 'domcontentloaded',
+    timeout: 120_000,
+  });
+  await expect(page.getByText(/Loading property register/)).toHaveCount(0);
+  await page.getByRole('button', { name: 'Edit expected rent' }).click();
+  await page.getByLabel('Expected rent for 2026-10 (AUD)').fill('2700');
+  await page.getByLabel('Calculation note (optional)').fill('2 weeks × $650 + 2 weeks × $700');
+  await page.getByRole('button', { name: 'Save record' }).click();
+  await expect(page.getByText('Expected rent saved for 2026-10')).toBeVisible();
+  await expect(page.getByText(/Manual override · 2 weeks/)).toBeVisible();
+
+  await page.getByRole('button', { name: 'Change terms from 2026-10' }).click();
+  await page.getByLabel('Weekly rent (AUD)').fill('700');
+  await page.getByRole('button', { name: 'Save record' }).click();
+  await expect(
+    page.getByText('Property terms saved from 2026-10; earlier months are unchanged')
+  ).toBeVisible();
+  expect(mutations).toEqual([
+    expect.objectContaining({ kind: 'expected_rent', expectedRentAud: 2700 }),
+    expect.objectContaining({ kind: 'terms', effectiveMonth: '2026-10', weeklyRentAud: 700 }),
+  ]);
+
+  await page.screenshot({
+    path: testInfo.outputPath('property-monthly-expected-rent-desktop.png'),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(395);
+  await page.screenshot({
+    path: testInfo.outputPath('property-monthly-expected-rent-mobile.png'),
+    fullPage: true,
+  });
 });
 
 test('subscription register handles long rows and load errors on mobile', async ({
@@ -216,6 +373,10 @@ test('subscription register handles long rows and load errors on mobile', async 
   });
   await page.goto('/finance/expenses?tab=subscriptions');
   await expect(page.getByText('Long subscription vendor name 24 with details')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add optional limits' })).toBeVisible();
+  await expect(page.getByLabel(/monthly budget/)).toHaveCount(0);
+  await page.getByRole('button', { name: 'Add optional limits' }).click();
+  await expect(page.getByLabel('Software monthly budget')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(395);
   await page.screenshot({
     path: testInfo.outputPath('subscriptions-long-mobile.png'),

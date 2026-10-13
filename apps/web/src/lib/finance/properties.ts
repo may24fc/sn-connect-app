@@ -8,6 +8,31 @@ export type FinanceProperty = {
   due_day: number;
   created_by: string;
   created_at: string;
+  term_effective_month?: string;
+  default_expected_rent_aud?: number;
+  expected_rent_aud?: number;
+  expected_rent_note?: string | null;
+  has_expected_rent_override?: boolean;
+};
+
+export type PropertyTerm = {
+  property_id: string;
+  effective_month: string;
+  tenant_name: string | null;
+  occupancy: 'occupied' | 'vacant';
+  weekly_rent_aud: number;
+  due_day: number;
+  changed_by: string;
+  changed_at: string;
+};
+
+export type PropertyExpectedRent = {
+  property_id: string;
+  period_month: string;
+  expected_rent_aud: number;
+  calculation_note: string | null;
+  updated_by: string;
+  updated_at: string;
 };
 
 export type RentPayment = {
@@ -61,10 +86,13 @@ export type PropertyQuery<T> = PromiseLike<{
   eq: (column: string, value: string) => PropertyQuery<T>;
   gte: (column: string, value: string) => PropertyQuery<T>;
   lt: (column: string, value: string) => PropertyQuery<T>;
+  lte: (column: string, value: string) => PropertyQuery<T>;
   order: (column: string, options?: { ascending: boolean }) => PropertyQuery<T>;
   limit: (count: number) => PropertyQuery<T>;
   in: (column: string, values: Array<string>) => PropertyQuery<T>;
   insert: (value: Record<string, unknown>) => PropertyQuery<T>;
+  upsert: (value: Record<string, unknown>, options?: { onConflict: string }) => PropertyQuery<T>;
+  delete: () => PropertyQuery<T>;
   update: (value: Record<string, unknown>) => PropertyQuery<T>;
   single: () => Promise<{ data: T | null; error: { message: string } | null }>;
   maybeSingle: () => Promise<{ data: T | null; error: { message: string } | null }>;
@@ -75,6 +103,8 @@ export type PropertyClient = {
   from(table: 'finance_property_rent_payments'): PropertyQuery<RentPayment>;
   from(table: 'finance_property_maintenance'): PropertyQuery<MaintenanceJob>;
   from(table: 'finance_property_maintenance_status_events'): PropertyQuery<MaintenanceStatusEvent>;
+  from(table: 'finance_property_terms'): PropertyQuery<PropertyTerm>;
+  from(table: 'finance_property_monthly_expected_rent'): PropertyQuery<PropertyExpectedRent>;
 };
 
 export function monthlyRent(weekly: number): number {
@@ -83,7 +113,9 @@ export function monthlyRent(weekly: number): number {
 
 export function propertySummary(register: PropertyRegister, month: string, today: string) {
   const rows = register.properties.map((property) => {
-    const due = property.occupancy === 'occupied' ? monthlyRent(property.weekly_rent_aud) : 0;
+    const due =
+      property.expected_rent_aud ??
+      (property.occupancy === 'occupied' ? monthlyRent(property.weekly_rent_aud) : 0);
     const received = register.payments
       .filter((payment) => payment.property_id === property.id && !payment.voided_at)
       .reduce((sum, payment) => sum + Number(payment.amount_aud), 0);

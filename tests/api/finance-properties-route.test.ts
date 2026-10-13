@@ -19,14 +19,29 @@ describe('Finance properties API', () => {
       eq: vi.fn(),
       gte: vi.fn(),
       lt: vi.fn(),
+      lte: vi.fn(),
       in: vi.fn(),
       order: vi.fn(),
       limit: vi.fn(),
       insert,
+      upsert: vi.fn(),
+      delete: vi.fn(),
       maybeSingle: vi.fn(async () => ({ data: { id: 'property' }, error: null })),
       single: vi.fn(async () => ({ data: { id: 'created' }, error: null })),
     });
-    for (const method of ['select', 'eq', 'gte', 'lt', 'in', 'order', 'limit', 'insert'] as const)
+    for (const method of [
+      'select',
+      'eq',
+      'gte',
+      'lt',
+      'lte',
+      'in',
+      'order',
+      'limit',
+      'insert',
+      'upsert',
+      'delete',
+    ] as const)
       query[method].mockReturnValue(query);
     return query;
   });
@@ -45,6 +60,8 @@ describe('Finance properties API', () => {
       'finance_property_rent_payments',
       'finance_property_maintenance',
       'finance_property_maintenance_status_events',
+      'finance_property_terms',
+      'finance_property_monthly_expected_rent',
     ])
       tables.set(table, { data: [], count: 0, error: null });
     vi.mocked(getFinanceContext).mockResolvedValue({
@@ -93,12 +110,51 @@ describe('Finance properties API', () => {
     ).toBe(500);
   });
 
+  it('stores effective-month terms and a monthly expected-rent override independently', async () => {
+    const propertyId = '123e4567-e89b-42d3-a456-426614174000';
+    const terms = await POST(
+      request({
+        kind: 'terms',
+        propertyId,
+        effectiveMonth: '2026-06',
+        tenantName: 'Tenant',
+        occupancy: 'occupied',
+        weeklyRentAud: 700,
+        dueDay: 5,
+      })
+    );
+    expect(terms.status).toBe(200);
+    expect(from).toHaveBeenCalledWith('finance_property_terms');
+
+    const expected = await POST(
+      request({
+        kind: 'expected_rent',
+        propertyId,
+        month: '2026-06',
+        expectedRentAud: 2700,
+        calculationNote: '2 weeks at 650 plus 2 weeks at 700',
+      })
+    );
+    expect(expected.status).toBe(200);
+    expect(from).toHaveBeenCalledWith('finance_property_monthly_expected_rent');
+  });
+
   it('validates writes and records a property, partial rent and maintenance', async () => {
     expect((await POST(request({ kind: 'rent', amountAud: -1 }))).status).toBe(400);
-    expect((await POST(request({
-      kind: 'rent', propertyId: '123e4567-e89b-42d3-a456-426614174000',
-      month: '2026-06', receivedOn: '2026-06-15', amountAud: 1.001, reference: null,
-    }))).status).toBe(400);
+    expect(
+      (
+        await POST(
+          request({
+            kind: 'rent',
+            propertyId: '123e4567-e89b-42d3-a456-426614174000',
+            month: '2026-06',
+            receivedOn: '2026-06-15',
+            amountAud: 1.001,
+            reference: null,
+          })
+        )
+      ).status
+    ).toBe(400);
     const property = await POST(
       request({
         kind: 'property',

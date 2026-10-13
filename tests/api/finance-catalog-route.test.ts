@@ -6,7 +6,7 @@ vi.mock('@/lib/finance/auth', () => ({
   canReviewFinance: (capabilities: { isAccounting: boolean }) => capabilities.isAccounting,
 }));
 
-import { GET } from '@/app/api/finance/catalog/route';
+import { GET, POST } from '@/app/api/finance/catalog/route';
 import { getFinanceContext } from '@/lib/finance/auth';
 
 const request = new NextRequest('http://localhost/api/finance/catalog?month=2026-06-01');
@@ -16,6 +16,7 @@ describe('Finance subscription catalog', () => {
   let charges: Array<{ subscription_id: string; last_charged: string }>;
   let serverPageSize: number;
   let ranges: Array<{ table: string; start: number; end: number }>;
+  let deletedTables: Array<string>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -23,6 +24,7 @@ describe('Finance subscription catalog', () => {
     charges = [{ subscription_id: 'sub-1', last_charged: '2026-06-10' }];
     serverPageSize = 1000;
     ranges = [];
+    deletedTables = [];
     const from = vi.fn((table: string) => {
       const data =
         table === 'finance_subscriptions'
@@ -33,6 +35,10 @@ describe('Finance subscription catalog', () => {
       const result = { data, count: data.length, error: null };
       const query = Promise.resolve(result) as Promise<typeof result> & Record<string, unknown>;
       for (const method of ['select', 'order', 'eq']) query[method] = vi.fn(() => query);
+      query.delete = vi.fn(() => {
+        deletedTables.push(table);
+        return query;
+      });
       query.range = vi.fn(async (start: number, end: number) => {
         ranges.push({ table, start, end });
         return {
@@ -83,5 +89,35 @@ describe('Finance subscription catalog', () => {
     const response = await GET(request);
     expect(response.status).toBe(413);
     expect((await response.json()).error).toMatch(/10,000/);
+  });
+
+  it('clears an optional monthly limit and rejects zero as a configured limit', async () => {
+    const clearResponse = await POST(
+      new NextRequest('http://localhost/api/finance/catalog', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kind: 'budget_clear',
+          categoryCode: 'software',
+          month: '2026-06-01',
+        }),
+      })
+    );
+    expect(clearResponse.status).toBe(200);
+    expect(deletedTables).toEqual(['finance_budgets']);
+
+    const zeroResponse = await POST(
+      new NextRequest('http://localhost/api/finance/catalog', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kind: 'budget',
+          categoryCode: 'software',
+          month: '2026-06-01',
+          amountAud: 0,
+        }),
+      })
+    );
+    expect(zeroResponse.status).toBe(400);
   });
 });

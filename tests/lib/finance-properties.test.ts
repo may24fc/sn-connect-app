@@ -112,4 +112,19 @@ describe('Finance property figures', () => {
       ).due
     ).toBe(0);
   });
+
+  it('uses a monthly expected-rent override instead of recalculating the weekly default', () => {
+    const overridden = propertySummary(
+      {
+        ...register,
+        properties: [
+          { ...register.properties[0]!, expected_rent_aud: 2700, has_expected_rent_override: true },
+        ],
+      },
+      '2026-06',
+      '2026-06-11'
+    );
+    expect(overridden.due).toBe(2700);
+    expect(overridden.rows[0]?.outstanding).toBe(2000);
+  });
 });

@@ -67,7 +67,12 @@ export function FinanceReportControls({ month }: { month: string }) {
           year: 'numeric',
           timeZone: 'UTC',
         }).format(new Date(`${month}-01T00:00:00Z`))}{' '}
-        · Save a dated draft with open exceptions. Finalization checks the live ledger again.
+        · Save a dated draft with open exceptions. The complete rule for what blocks Final is
+        awaiting Finance confirmation.
+      </p>
+      <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+        <b>Finalization policy pending.</b> Mark final is paused. Current reconciliation and Wise
+        safeguards remain visible while the full blocking list is reviewed.
       </p>
       {error ? (
         <p role="alert" className="text-sm text-red-600">
@@ -110,7 +115,7 @@ export function FinanceReportControls({ month }: { month: string }) {
           <b>Unknown payment confirmations</b>
           <p className="text-xs text-muted-foreground">
             {data
-              ? `${data.report.unknownPayments?.length ?? 0} direct payments listed; these do not block finalization.`
+              ? `${data.report.unknownPayments?.length ?? 0} direct payments listed under the current safeguard; final policy is pending.`
               : 'Loading payment statuses…'}
           </p>
           {data?.report.unknownPayments?.length ? (
@@ -135,7 +140,7 @@ export function FinanceReportControls({ month }: { month: string }) {
         </button>
         <button
           type="button"
-          disabled={busy || !data || data.snapshots.some((item) => item.status === 'final')}
+          disabled
           onClick={() => void save('final')}
           className="rounded-md border px-3 py-2 text-sm font-semibold disabled:opacity-50"
         >
@@ -181,9 +186,9 @@ export function FinanceReportControls({ month }: { month: string }) {
         )}
       </div>
       <p className="rounded-lg bg-[#e6f0f1] p-3 text-xs text-[#0f3f4b]">
-        A draft may record open exceptions. Final is only saved when the server confirms month-end
-        checks have cleared. Export a saved snapshot above for a retained CSV; the PDF is a live
-        report, not the saved snapshot.
+        A draft may record open exceptions. Final snapshots are paused until Finance confirms the
+        complete blocking policy. Export a saved snapshot above for a retained CSV; the PDF is a
+        live report, not the saved snapshot.
       </p>
     </section>
   );

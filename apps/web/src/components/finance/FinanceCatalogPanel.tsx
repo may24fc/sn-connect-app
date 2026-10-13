@@ -28,6 +28,7 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showBudgetControls, setShowBudgetControls] = useState(false);
   const [vendor, setVendor] = useState('');
   const [amount, setAmount] = useState('');
   const [seats, setSeats] = useState('');
@@ -44,7 +45,9 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
     try {
       const response = await fetch(`/api/finance/catalog?month=${month}`);
       if (!response.ok) throw new Error('Could not load subscriptions and budgets');
-      setCatalog((await response.json()).data);
+      const next = (await response.json()).data as Catalog;
+      setCatalog(next);
+      if (next.budgets.some((budget) => Number(budget.amount_aud) > 0)) setShowBudgetControls(true);
       setError('');
     } catch {
       setError('Could not load subscriptions and budgets');
@@ -55,8 +58,8 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
   }, [load]);
   async function saveBudget(code: string, value: string) {
     const amountAud = Number(value);
-    if (!Number.isFinite(amountAud) || amountAud < 0) {
-      setError('Enter a valid budget');
+    if (!Number.isFinite(amountAud) || amountAud <= 0) {
+      setError('Enter a limit greater than zero, or clear the existing limit');
       return;
     }
     setSaving(true);
@@ -69,6 +72,18 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
     setSaving(false);
     if (response.ok) void load();
     else setError('Could not save budget');
+  }
+  async function clearBudget(code: string) {
+    setSaving(true);
+    setError('');
+    const response = await fetch('/api/finance/catalog', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind: 'budget_clear', categoryCode: code, month }),
+    });
+    setSaving(false);
+    if (response.ok) void load();
+    else setError('Could not clear budget');
   }
   async function addSubscription(event: React.FormEvent) {
     event.preventDefault();
@@ -300,21 +315,39 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
         </form>
       </section>
       <section className="rounded-xl border bg-card p-5">
-        <h2 className="mb-3 text-lg font-semibold">Categories and budgets · {month.slice(0, 7)}</h2>
-        <div className="grid gap-3 md:grid-cols-2">
-          {catalog?.categories.map((item) => (
-            <BudgetEditor
-              key={item.code}
-              category={item}
-              amount={
-                catalog.budgets.find((budget) => budget.category_code === item.code)?.amount_aud ??
-                null
-              }
-              saving={saving}
-              onSave={saveBudget}
-            />
-          ))}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">Optional monthly limits · {month.slice(0, 7)}</h2>
+            <p className="text-sm text-muted-foreground">
+              Spend by category, month-over-month changes, and subscriptions remain monitored
+              without limits.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowBudgetControls((shown) => !shown)}
+            className="rounded-md border px-3 py-2 text-sm font-medium"
+          >
+            {showBudgetControls ? 'Hide limit controls' : 'Add optional limits'}
+          </button>
         </div>
+        {showBudgetControls ? (
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {catalog?.categories.map((item) => (
+              <BudgetEditor
+                key={item.code}
+                category={item}
+                amount={
+                  catalog.budgets.find((budget) => budget.category_code === item.code)
+                    ?.amount_aud ?? null
+                }
+                saving={saving}
+                onSave={saveBudget}
+                onClear={clearBudget}
+              />
+            ))}
+          </div>
+        ) : null}
       </section>
     </div>
   );
@@ -325,11 +358,13 @@ function BudgetEditor({
   amount,
   saving,
   onSave,
+  onClear,
 }: {
   category: Category;
   amount: number | null;
   saving: boolean;
   onSave: (code: string, amount: string) => Promise<void>;
+  onClear: (code: string) => Promise<void>;
 }) {
   const [value, setValue] = useState(amount === null ? '' : String(amount));
   useEffect(() => setValue(amount === null ? '' : String(amount)), [amount]);
@@ -356,6 +391,16 @@ function BudgetEditor({
         >
           Save
         </button>
+        {amount !== null ? (
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => void onClear(category.code)}
+            className="rounded border px-2 py-1"
+          >
+            Clear limit
+          </button>
+        ) : null}
       </div>
     </div>
   );

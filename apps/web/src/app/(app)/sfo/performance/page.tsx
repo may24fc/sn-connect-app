@@ -23,13 +23,13 @@ export default async function SfoPerformancePage() {
       : '/crm'
     : null;
   return (
-    <main className="bg-[#f5f6f4] text-[#10191c] dark:bg-[#0a1e26] dark:text-slate-100">
+    <main className="h-full space-y-6">
       <MarketingAdSpendDashboard
         initialTab="sales-comparison"
         sfoView
         revenueComparisonAccess={revenueAccess}
       />
-      <section className="mx-auto max-w-xl rounded-xl border bg-card p-6 text-center md:my-8">
+      <section className="mx-auto max-w-xl rounded-xl border bg-card p-6 text-center">
         <h2 className="text-lg font-semibold">CRM Tracker · unchanged</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           The SFO proposal changes Ad Spend and Revenue, not the CRM. Leads and pipeline records

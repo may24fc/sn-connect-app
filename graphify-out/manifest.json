@@ -3174,8 +3174,8 @@
     "semantic_hash": "7a0dc3198c754c2a24e5a4a5466f950f"
   },
   "apps/web/src/lib/generated/application-update-summary.generated.ts": {
-    "mtime": 1791797068.2749093,
-    "seen": 1791801610.8216815,
+    "mtime": 1791902425.2465298,
+    "seen": 1791902830.9812918,
     "ast_hash": "7322821048c7b2c5f9f9ddca7c61261a",
     "semantic_hash": "7322821048c7b2c5f9f9ddca7c61261a"
   },
@@ -4806,9 +4806,9 @@
     "semantic_hash": ""
   },
   "packages/database/src/database.types.ts": {
-    "mtime": 1791787238.1370108,
-    "seen": 1791788039.2520652,
-    "ast_hash": "490fd5b5b42f5a41a59f75d2bb546eea",
+    "mtime": 1791901346.7442174,
+    "seen": 1791902830.9819076,
+    "ast_hash": "a03348a1a8dddcf867f7f436e7f9f7fb",
     "semantic_hash": ""
   },
   "packages/database/src/enums.ts": {
@@ -10170,9 +10170,9 @@
     "semantic_hash": ""
   },
   "docs/apps/web/architecture/optimistic-ui.md": {
-    "mtime": 1791800935.1198819,
-    "seen": 1791801610.8320105,
-    "ast_hash": "d3e00001fa535b28cd021fa19cf2887b",
+    "mtime": 1791900882.388316,
+    "seen": 1791901047.9802504,
+    "ast_hash": "8380d46808dd4787f562b80e2eff1fa6",
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpAccessManagerDialog.tsx": {
@@ -12150,9 +12150,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/finance/page.tsx": {
-    "mtime": 1791778275.8647978,
-    "seen": 1791778702.413175,
-    "ast_hash": "63a4fd75a927d4dae5fd693283d422d2",
+    "mtime": 1791902356.9695811,
+    "seen": 1791902830.9799454,
+    "ast_hash": "b9d8bfbd6e85b06a75f4050f8ff2210a",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/finance/wise-batches/[id]/export/route.ts": {
@@ -12228,39 +12228,39 @@
     "semantic_hash": ""
   },
   "docs/features/finance-redesign/optimization.md": {
-    "mtime": 1791786131.8535001,
-    "seen": 1791788039.253256,
-    "ast_hash": "f39761534deade79ae40a443ea5623e9",
+    "mtime": 1791902639.2917695,
+    "seen": 1791902830.9834998,
+    "ast_hash": "983bcaf7cf220f9fbf17fe3d30e14d5a",
     "semantic_hash": ""
   },
   "docs/features/finance-redesign/task-tracker.md": {
-    "mtime": 1791787058.665558,
-    "seen": 1791788039.2532582,
-    "ast_hash": "84752603a71f6d25353985f2dafa994b",
+    "mtime": 1791902639.1510322,
+    "seen": 1791902830.9835033,
+    "ast_hash": "8a1f99af74dd20c697d7694bfdffaef1",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/finance/expenses/page.tsx": {
-    "mtime": 1791783257.744432,
-    "seen": 1791785974.2504385,
-    "ast_hash": "dcbb2086aa9b5bc802a70510d1ccbd0b",
+    "mtime": 1791902356.9730074,
+    "seen": 1791902830.9799411,
+    "ast_hash": "9a016b2c21462082ff1b769db24dbbfc",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/finance/reports/page.tsx": {
-    "mtime": 1791784651.2293284,
-    "seen": 1791785974.2504416,
-    "ast_hash": "21618787925ac586fd70f90aea2eeccb",
+    "mtime": 1791902356.9695811,
+    "seen": 1791902830.9799514,
+    "ast_hash": "6957d859d3ac045309ddad4a4cc323a3",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/finance/staff-payments/page.tsx": {
-    "mtime": 1791784651.2145271,
-    "seen": 1791785974.2504425,
-    "ast_hash": "39f717d389860ec786640fbdab80e654",
+    "mtime": 1791902356.9595613,
+    "seen": 1791902830.9799533,
+    "ast_hash": "35f3976c9739463855ffc2f4f616be4e",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/sfo/performance/page.tsx": {
-    "mtime": 1791784651.2127926,
-    "seen": 1791785974.250447,
-    "ast_hash": "e7ee7422dfbc46e1aba9448d34c26690",
+    "mtime": 1791902348.462083,
+    "seen": 1791902830.9799652,
+    "ast_hash": "625a133c42692876e81fdec537a55a7e",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/employees/_identity.ts": {
@@ -12282,15 +12282,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/finance/catalog/route.ts": {
-    "mtime": 1791776720.5329878,
-    "seen": 1791778042.8033106,
-    "ast_hash": "71b34f572ba668f29d53d801fb8340dd",
+    "mtime": 1791897314.8034184,
+    "seen": 1791901047.9775622,
+    "ast_hash": "bd73b0dd015e4fc5478fa872ed72bdd3",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/finance/reports/route.ts": {
-    "mtime": 1791778500.438698,
-    "seen": 1791778702.4387212,
-    "ast_hash": "c6cc27cd613c45ae53a13b002726c14b",
+    "mtime": 1791900825.391997,
+    "seen": 1791901047.9775715,
+    "ast_hash": "b7d7120b33c9d88d155c9b3c8276eb96",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/finance/review/route.ts": {
@@ -12312,27 +12312,27 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/finance/FinanceApproverSettings.tsx": {
-    "mtime": 1791341821.1921768,
-    "seen": 1791343180.2623253,
-    "ast_hash": "f5ea49680a2c368ee5746b4cc77ca453",
+    "mtime": 1791900778.5100958,
+    "seen": 1791901047.9778762,
+    "ast_hash": "93e96a376dd504f55e97f681f03d73c5",
     "semantic_hash": ""
   },
   "apps/web/src/components/finance/FinanceCatalogPanel.tsx": {
-    "mtime": 1791778275.8658009,
-    "seen": 1791778702.5090017,
-    "ast_hash": "6e845a0c50216c210c0a33bae3d7e04d",
+    "mtime": 1791897314.8149066,
+    "seen": 1791901047.9778776,
+    "ast_hash": "606a715d88e3991469e9c62f91511d76",
     "semantic_hash": ""
   },
   "apps/web/src/components/finance/FinanceReportControls.tsx": {
-    "mtime": 1791778500.439713,
-    "seen": 1791778702.5107677,
-    "ast_hash": "47c78781313166f9810f878607f180bc",
+    "mtime": 1791897293.3100066,
+    "seen": 1791901047.9778857,
+    "ast_hash": "5c47fda3f7046317ef4f7a7307adaa94",
     "semantic_hash": ""
   },
   "apps/web/src/components/finance/FinanceWiseBatches.tsx": {
-    "mtime": 1791778612.0875998,
-    "seen": 1791778702.5107703,
-    "ast_hash": "783a46d6bd6db6741ea9e6acf6c13cca",
+    "mtime": 1791897293.5276277,
+    "seen": 1791901047.9778867,
+    "ast_hash": "21f741db3b247f3046fbaf9cc91fa3aa",
     "semantic_hash": ""
   },
   "apps/web/src/lib/finance/categories.ts": {
@@ -12384,9 +12384,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/lib/finance/overview.ts": {
-    "mtime": 1791778110.2434535,
-    "seen": 1791778702.5948787,
-    "ast_hash": "58c015ddff84e3e6a8f76bc7d6c2f832",
+    "mtime": 1791897239.1686766,
+    "seen": 1791901047.9781237,
+    "ast_hash": "bc7f35629ea16610a60cff8b3554c0b9",
     "semantic_hash": ""
   },
   "apps/web/src/lib/people/assignment-validation.ts": {
@@ -12402,9 +12402,9 @@
     "semantic_hash": ""
   },
   "tests/lib/finance-overview.test.ts": {
-    "mtime": 1791343589.1641314,
-    "seen": 1791343735.152834,
-    "ast_hash": "c1c2ad9a42325c834e050519c798dcc7",
+    "mtime": 1791897416.8872983,
+    "seen": 1791901047.980009,
+    "ast_hash": "088ec3134da448de353ec258a03d97f3",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/finance/expenses/export/route.ts": {
@@ -12486,21 +12486,21 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/finance/properties/route.ts": {
-    "mtime": 1791347243.227886,
-    "seen": 1791347802.9026628,
-    "ast_hash": "e23a6863d1661687b24d07cba0c578b4",
+    "mtime": 1791897330.2244434,
+    "seen": 1791901047.977568,
+    "ast_hash": "055e9e383bb95846ac597d630da13130",
     "semantic_hash": ""
   },
   "apps/web/src/components/finance/FinancePropertiesPanel.tsx": {
-    "mtime": 1791772840.3354135,
-    "seen": 1791773339.4943874,
-    "ast_hash": "0ca7a7b020a44022d9b8bbeb58ed9ffc",
+    "mtime": 1791898950.5052662,
+    "seen": 1791901047.9778848,
+    "ast_hash": "93e5e18708cf4afab1cef8157aeebd6c",
     "semantic_hash": ""
   },
   "apps/web/src/lib/finance/properties.ts": {
-    "mtime": 1791346720.8262994,
-    "seen": 1791347802.9031203,
-    "ast_hash": "c0adb61ec06b73527866ec730d292001",
+    "mtime": 1791897186.9382067,
+    "seen": 1791901047.9781258,
+    "ast_hash": "befe1b5eec3efef61c0dc5a0f0f8adbc",
     "semantic_hash": ""
   },
   "supabase/migrations/20261007000009_finance_properties.sql": {
@@ -12510,15 +12510,15 @@
     "semantic_hash": ""
   },
   "tests/api/finance-properties-route.test.ts": {
-    "mtime": 1791347246.5442088,
-    "seen": 1791347802.9038312,
-    "ast_hash": "99c86dcdfcfe4fa4d8db6570de6d3614",
+    "mtime": 1791900778.524096,
+    "seen": 1791901047.9798276,
+    "ast_hash": "416f77db89b7c0bb185086a257b829da",
     "semantic_hash": ""
   },
   "tests/lib/finance-properties.test.ts": {
-    "mtime": 1791346873.2259843,
-    "seen": 1791347802.903898,
-    "ast_hash": "48768f40e711dce45865afd63de8a90b",
+    "mtime": 1791897417.0026345,
+    "seen": 1791901047.9800107,
+    "ast_hash": "43619a21df15a739fce6596c453f424e",
     "semantic_hash": ""
   },
   "tests/pages/sfo-performance-crm.test.tsx": {
@@ -12534,9 +12534,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/marketing/MarketingAdSpendDashboard.tsx": {
-    "mtime": 1791781937.1329682,
-    "seen": 1791785974.25085,
-    "ast_hash": "9a419d60b3e2f1cd22c319930a8e650b",
+    "mtime": 1791902348.2422302,
+    "seen": 1791902830.980808,
+    "ast_hash": "7a80248cccd5cc4368bde29e73c9937a",
     "semantic_hash": ""
   },
   "apps/web/src/lib/observability/timing.ts": {
@@ -12630,9 +12630,9 @@
     "semantic_hash": ""
   },
   "docs/features/finance-redesign/pending-decisions.md": {
-    "mtime": 1791784800.0862963,
-    "seen": 1791785974.2525156,
-    "ast_hash": "633f6480deca4cdd78e7c608b8224517",
+    "mtime": 1791900862.0246742,
+    "seen": 1791901047.9803543,
+    "ast_hash": "e79a8b0f12ef381761bfbfe6ab028ccb",
     "semantic_hash": ""
   },
   "docs/guides/latency-measurement.md": {
@@ -12786,9 +12786,9 @@
     "semantic_hash": ""
   },
   "docs/features/work-tracker-kanban/task-tracker.md": {
-    "mtime": 1791800890.4676497,
-    "seen": 1791801610.8328824,
-    "ast_hash": "fbdcdf38f1424e2bd8326aff859d2112",
+    "mtime": 1791802405.5334246,
+    "seen": 1791901047.9803813,
+    "ast_hash": "28426f5c8e75e4a0e5f62f7403ca5648",
     "semantic_hash": ""
   },
   "e2e/uhp-wellness-evaluation.spec.ts": {
@@ -12798,9 +12798,9 @@
     "semantic_hash": ""
   },
   "tests/api/finance-catalog-route.test.ts": {
-    "mtime": 1791776709.6164613,
-    "seen": 1791778043.1513681,
-    "ast_hash": "48c1be3b5ff98fc4c53c1bb325f94817",
+    "mtime": 1791901269.2839105,
+    "seen": 1791902830.9829516,
+    "ast_hash": "d15a596c046a3ceaf12bd04ef086e777",
     "semantic_hash": ""
   },
   "tests/api/finance-report-export-route.test.ts": {
@@ -12822,9 +12822,9 @@
     "semantic_hash": ""
   },
   "e2e/finance-redesign.spec.ts": {
-    "mtime": 1791785398.6462767,
-    "seen": 1791785974.2513235,
-    "ast_hash": "7475f0c53ae4dd1dfa8134103dd77ec6",
+    "mtime": 1791902651.6367493,
+    "seen": 1791902830.981781,
+    "ast_hash": "529026a326965145a4779ba80210c6cc",
     "semantic_hash": ""
   },
   "tests/lib/dry-audit-regressions.test.ts": {
@@ -12882,9 +12882,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/property/properties/page.tsx": {
-    "mtime": 1791784651.2145271,
-    "seen": 1791785974.2504454,
-    "ast_hash": "b7ff4749aeede4a5d915f461e99c1f73",
+    "mtime": 1791902356.9582763,
+    "seen": 1791902830.9799602,
+    "ast_hash": "c74ec872bb43e34652dac1b4c1df1368",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/finance/wise-batches/import-exceptions/[id]/route.ts": {
@@ -13077,6 +13077,36 @@
     "mtime": 1791795135.0496328,
     "seen": 1791796902.4116604,
     "ast_hash": "8ea2fc9c609b8c966552b02b5bf63ca2",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261013000001_finance_property_terms.sql": {
+    "mtime": 1791897186.775175,
+    "seen": 1791901047.9797666,
+    "ast_hash": "d60d8ccc546e5c6f78e26bdb48e34643",
+    "semantic_hash": ""
+  },
+  "tests/api/finance-reports-route.test.ts": {
+    "mtime": 1791900772.3368556,
+    "seen": 1791901047.9798334,
+    "ast_hash": "5db7cc39158d00e9f5a7ca6c3a051892",
+    "semantic_hash": ""
+  },
+  "tests/sql/finance-property-terms-local.sql": {
+    "mtime": 1791897461.1936882,
+    "seen": 1791901047.9800663,
+    "ast_hash": "6254f9547d28671c0449170eca07451a",
+    "semantic_hash": ""
+  },
+  "docs/guides/ai-agent-prompting-for-eas.md": {
+    "mtime": 1791896126.1143208,
+    "seen": 1791901047.980387,
+    "ast_hash": "cc05565c9b9a2c19c45988bef313eed9",
+    "semantic_hash": ""
+  },
+  "docs/guides/ai-agent-prompting-for-eas.pdf": {
+    "mtime": 1791896317.5023963,
+    "seen": 1791901047.9804475,
+    "ast_hash": "0e5b244fdffcd658e0a0fb31473131ce",
     "semantic_hash": ""
   }
 }

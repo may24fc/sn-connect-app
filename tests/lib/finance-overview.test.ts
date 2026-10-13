@@ -32,8 +32,8 @@ describe('finance overview presentation', () => {
       previous
     );
     expect(result.rankedCategories.map((row) => row.code)).toEqual(['tools', 'travel', 'new']);
-    expect(result.budgetedCategories).toHaveLength(2);
-    expect(result.overBudgetCount).toBe(1);
+    expect(result.budgetedCategories).toHaveLength(1);
+    expect(result.overBudgetCount).toBe(0);
     expect(result.changePercent).toBeCloseTo(20);
     expect(result.changes.map((row) => row.delta)).toEqual([30, -20]);
   });

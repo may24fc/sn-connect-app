@@ -133,13 +133,22 @@ export function FinanceWiseBatches({ hideAmounts = false }: { hideAmounts?: bool
   return (
     <section className="space-y-5 rounded-xl border bg-gradient-to-r from-[#f1f8f9] to-white p-5">
       <div>
-        <h2 className="text-xl font-semibold">Next Wise payout</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-xl font-semibold">Next Wise payout</h2>
+          <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-900">
+            External file test pending
+          </span>
+        </div>
         <p className="text-sm text-muted-foreground">
           {queue
             ? `${queue.ready.filter((item) => item.eligible).length} approved invoices eligible for a batch`
             : 'Loading approved invoices…'}{' '}
           · Only verified saved recipients without earlier transfers can be batched. Exporting never
           marks an invoice Paid.
+        </p>
+        <p className="mt-2 text-xs text-amber-800">
+          The saved-recipient template and completed-result import still need approved sanitized
+          Wise fixtures before the end-to-end file test can be signed off.
         </p>
       </div>
       {error ? (

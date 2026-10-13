@@ -1,7 +1,7 @@
 import { buildMonthlyExpenseReport } from '@/lib/expenses/monthly-report';
 import { canReviewFinance, getFinanceContext } from '@/lib/finance/auth';
 import { buildFinanceReportPackSupplement } from '@/lib/finance/report-pack';
-import { NextResponse, type NextRequest } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const monthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
@@ -53,6 +53,11 @@ export async function POST(request: NextRequest) {
   const parsed = createSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success)
     return NextResponse.json({ error: 'Invalid report request' }, { status: 400 });
+  if (parsed.data.status === 'final')
+    return NextResponse.json(
+      { error: 'Finalization is paused while Finance confirms the complete blocking policy' },
+      { status: 409 }
+    );
   const [monthly, supplement] = await Promise.all([
     buildMonthlyExpenseReport(context.admin, new Date(`${parsed.data.month}-01T00:00:00Z`)),
     buildFinanceReportPackSupplement(context.admin, parsed.data.month),
@@ -62,7 +67,7 @@ export async function POST(request: NextRequest) {
     target_month: `${parsed.data.month}-01`,
     actor_id: context.user.id,
     payload: report,
-    make_final: parsed.data.status === 'final',
+    make_final: false,
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 409 });
   return NextResponse.json({ data: { id: data, status: parsed.data.status } }, { status: 201 });

@@ -41,7 +41,8 @@ export function summarizeFinanceOverview(
     .filter((row) => row.spent_aud > 0)
     .sort((a, b) => b.spent_aud - a.spent_aud);
   const budgetedCategories = categories.filter(
-    (row): row is typeof row & { budget_aud: number } => row.budget_aud !== null
+    (row): row is typeof row & { budget_aud: number } =>
+      row.budget_aud !== null && row.budget_aud > 0
   );
   const prior = new Map(previous.categoryBudgets.map((row) => [row.code, Number(row.spent_aud)]));
   const changes = categories
