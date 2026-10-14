@@ -43,6 +43,8 @@ import {
   Minimize,
   Sparkles,
   Trash2,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import {
   type CSSProperties,
@@ -77,6 +79,9 @@ type Ornament = ChristmasTreeSnapshot['ornaments'][number];
 type WishCategory = keyof typeof categoryDetails;
 type OrnamentAsset = (typeof CHRISTMAS_ORNAMENT_ASSETS)[number];
 
+const CHRISTMAS_MUSIC_STORAGE_KEY = 'christmas-tree-music-enabled';
+const CHRISTMAS_MUSIC_VIDEO_ID = 'mmJ-KiSIsD4';
+
 const snowflakes = Array.from({ length: 36 }, (_, index) => ({
   id: index,
   left: (index * 29 + 7) % 100,
@@ -103,11 +108,17 @@ export default function ChristmasTreePage() {
   } | null>(null);
   const [placementMessage, setPlacementMessage] = useState<string | null>(null);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
+  const [isMusicEnabled, setIsMusicEnabled] = useState<boolean | null>(null);
 
   useEffect(() => {
     const handleFullscreenChange = () => setIsPresentationMode(Boolean(document.fullscreenElement));
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  useEffect(() => {
+    const savedPreference = window.localStorage.getItem(CHRISTMAS_MUSIC_STORAGE_KEY);
+    setIsMusicEnabled(savedPreference === null ? true : savedPreference === 'true');
   }, []);
 
   if (isLoading) return <ChristmasTreeLoading />;
@@ -140,6 +151,11 @@ export default function ChristmasTreePage() {
       // Presentation mode remains usable when the browser blocks fullscreen.
     }
   };
+  const toggleMusic = () => {
+    const nextValue = !isMusicEnabled;
+    window.localStorage.setItem(CHRISTMAS_MUSIC_STORAGE_KEY, String(nextValue));
+    setIsMusicEnabled(nextValue);
+  };
 
   if (isPresentationMode) {
     return (
@@ -150,6 +166,7 @@ export default function ChristmasTreePage() {
               {data.event.title}
             </h1>
             <div className="flex items-center gap-2">
+              <ChristmasMusicControl isEnabled={isMusicEnabled} onToggle={toggleMusic} />
               <Button
                 aria-label="Exit fullscreen presentation"
                 onClick={() => void togglePresentationMode()}
@@ -195,6 +212,7 @@ export default function ChristmasTreePage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <ChristmasMusicControl isEnabled={isMusicEnabled} onToggle={toggleMusic} />
           <Button onClick={() => void togglePresentationMode()} size="sm" variant="outline">
             <Maximize /> Present tree
           </Button>
@@ -208,7 +226,7 @@ export default function ChristmasTreePage() {
         />
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_380px]">
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.45fr)_380px]">
         <ChristmasTreeCanvas
           decoration={data.decoration}
           isDraggingNewBall={isDraggingNewBall}
@@ -267,6 +285,43 @@ export default function ChristmasTreePage() {
         }
       />
     </div>
+  );
+}
+
+function ChristmasMusicControl({
+  isEnabled,
+  onToggle,
+}: {
+  isEnabled: boolean | null;
+  onToggle: () => void;
+}) {
+  const enabled = isEnabled === true;
+
+  return (
+    <>
+      {enabled ? (
+        <iframe
+          allow="autoplay; encrypted-media"
+          aria-hidden="true"
+          className="pointer-events-none absolute h-px w-px opacity-0"
+          data-testid="christmas-music-player"
+          src={`https://www.youtube-nocookie.com/embed/${CHRISTMAS_MUSIC_VIDEO_ID}?autoplay=1&loop=1&playlist=${CHRISTMAS_MUSIC_VIDEO_ID}&controls=0&playsinline=1`}
+          tabIndex={-1}
+          title="Christmas Tree background music"
+        />
+      ) : null}
+      <Button
+        aria-label={enabled ? 'Turn Christmas music off' : 'Turn Christmas music on'}
+        aria-pressed={enabled}
+        disabled={isEnabled === null}
+        onClick={onToggle}
+        size="sm"
+        variant="outline"
+      >
+        {enabled ? <Volume2 /> : <VolumeX />}
+        {enabled ? 'Music on' : 'Music off'}
+      </Button>
+    </>
   );
 }
 
@@ -452,6 +507,7 @@ function ChristmasTreeCanvas({
         'relative min-h-[500px] overflow-hidden rounded-xl border border-slate-950/20 bg-[linear-gradient(180deg,#527586_0%,#6f919d_55%,#91aab2_100%)] shadow-sm sm:min-h-[550px]',
         fillHeight && 'flex-1'
       )}
+      data-testid="christmas-tree-canvas"
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(253,230,138,.12),transparent_58%)]" />
       <div
@@ -489,6 +545,7 @@ function ChristmasTreeCanvas({
           onPointerMove={(event) => {
             if (!movingOrnamentRef.current) updateNewBallPreview(event.clientX, event.clientY);
           }}
+          data-testid="christmas-tree-drop-zone"
           ref={treeRef}
           role={placementAssetType && canPlace ? 'button' : undefined}
           tabIndex={placementAssetType && canPlace ? 0 : undefined}
@@ -996,7 +1053,7 @@ function getChristmasTreeDropPosition(
 
 function ChristmasTreeLoading() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="christmas-tree-loading">
       <Skeleton className="h-24" />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_380px]">
         <Skeleton className="h-[580px]" />
