@@ -3174,8 +3174,8 @@
     "semantic_hash": "7a0dc3198c754c2a24e5a4a5466f950f"
   },
   "apps/web/src/lib/generated/application-update-summary.generated.ts": {
-    "mtime": 1791902425.2465298,
-    "seen": 1791902830.9812918,
+    "mtime": 1791903071.4926846,
+    "seen": 1791940769.8993618,
     "ast_hash": "7322821048c7b2c5f9f9ddca7c61261a",
     "semantic_hash": "7322821048c7b2c5f9f9ddca7c61261a"
   },
@@ -10104,9 +10104,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/lib/uhp.ts": {
-    "mtime": 1791773104.566259,
-    "seen": 1791773339.495414,
-    "ast_hash": "de1d1a5eeb3f5d6fdd93bbc10aeb81c6",
+    "mtime": 1791940485.7449243,
+    "seen": 1791940769.8995595,
+    "ast_hash": "a56881df4588557c5803ce7091efa3ec",
     "semantic_hash": ""
   },
   "supabase/migrations/20260923000002_create_uhp_workspace.sql": {
@@ -10146,15 +10146,15 @@
     "semantic_hash": ""
   },
   "n8n/workflows/uhp-herbalife-portal-reminders.json": {
-    "mtime": 1791778523.9497302,
-    "seen": 1791778702.660488,
-    "ast_hash": "dec3a833badf3171f073d91ed1361f99",
+    "mtime": 1791940884.891381,
+    "seen": 1791941033.9938333,
+    "ast_hash": "5cb6cf41d5e5389508fa26502d332309",
     "semantic_hash": ""
   },
   "n8n/workflows/uhp-volume-points-daily-digest.json": {
-    "mtime": 1791778524.1562784,
-    "seen": 1791778702.6604958,
-    "ast_hash": "4b546511fb8154cbaa821ace00bce708",
+    "mtime": 1791940486.92206,
+    "seen": 1791940769.9000359,
+    "ast_hash": "cbe17915a17c86d7c947387137bd61b9",
     "semantic_hash": ""
   },
   "scripts/backfill/import-uhp-workspace.mjs": {
@@ -10188,9 +10188,9 @@
     "semantic_hash": ""
   },
   "n8n/workflows/uhp-workflows.test.ts": {
-    "mtime": 1791778532.9848106,
-    "seen": 1791778702.6604996,
-    "ast_hash": "3622faa85d8159e6b0c8786bb1d931c1",
+    "mtime": 1791940885.0047965,
+    "seen": 1791941033.9938378,
+    "ast_hash": "7db5c21eb4000413500712b1882f8401",
     "semantic_hash": ""
   },
   "scripts/backfill/import-uhp-workspace.test.ts": {
@@ -11028,9 +11028,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx": {
-    "mtime": 1790597973.083007,
-    "seen": 1790599138.0192528,
-    "ast_hash": "b4125995ee459d93be81b708d6fb3677",
+    "mtime": 1791940177.7667112,
+    "seen": 1791940769.897559,
+    "ast_hash": "902780deeb2f0a1b72273d23d3f34b67",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/dashboard/components/KPIEntryWidget.tsx": {
@@ -11658,9 +11658,9 @@
     "semantic_hash": ""
   },
   "n8n/workflows/uhp-outreach-weekly-summary.json": {
-    "mtime": 1791778524.650054,
-    "seen": 1791778702.660493,
-    "ast_hash": "44e81c9f5752249aa1383c2bf7b9e0ed",
+    "mtime": 1791940486.5541286,
+    "seen": 1791940769.9000342,
+    "ast_hash": "922bc77d5bcd5c36e4cb14be376bf0cb",
     "semantic_hash": ""
   },
   "packages/ai/src/contact.ts": {
@@ -11682,9 +11682,9 @@
     "semantic_hash": ""
   },
   "tests/lib/uhp-outreach-summary.test.ts": {
-    "mtime": 1791773111.0920272,
-    "seen": 1791773339.498026,
-    "ast_hash": "5c501c6e808d999c9d40df2df9edc49f",
+    "mtime": 1791940486.120522,
+    "seen": 1791940769.901262,
+    "ast_hash": "541aae92dcfdd56770e5926a21fdfe02",
     "semantic_hash": ""
   },
   "supabase/migrations/20260930000002_add_task_rollup_fields.sql": {
@@ -11916,15 +11916,15 @@
     "semantic_hash": ""
   },
   "docs/features/ultimate-health-project/optimization.md": {
-    "mtime": 1791778908.0304308,
-    "seen": 1791779336.0254326,
-    "ast_hash": "d77287cd025bb26959df8f86b3edf1c6",
+    "mtime": 1791940965.3922856,
+    "seen": 1791941033.9946082,
+    "ast_hash": "34167c67688cc1b79a041041a5aebb6c",
     "semantic_hash": ""
   },
   "docs/features/ultimate-health-project/task-tracker.md": {
-    "mtime": 1791778907.835694,
-    "seen": 1791779336.0254335,
-    "ast_hash": "b1331203de0f0816547f9a06871b19ef",
+    "mtime": 1791940965.2744515,
+    "seen": 1791941033.9946094,
+    "ast_hash": "2dcc21b8ec3d3ef32318d9778c7d54f4",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/users/[id]/permanent/route.ts": {
@@ -12228,15 +12228,15 @@
     "semantic_hash": ""
   },
   "docs/features/finance-redesign/optimization.md": {
-    "mtime": 1791902639.2917695,
-    "seen": 1791902830.9834998,
-    "ast_hash": "983bcaf7cf220f9fbf17fe3d30e14d5a",
+    "mtime": 1791903324.851546,
+    "seen": 1791940769.9016578,
+    "ast_hash": "8347965a3f6c804f5cd9536a71d4e60d",
     "semantic_hash": ""
   },
   "docs/features/finance-redesign/task-tracker.md": {
-    "mtime": 1791902639.1510322,
-    "seen": 1791902830.9835033,
-    "ast_hash": "8a1f99af74dd20c697d7694bfdffaef1",
+    "mtime": 1791903324.7396662,
+    "seen": 1791940769.9016619,
+    "ast_hash": "9f7aef0f814a3311f9f11ca02845b1f8",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/finance/expenses/page.tsx": {
@@ -13107,6 +13107,18 @@
     "mtime": 1791896317.5023963,
     "seen": 1791901047.9804475,
     "ast_hash": "0e5b244fdffcd658e0a0fb31473131ce",
+    "semantic_hash": ""
+  },
+  "e2e/christmas-tree-layout.spec.ts": {
+    "mtime": 1791940299.80652,
+    "seen": 1791940769.899935,
+    "ast_hash": "0eb4e13576ba9f9ca538dd5a2470629e",
+    "semantic_hash": ""
+  },
+  "docs/features/christmas-tree/task-tracker.md": {
+    "mtime": 1791940395.05038,
+    "seen": 1791940769.9016418,
+    "ast_hash": "d368856fe78a1996f63927854eb8e4df",
     "semantic_hash": ""
   }
 }
