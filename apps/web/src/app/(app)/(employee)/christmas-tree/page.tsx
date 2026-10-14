@@ -81,6 +81,57 @@ type OrnamentAsset = (typeof CHRISTMAS_ORNAMENT_ASSETS)[number];
 
 const CHRISTMAS_MUSIC_STORAGE_KEY = 'christmas-tree-music-enabled';
 const CHRISTMAS_MUSIC_VIDEO_ID = 'mmJ-KiSIsD4';
+const CHRISTMAS_MUSIC_DEFAULT_VOLUME = 25;
+
+type YouTubeMusicPlayer = {
+  destroy: () => void;
+  playVideo: () => void;
+  setVolume: (volume: number) => void;
+};
+
+type YouTubeIframeApi = {
+  Player: new (
+    element: HTMLIFrameElement,
+    options: {
+      events: { onReady: (event: { target: YouTubeMusicPlayer }) => void };
+    }
+  ) => YouTubeMusicPlayer;
+};
+
+declare global {
+  interface Window {
+    YT?: YouTubeIframeApi;
+    onYouTubeIframeAPIReady?: () => void;
+  }
+}
+
+let youtubeIframeApiPromise: Promise<YouTubeIframeApi> | null = null;
+
+function loadYouTubeIframeApi() {
+  if (window.YT?.Player) return Promise.resolve(window.YT);
+  if (youtubeIframeApiPromise) return youtubeIframeApiPromise;
+
+  youtubeIframeApiPromise = new Promise<YouTubeIframeApi>((resolve, reject) => {
+    const previousReadyHandler = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      previousReadyHandler?.();
+      if (window.YT) resolve(window.YT);
+    };
+
+    if (document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) return;
+
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = 'https://www.youtube.com/iframe_api';
+    script.addEventListener('error', () => {
+      youtubeIframeApiPromise = null;
+      reject(new Error('Unable to load the YouTube player API'));
+    });
+    document.head.appendChild(script);
+  });
+
+  return youtubeIframeApiPromise;
+}
 
 const snowflakes = Array.from({ length: 36 }, (_, index) => ({
   id: index,
@@ -296,6 +347,34 @@ function ChristmasMusicControl({
   onToggle: () => void;
 }) {
   const enabled = isEnabled === true;
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+
+  useEffect(() => {
+    if (!(enabled && iframeRef.current)) return;
+
+    let player: YouTubeMusicPlayer | null = null;
+    let isCancelled = false;
+    void loadYouTubeIframeApi()
+      .then((youtube) => {
+        if (isCancelled || !iframeRef.current) return;
+        player = new youtube.Player(iframeRef.current, {
+          events: {
+            onReady: (event) => {
+              event.target.setVolume(CHRISTMAS_MUSIC_DEFAULT_VOLUME);
+              event.target.playVideo();
+            },
+          },
+        });
+      })
+      .catch(() => {
+        // The visible toggle remains available if YouTube is unavailable.
+      });
+
+    return () => {
+      isCancelled = true;
+      player?.destroy();
+    };
+  }, [enabled]);
 
   return (
     <>
@@ -303,11 +382,14 @@ function ChristmasMusicControl({
         <iframe
           allow="autoplay; encrypted-media"
           aria-hidden="true"
-          className="pointer-events-none absolute h-px w-px opacity-0"
+          className="pointer-events-none fixed -left-[9999px] top-0 h-[200px] w-[200px] opacity-0"
           data-testid="christmas-music-player"
-          src={`https://www.youtube-nocookie.com/embed/${CHRISTMAS_MUSIC_VIDEO_ID}?autoplay=1&loop=1&playlist=${CHRISTMAS_MUSIC_VIDEO_ID}&controls=0&playsinline=1`}
+          height="200"
+          ref={iframeRef}
+          src={`https://www.youtube-nocookie.com/embed/${CHRISTMAS_MUSIC_VIDEO_ID}?autoplay=1&loop=1&playlist=${CHRISTMAS_MUSIC_VIDEO_ID}&controls=0&playsinline=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
           tabIndex={-1}
           title="Christmas Tree background music"
+          width="200"
         />
       ) : null}
       <Button

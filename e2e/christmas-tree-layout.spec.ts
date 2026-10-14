@@ -90,6 +90,22 @@ test.describe('Christmas Tree layout stability', () => {
         body: '<!doctype html><title>Music</title>',
       });
     });
+    await page.route('https://www.youtube.com/iframe_api', async (route) => {
+      await route.fulfill({
+        contentType: 'application/javascript',
+        body: `
+          window.YT = {
+            Player: function (_element, options) {
+              this.destroy = function () {};
+              this.playVideo = function () { window.__christmasMusicPlayed = true; };
+              this.setVolume = function (volume) { window.__christmasMusicVolume = volume; };
+              setTimeout(() => options.events.onReady({ target: this }), 0);
+            }
+          };
+          window.onYouTubeIframeAPIReady?.();
+        `,
+      });
+    });
 
     await page.route('**/api/christmas-tree/current', async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 200));
@@ -115,6 +131,12 @@ test.describe('Christmas Tree layout stability', () => {
     await expect(musicToggle).toBeVisible();
     await expect(musicToggle).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByTestId('christmas-music-player')).toHaveCount(1);
+    await expect
+      .poll(() => page.evaluate(() => Reflect.get(window, '__christmasMusicVolume')))
+      .toBe(25);
+    await expect
+      .poll(() => page.evaluate(() => Reflect.get(window, '__christmasMusicPlayed')))
+      .toBe(true);
 
     await musicToggle.click();
     await expect(page.getByRole('button', { name: 'Turn Christmas music on' })).toHaveAttribute(

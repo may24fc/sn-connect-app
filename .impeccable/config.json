@@ -8,6 +8,15 @@
         "value": "helvetica",
         "createdAt": "2026-10-01T14:29:14.874Z",
         "reason": "Claude triage: transactional email HTML needs email-client-safe system font stacks (web fonts are unreliable in Gmail/Outlook); matches the existing email.ts templates"
+      },
+      {
+        "rule": "border-accent-on-rounded",
+        "value": "*",
+        "files": [
+          "apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx"
+        ],
+        "createdAt": "2026-10-14T03:26:43.451Z",
+        "reason": "Claude triage: L647/L650 are the tree garland and lights, drawn as border-b-4 on rounded-b-[50%] overlays to form a curved swag; not a card accent"
       }
     ]
   }
