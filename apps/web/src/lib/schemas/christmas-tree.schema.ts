@@ -62,7 +62,11 @@ export const christmasWishUpsertSchema = z
         path: ['itemNumber'],
       });
     }
-  });
+  })
+  .transform((wish) => ({
+    ...wish,
+    linkUrl: wish.category === 'personal' ? (wish.linkUrl ?? null) : null,
+  }));
 
 export const christmasWishDeleteSchema = z
   .object({

@@ -749,9 +749,15 @@ function WishPanel({
           const detail = categoryDetails[category];
           const state = getCategoryState(data, category);
           return (
-            <section className="space-y-3" key={category}>
+            <section
+              aria-labelledby={`${category}-wish-heading`}
+              className="space-y-3"
+              key={category}
+            >
               <div>
-                <h2 className="font-medium">{detail.title}</h2>
+                <h2 className="font-medium" id={`${category}-wish-heading`}>
+                  {detail.title}
+                </h2>
                 <p className="text-sm text-muted-foreground">{detail.description}</p>
               </div>
               {!state.isUnlocked ? (
@@ -768,6 +774,7 @@ function WishPanel({
                   const savedWish = myWishes.find(
                     (wish) => wish.category === category && wish.item_number === itemNumber
                   );
+                  const allowsLink = category === 'personal';
                   return (
                     <div className="space-y-2" key={key}>
                       <Textarea
@@ -785,19 +792,22 @@ function WishPanel({
                         showCounter={false}
                         value={draft.content}
                       />
-                      <Input
-                        disabled={!state.isEditable || isPending || isDeleting}
-                        maxLength={2048}
-                        onChange={(event) =>
-                          setDrafts((current) => ({
-                            ...current,
-                            [key]: { ...draft, linkUrl: event.target.value },
-                          }))
-                        }
-                        placeholder="Optional link (https://...)"
-                        type="url"
-                        value={draft.linkUrl}
-                      />
+                      {allowsLink ? (
+                        <Input
+                          aria-label={`Optional link for personal wish ${itemNumber}`}
+                          disabled={!state.isEditable || isPending || isDeleting}
+                          maxLength={2048}
+                          onChange={(event) =>
+                            setDrafts((current) => ({
+                              ...current,
+                              [key]: { ...draft, linkUrl: event.target.value },
+                            }))
+                          }
+                          placeholder="Optional link (https://...)"
+                          type="url"
+                          value={draft.linkUrl}
+                        />
+                      ) : null}
                       <div className="flex flex-wrap gap-2">
                         <Button
                           disabled={!state.isEditable || isPending || isDeleting || !hasDraft}
@@ -806,7 +816,7 @@ function WishPanel({
                               category,
                               itemNumber,
                               content: draft.content.trim(),
-                              linkUrl: draft.linkUrl.trim(),
+                              linkUrl: allowsLink ? draft.linkUrl.trim() : '',
                             })
                           }
                           size="sm"
@@ -892,7 +902,7 @@ function OrnamentDialog({
                     {categoryDetails[wish.category].title}
                   </p>
                   <p className="text-sm">{wish.content}</p>
-                  {wish.link_url ? (
+                  {wish.category === 'personal' && wish.link_url ? (
                     <a
                       className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-300"
                       href={wish.link_url}

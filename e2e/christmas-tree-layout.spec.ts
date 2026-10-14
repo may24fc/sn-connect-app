@@ -148,6 +148,14 @@ test.describe('Christmas Tree layout stability', () => {
     await dropZone.click({ position: { x: dropBox.width * 0.5, y: dropBox.height * 0.45 } });
 
     await expect(page.getByText('Your Christmas Wishes')).toBeVisible();
+    await expect(page.getByPlaceholder('Optional link (https://...)')).toHaveCount(3);
+    await expect(page.getByLabel('Optional link for personal wish 1')).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Wish for Others' }).getByPlaceholder('Optional link')
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('region', { name: 'Wish for SN' }).getByPlaceholder('Optional link')
+    ).toHaveCount(0);
     const afterBox = await canvas.boundingBox();
     if (!afterBox) throw new Error('Christmas Tree canvas was not measurable after placement');
     expect(Math.abs(afterBox.height - beforeBox.height)).toBeLessThanOrEqual(2);

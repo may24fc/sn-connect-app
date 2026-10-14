@@ -7,7 +7,9 @@ The Christmas Tree soundtrack is implemented with an explicit user control and a
 ## Relevant Code Map
 
 - [Christmas Tree page](../../../apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx) - soundtrack preference, YouTube player, and visible control.
+- [Christmas Tree schema](../../../apps/web/src/lib/schemas/christmas-tree.schema.ts) - wish-category limits and personal-only link normalization.
 - [Christmas Tree Playwright coverage](../../../e2e/christmas-tree-layout.spec.ts) - enable/disable, persistence, responsive, and error-state coverage.
+- [Christmas Tree schema tests](../../../tests/schemas/christmas-tree.test.ts) - link policy and wish payload validation.
 - [Task tracker](./task-tracker.md) - delivery status and validation history.
 
 ## Optimizations
@@ -19,6 +21,14 @@ The Christmas Tree soundtrack is implemented with an explicit user control and a
 - **Solution:** Default the soundtrack preference on for a first visit, expose a labelled and pressed-state-aware toggle, persist opt-out in local storage, remove the iframe entirely while disabled, and use `youtube-nocookie.com`. If autoplay is blocked, an off/on click supplies the user gesture needed by common browser policies.
 - **Code paths:** `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `e2e/christmas-tree-layout.spec.ts`.
 - **Validation:** TypeScript passed. `pnpm exec playwright test --config playwright.local.config.ts e2e/christmas-tree-layout.spec.ts` passed 3/3 tests and verifies the default state, iframe source, disable/enable behavior, saved opt-out restoration on a new visit, and desktop/mobile presentation with no feature request failures or console errors. The cross-origin player is mocked during automated tests, so actual audible playback remains dependent on YouTube availability and the user's browser autoplay policy.
+
+### Relevant wish fields by category
+
+- **Status:** Implemented
+- **Problem/evidence:** The optional URL field appeared for November and December wishes even though the client only wants product links attached to the three Personal Wishes. This added an irrelevant input and allowed non-personal link data to reach the ornament dialog.
+- **Solution:** Render and display links only for `personal` wishes, label the three category regions for assistive technology, and normalize every non-personal wish payload to `linkUrl: null` at the shared schema boundary.
+- **Code paths:** `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `apps/web/src/lib/schemas/christmas-tree.schema.ts`, `tests/schemas/christmas-tree.test.ts`, `e2e/christmas-tree-layout.spec.ts`.
+- **Validation:** TypeScript passed; the focused schema suite passed 7/7 tests; Playwright asserts exactly three URL fields and none in the “Wish for Others” or “Wish for SN” regions.
 
 ## Measurements
 
@@ -47,3 +57,4 @@ flowchart LR
 ## Change Log
 
 - 2026-10-14: Implemented the persistent soundtrack control, documented browser autoplay and third-party-load tradeoffs, and deferred numeric browser-load comparison until a valid pre-change baseline can be captured.
+- 2026-10-14: Removed irrelevant link fields from November and December wishes and enforced the same personal-only rule at the schema boundary.
