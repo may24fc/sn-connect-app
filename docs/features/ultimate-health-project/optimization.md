@@ -24,6 +24,31 @@
 
 ## Records
 
+### Implemented - 2026-10-14: Early portal reminder delivery
+
+- Problem/evidence: The client requested the 10-customer-form reminder on the 5th and checks-and-deposits reminder on the 16th at 05:30 PHT, with weekend deadlines sent on the preceding Friday. The date and weekend rules already matched, but the workflow evaluated them at 08:00 PHT.
+- Delivered solution: Move the existing daily schedule trigger to `30 5 * * *` under the `Asia/Manila` workflow timezone. Keep the same Control Hub Telegram bot, destination configuration, callback credentials, due-date rules, and failure handling.
+- Code paths: [Reminder workflow definition](../../../n8n/workflows/uhp-herbalife-portal-reminders.json), [workflow regression tests](../../../n8n/workflows/uhp-workflows.test.ts), and [reminder-date calculation tests](../../../apps/web/src/lib/uhp-reminders.test.ts).
+- Validation: 21 focused tests passed. Live workflow `tGgNv4OB3vtADFZg` was updated and read back as active with cron `30 5 * * *` and timezone `Asia/Manila`; the destination and Telegram/callback credentials matched their pre-update values. This schedule-only change does not alter an API or user-flow latency path, so latency measurement is not applicable.
+
+### Implemented - 2026-10-14: Digest feedback and schedule alignment
+
+- Problem/evidence: Telegram feedback requested the weekly Outreach digest at 09:00 Friday, three distinct booking lines, member names under Volume Points orders, and removal of target VP. Both the repository and live n8n still used Friday 17:00, one combined booking line, and target-bearing VP rows without member names.
+- Delivered solution: Schedule Outreach at `0 9 * * 5` in the existing `Asia/Manila` workflow timezone. Preserve the existing combined Wellness evaluations metric for the app while exposing separate form-milestone and wellness-call counts to the digest. Build the VP "WHO ORDERED" section from entries changed since the previous daily digest, grouped by member, and omit target values.
+- Code paths: [Outreach summary calculation](../../../apps/web/src/lib/uhp.ts), [summary tests](../../../tests/lib/uhp-outreach-summary.test.ts), [VP workflow](../../../n8n/workflows/uhp-volume-points-daily-digest.json), [Outreach workflow](../../../n8n/workflows/uhp-outreach-weekly-summary.json), and [workflow tests](../../../n8n/workflows/uhp-workflows.test.ts).
+- Validation: 31 focused tests and web TypeScript passed. The inactive live VP and Outreach workflows were synced and read back; Outreach is Friday 09:00 PHT, VP remains daily 12:00 PHT, and recipients, credentials, and inactive states were unchanged. The web app must be deployed before Outreach activation so production returns the new booking fields.
+
+#### Measurements
+
+- Status: Deferred. On 2026-10-14 the local Supabase Docker stack was unavailable, so the required pre-change API baseline could not be captured. No latency claim is made. Resume by running an isolated pre-change worktree and the changed worktree against local Supabase and `pnpm performance:serve`, then run `pnpm performance:latency --feature ultimate-health-project --base-url http://localhost:3101 --targets "/api/uhp/clients/digest,/api/notifications?limit=1" --label before` and the identical `--label after` command with at least 30 samples and 3 warmups.
+
+```mermaid
+flowchart LR
+  A[Friday 09:00 PHT schedule] --> B[Control Hub rolling weekly summary]
+  B --> C[n8n message formatter]
+  C --> D[Telegram: response, prospects, three booking lines]
+```
+
 ### Audited - 2026-10-12: Notification activation readiness
 
 - Problem/evidence: A successful single-recipient test does not establish that the final audience receives all three workflows or that failure reporting survives Telegram or callback outages.
@@ -209,7 +234,7 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-  S[Daily 08:00 PHT schedule] --> B[Build due reminders]
+  S[Daily 05:30 PHT schedule] --> B[Build due reminders]
   B -->|No due reminder| E[No items; execution ends]
   B -->|Due reminder + destination| T[Telegram send]
   T -->|Success| R[Record sent callback]
@@ -220,6 +245,7 @@ flowchart LR
 
 ## Change Log
 
+- 2026-10-14: Moved the active portal reminder evaluation to 05:30 PHT while preserving the 5th/16th deadlines, weekend-to-Friday adjustment, destination, and credentials; 21 focused tests passed.
 - 2026-10-12: Audited WE form status versus appointment-only metric, implemented milestone-aware deduplication, passed focused and local Playwright tests, and inspected desktop/mobile screenshots. Recorded before/after local latency samples; p95/control drift prevents attributing the delta.
 - 2026-10-12: Fixed UTC timestamp contract and nested live test destinations; verified Telegram and saved Control Hub delivery records for all three workflows, then restored normal schedules and activation states.
 - 2026-10-08: Added outreach-week cohorts and Last week selection, with late replies and later-follow-up attribution. Validated 23 focused tests and local build; recorded 30-sample before/after and control-route drift, with no causal speed claim.

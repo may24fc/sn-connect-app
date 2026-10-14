@@ -5,11 +5,11 @@
   "nodes": [
     {
       "id": "daily-trigger",
-      "name": "Daily 08:00 PHT",
+      "name": "Daily 05:30 PHT",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [240, 300],
-      "parameters": { "rule": { "interval": [{ "field": "cronExpression", "expression": "0 8 * * *" }] } }
+      "parameters": { "rule": { "interval": [{ "field": "cronExpression", "expression": "30 5 * * *" }] } }
     },
     {
       "id": "configure-destinations",
@@ -98,7 +98,7 @@
     }
   ],
   "connections": {
-    "Daily 08:00 PHT": { "main": [[{ "node": "Configure Telegram Destinations", "type": "main", "index": 0 }]] },
+    "Daily 05:30 PHT": { "main": [[{ "node": "Configure Telegram Destinations", "type": "main", "index": 0 }]] },
     "Configure Telegram Destinations": { "main": [[{ "node": "Build Today's Reminders", "type": "main", "index": 0 }]] },
     "Build Today's Reminders": { "main": [[{ "node": "Send Telegram Reminder", "type": "main", "index": 0 }]] },
     "Send Telegram Reminder": { "main": [[{ "node": "Record Reminder Run", "type": "main", "index": 0 }], [{ "node": "Record Reminder Failure", "type": "main", "index": 0 }]] }

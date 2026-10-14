@@ -200,6 +200,8 @@ export type UhpOutreachSummary = {
   interested: number;
   declined: number;
   noResponse: number;
+  wellnessEvaluationForms: number;
+  wellnessEvaluationCalls: number;
   wellnessEvaluationsScheduled: number;
   callsScheduled: number;
   newClients: number;
@@ -226,6 +228,13 @@ export function summarizeUhpOutreach(
   const declined = clientsWhere((row) => outcomeStillCurrent(row, 'declined'));
   const repliedAfterOutreach = [...reachedOut].filter((id) => replied.has(id)).length;
   const noResponse = [...reachedOut].filter((id) => !(replied.has(id) || declined.has(id))).length;
+  const isWellnessEvaluationForm = (row: UhpOutreachActivityRow) =>
+    row.title === 'Status changed to WE form Filled' ||
+    row.title?.startsWith('Status changed to WE form Filled; ') === true;
+  const wellnessEvaluationForms = clientsWhere(isWellnessEvaluationForm).size;
+  const wellnessEvaluationCalls = rows.filter(
+    (row) => row.appointment_type === 'wellness_evaluation'
+  ).length;
 
   return {
     clientsReachedOut: reachedOut.size,
@@ -238,13 +247,12 @@ export function summarizeUhpOutreach(
     interested: clientsWhere((row) => outcomeStillCurrent(row, 'interested')).size,
     declined: declined.size,
     noResponse,
+    wellnessEvaluationForms,
+    wellnessEvaluationCalls,
     // A completed WE form is logged as a status-change activity, not as an appointment.
     // Count the client once when both that milestone and an appointment were logged.
     wellnessEvaluationsScheduled: clientsWhere(
-      (row) =>
-        row.appointment_type === 'wellness_evaluation' ||
-        row.title === 'Status changed to WE form Filled' ||
-        row.title?.startsWith('Status changed to WE form Filled; ') === true
+      (row) => row.appointment_type === 'wellness_evaluation' || isWellnessEvaluationForm(row)
     ).size,
     callsScheduled: rows.filter((row) => row.appointment_type === 'call').length,
     newClients,

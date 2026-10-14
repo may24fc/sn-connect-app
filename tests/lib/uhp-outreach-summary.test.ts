@@ -52,6 +52,8 @@ describe('summarizeUhpOutreach', () => {
       0
     );
     expect(summary).toMatchObject({
+      wellnessEvaluationForms: 0,
+      wellnessEvaluationCalls: 1,
       wellnessEvaluationsScheduled: 1,
       callsScheduled: 1,
       interested: 1,
@@ -72,7 +74,11 @@ describe('summarizeUhpOutreach', () => {
       0
     );
 
-    expect(summary.wellnessEvaluationsScheduled).toBe(2);
+    expect(summary).toMatchObject({
+      wellnessEvaluationForms: 2,
+      wellnessEvaluationCalls: 1,
+      wellnessEvaluationsScheduled: 2,
+    });
   });
 
   it('counts timestamp-filtered manual replies and activity replies once per client', () => {
