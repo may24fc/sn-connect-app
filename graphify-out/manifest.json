@@ -588,9 +588,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/directory/route.ts": {
-    "mtime": 1791787595.6622384,
-    "seen": 1791788039.2511017,
-    "ast_hash": "7622a767ab99e1c91b705baa99c7e0d3",
+    "mtime": 1792049898.403494,
+    "seen": 1792050566.028574,
+    "ast_hash": "4a1f51d2c1bac7830e306fbb62bdeaa0",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/divisions/route.ts": {
@@ -1134,9 +1134,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/performance/individual/[employeeId]/route.ts": {
-    "mtime": 1791787595.686169,
-    "seen": 1791788039.2512212,
-    "ast_hash": "5689fec0ad52505cb4c606c7cc16766d",
+    "mtime": 1792049898.6267116,
+    "seen": 1792050566.0286849,
+    "ast_hash": "0c967a6b006d3fec3af269a5c362c7ef",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/performance/kpis/[id]/evidence/route.ts": {
@@ -2538,9 +2538,9 @@
     "semantic_hash": "e0bcbf5d641cd2498a65c74cd0eec451"
   },
   "apps/web/src/hooks/useDirectory.ts": {
-    "mtime": 1791504958.0205195,
-    "seen": 1791773339.4947228,
-    "ast_hash": "271f719402c46492faa2428210ea03b5",
+    "mtime": 1792049898.2831304,
+    "seen": 1792050566.0290043,
+    "ast_hash": "9cba0ef083216f8f8fd54e9e592282a5",
     "semantic_hash": ""
   },
   "apps/web/src/hooks/useDivisions.ts": {
@@ -2772,10 +2772,10 @@
     "semantic_hash": ""
   },
   "apps/web/src/hooks/usePerformanceRealtime.ts": {
-    "mtime": 1788257422.5153193,
-    "seen": 1789664611.8288913,
-    "ast_hash": "76c241bb2b1c1425c46f760bea6aa13d",
-    "semantic_hash": "76c241bb2b1c1425c46f760bea6aa13d"
+    "mtime": 1792050677.086243,
+    "seen": 1792050874.1166077,
+    "ast_hash": "ae0efd299c11f31101b0f704fb7281f8",
+    "semantic_hash": ""
   },
   "apps/web/src/hooks/useProbation.ts": {
     "mtime": 1791342273.1082685,
@@ -4806,9 +4806,9 @@
     "semantic_hash": ""
   },
   "packages/database/src/database.types.ts": {
-    "mtime": 1791901346.7442174,
-    "seen": 1791902830.9819076,
-    "ast_hash": "a03348a1a8dddcf867f7f436e7f9f7fb",
+    "mtime": 1792049898.7526872,
+    "seen": 1792050566.0294285,
+    "ast_hash": "92468d566bb8535323791e352e703b2a",
     "semantic_hash": ""
   },
   "packages/database/src/enums.ts": {
@@ -7650,9 +7650,9 @@
     "semantic_hash": "77c994f3636f7f1111473c8c8ea31912"
   },
   "tests/api/directory-route.test.ts": {
-    "mtime": 1791505281.7268853,
-    "seen": 1791773339.49766,
-    "ast_hash": "dff9950bef76b73d4d545e8dbbc6f8c0",
+    "mtime": 1792050014.9242384,
+    "seen": 1792050566.0299165,
+    "ast_hash": "60fa5b02b10fed414eb88444c85cdc59",
     "semantic_hash": ""
   },
   "tests/api/expenses-verify-route.test.ts": {
@@ -10488,9 +10488,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(admin)/admin/performance/employee/[id]/page.tsx": {
-    "mtime": 1791342642.6887884,
-    "seen": 1791343180.2617161,
-    "ast_hash": "4b2e7cd0e6aea6cef7321886a948cc43",
+    "mtime": 1792049915.796738,
+    "seen": 1792050566.0282333,
+    "ast_hash": "0934ecd7806bd1b17f1840c033796c9a",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(admin)/admin/performance/evaluations/page.tsx": {
@@ -10524,9 +10524,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(admin)/admin/performance/page.tsx": {
-    "mtime": 1791342642.6867833,
-    "seen": 1791343180.261725,
-    "ast_hash": "e90d78a3e7a841e58ceea5f9b807de49",
+    "mtime": 1792050261.6205049,
+    "seen": 1792050566.0282412,
+    "ast_hash": "5e45bf1d74e8cc73ca88571f88f67fff",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(admin)/admin/performance/self-evaluation/page.tsx": {
@@ -13143,6 +13143,30 @@
     "mtime": 1791948385.3724606,
     "seen": 1792034888.830358,
     "ast_hash": "bb817d80e9f75782d9f321f9576d792f",
+    "semantic_hash": ""
+  },
+  "e2e/okr-kpi-historical-roster.spec.ts": {
+    "mtime": 1792050747.578411,
+    "seen": 1792050874.1169229,
+    "ast_hash": "1547395309fbdf103e0dda2cc84d0d90",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261015000001_add_user_created_at_to_employee_directory.sql": {
+    "mtime": 1792049907.2418375,
+    "seen": 1792050566.0298905,
+    "ast_hash": "92625228980d9597f270de58b19252e5",
+    "semantic_hash": ""
+  },
+  "docs/features/okr-kpi-cycle-roster/optimization.md": {
+    "mtime": 1792050677.1985035,
+    "seen": 1792050874.1177576,
+    "ast_hash": "693d2f29af350b99fc93796c0f73fd6c",
+    "semantic_hash": ""
+  },
+  "docs/features/okr-kpi-cycle-roster/task-tracker.md": {
+    "mtime": 1792050385.5468328,
+    "seen": 1792050566.030213,
+    "ast_hash": "6cc1df313394a7d697947bc990e46071",
     "semantic_hash": ""
   }
 }
