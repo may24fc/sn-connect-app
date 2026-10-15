@@ -1,6 +1,10 @@
 'use client';
 
 import { ReportsPlansTab } from '@/app/(app)/(admin)/admin/reports/components/ReportsPlansTab';
+import {
+  DateRangeFilter,
+  type DateRangeValue,
+} from '@/components/data-display/DateRangeFilter';
 import { MarketingDeliverablesReminderRecipientsButton } from '@/components/reports/MarketingDeliverablesReminderRecipientsDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useReports } from '@/hooks/useReports';
@@ -19,10 +23,6 @@ import {
   resolveMarketingReportType,
 } from '@/lib/report-utils';
 import {
-  Button,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
   Select,
   SelectContent,
   SelectItem,
@@ -33,15 +33,11 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  cn,
 } from '@hr-portal/ui';
 import { format } from 'date-fns';
-import { CalendarRange, X } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import type { DateRange } from 'react-day-picker';
-import { DayPicker } from 'react-day-picker';
 
 const MARKETING_DEPARTMENT = 'marketing';
 const FILTER_INCLUDED_STATUSES = ['submitted', 'approved'] as const;
@@ -91,9 +87,9 @@ export default function AdminReportsPage() {
   const [reportType, setReportType] = useState<MarketingReportTypeFilterValue>('all');
   const [campaignType, setCampaignType] = useState<MarketingCampaignFilterValue>('all');
   const [objective, setObjective] = useState<MarketingObjectiveFilterValue>('all');
-  const [periodRange, setPeriodRange] = useState<DateRange>();
-  const customStartDate = periodRange?.from ? format(periodRange.from, 'yyyy-MM-dd') : '';
-  const customEndDate = periodRange?.to ? format(periodRange.to, 'yyyy-MM-dd') : '';
+  const [periodRange, setPeriodRange] = useState<DateRangeValue>({ from: '', to: '' });
+  const customStartDate = periodRange.from;
+  const customEndDate = periodRange.to;
   const planningFiltersEnabled =
     reportType === 'all' || getMarketingCampaignTypeAvailability(reportType) === 'enabled';
   const liveFilterReports = useMemo(
@@ -264,121 +260,14 @@ export default function AdminReportsPage() {
             </SelectContent>
           </Select>
 
-          <div className="flex items-center gap-2">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={cn(
-                    'h-10 w-[160px] justify-between px-3 text-left font-normal',
-                    !periodRange?.from && 'text-muted-foreground'
-                  )}
-                >
-                  <span className="truncate">
-                    {periodRange?.from ? format(periodRange.from, 'MMM d, yyyy') : 'Start date'}
-                  </span>
-                  <CalendarRange className="h-4 w-4 shrink-0 text-muted-foreground" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-auto p-3">
-                <DayPicker
-                  mode="single"
-                  selected={periodRange?.from}
-                  onSelect={(from) => setPeriodRange((current) => ({ from, to: current?.to }))}
-                  disabled={periodRange?.to ? { after: periodRange.to } : undefined}
-                  className="mx-auto"
-                  classNames={{
-                    months: 'flex justify-center',
-                    month: 'space-y-2',
-                    caption: 'relative flex h-9 items-center justify-center',
-                    caption_label: 'text-sm font-medium',
-                    nav: 'absolute inset-x-0 top-0 flex items-center justify-between',
-                    button_previous:
-                      'inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted',
-                    button_next:
-                      'inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted',
-                    table: 'w-full border-collapse',
-                    head_row: 'grid grid-cols-7 gap-1',
-                    head_cell: 'h-8 text-center text-xs font-medium text-muted-foreground',
-                    row: 'mt-1 grid grid-cols-7 gap-1',
-                    cell: 'h-9 w-9 p-0 text-center text-sm',
-                    day: 'h-9 w-9 p-0',
-                    day_button:
-                      'flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                    day_selected:
-                      'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground',
-                    day_today: 'font-bold',
-                    day_outside: 'text-muted-foreground opacity-50',
-                  }}
-                />
-              </PopoverContent>
-            </Popover>
-
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={cn(
-                    'h-10 w-[160px] justify-between px-3 text-left font-normal',
-                    !periodRange?.to && 'text-muted-foreground'
-                  )}
-                >
-                  <span className="truncate">
-                    {periodRange?.to ? format(periodRange.to, 'MMM d, yyyy') : 'End date'}
-                  </span>
-                  <CalendarRange className="h-4 w-4 shrink-0 text-muted-foreground" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="end" className="w-auto p-3">
-                <div className="space-y-3">
-                  <DayPicker
-                    mode="single"
-                    selected={periodRange?.to}
-                    onSelect={(to) => setPeriodRange((current) => ({ from: current?.from, to }))}
-                    disabled={periodRange?.from ? { before: periodRange.from } : undefined}
-                    className="mx-auto"
-                    classNames={{
-                      months: 'flex justify-center',
-                      month: 'space-y-2',
-                      caption: 'relative flex h-9 items-center justify-center',
-                      caption_label: 'text-sm font-medium',
-                      nav: 'absolute inset-x-0 top-0 flex items-center justify-between',
-                      button_previous:
-                        'inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted',
-                      button_next:
-                        'inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted',
-                      table: 'w-full border-collapse',
-                      head_row: 'grid grid-cols-7 gap-1',
-                      head_cell: 'h-8 text-center text-xs font-medium text-muted-foreground',
-                      row: 'mt-1 grid grid-cols-7 gap-1',
-                      cell: 'h-9 w-9 p-0 text-center text-sm',
-                      day: 'h-9 w-9 p-0',
-                      day_button:
-                        'flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                      day_selected:
-                        'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground',
-                      day_today: 'font-bold',
-                      day_outside: 'text-muted-foreground opacity-50',
-                    }}
-                  />
-                  {periodRange?.from || periodRange?.to ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="ml-auto"
-                      onClick={() => setPeriodRange(undefined)}
-                    >
-                      <X className="mr-2 h-4 w-4" />
-                      Clear dates
-                    </Button>
-                  ) : null}
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
+          <DateRangeFilter
+            idPrefix="marketing-reports-period"
+            value={periodRange}
+            onApply={setPeriodRange}
+            maxDate={format(new Date(), 'yyyy-MM-dd')}
+            helperText="Apply a complete range to filter all report tabs."
+            className="w-full xl:w-auto"
+          />
 
           {/* Time range selector
           <Select

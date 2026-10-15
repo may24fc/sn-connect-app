@@ -47,6 +47,47 @@ function zonedMidnightUtc(year: number, month: number, day: number, timeZone: st
   return new Date(utcTime).toISOString();
 }
 
+function parseCalendarDateKey(value: string): { year: number; month: number; day: number } {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) throw new RangeError('Date must use YYYY-MM-DD format.');
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    throw new RangeError('Date is not a valid calendar day.');
+  }
+  return { year, month, day };
+}
+
+/** Inclusive local calendar dates represented as an inclusive start and exclusive end UTC range. */
+export function calendarDateRangeBounds(
+  fromDate: string,
+  toDate: string,
+  timeZone: MetricTimeZone
+): { from: string; until: string } {
+  const from = parseCalendarDateKey(fromDate);
+  const to = parseCalendarDateKey(toDate);
+  const fromOrdinal = Date.UTC(from.year, from.month - 1, from.day);
+  const toOrdinal = Date.UTC(to.year, to.month - 1, to.day);
+  if (fromOrdinal > toOrdinal) throw new RangeError('Start date must not be after end date.');
+  const dayAfterTo = new Date(Date.UTC(to.year, to.month - 1, to.day + 1));
+  const zone = resolvedTimeZone(timeZone);
+  return {
+    from: zonedMidnightUtc(from.year, from.month, from.day, zone),
+    until: zonedMidnightUtc(
+      dayAfterTo.getUTCFullYear(),
+      dayAfterTo.getUTCMonth() + 1,
+      dayAfterTo.getUTCDate(),
+      zone
+    ),
+  };
+}
+
 /** Inclusive start and exclusive end of a calendar period, represented as UTC instants. */
 export function calendarPeriodBounds(
   period: CalendarMetricPeriod,

@@ -1,5 +1,6 @@
 'use client';
 
+import { DatePickerField } from '@/components/forms/DatePickerField';
 import {
   Input,
   Label,
@@ -11,7 +12,6 @@ import {
   SelectValue,
 } from '@hr-portal/ui';
 import type { ReactNode } from 'react';
-import { DatePickerField } from './DatePickerField';
 
 const NATIONALITIES = [
   'Filipino',

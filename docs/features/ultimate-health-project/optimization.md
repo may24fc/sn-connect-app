@@ -10,6 +10,7 @@
 - [Workflow regression tests](../../../n8n/workflows/uhp-workflows.test.ts)
 - [Reminder-date calculation tests](../../../apps/web/src/lib/uhp-reminders.test.ts)
 - [Outreach Tracker period selector](../../../apps/web/src/components/uhp/UhpClientTrackerPage.tsx)
+- [Shared calendar field](../../../apps/web/src/components/forms/DatePickerField.tsx), [shared date-range filter](../../../apps/web/src/components/data-display/DateRangeFilter.tsx), [range interaction tests](../../../tests/components/DateRangeFilter.test.tsx), and [custom-range browser regression](../../../e2e/uhp-custom-date-range.spec.ts)
 - [Outreach metrics endpoint](../../../apps/web/src/app/api/uhp/clients/metrics/route.ts)
 - [Period-filtered outreach data](../../../apps/web/src/app/api/uhp/_lib.ts)
 - [Outreach summary calculation](../../../apps/web/src/lib/uhp.ts)
@@ -23,6 +24,27 @@
 - [WE form status activity query](../../../apps/web/src/app/api/uhp/_lib.ts), [deduplicated evaluation summary](../../../apps/web/src/lib/uhp.ts), [summary tests](../../../tests/lib/uhp-outreach-summary.test.ts), [period query test](../../../tests/api/uhp-outreach-period.test.ts), and [browser regression](../../../e2e/uhp-wellness-evaluation.spec.ts) - status milestone and appointment attribution.
 
 ## Records
+
+### Implemented - 2026-10-15: Custom Outreach metrics date range
+
+- Problem/evidence: The tracker offered only This week, Last week, This month, and This quarter, while the client needed to report on arbitrary dates. The existing API already accepts exact `from`/`to` timestamps, but the page had no safe way to construct a viewer-local inclusive range.
+- Reference review: [Google Analytics](https://support.google.com/analytics/answer/13412290?hl=en) keeps presets and a calendar-based custom range behind one date control with an explicit Apply action. [Power BI](https://learn.microsoft.com/en-us/power-bi/visuals/power-bi-visualization-slicer-visual) likewise combines relative choices with manual start/end date selection. The transferable pattern is to preserve fast presets, make both boundaries visible, and avoid changing the report while the range is incomplete.
+- Delivered solution: Add Custom range to the established Metrics period Select; extract the onboarding calendar into a shared form component; compose it into one shared draft/Apply/Clear range filter used by both UHP and Marketing Reports; initialize UHP to the current month; constrain filter dates through today and start <= end; and treat both UHP endpoints as inclusive in the viewer's IANA timezone. The existing request guard prevents stale ranges from replacing the latest cards. This is a server-confirmed filter, not an optimistic mutation.
+- Code paths: [Outreach Tracker](../../../apps/web/src/components/uhp/UhpClientTrackerPage.tsx), [Marketing Reports](<../../../apps/web/src/app/(app)/(admin)/admin/reports/page.tsx>), shared calendar/range controls and tests in Relevant Code Map, [timezone conversion](../../../apps/web/src/lib/metrics-period.ts), [calendar tests](../../../tests/lib/metrics-period.test.ts), and [browser regression](../../../e2e/uhp-custom-date-range.spec.ts).
+- Validation: 11 focused tests, web TypeScript, focused Biome checks, and the full monorepo production build passed. Playwright passed against local Supabase on `/uhp/clients` and `/admin/reports` as admin at 1440x900 and 390x844. It exercised delayed loading and an intentional mocked 500 response, verified Oct 5-12 becomes `2026-10-04T16:00:00.000Z` through `2026-10-12T15:59:59.999Z`, confirmed reporting requests do not receive overlap dates until Apply, exercised Clear, checked open calendars and dark-mode emulation, and found no overflow or unexpected success-path page/console/network errors. Screenshots were inspected. The dark-mode emulation retains the screens' established light palette.
+
+#### Measurements
+
+- Status: Deferred. The initial pre-edit environment check could not reach Docker from the restricted process and appeared offline. Elevated access later showed local Supabase was healthy, but the custom-range source was already present in a dirty UHP worktree, so a valid isolated before measurement no longer exists. No latency or speed claim is made. Resume from a clean pre-change worktree with `pnpm performance:serve` and `pnpm performance:latency --feature ultimate-health-project --base-url http://localhost:3101 --targets "/uhp/clients,/api/uhp/clients/metrics?from=2026-01-01T00%3A00%3A00.000Z&to=2026-10-15T00%3A00%3A00.000Z,/api/notifications?limit=1" --label before`, then repeat identically with `--label after` and compare the saved results.
+
+```mermaid
+flowchart LR
+  P[Preset or Custom range] --> D[Draft local dates]
+  D --> A[Apply complete inclusive range]
+  A --> Z[Convert viewer-local midnights to UTC]
+  Z --> Q[Fetch Outreach metrics]
+  Q --> C[Replace cards only for latest request]
+```
 
 ### Implemented - 2026-10-14: Early portal reminder delivery
 
@@ -245,6 +267,8 @@ flowchart LR
 
 ## Change Log
 
+- 2026-10-15: Extracted the calendar and draft/Apply/Clear range behavior into shared components, removed duplicate Marketing Reports DayPickers, and passed the final two-route desktop/mobile browser audit. No speed or bundle-size claim is made.
+- 2026-10-15: Added an inclusive custom Outreach metrics range using the established calendar and server-confirmed Apply behavior; passed focused tests and the secured desktop/mobile browser audit. Latency comparison remains deferred without a valid pre-edit baseline.
 - 2026-10-14: Moved the active portal reminder evaluation to 05:30 PHT while preserving the 5th/16th deadlines, weekend-to-Friday adjustment, destination, and credentials; 21 focused tests passed.
 - 2026-10-12: Audited WE form status versus appointment-only metric, implemented milestone-aware deduplication, passed focused and local Playwright tests, and inspected desktop/mobile screenshots. Recorded before/after local latency samples; p95/control drift prevents attributing the delta.
 - 2026-10-12: Fixed UTC timestamp contract and nested live test destinations; verified Telegram and saved Control Hub delivery records for all three workflows, then restored normal schedules and activation states.

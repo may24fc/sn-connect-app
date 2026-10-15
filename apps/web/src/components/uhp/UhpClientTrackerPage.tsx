@@ -1,10 +1,15 @@
 'use client';
 
 import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
+import { DateRangeFilter, type DateRangeValue } from '@/components/data-display/DateRangeFilter';
 import { MetricsPeriodSelect } from '@/components/data-display/MetricsPeriodSelect';
 import { TrackerPagination } from '@/components/data-display/TrackerPagination';
 import { usePeriodRequestGuard } from '@/hooks/usePeriodRequestGuard';
-import { calendarPeriodBounds, previousCalendarPeriodBounds } from '@/lib/metrics-period';
+import {
+  calendarDateRangeBounds,
+  calendarPeriodBounds,
+  previousCalendarPeriodBounds,
+} from '@/lib/metrics-period';
 import {
   UHP_CLIENT_SOURCE_DEFAULTS,
   UHP_CLIENT_STATUS_VALUES,
@@ -35,6 +40,7 @@ import {
   SelectValue,
   useToast,
 } from '@hr-portal/ui';
+import { format } from 'date-fns';
 import {
   AlertTriangle,
   ExternalLink,
@@ -103,29 +109,49 @@ const emptyMetrics: Metrics = {
   callsScheduled: 0,
 };
 
-type MetricsPeriod = 'week' | 'last-week' | 'month' | 'quarter';
+type MetricsPeriod = 'week' | 'last-week' | 'month' | 'quarter' | 'custom';
+type CustomMetricsRange = DateRangeValue;
 
 const PERIOD_OPTIONS = [
   { value: 'week', label: 'This week' },
   { value: 'last-week', label: 'Last week' },
   { value: 'month', label: 'This month' },
   { value: 'quarter', label: 'This quarter' },
+  { value: 'custom', label: 'Custom range' },
 ] as const;
 
 const CLIENTS_PER_PAGE = 10;
 const TABLE_COLUMNS = 10;
 
-async function fetchMetrics(period: MetricsPeriod): Promise<Metrics> {
+function defaultCustomMetricsRange(now = new Date()): CustomMetricsRange {
+  return {
+    from: format(new Date(now.getFullYear(), now.getMonth(), 1), 'yyyy-MM-dd'),
+    to: format(now, 'yyyy-MM-dd'),
+  };
+}
+
+function shouldSurfaceMetricsError(isCurrentRequest: boolean, showLoading: boolean) {
+  return isCurrentRequest && showLoading;
+}
+
+async function fetchMetrics(
+  period: MetricsPeriod,
+  customRange: CustomMetricsRange
+): Promise<Metrics> {
   const now = new Date();
   const bounds =
-    period === 'last-week'
-      ? previousCalendarPeriodBounds('week', now, 'viewer')
-      : calendarPeriodBounds(period, now, 'viewer');
+    period === 'custom'
+      ? calendarDateRangeBounds(customRange.from, customRange.to, 'viewer')
+      : period === 'last-week'
+        ? previousCalendarPeriodBounds('week', now, 'viewer')
+        : calendarPeriodBounds(period, now, 'viewer');
   const from = bounds.from;
   const to =
-    period === 'last-week'
-      ? new Date(Date.parse(bounds.until) - 1).toISOString()
-      : now.toISOString();
+    period === 'custom'
+      ? new Date(Math.min(Date.parse(bounds.until) - 1, now.getTime())).toISOString()
+      : period === 'last-week'
+        ? new Date(Date.parse(bounds.until) - 1).toISOString()
+        : now.toISOString();
   const response = await fetch(
     `/api/uhp/clients/metrics?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
     { cache: 'no-store' }
@@ -152,17 +178,22 @@ type CreateClientPayload = {
 export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean }) {
   const { addToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
-  const [clients, setClients] = useState<Client[]>([]);
+  const [clients, setClients] = useState<Array<Client>>([]);
   const [sourceOptions, setSourceOptions] = useState<Array<string>>([
     ...UHP_CLIENT_SOURCE_DEFAULTS,
   ]);
   const [newClientSource, setNewClientSource] = useState('');
   const [metrics, setMetrics] = useState<Metrics>(emptyMetrics);
   const [period, setPeriod] = useState<MetricsPeriod>('month');
-  const [loadedMetricsPeriod, setLoadedMetricsPeriod] = useState<MetricsPeriod | null>(null);
+  const [appliedCustomRange, setAppliedCustomRange] = useState<CustomMetricsRange>(() =>
+    defaultCustomMetricsRange()
+  );
+  const metricsSelectionKey =
+    period === 'custom' ? `custom:${appliedCustomRange.from}:${appliedCustomRange.to}` : period;
+  const [loadedMetricsSelection, setLoadedMetricsSelection] = useState<string | null>(null);
   const [metricsError, setMetricsError] = useState(false);
   const { begin: beginMetricsRequest, isCurrent: isCurrentMetricsRequest } =
-    usePeriodRequestGuard(period);
+    usePeriodRequestGuard(metricsSelectionKey);
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -212,12 +243,18 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
         setMetricsError(false);
       }
       try {
-        const nextMetrics = await fetchMetrics(period);
-        if (!isCurrentMetricsRequest(period, requestId)) return;
+        const nextMetrics = await fetchMetrics(period, appliedCustomRange);
+        if (!isCurrentMetricsRequest(metricsSelectionKey, requestId)) return;
         setMetrics(nextMetrics);
-        setLoadedMetricsPeriod(period);
+        setLoadedMetricsSelection(metricsSelectionKey);
       } catch (error) {
-        if (!isCurrentMetricsRequest(period, requestId) || !showLoading) return;
+        if (
+          !shouldSurfaceMetricsError(
+            isCurrentMetricsRequest(metricsSelectionKey, requestId),
+            showLoading
+          )
+        )
+          return;
         setMetricsError(true);
         addToast({
           variant: 'error',
@@ -225,10 +262,17 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
           description: error instanceof Error ? error.message : 'Please try again.',
         });
       } finally {
-        if (isCurrentMetricsRequest(period, requestId)) setMetricsLoading(false);
+        if (isCurrentMetricsRequest(metricsSelectionKey, requestId)) setMetricsLoading(false);
       }
     },
-    [addToast, beginMetricsRequest, isCurrentMetricsRequest, period]
+    [
+      addToast,
+      appliedCustomRange,
+      beginMetricsRequest,
+      isCurrentMetricsRequest,
+      metricsSelectionKey,
+      period,
+    ]
   );
 
   useEffect(() => {
@@ -486,6 +530,16 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
         options={PERIOD_OPTIONS}
         className="w-[9rem]"
       />
+      {period === 'custom' ? (
+        <DateRangeFilter
+          idPrefix="uhp-metrics"
+          value={appliedCustomRange}
+          onApply={setAppliedCustomRange}
+          disabled={metricsLoading}
+          maxDate={format(new Date(), 'yyyy-MM-dd')}
+          helperText="Start and end dates are both included in the metrics."
+        />
+      ) : null}
       <p className="text-xs text-muted-foreground">
         Based on outreach logged in the selected period. Replies received later still count toward
         that period's response rate; the Updated column does not affect these cards.
@@ -493,7 +547,9 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
 
       <div
         className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6"
-        aria-busy={metricsLoading || (loadedMetricsPeriod !== period && !metricsError)}
+        aria-busy={
+          metricsLoading || (loadedMetricsSelection !== metricsSelectionKey && !metricsError)
+        }
         aria-live="polite"
       >
         {metricCards.map(([label, value]) => (
@@ -501,9 +557,9 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
             <CardContent className="p-4">
               <p className="text-xs text-muted-foreground">{label}</p>
               <p className="mt-1 text-2xl font-semibold">
-                {metricsError && loadedMetricsPeriod !== period ? (
+                {metricsError && loadedMetricsSelection !== metricsSelectionKey ? (
                   '—'
-                ) : metricsLoading || loadedMetricsPeriod !== period ? (
+                ) : metricsLoading || loadedMetricsSelection !== metricsSelectionKey ? (
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 ) : (
                   value

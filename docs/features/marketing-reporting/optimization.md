@@ -4,6 +4,8 @@
 
 Implemented: weekly-plan items use a 1,000-character per-item limit enforced by both browser and server. This is generous enough for a detailed task while keeping each entry operational rather than turning the plan into an unbounded document.
 
+Implemented: Marketing Reports uses the shared draft/Apply/Clear date-range filter instead of maintaining two page-local calendar implementations.
+
 ## Relevant Code Map
 
 - [Ad Spend period view](../../../apps/web/src/components/marketing/MarketingAdSpendDashboard.tsx), [shared period selector](../../../apps/web/src/components/data-display/MetricsPeriodSelect.tsx), [year options](../../../apps/web/src/lib/metrics-period.ts), and [request guard](../../../apps/web/src/hooks/usePeriodRequestGuard.ts) - year choice and latest-response safety.
@@ -12,8 +14,17 @@ Implemented: weekly-plan items use a 1,000-character per-item limit enforced by 
 - [API error adapter](../../../apps/web/src/lib/api-error.ts) - extracts the first actionable Zod field/form message.
 - [Create-report hook](../../../apps/web/src/hooks/useCreateReport.ts) and [update-report hook](../../../apps/web/src/hooks/useUpdateReport.ts) - use the shared API error adapter.
 - [Boundary tests](../../../tests/report-input-limits.test.ts) and [API error tests](../../../tests/api-error.test.ts) - exercise the request contract and error mapping.
+- [Marketing Reports filters](<../../../apps/web/src/app/(app)/(admin)/admin/reports/page.tsx>), [shared date-range filter](../../../apps/web/src/components/data-display/DateRangeFilter.tsx), [shared calendar field](../../../apps/web/src/components/forms/DatePickerField.tsx), [range tests](../../../tests/components/DateRangeFilter.test.tsx), and [browser regression](../../../e2e/uhp-custom-date-range.spec.ts) - linked draft dates and explicit application shared with UHP.
 
 ## Findings
+
+### Implemented - 2026-10-15: Shared custom date-range filtering
+
+- Problem/evidence: Marketing Reports contained two page-local DayPicker popovers with duplicated styling and boundary logic. Each day selection immediately changed child-tab filters, so choosing the first boundary could transiently represent an incomplete range.
+- Delivered solution: Move the established calendar to a shared form component and use one shared date-range control in Marketing Reports and UHP Outreach. The component owns draft validation, linked min/max dates, explicit Apply, and Clear. Marketing Reports now caps future dates and changes all report-tab range props only when a complete range is applied.
+- Relevant paths: Marketing Reports and shared controls/tests in Relevant Code Map.
+- Validation: 2 focused component tests, web TypeScript, focused Biome checks, and the full monorepo production build passed. Playwright verified `/admin/reports` as local admin at 1440x900 and 390x844: no overlap parameters were sent while drafting; Oct 5-12 appeared after Apply; Clear restored empty controls; the open calendar, dark-mode emulation, overflow, and success-path console/network checks passed. Screenshots were inspected.
+- Measurement: Not measured. This removes duplicated source and changes client-side filter interaction, but makes no latency or bundle-size claim; server endpoints and query shapes after Apply are unchanged.
 
 ### Implemented - 2026-10-08: Ad Spend period response safety
 
@@ -33,13 +44,14 @@ Implemented: weekly-plan items use a 1,000-character per-item limit enforced by 
 
 ```mermaid
 flowchart LR
-    A[Weekly-plan textarea] -->|1,000-character browser cap| B[Report payload]
-    B -->|authoritative Zod validation| C[Reports API]
-    C -->|serialized marketing context| D[(PostgreSQL text)]
-    C -->|field-level corrective message| A
+    D[Draft shared date fields] --> A[Apply complete range]
+    A --> P[All report-tab filter props]
+    P --> R[Reports API overlap query]
+    C[Clear] --> P
 ```
 
 ## Change Log
 
+- 2026-10-15: Replaced the duplicated reporting calendars with the shared draft/Apply/Clear range control and verified desktop/mobile behavior in-browser.
 - 2026-10-08: Shared the Ad Spend year control and added latest-period response safety, including stale-data hiding and retry. Recorded local comparison in the cross-feature optimization record.
 - 2026-10-06: Implemented the shared weekly-plan limit, inline UX, and actionable API validation errors. No database schema change was needed.

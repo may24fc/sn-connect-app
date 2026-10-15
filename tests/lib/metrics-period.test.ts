@@ -1,4 +1,5 @@
 import {
+  calendarDateRangeBounds,
   calendarMonthKey,
   calendarPeriodBounds,
   previousCalendarPeriodBounds,
@@ -7,6 +8,26 @@ import {
 import { describe, expect, it } from 'vitest';
 
 describe('metric calendar periods', () => {
+  it('converts an inclusive custom date range using viewer-local boundaries', () => {
+    expect(calendarDateRangeBounds('2026-10-05', '2026-10-12', 'Asia/Manila')).toEqual({
+      from: '2026-10-04T16:00:00.000Z',
+      until: '2026-10-12T16:00:00.000Z',
+    });
+    expect(calendarDateRangeBounds('2026-10-24', '2026-10-26', 'Europe/Rome')).toEqual({
+      from: '2026-10-23T22:00:00.000Z',
+      until: '2026-10-26T23:00:00.000Z',
+    });
+  });
+
+  it('rejects reversed or invalid custom dates', () => {
+    expect(() => calendarDateRangeBounds('2026-10-13', '2026-10-12', 'UTC')).toThrow(
+      'Start date must not be after end date.'
+    );
+    expect(() => calendarDateRangeBounds('2026-02-30', '2026-03-01', 'UTC')).toThrow(
+      'Date is not a valid calendar day.'
+    );
+  });
+
   it('starts a Manila week on Monday even while the UTC date is Sunday', () => {
     const now = new Date('2026-10-04T17:00:00.000Z');
     expect(calendarPeriodBounds('week', now, 'Asia/Manila')).toEqual({
