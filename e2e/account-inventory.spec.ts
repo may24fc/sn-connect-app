@@ -71,6 +71,66 @@ test('super admin reviews non-workforce accounts and creates a server-confirmed 
   });
 });
 
+test('super admin reaches Account Inventory from the profile menu, not the sidebar', async ({
+  page,
+}, testInfo: TestInfo) => {
+  const problems: Array<string> = [];
+  page.on('pageerror', (error) => problems.push(`pageerror: ${error.message}`));
+  page.on('console', (message) => {
+    // The mock-auth harness has no real session, so unmocked shell APIs answer 401.
+    if (message.type() === 'error' && !/status of 401/.test(message.text())) {
+      problems.push(`console: ${message.text()}`);
+    }
+  });
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.goto('/super-admin/settings');
+  await expect(page.getByRole('button', { name: 'Open profile menu' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Account Inventory' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Account Inventory' })).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Open profile menu' }).click();
+  await expect(page.getByRole('menuitem', { name: 'Account Inventory' })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('profile-menu-desktop.png') });
+  await page.getByRole('menuitem', { name: 'Account Inventory' }).click();
+  await expect(page).toHaveURL(/\/super-admin\/account-inventory$/);
+  await expect(page.getByRole('heading', { name: 'Account Inventory' })).toBeVisible();
+  expect(problems).toEqual([]);
+});
+
+test('profile menu entry is usable at a mobile viewport', async ({ page }, testInfo: TestInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/super-admin/settings');
+  await page.getByRole('button', { name: 'Open profile menu' }).click();
+  const item = page.getByRole('menuitem', { name: 'Account Inventory' });
+  await expect(item).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('profile-menu-mobile.png') });
+  await item.click();
+  await expect(page).toHaveURL(/\/super-admin\/account-inventory$/);
+});
+
+test('admins who are not super admins do not see Account Inventory in the profile menu', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'auth_user',
+      JSON.stringify({
+        id: 'admin-1',
+        name: 'Admin',
+        email: 'admin@example.com',
+        role: 'admin',
+        accountKind: 'workforce',
+        isOnboardingComplete: true,
+      })
+    );
+  });
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.goto('/admin/settings');
+  await page.getByRole('button', { name: 'Open profile menu' }).click();
+  await expect(page.getByRole('menuitem', { name: 'Settings' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Account Inventory' })).toHaveCount(0);
+});
+
 test('account inventory remains usable at a mobile viewport', async ({
   page,
 }, testInfo: TestInfo) => {

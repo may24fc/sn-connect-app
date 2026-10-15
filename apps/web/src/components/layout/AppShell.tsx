@@ -255,6 +255,11 @@ function AppShellInner({
           onLogout={onLogout}
           onProfileClick={onProfileClick}
           onSettingsClick={onSettingsClick}
+          onAccountInventoryClick={
+            user.role === 'super_admin'
+              ? () => onNavigate('/super-admin/account-inventory')
+              : undefined
+          }
           onHelpClick={currentGroup ? startTour : undefined}
           notificationSlot={<AppShellNotificationBell />}
           aiChatSlot={

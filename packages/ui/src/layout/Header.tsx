@@ -15,6 +15,7 @@ import {
   Sun,
   Trophy,
   User,
+  UserCog,
 } from 'lucide-react';
 import * as React from 'react';
 import { AppLink } from '../primitives/app-link';
@@ -46,6 +47,8 @@ export interface HeaderProps {
   onLogout: () => void;
   onProfileClick: () => void;
   onSettingsClick?: () => void;
+  /** When provided, shows an "Account Inventory" item in the profile menu (super admins only). */
+  onAccountInventoryClick?: (() => void) | undefined;
   /** @deprecated Use notificationSlot instead */
   notificationCount?: number;
   /** @deprecated Use notificationSlot instead */
@@ -71,6 +74,7 @@ export function Header({
   onLogout,
   onProfileClick,
   onSettingsClick,
+  onAccountInventoryClick,
   notificationCount = 0,
   onNotificationsClick,
   notificationSlot,
@@ -318,6 +322,18 @@ export function Header({
                   strokeWidth={1.5}
                 />
                 Settings
+              </DropdownMenuItem>
+            )}
+            {onAccountInventoryClick && (
+              <DropdownMenuItem
+                onClick={onAccountInventoryClick}
+                className="text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              >
+                <UserCog
+                  className="mr-2 h-4 w-4 text-zinc-500 dark:text-zinc-400"
+                  strokeWidth={1.5}
+                />
+                Account Inventory
               </DropdownMenuItem>
             )}
             {onThemeChange && (

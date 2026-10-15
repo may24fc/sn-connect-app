@@ -206,7 +206,6 @@ const adminNavItems: Array<NavItem> = [
 const superAdminNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/super-admin/dashboard', icon: Home },
   { label: 'Directory', href: '/admin/directory', icon: Users },
-  { label: 'Account Inventory', href: '/super-admin/account-inventory', icon: UserCog },
   {
     label: 'Employee Management',
     href: '/admin/employee-management',
@@ -290,7 +289,6 @@ const adminInternalSectionConfig: ReadonlyArray<{
     title: 'People',
     hrefs: [
       '/admin/directory',
-      '/super-admin/account-inventory',
       '/admin/employee-management',
       '/admin/interns',
       '/admin/recruitment',
