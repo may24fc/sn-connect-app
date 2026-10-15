@@ -33,6 +33,7 @@ describe('SFO CRM prototype boundary', () => {
     } as never);
     const html = renderToStaticMarkup(await SfoPerformancePage());
     expect(html).toContain('SFO Performance');
+    expect(html).toContain('class="min-h-full space-y-6"');
     expect(html).toContain('CRM Tracker · unchanged');
     expect(html).toContain('href="/admin/crm"');
   });

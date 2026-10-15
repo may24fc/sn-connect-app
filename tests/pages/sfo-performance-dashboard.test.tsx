@@ -95,6 +95,14 @@ describe('SFO performance dashboard', () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
+  it('can grow beyond the viewport without overlapping following page content', async () => {
+    const { container } = render(<MarketingAdSpendDashboard sfoView />);
+    await screen.findByText('Monthly ad spend by platform');
+
+    expect(container.firstElementChild).toHaveClass('min-h-full');
+    expect(container.firstElementChild).not.toHaveClass('h-full');
+  });
+
   it('uses recorded months only for year-over-year sales, stacked spend and monthly rates', async () => {
     render(<MarketingAdSpendDashboard sfoView />);
     expect(await screen.findByText('Monthly ad spend by platform')).toBeInTheDocument();

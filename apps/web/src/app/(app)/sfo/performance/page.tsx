@@ -23,7 +23,7 @@ export default async function SfoPerformancePage() {
       : '/crm'
     : null;
   return (
-    <main className="h-full space-y-6">
+    <main className="min-h-full space-y-6">
       <MarketingAdSpendDashboard
         initialTab="sales-comparison"
         sfoView
