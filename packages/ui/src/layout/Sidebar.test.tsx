@@ -97,6 +97,17 @@ describe('Sidebar workspaces', () => {
     expect(screen.getByText('Revenue Forecast')).not.toBeNull();
   });
 
+  it.each(['/sfo/performance', '/sfo/performance/details'])(
+    'keeps SFO Performance routes in the Seafood Factory Outlet workspace for %s',
+    (currentPath) => {
+      render(<Sidebar variant="super_admin" currentPath={currentPath} onNavigate={vi.fn()} />);
+
+      expect(screen.getByLabelText('Current workspace: Seafood Factory Outlet')).not.toBeNull();
+      expect(screen.getByText('SFO Performance')).not.toBeNull();
+      expect(screen.queryByText('Work Tracker')).toBeNull();
+    }
+  );
+
   it.each(['admin', 'super_admin'] as const)(
     'uses the unified Work Tracker for %s internal work visibility',
     (variant) => {

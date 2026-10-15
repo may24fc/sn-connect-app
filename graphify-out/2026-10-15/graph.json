@@ -136983,7 +136983,7 @@
       "node_kind": "heading",
       "norm_label": "audited - comparable performance-cycle behavior",
       "source_file": "docs/features/okr-kpi-cycle-roster/optimization.md",
-      "source_location": "L39"
+      "source_location": "L40"
     },
     {
       "id": "docs_features_okr_kpi_cycle_roster_optimization_change_log",
@@ -136995,7 +136995,7 @@
       "node_kind": "heading",
       "norm_label": "change log",
       "source_file": "docs/features/okr-kpi-cycle-roster/optimization.md",
-      "source_location": "L74"
+      "source_location": "L75"
     },
     {
       "id": "docs_features_okr_kpi_cycle_roster_optimization_current_status",
@@ -137019,7 +137019,7 @@
       "node_kind": "heading",
       "norm_label": "deferred - directory query latency measurement",
       "source_file": "docs/features/okr-kpi-cycle-roster/optimization.md",
-      "source_location": "L47"
+      "source_location": "L48"
     },
     {
       "id": "docs_features_okr_kpi_cycle_roster_optimization_implemented_cycle_scoped_historical_roster_correctness",
@@ -137031,7 +137031,7 @@
       "node_kind": "heading",
       "norm_label": "implemented - cycle-scoped historical roster correctness",
       "source_file": "docs/features/okr-kpi-cycle-roster/optimization.md",
-      "source_location": "L31"
+      "source_location": "L32"
     },
     {
       "id": "docs_features_okr_kpi_cycle_roster_optimization_measurements",
@@ -137043,7 +137043,7 @@
       "node_kind": "heading",
       "norm_label": "measurements",
       "source_file": "docs/features/okr-kpi-cycle-roster/optimization.md",
-      "source_location": "L55"
+      "source_location": "L56"
     },
     {
       "id": "docs_features_okr_kpi_cycle_roster_optimization_okr_kpi_cycle_roster_optimization_record",
@@ -137067,7 +137067,7 @@
       "node_kind": "heading",
       "norm_label": "optimization entries",
       "source_file": "docs/features/okr-kpi-cycle-roster/optimization.md",
-      "source_location": "L29"
+      "source_location": "L30"
     },
     {
       "id": "docs_features_okr_kpi_cycle_roster_optimization_relevant_code_map",
@@ -137091,7 +137091,7 @@
       "node_kind": "heading",
       "norm_label": "visual guide",
       "source_file": "docs/features/okr-kpi-cycle-roster/optimization.md",
-      "source_location": "L18"
+      "source_location": "L19"
     },
     {
       "id": "docs_features_okr_kpi_cycle_roster_task_tracker",
@@ -478078,18 +478078,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/features/okr-kpi-cycle-roster/optimization.md",
-      "source_location": "L18",
-      "weight": 1.0
-    },
-    {
-      "source": "docs_features_okr_kpi_cycle_roster_optimization_okr_kpi_cycle_roster_optimization_record",
-      "target": "docs_features_okr_kpi_cycle_roster_optimization_optimization_entries",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "docs/features/okr-kpi-cycle-roster/optimization.md",
-      "source_location": "L29",
+      "source_location": "L19",
       "weight": 1.0
     },
     {
@@ -478105,13 +478094,24 @@
     },
     {
       "source": "docs_features_okr_kpi_cycle_roster_optimization_okr_kpi_cycle_roster_optimization_record",
+      "target": "docs_features_okr_kpi_cycle_roster_optimization_optimization_entries",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/features/okr-kpi-cycle-roster/optimization.md",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_features_okr_kpi_cycle_roster_optimization_okr_kpi_cycle_roster_optimization_record",
       "target": "docs_features_okr_kpi_cycle_roster_optimization_measurements",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/features/okr-kpi-cycle-roster/optimization.md",
-      "source_location": "L55",
+      "source_location": "L56",
       "weight": 1.0
     },
     {
@@ -478133,7 +478133,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/features/okr-kpi-cycle-roster/optimization.md",
-      "source_location": "L74",
+      "source_location": "L75",
       "weight": 1.0
     },
     {
@@ -478144,7 +478144,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/features/okr-kpi-cycle-roster/optimization.md",
-      "source_location": "L31",
+      "source_location": "L32",
       "weight": 1.0
     },
     {
@@ -478155,7 +478155,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/features/okr-kpi-cycle-roster/optimization.md",
-      "source_location": "L39",
+      "source_location": "L40",
       "weight": 1.0
     },
     {
@@ -478166,7 +478166,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/features/okr-kpi-cycle-roster/optimization.md",
-      "source_location": "L47",
+      "source_location": "L48",
       "weight": 1.0
     },
     {

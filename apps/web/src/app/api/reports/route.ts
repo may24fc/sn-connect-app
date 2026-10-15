@@ -1,10 +1,10 @@
-import { getActiveUserRole } from '@/lib/auth/active-role';
-import { parsePagination } from '@/lib/api/pagination';
-import { logActivity } from '@/lib/audit';
 import {
   notifyMarketingSubmissionWebhook,
   notifySuperAdminsAboutSubmittedReport,
 } from '@/app/api/reports/_notifications';
+import { parseReportsPagination } from '@/app/api/reports/_pagination';
+import { logActivity } from '@/lib/audit';
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import {
   getMarketingReportDisplayName,
   isMarketingWeeklyPlan,
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
       ? requestedMarketingReportType
       : '';
     const department = searchParams.get('department') || '';
-    const pagination = parsePagination(searchParams, 10);
+    const pagination = parseReportsPagination(searchParams);
     if (!pagination) return NextResponse.json({ error: 'Invalid pagination' }, { status: 400 });
     const { page, pageSize } = pagination;
 

@@ -420,6 +420,7 @@ function getWorkspaceForPath(path: string): WorkspaceId {
     '/admin/reports',
     '/marketing/ad-spend',
     '/admin/marketing/ad-spend',
+    '/sfo/performance',
     '/crm',
     '/admin/crm',
     '/revenue-forecast',
