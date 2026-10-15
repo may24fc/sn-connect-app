@@ -34,7 +34,7 @@ node scripts/accounts/ensure-latency-bench-account.mjs --env-file apps/web/.env.
 node scripts/accounts/ensure-latency-bench-account.mjs --env-file apps/web/.env.local.prodops --apply
 ```
 
-`latency-bench@example.com` has role `admin` so it can reach admin dashboard APIs. It has no `employees` row, so it does not appear in directory or headcount data. Its password is random and exists only in `.env.local.prodops`.
+`latency-bench@example.com` has role `admin` so it can reach admin dashboard APIs, but its first-class `account_kind` is `test`. Workforce views therefore exclude it from directories, headcount, people pickers, and performance rosters regardless of whether an employee row exists. Its password is random and exists only in `.env.local.prodops`.
 
 ```mermaid
 flowchart LR
