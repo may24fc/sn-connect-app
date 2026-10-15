@@ -79,5 +79,6 @@ The control route also regressed and all routes showed intermittent p95 outliers
 
 ## Change Log
 
+- 2026-10-15: Applied the migration to local and production. No post-migration production latency was captured. The `employee_directory` view gained one column and one indexed filter (`idx_users_account_kind`), so a production latency check is worthwhile before any speed claim.
 - 2026-10-15: Corrected the expiry cron to answer Vercel's `GET` (it was `POST`-only), added route tests, and published the [deployment runbook](deployment-runbook.md). No latency-relevant code path changed.
 - 2026-10-15: Audited identity leakage, implemented centralized classification and layered reviewer access, captured the local baseline, and deferred external environment provisioning and production remediation.

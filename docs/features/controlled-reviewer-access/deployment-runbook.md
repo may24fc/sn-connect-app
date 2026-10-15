@@ -89,4 +89,4 @@ As the sponsor, `POST /api/review/invitations` with `{ email, displayName, purpo
 
 ## Production rollout is separate
 
-The migration `20261015000002_controlled_reviewer_access.sql` is not applied to production. The production items (disabling the Accounting tester and latency accounts, reclassification report) depend on it because `scripts/accounts/report-account-classification.mjs` reads `users.account_kind`. Follow the migration gate in `.github/skills/build-fix-commit-push/SKILL.md` (local first, production dry run, push only when exactly this migration is listed) and only on an explicit production request.
+The migration `20261015000002_controlled_reviewer_access.sql` was applied to production on 2026-10-15 (see the tracker). The remaining production items (disabling the Accounting tester and latency accounts, and the reclassification report from `scripts/accounts/report-account-classification.mjs`) are still deferred and need an explicit production request.

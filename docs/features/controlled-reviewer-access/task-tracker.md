@@ -18,14 +18,15 @@ Optimization and measurement details: [optimization.md](optimization.md).
 
 - [x] Fix scheduled expiry for Vercel Cron - 2026-10-15; `apps/web/src/app/api/cron/review-expire/route.ts` previously exported only `POST`, but Vercel Cron issues `GET`, so a scheduled run would have returned 405 and never banned expired reviewers. It now exports `GET` and `POST` sharing one handler; `tests/api/review-expire-cron.test.ts` (4 tests: environment gate, secret gate, GET expiry/ban, POST) passed.
 - [x] Write the review deployment runbook - 2026-10-15; [deployment-runbook.md](deployment-runbook.md) covers the Supabase/Vercel setup, env vars, cron, seeding, smoke test, invitation, and rollback. Documentation only; nothing was provisioned.
+- [x] Apply `20261015000002_controlled_reviewer_access.sql` to local and production - 2026-10-15; local: `migration list --local` shows it, `migration up --local` reports up to date, and `tests/sql/controlled-reviewer-access-local.sql` returns `controlled_reviewer_access_local_ok`. Production (`tccdupkjmwwxcvpqnpeb`): the `employee_directory` view differs from the live `20261015000001` definition only by the appended `account_kind` column and the `account_kind = 'workforce'` filter (the rest is reformatting); `db push --linked --dry-run` listed only this migration, `db push --linked` applied it, and `migration list --linked` shows it on both sides. Existing accounts default to `workforce`; `latency-bench@example.com` is reclassified `test`.
 
 ### In Progress
 - [ ] None.
 
 ### Deferred
 - [ ] Provision the isolated Demo/Review deployment and Supabase project - requires owner-controlled Vercel/Supabase project creation, secrets, custom URL, and scheduled `/api/cron/review-expire`; resume when deployment access is explicitly provided, following [deployment-runbook.md](deployment-runbook.md).
-- [ ] Disable and audit the real Accounting tester and production latency account - production changes require an explicit production remediation request; resume with the exact account IDs and approved retention/audit window. Prerequisite: the `20261015000002` migration must first be applied to production through the delivery skill's migration gate, because the accounts need the new `account_kind` classification.
-- [ ] Reclassify any production anomalies - local classification returned none; resume after the migration above reaches production, then run `pnpm accounts:classification-report -- --env-file apps/web/.env.local.prodops` (read-only). It was not run on 2026-10-15: the production `users` table has no `account_kind` column yet, so the query cannot succeed.
+- [ ] Disable and audit the real Accounting tester and production latency account - production changes require an explicit production remediation request; resume with the exact account IDs and approved retention/audit window. The migration is now in production, so the accounts can be classified.
+- [ ] Reclassify any production anomalies - local classification returned none; the production report has not been run. Resume condition: the user runs `pnpm accounts:classification-report -- --env-file apps/web/.env.local.prodops` (read-only, changes nothing) and shares the anomaly count.
 
 ### Skipped
 - [ ] Copy or anonymize production data into the demo - intentionally skipped because the approved design requires purpose-built synthetic data; reconsider only if a formal privacy review changes that policy.
@@ -34,5 +35,6 @@ Optimization and measurement details: [optimization.md](optimization.md).
 - [ ] None.
 
 ## Session History
+- 2026-10-15 (migration): Applied `20261015000002` locally (already present; SQL assertions re-run) and to production after a dry run listed only that migration. Code depending on it can now be pushed. The production classification report was not run. The migration also set `latency-bench@example.com` to `test`, which removes it from production directory and performance views. No other production data was read or changed.
 - 2026-10-15 (follow-up): Re-verified typecheck and auth tests. Found and fixed the GET/POST cron mismatch above, added its test, and wrote the deployment runbook. Did not run the production classification report (the production schema lacks the column the script reads) and did not push or deploy anything. Remaining risk: the migration is not yet in production, and the repo's delivery gate forbids pushing code that depends on an unapplied migration.
 - 2026-10-15: Implemented and locally verified the schema, authorization boundary, reviewer APIs, synthetic Review Hub, Account Inventory, and reset/report tooling. Typecheck, 19 focused unit/API tests, SQL assertions, and five Playwright tests passed. No production or external deployment was changed. Remaining risks are external environment provisioning and explicit production remediation.
