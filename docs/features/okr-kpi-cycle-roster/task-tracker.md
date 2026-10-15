@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Implementation and focused automated checks are complete. Local migration validation and live latency measurement are blocked because the Docker Desktop engine, and therefore local Supabase, is unavailable. See [optimization.md](./optimization.md).
+Implementation and focused automated checks are complete. Migration `20261015000001` is applied locally and in production; the feature code is not yet committed. Live latency measurement remains blocked. See [optimization.md](./optimization.md).
 
 ## Tasks
 
@@ -13,6 +13,7 @@ Implementation and focused automated checks are complete. Local migration valida
 - [x] Add critical-flow browser coverage - 2026-10-15; added `e2e/okr-kpi-historical-roster.spec.ts`; `pnpm exec playwright test --config playwright.local.config.ts e2e/okr-kpi-historical-roster.spec.ts` passed with no console errors, failed requests, or horizontal overflow. Screenshots were reviewed from the Playwright output directory.
 
 - [x] Validate the new view migration against local Supabase - 2026-10-15; `supabase migration up --local` applied `20261015000001` and `supabase migration list --local` lists it; `pnpm build` passed for the full monorepo and `tests/api/directory-route.test.ts` passed 6/6.
+- [x] Apply `20261015000001_add_user_created_at_to_employee_directory.sql` to production - 2026-10-15; compared with the previous view definition (`20261007000004`), the only change is the appended `user_created_at` column, and `termination_reason` stays out of the view. `supabase db push --linked --dry-run` against `tccdupkjmwwxcvpqnpeb` listed only this migration; `supabase db push --linked` applied it, and `supabase migration list --linked` shows it on both sides.
 
 ### In Progress
 
@@ -28,10 +29,10 @@ None.
 
 ### Blocked
 
-- [ ] Apply `20261015000001_add_user_created_at_to_employee_directory.sql` to production - blocked 2026-10-15: `supabase db push --linked --dry-run` against `tccdupkjmwwxcvpqnpeb` failed with a 403 on login-role initialisation and `SUPABASE_DB_PASSWORD` is not set. Resume by exporting `SUPABASE_DB_PASSWORD` (or re-authenticating with an account that has database access), rerun the dry run, confirm only this migration is listed, then push and verify with `supabase migration list --linked`. Note: `supabase db push` in CLI v1.226.4 has no `--project-ref` flag; use `--linked` (the repo is linked to the production ref). Code in this feature depends on the new view column, so do not commit/push it before the migration is applied.
 - [ ] Capture before/after local latency measurements - no baseline could be sampled because local Supabase was unavailable before editing; dependency: running Docker Desktop and local Supabase. Resume using commit `bf6c3ad3` in a separate baseline worktree and the commands recorded in [optimization.md](./optimization.md).
 
 ## Session History
 
 - 2026-10-15: Confirmed that the shared directory route excluded all terminated accounts and that the performance page supplied no cycle date boundary. Added an opt-in historical directory mode, account-created-through filtering, former-employee detail access, selected-cycle continuity, and focused API/browser regression coverage. Kept ordinary Directory behavior unchanged. Remaining risks are local SQL migration validation and measured query latency, both blocked by the unavailable Docker engine.
 - 2026-10-15 (delivery attempt): Started Docker Desktop, validated the migration locally, full `pnpm build` and focused API tests passed. Production dry run failed (403 / no `SUPABASE_DB_PASSWORD`), so nothing was committed or pushed. Latency measurement is still outstanding.
+- 2026-10-15 (production migration): Reviewed the view diff (only `user_created_at` added; grants unchanged), then the production dry run listed only `20261015000001`. Applied it to production and verified migration history. The feature code can now be committed and deployed; latency measurement is still outstanding.
