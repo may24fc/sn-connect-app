@@ -3174,8 +3174,8 @@
     "semantic_hash": "7a0dc3198c754c2a24e5a4a5466f950f"
   },
   "apps/web/src/lib/generated/application-update-summary.generated.ts": {
-    "mtime": 1791903071.4926846,
-    "seen": 1791940769.8993618,
+    "mtime": 1792035726.1354966,
+    "seen": 1792036360.325024,
     "ast_hash": "7322821048c7b2c5f9f9ddca7c61261a",
     "semantic_hash": "7322821048c7b2c5f9f9ddca7c61261a"
   },
@@ -3420,9 +3420,9 @@
     "semantic_hash": "d2be90d498e6b1fec8662b9ae1642723"
   },
   "apps/web/src/lib/schemas/christmas-tree.schema.ts": {
-    "mtime": 1790582248.118051,
-    "seen": 1790599138.0198836,
-    "ast_hash": "1a37268c53e81c76f7b5ac6a2887777b",
+    "mtime": 1791942969.2392428,
+    "seen": 1792034888.8276753,
+    "ast_hash": "92041490e49506f118fd72208dc57fb8",
     "semantic_hash": ""
   },
   "apps/web/src/lib/schemas/crm.schema.ts": {
@@ -7872,10 +7872,10 @@
     "semantic_hash": "6dbd2eb3220be870e4f42df1f57a237b"
   },
   "tests/schemas/christmas-tree.test.ts": {
-    "mtime": 1789142820.2536888,
-    "seen": 1789664611.8294985,
-    "ast_hash": "0f581a485c4dbaf80cd506961f39ade3",
-    "semantic_hash": "0f581a485c4dbaf80cd506961f39ade3"
+    "mtime": 1791943018.252309,
+    "seen": 1792034888.8299644,
+    "ast_hash": "d62afb3ec847f19993ca83ed7872f00c",
+    "semantic_hash": ""
   },
   "tests/schemas/onboarding.test.ts": {
     "mtime": 1788257423.7871163,
@@ -10116,9 +10116,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpClientTrackerPage.tsx": {
-    "mtime": 1791422029.2362075,
-    "seen": 1791422952.5488234,
-    "ast_hash": "407b00dff0217de2a421c34755ea6972",
+    "mtime": 1792033778.0464122,
+    "seen": 1792034888.8270705,
+    "ast_hash": "38f231f637a86c42696d8c6319d3fdaa",
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpRemindersPage.tsx": {
@@ -10170,9 +10170,9 @@
     "semantic_hash": ""
   },
   "docs/apps/web/architecture/optimistic-ui.md": {
-    "mtime": 1791900882.388316,
-    "seen": 1791901047.9802504,
-    "ast_hash": "8380d46808dd4787f562b80e2eff1fa6",
+    "mtime": 1792033027.2599187,
+    "seen": 1792034888.8302393,
+    "ast_hash": "66584aee1be07c7ee1ec4ebf586c1b6f",
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpAccessManagerDialog.tsx": {
@@ -10638,9 +10638,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(admin)/admin/reports/page.tsx": {
-    "mtime": 1790581114.3298285,
-    "seen": 1790581746.5297735,
-    "ast_hash": "62a0169edda1e00d72f2075df0a87e93",
+    "mtime": 1792033745.4570997,
+    "seen": 1792034888.825279,
+    "ast_hash": "ef70353398bbf7e364a01f0362eb3e89",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(admin)/admin/resources/[id]/page.tsx": {
@@ -11028,9 +11028,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx": {
-    "mtime": 1791940177.7667112,
-    "seen": 1791940769.897559,
-    "ast_hash": "902780deeb2f0a1b72273d23d3f34b67",
+    "mtime": 1791948224.8536434,
+    "seen": 1792034888.8254774,
+    "ast_hash": "ad652f93a2008594a55e040bdcde77b0",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/dashboard/components/KPIEntryWidget.tsx": {
@@ -11261,12 +11261,6 @@
     "ast_hash": "905b7cee67ef02a3b2ae0f9a8947380a",
     "semantic_hash": ""
   },
-  "apps/web/src/app/(app)/(employee)/onboarding/setup/components/DatePickerField.tsx": {
-    "mtime": 1790581114.4074268,
-    "seen": 1790581746.5298467,
-    "ast_hash": "58641ace2c0b4ab7dc557ad4a57e55b4",
-    "semantic_hash": ""
-  },
   "apps/web/src/app/(app)/(employee)/onboarding/setup/components/DocumentUploadCard.tsx": {
     "mtime": 1790581114.4074268,
     "seen": 1790581746.5298476,
@@ -11304,9 +11298,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/onboarding/setup/components/StepPersonalInfo.tsx": {
-    "mtime": 1791283931.252312,
-    "seen": 1791285258.6735327,
-    "ast_hash": "bccf668a179f55bfa96c43f3c3d326ef",
+    "mtime": 1792033778.3515825,
+    "seen": 1792034888.8256023,
+    "ast_hash": "c38758145300482360881296557f785a",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/onboarding/setup/components/StepReview.tsx": {
@@ -11760,9 +11754,9 @@
     "semantic_hash": ""
   },
   ".impeccable/config.json": {
-    "mtime": 1790864954.8754845,
-    "seen": 1790865939.8868499,
-    "ast_hash": "d0224c9e27b3e1ee55da6500a3132e3a",
+    "mtime": 1791948403.4535992,
+    "seen": 1792034888.8250031,
+    "ast_hash": "a5042abe49bf564bb78b22932d2db7df",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/performance/five-percent-reflections/summary-email/route.ts": {
@@ -11916,15 +11910,15 @@
     "semantic_hash": ""
   },
   "docs/features/ultimate-health-project/optimization.md": {
-    "mtime": 1791940965.3922856,
-    "seen": 1791941033.9946082,
-    "ast_hash": "34167c67688cc1b79a041041a5aebb6c",
+    "mtime": 1792036138.3788857,
+    "seen": 1792036360.3282242,
+    "ast_hash": "17f3597f40ccc92d68301ede4e6b1134",
     "semantic_hash": ""
   },
   "docs/features/ultimate-health-project/task-tracker.md": {
-    "mtime": 1791940965.2744515,
-    "seen": 1791941033.9946094,
-    "ast_hash": "2dcc21b8ec3d3ef32318d9778c7d54f4",
+    "mtime": 1792036138.1008282,
+    "seen": 1792036360.3282259,
+    "ast_hash": "bb3603e6be7c44e56fa6aad6dd48b285",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/users/[id]/permanent/route.ts": {
@@ -11982,15 +11976,15 @@
     "semantic_hash": ""
   },
   "docs/features/marketing-reporting/optimization.md": {
-    "mtime": 1791418584.316463,
-    "seen": 1791418894.1363516,
-    "ast_hash": "032f361cc850828b5654fb1c6850fd85",
+    "mtime": 1792036138.98591,
+    "seen": 1792036360.3282096,
+    "ast_hash": "052e8f589916d6546dbdc43728af91ab",
     "semantic_hash": ""
   },
   "docs/features/marketing-reporting/task-tracker.md": {
-    "mtime": 1791418584.2008843,
-    "seen": 1791418894.136353,
-    "ast_hash": "655059e1018413ba5aa675522735b498",
+    "mtime": 1792036138.665091,
+    "seen": 1792036360.3282118,
+    "ast_hash": "80fd63f052e1526fc433fd8c21e34420",
     "semantic_hash": ""
   },
   "docs/features/pa-task-tracker/task-tracker.md": {
@@ -12678,9 +12672,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/lib/metrics-period.ts": {
-    "mtime": 1791422014.9647195,
-    "seen": 1791422952.5490158,
-    "ast_hash": "5f84704b14e94f62c1c178bf031e942c",
+    "mtime": 1792032021.4915702,
+    "seen": 1792034888.8275805,
+    "ast_hash": "bd2e0e16dc0d488a4d594c27fd465cb7",
     "semantic_hash": ""
   },
   "tests/components/MetricsPeriodSelect.test.tsx": {
@@ -12696,9 +12690,9 @@
     "semantic_hash": ""
   },
   "tests/lib/metrics-period.test.ts": {
-    "mtime": 1791422157.741147,
-    "seen": 1791422952.5499234,
-    "ast_hash": "32ed0198e2f62570f04a4ec93089b651",
+    "mtime": 1792032021.9890125,
+    "seen": 1792034888.8297398,
+    "ast_hash": "e3638b7be30a55026ef3e7b1f951f36b",
     "semantic_hash": ""
   },
   "docs/features/metrics-period-consistency/optimization.md": {
@@ -13110,15 +13104,45 @@
     "semantic_hash": ""
   },
   "e2e/christmas-tree-layout.spec.ts": {
-    "mtime": 1791940299.80652,
-    "seen": 1791940769.899935,
-    "ast_hash": "0eb4e13576ba9f9ca538dd5a2470629e",
+    "mtime": 1791948064.2027392,
+    "seen": 1792034888.828258,
+    "ast_hash": "a7f09992f9a24913160706d51c0e9a10",
     "semantic_hash": ""
   },
   "docs/features/christmas-tree/task-tracker.md": {
-    "mtime": 1791940395.05038,
-    "seen": 1791940769.9016418,
-    "ast_hash": "d368856fe78a1996f63927854eb8e4df",
+    "mtime": 1791948387.4816997,
+    "seen": 1792034888.8303607,
+    "ast_hash": "c4c4baf3bbb496986468d0d276a466a1",
+    "semantic_hash": ""
+  },
+  "apps/web/src/components/data-display/DateRangeFilter.tsx": {
+    "mtime": 1792034384.4686055,
+    "seen": 1792034888.8268578,
+    "ast_hash": "3bd5b3dcdeb7592ae8326bc1918c1b31",
+    "semantic_hash": ""
+  },
+  "apps/web/src/components/forms/DatePickerField.tsx": {
+    "mtime": 1792035481.764112,
+    "seen": 1792036360.3243601,
+    "ast_hash": "4ea3344540b0984b4b0542c8806cf447",
+    "semantic_hash": ""
+  },
+  "e2e/uhp-custom-date-range.spec.ts": {
+    "mtime": 1792034324.2945611,
+    "seen": 1792034888.828348,
+    "ast_hash": "a3bd54a586084b419293f3fe330dd95a",
+    "semantic_hash": ""
+  },
+  "tests/components/DateRangeFilter.test.tsx": {
+    "mtime": 1792033822.1892774,
+    "seen": 1792034888.8294864,
+    "ast_hash": "ce787342ba5b67dde55819a96e67b04f",
+    "semantic_hash": ""
+  },
+  "docs/features/christmas-tree/optimization.md": {
+    "mtime": 1791948385.3724606,
+    "seen": 1792034888.830358,
+    "ast_hash": "bb817d80e9f75782d9f321f9576d792f",
     "semantic_hash": ""
   }
 }
