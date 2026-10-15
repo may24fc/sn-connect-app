@@ -64,7 +64,7 @@ interface WorkspaceOption {
   comingSoon?: boolean;
 }
 
-export type UserRole = 'employee' | 'associate' | 'admin' | 'super_admin';
+export type UserRole = 'employee' | 'associate' | 'admin' | 'super_admin' | 'reviewer';
 
 export interface SidebarProps {
   variant: UserRole;
@@ -206,6 +206,7 @@ const adminNavItems: Array<NavItem> = [
 const superAdminNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/super-admin/dashboard', icon: Home },
   { label: 'Directory', href: '/admin/directory', icon: Users },
+  { label: 'Account Inventory', href: '/super-admin/account-inventory', icon: UserCog },
   {
     label: 'Employee Management',
     href: '/admin/employee-management',
@@ -289,6 +290,7 @@ const adminInternalSectionConfig: ReadonlyArray<{
     title: 'People',
     hrefs: [
       '/admin/directory',
+      '/super-admin/account-inventory',
       '/admin/employee-management',
       '/admin/interns',
       '/admin/recruitment',
@@ -325,7 +327,14 @@ const selfServiceInternalSectionConfig: ReadonlyArray<{
   },
   {
     title: 'Finance',
-    hrefs: ['/invoice', '/expenses', '/finance', '/finance/expenses', '/finance/reports', '/finance/staff-payments'],
+    hrefs: [
+      '/invoice',
+      '/expenses',
+      '/finance',
+      '/finance/expenses',
+      '/finance/reports',
+      '/finance/staff-payments',
+    ],
   },
   {
     title: 'Knowledge & Support',
@@ -402,7 +411,11 @@ function getWorkspaceForPath(path: string): WorkspaceId {
   const normalizedPath = normalizePath(path);
   if (normalizedPath === '/pa-tasks' || normalizedPath.startsWith('/pa-tasks/')) return 'pa';
   if (normalizedPath === '/uhp' || normalizedPath.startsWith('/uhp/')) return 'uhp';
-  if (normalizedPath === '/property/properties' || normalizedPath.startsWith('/property/properties/')) return 'property';
+  if (
+    normalizedPath === '/property/properties' ||
+    normalizedPath.startsWith('/property/properties/')
+  )
+    return 'property';
 
   const sfoPrefixes = [
     '/reports',
@@ -439,9 +452,9 @@ function createWorkspaceSections(
           ? uhpSectionConfig
           : workspace === 'property'
             ? propertySectionConfig
-          : variant === 'admin' || variant === 'super_admin'
-            ? adminInternalSectionConfig
-            : selfServiceInternalSectionConfig;
+            : variant === 'admin' || variant === 'super_admin'
+              ? adminInternalSectionConfig
+              : selfServiceInternalSectionConfig;
 
   const itemByHref = new Map(navItems.map((item) => [item.href, item]));
   const sections: Array<NavSection> = [];
@@ -502,10 +515,20 @@ export function Sidebar({
       return false;
     }
 
-    if (isSelfServiceRole(variant) && !showExpenseDeskAccess && ['/finance','/finance/expenses','/finance/reports','/finance/staff-payments'].includes(item.href)) {
+    if (
+      isSelfServiceRole(variant) &&
+      !showExpenseDeskAccess &&
+      ['/finance', '/finance/expenses', '/finance/reports', '/finance/staff-payments'].includes(
+        item.href
+      )
+    ) {
       return false;
     }
-    if (isSelfServiceRole(variant) && !showFinancePropertiesAccess && item.href === '/property/properties') {
+    if (
+      isSelfServiceRole(variant) &&
+      !showFinancePropertiesAccess &&
+      item.href === '/property/properties'
+    ) {
       return false;
     }
 

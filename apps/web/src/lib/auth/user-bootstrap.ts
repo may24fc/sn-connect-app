@@ -2,7 +2,8 @@ import { getNormalizedMetadataRole, normalizeDbRoleClaim } from '@/lib/auth/role
 import { resolveUserDisplayName } from '@/lib/user-display';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-export type UserRoleType = 'employee' | 'associate' | 'admin' | 'super_admin';
+export type UserRoleType = 'employee' | 'associate' | 'admin' | 'super_admin' | 'reviewer';
+export type AccountKindType = 'workforce' | 'reviewer' | 'test' | 'service';
 
 export type UserStatusType =
   | 'active'
@@ -17,6 +18,7 @@ export interface AuthenticatedUser {
   name: string;
   email: string;
   role: UserRoleType;
+  accountKind?: AccountKindType;
   status?: UserStatusType;
   avatarUrl?: string;
   isOnboardingComplete?: boolean;
@@ -32,6 +34,8 @@ export interface AuthUserLike {
 interface UserRecord {
   role: string | null;
   status: string | null;
+  account_kind: string | null;
+  access_expires_at: string | null;
 }
 
 interface OnboardingRecord {
@@ -50,6 +54,8 @@ export function resolveUiRole(role: string | null | undefined): UserRoleType {
       return 'admin';
     case 'associate':
       return 'associate';
+    case 'reviewer':
+      return 'reviewer';
     default:
       return 'employee';
   }
@@ -62,7 +68,7 @@ function needsOnboardingProfile(role: UserRoleType | null): boolean {
 function queryUserRecord(supabase: SupabaseClient, userId: string) {
   return supabase
     .from('users')
-    .select('role, status')
+    .select('role, status, account_kind, access_expires_at')
     .eq('id', userId)
     .is('deleted_at', null)
     .maybeSingle();
@@ -181,6 +187,18 @@ export async function resolveAuthenticatedUser(
   dbRole = normalizeDbRoleClaim(userRecord?.role ?? dbRole);
   const resolvedRole = resolveUiRole(dbRole);
 
+  const accountKind = (userRecord?.account_kind ?? 'workforce') as AccountKindType;
+  if (resolvedRole === 'reviewer' && accountKind !== 'reviewer') {
+    throw new Error('Reviewer role is missing its reviewer account classification.');
+  }
+  if (
+    resolvedRole === 'reviewer' &&
+    (!userRecord?.access_expires_at ||
+      new Date(userRecord.access_expires_at).getTime() <= Date.now())
+  ) {
+    throw new Error('Reviewer access has expired.');
+  }
+
   // Metadata can be absent or stale. If the database resolves to an onboarding
   // role, fetch the profile now unless it was already loaded in parallel.
   onboardingResult = await completeOnboardingLookup(
@@ -205,6 +223,7 @@ export async function resolveAuthenticatedUser(
     name,
     email: authUser.email ?? '',
     role: resolvedRole,
+    accountKind,
     status: (userRecord?.status as UserStatusType | null) ?? 'active',
     isOnboardingComplete,
     ...(avatarUrlFromMetadata ? { avatarUrl: avatarUrlFromMetadata } : {}),

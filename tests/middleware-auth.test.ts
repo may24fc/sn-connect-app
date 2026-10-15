@@ -24,6 +24,7 @@ describe('authentication middleware optimization', () => {
     vi.stubEnv('NEXT_PUBLIC_ENABLE_MOCK_AUTH', 'false');
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://example.supabase.co');
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'public-anon-key');
+    vi.stubEnv('CONTROL_HUB_ENV', 'local');
     mocks.getUser.mockResolvedValue({
       data: {
         user: {
@@ -87,5 +88,63 @@ describe('authentication middleware optimization', () => {
     expect(response.cookies.get('sb-refreshed')).toMatchObject({ value: 'token' });
     expect(response.headers.get('x-middleware-request-cookie')).toContain('sb-refreshed=token');
     expect(response.headers.get('server-timing')).toMatch(/^auth_middleware;dur=/);
+  });
+
+  it('blocks reviewer identities outside the isolated review environment', async () => {
+    mocks.getUser.mockResolvedValue({
+      data: {
+        user: {
+          id: 'reviewer-1',
+          email: 'reviewer@example.com',
+          app_metadata: { db_role: 'reviewer', account_kind: 'reviewer' },
+          user_metadata: {},
+        },
+      },
+    });
+
+    const response = await middleware(new NextRequest('https://app.example.com/review'));
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe('https://app.example.com/account-disabled');
+  });
+
+  it('default-denies ordinary APIs for reviewers in the review environment', async () => {
+    vi.stubEnv('CONTROL_HUB_ENV', 'review');
+    mocks.getUser.mockResolvedValue({
+      data: {
+        user: {
+          id: 'reviewer-1',
+          email: 'reviewer@example.com',
+          app_metadata: { db_role: 'reviewer', account_kind: 'reviewer' },
+          user_metadata: {},
+        },
+      },
+    });
+
+    const response = await middleware(new NextRequest('https://review.example.com/api/directory'));
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Reviewer accounts cannot access this resource',
+    });
+  });
+
+  it('allows reviewers to reach only the review shell and review APIs', async () => {
+    vi.stubEnv('CONTROL_HUB_ENV', 'review');
+    mocks.getUser.mockResolvedValue({
+      data: {
+        user: {
+          id: 'reviewer-1',
+          email: 'reviewer@example.com',
+          app_metadata: { db_role: 'reviewer', account_kind: 'reviewer' },
+          user_metadata: {},
+        },
+      },
+    });
+
+    const pageResponse = await middleware(new NextRequest('https://review.example.com/review'));
+    const apiResponse = await middleware(
+      new NextRequest('https://review.example.com/api/review/items')
+    );
+    expect(pageResponse.status).toBe(200);
+    expect(apiResponse.status).toBe(200);
   });
 });

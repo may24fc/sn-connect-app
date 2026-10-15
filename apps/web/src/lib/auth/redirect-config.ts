@@ -53,8 +53,9 @@ function isLocalRuntime(): boolean {
  * IMPORTANT: When deploying to a custom domain, add it here AND in Supabase
  * Dashboard → Authentication → URL Configuration → Redirect URLs.
  */
-const ALLOWED_ORIGIN_PATTERNS: readonly string[] = [
+const ALLOWED_ORIGIN_PATTERNS: ReadonlyArray<string> = [
   ...(isLocalRuntime() ? ['http://localhost:3000', 'http://localhost:3001'] : []),
+  ...(process.env.NEXT_PUBLIC_SITE_URL ? [normaliseUrl(process.env.NEXT_PUBLIC_SITE_URL)] : []),
   'https://*.vercel.app',
   PRODUCTION_APP_URL,
   'https://sngroup.com.au',
@@ -169,12 +170,14 @@ export function getLoginUrl(): string {
  */
 export function getPostLoginRedirect(role?: string, returnTo?: string | null): string {
   // If a safe returnTo path was provided, use it.
-  if (returnTo && returnTo.startsWith('/')) {
+  if (returnTo?.startsWith('/')) {
     return returnTo;
   }
 
   // Role-based default landing pages.
   switch (role) {
+    case 'reviewer':
+      return '/review';
     case 'super_admin':
       return '/super-admin/dashboard';
     case 'admin':
@@ -182,7 +185,6 @@ export function getPostLoginRedirect(role?: string, returnTo?: string | null): s
     case 'intern':
     case 'associate':
       return '/associate/dashboard';
-    case 'employee':
     default:
       return '/dashboard';
   }

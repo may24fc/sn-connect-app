@@ -164,6 +164,17 @@ export function AuthProvider({
           isOnboardingComplete: true,
         },
       },
+      'reviewer@example.com': {
+        password: 'password',
+        user: {
+          id: 'reviewer-1',
+          name: 'Sample Product Reviewer',
+          email: 'reviewer@example.com',
+          role: 'reviewer',
+          accountKind: 'reviewer',
+          isOnboardingComplete: true,
+        },
+      },
     }),
     []
   );

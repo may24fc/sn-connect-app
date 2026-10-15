@@ -85,4 +85,55 @@ describe('resolveAuthenticatedUser', () => {
     expect(requestedTables).toEqual(['users']);
     expect(user).toMatchObject({ role: 'admin', isOnboardingComplete: true });
   });
+
+  it('resolves an active reviewer without treating them as an employee', async () => {
+    const expiresAt = new Date(Date.now() + 60_000).toISOString();
+    const { client, requestedTables } = createSupabaseMock({
+      users: Promise.resolve({
+        data: {
+          role: 'reviewer',
+          status: 'active',
+          account_kind: 'reviewer',
+          access_expires_at: expiresAt,
+        },
+        error: null,
+      }),
+    });
+
+    const user = await resolveAuthenticatedUser(client, {
+      id: 'reviewer-1',
+      email: 'reviewer@example.com',
+      app_metadata: { db_role: 'reviewer', account_kind: 'reviewer' },
+      user_metadata: { full_name: 'Product Reviewer' },
+    });
+
+    expect(requestedTables).toEqual(['users']);
+    expect(user).toMatchObject({
+      role: 'reviewer',
+      accountKind: 'reviewer',
+      isOnboardingComplete: true,
+    });
+  });
+
+  it('rejects an expired reviewer during auth bootstrap', async () => {
+    const { client } = createSupabaseMock({
+      users: Promise.resolve({
+        data: {
+          role: 'reviewer',
+          status: 'active',
+          account_kind: 'reviewer',
+          access_expires_at: new Date(Date.now() - 60_000).toISOString(),
+        },
+        error: null,
+      }),
+    });
+
+    await expect(
+      resolveAuthenticatedUser(client, {
+        id: 'reviewer-1',
+        email: 'reviewer@example.com',
+        app_metadata: { db_role: 'reviewer' },
+      })
+    ).rejects.toThrow('Reviewer access has expired.');
+  });
 });

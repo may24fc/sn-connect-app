@@ -24,6 +24,7 @@ import {
   serializeVerifiedAuthSnapshot,
 } from '@/lib/auth/request-snapshot';
 import { appendServerTiming, recordAuthTiming, startAuthTiming } from '@/lib/auth/timing';
+import { isReviewEnvironment } from '@/lib/environment';
 import { type CookieOptions, createServerClient } from '@supabase/ssr';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -80,6 +81,44 @@ function createForwardedResponse(headers: Headers, cookies: Array<PendingCookie>
     response.cookies.set(name, value, options);
   }
   return response;
+}
+
+function withAuthTiming(response: NextResponse, authDuration: number): NextResponse {
+  appendServerTiming(response.headers, 'auth_middleware', authDuration, 'Supabase Auth getUser');
+  return response;
+}
+
+function getIdentityBoundaryResponse(params: {
+  request: NextRequest;
+  pathname: string;
+  metadataRole: unknown;
+  metadataAccountKind: unknown;
+  authDuration: number;
+}): NextResponse | null {
+  const { request, pathname, metadataRole, metadataAccountKind, authDuration } = params;
+  const isReviewer = metadataRole === 'reviewer' || metadataAccountKind === 'reviewer';
+  const isReviewPage = pathname === '/review' || pathname.startsWith('/review/');
+
+  if (!isReviewer) {
+    return isReviewPage
+      ? withAuthTiming(NextResponse.redirect(new URL('/dashboard', request.url)), authDuration)
+      : null;
+  }
+
+  if (!isReviewEnvironment()) {
+    return withAuthTiming(
+      NextResponse.redirect(new URL('/account-disabled', request.url)),
+      authDuration
+    );
+  }
+
+  const isReviewApi = pathname === '/api/review' || pathname.startsWith('/api/review/');
+  if (isReviewPage || isReviewApi) return null;
+
+  const response = pathname.startsWith('/api/')
+    ? NextResponse.json({ error: 'Reviewer accounts cannot access this resource' }, { status: 403 })
+    : NextResponse.redirect(new URL('/review', request.url));
+  return withAuthTiming(response, authDuration);
 }
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
@@ -159,6 +198,15 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     appendServerTiming(response.headers, 'auth_middleware', authDuration, 'Supabase Auth getUser');
     return response;
   }
+
+  const identityBoundaryResponse = getIdentityBoundaryResponse({
+    request,
+    pathname,
+    metadataRole: user.app_metadata?.db_role,
+    metadataAccountKind: user.app_metadata?.account_kind,
+    authDuration,
+  });
+  if (identityBoundaryResponse) return identityBoundaryResponse;
 
   forwardedHeaders.set(VERIFIED_AUTH_SNAPSHOT_HEADER, serializeVerifiedAuthSnapshot(user));
   const response = createForwardedResponse(forwardedHeaders, pendingCookies);

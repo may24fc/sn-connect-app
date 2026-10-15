@@ -67,6 +67,10 @@ export default async function AppLayout({
     startedAt: bootstrapStartedAt,
   });
 
+  if (initialUser.role === 'reviewer') {
+    redirect('/review');
+  }
+
   return (
     <AuthProvider initialUser={initialUser}>
       <AppShell>{children}</AppShell>

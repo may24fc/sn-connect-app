@@ -87,4 +87,30 @@ describe('signed-in app layout authentication', () => {
       expect.objectContaining({ id: 'user-2' })
     );
   });
+
+  it('redirects a reviewer away from the ordinary application shell', async () => {
+    const headerList = new Headers();
+    headerList.set(
+      VERIFIED_AUTH_SNAPSHOT_HEADER,
+      serializeVerifiedAuthSnapshot({
+        id: 'reviewer-1',
+        email: 'reviewer@example.com',
+        app_metadata: { db_role: 'reviewer', account_kind: 'reviewer' },
+      })
+    );
+    mocks.headers.mockResolvedValue(headerList);
+    mocks.resolveAuthenticatedUser.mockResolvedValue({
+      id: 'reviewer-1',
+      name: 'Product Reviewer',
+      email: 'reviewer@example.com',
+      role: 'reviewer',
+      accountKind: 'reviewer',
+      status: 'active',
+    });
+
+    const { default: AppLayout } = await import('@/app/(app)/layout');
+    await AppLayout({ children: <div>Dashboard</div> });
+
+    expect(mocks.redirect).toHaveBeenCalledWith('/review');
+  });
 });

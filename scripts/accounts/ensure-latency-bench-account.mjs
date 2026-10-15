@@ -12,7 +12,7 @@
  *   node scripts/accounts/ensure-latency-bench-account.mjs --env-file apps/web/.env.local.prodops --apply
  *
  * Options: --email (default latency-bench@example.com), --role (default admin).
- * The account has no employees row, so it does not appear in directory or headcount data.
+ * The account is classified as `test`, so workforce views exclude it even if a trigger creates an employee row.
  */
 import { randomBytes } from 'node:crypto';
 import fs from 'node:fs';
@@ -122,7 +122,7 @@ async function main() {
   const attributes = {
     password,
     email_confirm: true,
-    app_metadata: { db_role: values.role },
+    app_metadata: { db_role: values.role, account_kind: 'test' },
     user_metadata: {
       first_name: 'Latency',
       last_name: 'Bench',
@@ -140,7 +140,14 @@ async function main() {
   const { error: usersError } = await admin
     .from('users')
     .upsert(
-      { id: userId, role: values.role, status: 'active', deleted_at: null },
+      {
+        id: userId,
+        role: values.role,
+        status: 'active',
+        account_kind: 'test',
+        account_purpose: 'Automated latency measurement',
+        deleted_at: null,
+      },
       { onConflict: 'id' }
     );
   if (usersError) exit(`public.users upsert failed: ${usersError.message}`);
