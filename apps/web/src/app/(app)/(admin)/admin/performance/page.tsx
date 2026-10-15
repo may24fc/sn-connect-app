@@ -329,9 +329,11 @@ export default function AdminPerformancePage(): ReactNode {
     pageSize,
     sortBy: 'full_name',
     sortOrder: 'asc' as const,
+    includeTerminated: true,
+    ...(selectedCycle ? { createdThrough: selectedCycle.endDate } : {}),
   };
 
-  const { data, isLoading } = useDirectory(filters);
+  const { data, isLoading } = useDirectory(filters, { enabled: Boolean(selectedCycle) });
   const { data: departmentsData } = useDepartments({ page: 1, pageSize: 200 });
 
   const entries = data?.data || [];
@@ -914,12 +916,19 @@ export default function AdminPerformancePage(): ReactNode {
                               </p>
                             </div>
                           </div>
-                          <Badge
-                            variant={getRoleBadgeVariant(entry.role)}
-                            className="text-xs capitalize"
-                          >
-                            {entry.role?.replace('_', ' ') || '—'}
-                          </Badge>
+                          <div className="flex shrink-0 flex-col items-end gap-1.5">
+                            <Badge
+                              variant={getRoleBadgeVariant(entry.role)}
+                              className="text-xs capitalize"
+                            >
+                              {entry.role?.replace('_', ' ') || '—'}
+                            </Badge>
+                            {entry.status === 'terminated' && (
+                              <Badge variant="secondary" className="text-xs">
+                                Former
+                              </Badge>
+                            )}
+                          </div>
                         </div>
 
                         <div className="mt-4 rounded-lg border border-border/70 bg-muted/20 p-3">

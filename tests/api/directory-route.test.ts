@@ -4,6 +4,9 @@ import { NextRequest } from 'next/server';
 vi.mock('@/lib/supabase/server', () => ({
   createSupabaseServerClient: vi.fn(),
 }));
+vi.mock('@/lib/auth/active-role', () => ({
+  getActiveUserRole: vi.fn(async () => 'admin'),
+}));
 
 import { GET } from '../../apps/web/src/app/api/directory/route';
 import { createSupabaseServerClient } from '../../apps/web/src/lib/supabase/server';
@@ -22,6 +25,7 @@ function createThenableQuery<T>(result: QueryResult<T>) {
     in: vi.fn(() => query),
     or: vi.fn(() => query),
     order: vi.fn(() => query),
+    lte: vi.fn(() => query),
     range: vi.fn(() => query),
     is: vi.fn(() => query),
     maybeSingle: vi.fn(() => query),
@@ -259,5 +263,73 @@ describe('/api/directory route', () => {
     expect(response.status).toBe(200);
     // Malformed ids are dropped before they reach the query.
     expect(pageQuery.in).toHaveBeenCalledWith('user_id', [managerId]);
+  });
+
+  it('supports a historical roster with former employees through the selected cycle end', async () => {
+    const pageQuery = createThenableQuery({
+      data: [
+        {
+          user_id: 'former-user',
+          employee_id: 'former-employee',
+          full_name: 'Former Employee',
+          status: 'terminated',
+        },
+      ],
+      error: null,
+      count: 1,
+    });
+    const aggregateQuery = createThenableQuery({ data: [], error: null });
+    const employeesQuery = createThenableQuery({
+      data: [{ id: 'former-employee', termination_reason: null }],
+      error: null,
+    });
+    let directoryCallCount = 0;
+
+    vi.mocked(createSupabaseServerClient).mockResolvedValue({
+      auth: {
+        getUser: vi.fn(async () => ({
+          data: { user: { id: 'viewer-admin', app_metadata: { db_role: 'admin' } } },
+          error: null,
+        })),
+      },
+      from: vi.fn((table: string) => {
+        if (table === 'employees') return employeesQuery;
+        directoryCallCount += 1;
+        return directoryCallCount === 1 ? pageQuery : aggregateQuery;
+      }),
+    } as never);
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/directory?include_terminated=true&created_through=2026-06-30'
+      )
+    );
+
+    expect(response.status).toBe(200);
+    expect(pageQuery.lte).toHaveBeenCalledWith(
+      'user_created_at',
+      '2026-06-30T23:59:59.999Z'
+    );
+    expect(pageQuery.neq).not.toHaveBeenCalledWith('status', 'terminated');
+  });
+
+  it('rejects an invalid historical roster date', async () => {
+    const pageQuery = createThenableQuery({ data: [], error: null, count: 0 });
+    vi.mocked(createSupabaseServerClient).mockResolvedValue({
+      auth: {
+        getUser: vi.fn(async () => ({
+          data: { user: { id: 'viewer-admin', app_metadata: { db_role: 'admin' } } },
+          error: null,
+        })),
+      },
+      from: vi.fn(() => pageQuery),
+    } as never);
+
+    const response = await GET(
+      new NextRequest('http://localhost/api/directory?created_through=2026-02-31')
+    );
+
+    expect(response.status).toBe(400);
+    expect(pageQuery.lte).not.toHaveBeenCalled();
   });
 });

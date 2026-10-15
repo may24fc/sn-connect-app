@@ -10466,6 +10466,7 @@ export type Database = {
           start_date: string | null
           status: Database["public"]["Enums"]["user_status"] | null
           user_id: string | null
+          user_created_at: string | null
         }
         Relationships: []
       }

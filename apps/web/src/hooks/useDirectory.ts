@@ -16,6 +16,10 @@ export interface DirectoryFilters {
   page?: number;
   pageSize?: number;
   excludeTerminated?: boolean;
+  /** Include former employees. Intended for historical, cycle-scoped views. */
+  includeTerminated?: boolean;
+  /** Only include accounts created on or before this ISO date (YYYY-MM-DD). */
+  createdThrough?: string;
   /** Restrict results to these users (used to resolve already-selected people). */
   userIds?: string[];
 }
@@ -111,6 +115,8 @@ export function useDirectory(filters: DirectoryFilters = {}, options: { enabled?
       if (filters.page) params.append('page', String(filters.page));
       if (filters.pageSize) params.append('page_size', String(filters.pageSize));
       if (filters.excludeTerminated) params.append('exclude_terminated', 'true');
+      if (filters.includeTerminated) params.append('include_terminated', 'true');
+      if (filters.createdThrough) params.append('created_through', filters.createdThrough);
       if (filters.userIds?.length) params.append('user_ids', filters.userIds.join(','));
 
       const query = params.toString();

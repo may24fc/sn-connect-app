@@ -672,6 +672,7 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
   const { user } = useAuth();
   const { addToast } = useToast();
   const employeeId = params.id as string;
+  const selectedCycleStorageKey = 'admin-performance-selected-cycle-id';
 
   const { data, isLoading, isError, refetch } = useIndividualPerformance(employeeId);
   const { data: cycles = [] } = usePerformanceCycles();
@@ -684,7 +685,10 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
 
   const [expandedOkrs, setExpandedOkrs] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<'view' | 'evaluate'>('view');
-  const [selectedCycleId, setSelectedCycleId] = useState<string>('');
+  const [selectedCycleId, setSelectedCycleId] = useState<string>(() => {
+    if (typeof window === 'undefined') return '';
+    return window.localStorage.getItem(selectedCycleStorageKey) || '';
+  });
   const [selectedYear, setSelectedYear] = useState<string>('');
   const { data: reviewRecords = [] } = usePerformanceReviews(selectedCycleId || undefined, employeeId);
 
@@ -815,6 +819,12 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
       setSelectedCycleId(fallbackCycle.id);
     }
   }, [fallbackCycle, selectedCycleId]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && selectedCycleId) {
+      window.localStorage.setItem(selectedCycleStorageKey, selectedCycleId);
+    }
+  }, [selectedCycleId, selectedCycleStorageKey]);
 
   useEffect(() => {
     if (selectedYear) return;

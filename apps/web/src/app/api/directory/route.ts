@@ -9,6 +9,13 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 const ADMIN_ROLES = ['admin', 'super_admin'];
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function isValidIsoDate(value: string): boolean {
+  if (!ISO_DATE_PATTERN.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
 
 interface DirectoryRow {
   employee_id: string | null;
@@ -91,6 +98,8 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') || '';
     const employmentType = searchParams.get('employment_type') || '';
     const excludeTerminated = searchParams.get('exclude_terminated') === 'true';
+    const includeTerminated = searchParams.get('include_terminated') === 'true';
+    const createdThrough = searchParams.get('created_through') || '';
     const sortBy = searchParams.get('sort_by') || 'full_name';
     const sortOrder = searchParams.get('sort_order') === 'desc' ? false : true;
     const page = Number.parseInt(searchParams.get('page') || '1', 10);
@@ -107,6 +116,16 @@ export async function GET(request: NextRequest) {
 
     if (userIdFilters.length > 0) {
       query = query.in('user_id', userIdFilters);
+    }
+
+    if (createdThrough) {
+      if (!isValidIsoDate(createdThrough)) {
+        return NextResponse.json(
+          { error: 'created_through must be a valid date in YYYY-MM-DD format' },
+          { status: 400 }
+        );
+      }
+      query = query.lte('user_created_at', `${createdThrough}T23:59:59.999Z`);
     }
 
     // Role filter — "employee" expands to all non-associate roles so admins/leadership
@@ -164,7 +183,7 @@ export async function GET(request: NextRequest) {
 
     // General roster pages should not surface terminated staff unless the caller
     // explicitly requested the terminated status.
-    if (excludeTerminated || !explicitlyIncludesTerminated) {
+    if (excludeTerminated || (!includeTerminated && !explicitlyIncludesTerminated)) {
       query = query.neq('status', 'terminated');
     }
 

@@ -96,10 +96,6 @@ export async function GET(
       .eq('id', employee.user_id)
       .maybeSingle();
 
-    if (userData?.status === 'terminated') {
-      return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
-    }
-
     // Resolve department name from the canonical users.department_id first.
     // Fall back to the legacy employees.department text only if the FK is missing.
     let linkedDepartmentName: string | null = null;

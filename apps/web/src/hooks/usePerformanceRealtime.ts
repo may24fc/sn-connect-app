@@ -36,7 +36,7 @@ export function usePerformanceRealtime({
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled || process.env.NEXT_PUBLIC_ENABLE_MOCK_AUTH === 'true') {
       return;
     }
 
