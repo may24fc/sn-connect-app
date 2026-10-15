@@ -34,22 +34,27 @@ Complete the requested delivery workflow end to end for this pnpm/Turborepo repo
    ```
 
 2. If there are no new migration files, record that the migration gate was not applicable and continue without database changes.
-3. If migrations are present, state the target environment before every database-changing command. Apply and verify **local** first:
+3. If migrations are present, state the target environment before every database-changing command. Run every Supabase command through `pnpm exec supabase` so the repo-pinned CLI (`supabase` in `package.json`) is used; a globally installed CLI can be a different major version with different flags and authentication. Apply and verify **local** first:
 
    ```powershell
    pnpm supabase:start
-   supabase migration up --local
-   supabase migration list --local
+   pnpm exec supabase migration up --local
+   pnpm exec supabase migration list --local
    ```
 
-4. After local migration validation passes, apply and verify **production**. Use the known production project reference, run the dry run, then perform the push only when it reports the intended migration set:
+4. After local migration validation passes, apply and verify **production**. `supabase db push` has no `--project-ref` flag; confirm the linked project is production, linking explicitly if it is not, then use `--linked`. Run the dry run, and push only when it reports the intended migration set:
 
    ```powershell
    $productionProjectRef = 'tccdupkjmwwxcvpqnpeb'
-   supabase db push --project-ref $productionProjectRef --dry-run
-   supabase db push --project-ref $productionProjectRef
-   supabase migration list --project-ref $productionProjectRef
+   if ((Get-Content supabase/.temp/project-ref -ErrorAction SilentlyContinue) -ne $productionProjectRef) {
+     pnpm exec supabase link --project-ref $productionProjectRef
+   }
+   pnpm exec supabase db push --linked --dry-run
+   pnpm exec supabase db push --linked
+   pnpm exec supabase migration list --linked
    ```
+
+   If `link` prompts for the database password, ask the user to type it directly into the terminal; never request or relay it through chat. The CLI saves it for later `--linked` commands. If a command reports `Initialising login role... 403` or asks for `SUPABASE_DB_PASSWORD`, check `pnpm exec supabase --version` first: that error comes from a different CLI version, not from the migration.
 
 5. Never target staging. Do not modify an already-applied migration. If either environment rejects a migration, stop the delivery, report the target, error cause, and repair required; do not commit or push code that depends on the unapplied migration.
 6. Record the local and production application and verification in the owning feature tracker. Include each migration with its owning feature commit.
