@@ -183,12 +183,13 @@ test.beforeEach(async ({ page }) => {
     }
 
     if (url.pathname === '/api/directory') {
-      const isHistoricalRequest =
-        url.searchParams.get('include_terminated') === 'true' &&
+      const isCycleScopedRequest =
         url.searchParams.get('created_through') === '2026-06-30' &&
         url.searchParams.get('performance_cycle_id') === '10000000-0000-4000-8000-000000000002';
-      const data = isHistoricalRequest
-        ? [activeEmployee, formerEmployee]
+      const data = isCycleScopedRequest && url.searchParams.get('status') === 'terminated'
+        ? [formerEmployee]
+        : isCycleScopedRequest
+          ? [activeEmployee]
         : [activeEmployee, formerEmployee, formerEmployeeWithoutQuarterData, futureEmployee];
       await route.fulfill({
         json: {
@@ -230,7 +231,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('selected quarter includes former staff only with quarter data and excludes later accounts', async ({
+test('selected quarter defaults to current staff and offers a former-only roster', async ({
   page,
 }, testInfo) => {
   const consoleErrors: Array<string> = [];
@@ -248,11 +249,17 @@ test('selected quarter includes former staff only with quarter data and excludes
   await page.goto('/admin/performance', { waitUntil: 'networkidle' });
 
   await expect(page.getByText('Q2 2026', { exact: true }).first()).toBeVisible();
-  await expect(page.getByText('Former Employee', { exact: true })).toBeVisible();
-  await expect(page.getByText('Former', { exact: true })).toBeVisible();
   await expect(page.getByText('Existing Employee', { exact: true })).toBeVisible();
+  await expect(page.getByText('Former Employee', { exact: true })).toHaveCount(0);
   await expect(page.getByText('Future Employee', { exact: true })).toHaveCount(0);
   await expect(page.getByText('Former Without Quarter Data', { exact: true })).toHaveCount(0);
+
+  await page.getByRole('combobox').filter({ hasText: 'Highest OWA First' }).click();
+  await page.getByRole('option', { name: 'Former Employees' }).click();
+
+  await expect(page.getByText('Former Employee', { exact: true })).toBeVisible();
+  await expect(page.getByText('Former', { exact: true })).toBeVisible();
+  await expect(page.getByText('Existing Employee', { exact: true })).toHaveCount(0);
   await expect(page.getByText('100%')).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath('desktop-historical-roster.png'),
@@ -271,8 +278,13 @@ test('selected quarter includes former staff only with quarter data and excludes
     fullPage: true,
   });
 
-  await page.getByRole('button', { name: /Former Employee/ }).click();
-  await expect(page).toHaveURL(/\/admin\/performance\/employee\/former-employee$/);
+  await page
+    .getByRole('button')
+    .filter({ has: page.getByText('Former Employee', { exact: true }) })
+    .click();
+  await expect(page).toHaveURL(/\/admin\/performance\/employee\/former-employee$/, {
+    timeout: 30_000,
+  });
   await expect(page.getByRole('heading', { name: 'Former Employee' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Q2 2026' })).toBeVisible();
 

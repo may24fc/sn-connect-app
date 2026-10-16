@@ -42,6 +42,14 @@ flowchart LR
 - Code paths: quarter workforce policy migration, Directory API/hook, admin OKR/KPI roster, SQL assertions, API tests, and browser test in the Relevant Code Map.
 - Validation: both migrations applied to local Supabase; rollback-only SQL assertions passed, including isolation between parallel cycles with identical dates; Directory API tests passed 8/8; web TypeScript passed; focused Chromium desktop and 390px mobile checks passed with screenshots reviewed. Production was not changed.
 
+### Implemented - Current roster default with former-only opt-in
+
+- Status: `Implemented`
+- Problem/evidence: mixing former employees into the default roster made current performance monitoring awkward, especially when historical objectives had little or no progress.
+- Solution: keep the default Directory request terminated-free and add `Former Employees` to the existing card dropdown. That selection requests `status=terminated` while retaining the selected-cycle eligibility policy, search, role/department filters, and server-side pagination. Choosing any ordinary sort option returns to the current-employee default.
+- Code paths: admin OKR/KPI roster and historical roster browser test in the Relevant Code Map.
+- Validation: web TypeScript passed; all 8 Directory API tests passed; the focused Chromium spec passed the default-current, former-only selection, desktop, mobile, no-overflow, and former-detail flow. Screenshots were inspected with no new layout issue found.
+
 ### Implemented - Cycle-scoped historical roster correctness
 
 - Status: `Implemented`
@@ -87,5 +95,6 @@ pnpm performance:latency --compare <before-json> <after-json>
 
 ## Change Log
 
+- 2026-10-16: Defaulted the quarter roster to current employees and added an explicit former-only dropdown selection backed by the cycle-scoped Directory query.
 - 2026-10-16: Replaced termination-overlap eligibility with exact-cycle evidence for former employees and validated the rule locally through SQL, API, type, and browser checks.
 - 2026-10-15: Implemented cycle-aware historical roster filtering and former-employee access; audited comparable product behavior; completed focused automated UI/API checks; deferred SQL and latency validation because local Supabase was unavailable.

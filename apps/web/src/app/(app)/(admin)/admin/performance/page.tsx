@@ -33,6 +33,7 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
   getPersonMetaParts,
@@ -108,7 +109,7 @@ interface EmployeePerformanceSummary {
 }
 
 type ViewMode = 'cards' | 'list';
-type CardSortMode = 'weighted_desc' | 'weighted_asc' | 'name_asc';
+type CardSortMode = 'weighted_desc' | 'weighted_asc' | 'name_asc' | 'former';
 type SummaryMode = 'progress' | 'evaluation';
 type EvaluationAwareOkr = Pick<
   OKR,
@@ -329,7 +330,7 @@ export default function AdminPerformancePage(): ReactNode {
     pageSize,
     sortBy: 'full_name',
     sortOrder: 'asc' as const,
-    includeTerminated: true,
+    ...(cardSortMode === 'former' ? { status: 'terminated' } : {}),
     ...(selectedCycle ? { createdThrough: selectedCycle.endDate } : {}),
     ...(selectedCycle ? { performanceCycleId: selectedCycle.id } : {}),
   };
@@ -807,7 +808,10 @@ export default function AdminPerformancePage(): ReactNode {
         {viewMode === 'cards' && (
           <Select
             value={cardSortMode}
-            onValueChange={(value) => setCardSortMode(value as CardSortMode)}
+            onValueChange={(value) => {
+              setCardSortMode(value as CardSortMode);
+              setPage(1);
+            }}
           >
             <SelectTrigger className="w-[230px]">
               <SelectValue placeholder="Sort cards" />
@@ -816,6 +820,8 @@ export default function AdminPerformancePage(): ReactNode {
               <SelectItem value="weighted_desc">Highest OWA First</SelectItem>
               <SelectItem value="weighted_asc">Lowest OWA First</SelectItem>
               <SelectItem value="name_asc">Name (A-Z)</SelectItem>
+              <SelectSeparator />
+              <SelectItem value="former">Former Employees</SelectItem>
             </SelectContent>
           </Select>
         )}
@@ -875,7 +881,9 @@ export default function AdminPerformancePage(): ReactNode {
               icon={Users}
               title="No employees found"
               description={
-                search
+                cardSortMode === 'former'
+                  ? 'No former employees have performance data for this quarter.'
+                  : search
                   ? 'Try adjusting your search or filters.'
                   : 'There are no employees to show yet.'
               }
