@@ -2,10 +2,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/supabase/server', () => ({
   createSupabaseServerClient: vi.fn(),
+  createSupabaseAdminClient: vi.fn(),
+}));
+
+vi.mock('@/lib/auth/active-role', () => ({
+  getActiveUserRole: vi.fn(),
 }));
 
 import { GET } from '@/app/api/audit-logs/route';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { getActiveUserRole } from '@/lib/auth/active-role';
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 
 type QueryResult<T> = {
   data: T;
@@ -29,6 +35,13 @@ function createThenableQuery<T>(result: QueryResult<T>) {
   };
 
   return query;
+}
+
+/** Role comes from the users row (getActiveUserRole); names come from employee_directory via the admin client. */
+function mockClients(supabase: unknown, role: 'admin' | 'super_admin') {
+  vi.mocked(createSupabaseServerClient).mockResolvedValue(supabase as never);
+  vi.mocked(createSupabaseAdminClient).mockReturnValue(supabase as never);
+  vi.mocked(getActiveUserRole).mockResolvedValue(role);
 }
 
 describe('/api/audit-logs route', () => {
@@ -65,9 +78,8 @@ describe('/api/audit-logs route', () => {
     const userProfilesQuery = createThenableQuery({
       data: [
         {
-          id: 'admin-actor',
-          first_name: 'Alex',
-          last_name: 'Admin',
+          user_id: 'admin-actor',
+          full_name: 'Alex Admin',
           email: 'alex@example.com',
         },
       ],
@@ -89,6 +101,7 @@ describe('/api/audit-logs route', () => {
       },
       from: vi.fn((table: string) => {
         if (table === 'audit_logs') return auditLogsQuery;
+        if (table === 'employee_directory') return userProfilesQuery;
         if (table === 'users') {
           usersCallCount += 1;
           return usersCallCount === 1 ? actorIdsQuery : userProfilesQuery;
@@ -97,7 +110,7 @@ describe('/api/audit-logs route', () => {
       }),
     };
 
-    vi.mocked(createSupabaseServerClient).mockResolvedValue(supabase as never);
+    mockClients(supabase, 'admin');
 
     const response = await GET(new Request('http://localhost/api/audit-logs?scope=admin&limit=5'));
 
@@ -111,7 +124,7 @@ describe('/api/audit-logs route', () => {
           performedBy: 'Alex Admin',
           timestamp: '2026-03-29T10:00:00Z',
           tableName: 'okr_targets',
-          categoryLabel: 'Performance',
+          categoryLabel: 'OKRs & KPIs',
           category: 'performance',
         },
       ],
@@ -134,7 +147,7 @@ describe('/api/audit-logs route', () => {
       from: vi.fn(),
     };
 
-    vi.mocked(createSupabaseServerClient).mockResolvedValue(supabase as never);
+    mockClients(supabase, 'admin');
 
     const response = await GET(new Request('http://localhost/api/audit-logs?scope=super_admin'));
 
@@ -179,9 +192,8 @@ describe('/api/audit-logs route', () => {
     const userProfilesQuery = createThenableQuery({
       data: [
         {
-          id: 'super-actor',
-          first_name: 'Sam',
-          last_name: 'Super',
+          user_id: 'super-actor',
+          full_name: 'Sam Super',
           email: 'sam@example.com',
         },
       ],
@@ -203,6 +215,7 @@ describe('/api/audit-logs route', () => {
       },
       from: vi.fn((table: string) => {
         if (table === 'audit_logs') return auditLogsQuery;
+        if (table === 'employee_directory') return userProfilesQuery;
         if (table === 'users') {
           usersCallCount += 1;
           return usersCallCount === 1 ? actorIdsQuery : userProfilesQuery;
@@ -211,7 +224,7 @@ describe('/api/audit-logs route', () => {
       }),
     };
 
-    vi.mocked(createSupabaseServerClient).mockResolvedValue(supabase as never);
+    mockClients(supabase, 'super_admin');
 
     const response = await GET(new Request('http://localhost/api/audit-logs?scope=super_admin'));
 
@@ -251,15 +264,13 @@ describe('/api/audit-logs route', () => {
     const userProfilesQuery = createThenableQuery({
       data: [
         {
-          id: 'admin-actor',
-          first_name: 'Alex',
-          last_name: 'Admin',
+          user_id: 'admin-actor',
+          full_name: 'Alex Admin',
           email: 'alex@example.com',
         },
         {
-          id: 'target-user',
-          first_name: 'Taylor',
-          last_name: 'Employee',
+          user_id: 'target-user',
+          full_name: 'Taylor Employee',
           email: 'taylor@example.com',
         },
       ],
@@ -281,6 +292,7 @@ describe('/api/audit-logs route', () => {
       },
       from: vi.fn((table: string) => {
         if (table === 'audit_logs') return auditLogsQuery;
+        if (table === 'employee_directory') return userProfilesQuery;
         if (table === 'users') {
           usersCallCount += 1;
           return usersCallCount === 1 ? actorIdsQuery : userProfilesQuery;
@@ -289,7 +301,7 @@ describe('/api/audit-logs route', () => {
       }),
     };
 
-    vi.mocked(createSupabaseServerClient).mockResolvedValue(supabase as never);
+    mockClients(supabase, 'admin');
 
     const response = await GET(new Request('http://localhost/api/audit-logs?scope=admin'));
 
@@ -334,9 +346,8 @@ describe('/api/audit-logs route', () => {
     const userProfilesQuery = createThenableQuery({
       data: [
         {
-          id: 'admin-actor',
-          first_name: 'Avery',
-          last_name: 'Admin',
+          user_id: 'admin-actor',
+          full_name: 'Avery Admin',
           email: 'avery@example.com',
         },
       ],
@@ -358,6 +369,7 @@ describe('/api/audit-logs route', () => {
       },
       from: vi.fn((table: string) => {
         if (table === 'audit_logs') return auditLogsQuery;
+        if (table === 'employee_directory') return userProfilesQuery;
         if (table === 'users') {
           usersCallCount += 1;
           return usersCallCount === 1 ? actorIdsQuery : userProfilesQuery;
@@ -366,7 +378,7 @@ describe('/api/audit-logs route', () => {
       }),
     };
 
-    vi.mocked(createSupabaseServerClient).mockResolvedValue(supabase as never);
+    mockClients(supabase, 'admin');
 
     const response = await GET(new Request('http://localhost/api/audit-logs?scope=admin&limit=5'));
 

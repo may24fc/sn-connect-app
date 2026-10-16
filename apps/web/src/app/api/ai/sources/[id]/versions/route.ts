@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { getPersonDisplayName, loadDirectoryPeople } from '@/lib/people/directory-people';
 import { getAdminClient, getAuthedSupabase, isAiAdmin } from '../../../_lib';
 
 interface RouteContext {
@@ -59,39 +60,14 @@ export async function GET(_: NextRequest, context: RouteContext) {
 
     // Enrich with editor names
     const editorIds = [...new Set((versions || []).map((v) => v.changed_by).filter(Boolean))];
-    let editorMap = new Map<string, string>();
+    const editorMap = new Map<string, string>();
 
     if (editorIds.length > 0) {
-      const { data: editors } = await adminClient
-        .from('employees')
-        .select('user_id, first_name, last_name')
-        .in('user_id', editorIds)
-        .is('deleted_at', null);
-
-      if (editors) {
-        editorMap = new Map(
-          editors.map((e) => [
-            e.user_id,
-            `${e.first_name || ''} ${e.last_name || ''}`.trim() || 'Unknown',
-          ])
-        );
-      }
-
-      // Fallback to email for editors without employee records
-      const missingIds = editorIds.filter((id) => !editorMap.has(id));
-      if (missingIds.length > 0) {
-        const { data: users } = await adminClient
-          .from('users')
-          .select('id, email')
-          .in('id', missingIds);
-
-        if (users) {
-          for (const u of users) {
-            if (!editorMap.has(u.id)) {
-              editorMap.set(u.id, u.email || 'Unknown');
-            }
-          }
-        }
+      // The directory covers editors without an employee record (login email). public.users has
+      // no name or email columns, so the old fallback query there always failed.
+      const editors = await loadDirectoryPeople(adminClient, editorIds);
+      for (const editor of editors.values()) {
+        editorMap.set(editor.userId, getPersonDisplayName(editor.name, editor.email));
       }
     }
 
