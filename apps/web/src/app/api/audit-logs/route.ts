@@ -1,5 +1,6 @@
 import { getActiveUserRole } from '@/lib/auth/active-role';
 import { formatLabel } from '@/lib/format';
+import { getPersonDisplayName, loadDirectoryPeople } from '@/lib/people/directory-people';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
@@ -578,21 +579,14 @@ export async function GET(request: Request): Promise<NextResponse> {
       ),
     ] as string[];
 
-    let userMap: Record<string, string> = {};
+    const userMap: Record<string, string> = {};
     if (userIds.length > 0) {
       const adminClient = createSupabaseAdminClient();
 
-      const { data: users } = await adminClient
-        .from('users')
-        .select('id, first_name, last_name, email')
-        .in('id', userIds);
-
-      if (users) {
-        for (const u of users) {
-          const name =
-            [u.first_name, u.last_name].filter(Boolean).join(' ') || u.email || 'Unknown';
-          userMap[u.id] = name;
-        }
+      // public.users has no name or email columns; the directory resolves both.
+      const people = await loadDirectoryPeople(adminClient, userIds);
+      for (const person of people.values()) {
+        userMap[person.userId] = getPersonDisplayName(person.name, person.email);
       }
     }
 

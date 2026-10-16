@@ -24,9 +24,6 @@ import {
   toFivePointScore,
 } from '@/lib/performance/evaluation-score';
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
   Badge,
   Button,
   Card,
@@ -53,6 +50,8 @@ import {
   TabsList,
   TabsTrigger,
   Textarea,
+  UserAvatar,
+  formatPersonRole,
   getPersonMetaParts,
   useToast,
 } from '@hr-portal/ui';
@@ -82,15 +81,6 @@ import { useParams } from 'next/navigation';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 // ─── Helpers ────────────────────────────────────────────────────
-
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
-}
 
 function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return '—';
@@ -1128,6 +1118,8 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
   }
 
   const { employee } = data;
+  const roleLabel = formatPersonRole(employee.role);
+  const statusLabel = formatPersonRole(employee.status);
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -1141,12 +1133,7 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarImage src={employee.avatarUrl || undefined} />
-              <AvatarFallback className="text-lg bg-primary/10 text-primary">
-                {getInitials(employee.fullName || 'U')}
-              </AvatarFallback>
-            </Avatar>
+            <UserAvatar name={employee.fullName} avatarUrl={employee.avatarUrl} size="xl" />
             <div className="flex-1">
               <h1 className="text-xl font-semibold text-foreground">{employee.fullName}</h1>
               <p className="text-sm text-muted-foreground">
@@ -1154,12 +1141,16 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
                   'No position or department set'}
               </p>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant="outline" className="text-xs capitalize">
-                  {employee.role?.replace('_', ' ') || '—'}
-                </Badge>
-                <Badge variant="outline" className="text-xs capitalize">
-                  {employee.status?.replace('_', ' ') || '—'}
-                </Badge>
+                {roleLabel && (
+                  <Badge variant="outline" className="text-xs">
+                    {roleLabel}
+                  </Badge>
+                )}
+                {statusLabel && (
+                  <Badge variant="outline" className="text-xs">
+                    {statusLabel}
+                  </Badge>
+                )}
                 {employee.dateHired && (
                   <span className="text-xs text-muted-foreground">
                     Hired {formatDate(employee.dateHired)}

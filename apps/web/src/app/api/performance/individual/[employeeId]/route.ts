@@ -1,5 +1,5 @@
 import { getActiveUserRole } from '@/lib/auth/active-role';
-import { resolveDepartmentName } from '@/lib/people/directory-people';
+import { normalizeDepartmentName, resolveDepartmentName } from '@/lib/people/directory-people';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { type OkrStateTargetRow, applyComputedOkrState } from '../../_okr-state';
@@ -89,27 +89,23 @@ export async function GET(
       return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
     }
 
-    // Fetch user data for avatar, role, status, and department_id
-    const { data: userData } = await db
-      .from('users')
-      .select('avatar_url, role, email, department_id, status')
-      .eq('id', employee.user_id)
+    // Account identity comes from employee_directory: it resolves the photo (users.avatar_url, then
+    // auth metadata) and the department name in one row. `email` is not a column on public.users, so
+    // selecting it there failed the whole query and blanked the photo, role and status.
+    const { data: identity, error: identityError } = await db
+      .from('employee_directory')
+      .select('avatar_url, role, status, email, department_name')
+      .eq('user_id', employee.user_id)
       .maybeSingle();
 
-    // Resolve department name from the canonical users.department_id first.
-    // Fall back to the legacy employees.department text only if the FK is missing.
-    let linkedDepartmentName: string | null = null;
-    if (userData?.department_id) {
-      const { data: dept } = await db
-        .from('departments')
-        .select('name')
-        .eq('id', userData.department_id)
-        .maybeSingle();
-      linkedDepartmentName = dept?.name ?? null;
+    if (identityError) {
+      console.error('Failed to load employee identity for performance view:', identityError.message);
     }
 
-    // Legacy text may be a placeholder ('Unassigned') or a division name; neither is a department.
-    const departmentName = resolveDepartmentName(linkedDepartmentName, employee.department);
+    // The view already ignores placeholder text and divisions; the legacy column covers a missing row.
+    const departmentName =
+      normalizeDepartmentName(identity?.department_name) ??
+      resolveDepartmentName(null, employee.department);
 
     // Fetch KPIs
     const { data: kpis } = await db
@@ -295,12 +291,12 @@ export async function GET(
         fullName: `${employee.first_name || ''} ${employee.last_name || ''}`.trim(),
         position: employee.position,
         department: departmentName,
-        status: userData?.status ?? null,
+        status: identity?.status ?? null,
         employmentType: employee.employment_type,
         dateHired: employee.date_hired,
-        avatarUrl: userData?.avatar_url ?? null,
-        role: userData?.role ?? null,
-        email: userData?.email ?? null,
+        avatarUrl: identity?.avatar_url ?? null,
+        role: identity?.role ?? null,
+        email: identity?.email ?? null,
       },
       kpis: enrichedKpis,
       kpiSummary,
