@@ -858,7 +858,7 @@ function WishPanel({
                   );
                   const allowsLink = category === 'personal';
                   return (
-                    <div className="space-y-2" key={key}>
+                    <div className="space-y-2" data-testid={`wish-editor-${key}`} key={key}>
                       <Textarea
                         disabled={!state.isEditable || isPending || isDeleting}
                         maxLength={500}

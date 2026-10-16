@@ -310,6 +310,13 @@ export async function upsertChristmasWish(
 ) {
   const event = await getActiveChristmasEvent(adminClient);
   if (!event) throw new Error('No active Christmas Tree event is configured');
+  const state = categoryState(event, category);
+  if (!state.isEditable) {
+    throw new ChristmasTreeRequestError(
+      state.teaser ?? 'This wish cannot be changed right now',
+      403
+    );
+  }
   const { data: ornament, error: ornamentError } = await adminClient
     .from('christmas_ornaments')
     .select('id')
@@ -320,26 +327,50 @@ export async function upsertChristmasWish(
   if (ornamentError || !ornament)
     throw new ChristmasTreeRequestError('Place an ornament before submitting a wish', 400);
 
-  const { data: wish, error } = await adminClient
-    .from('christmas_wishes')
-    .upsert(
-      {
+  const wishValues = {
+    content,
+    link_url: linkUrl,
+    created_by: userId,
+  };
+  // A column-only upsert cannot target the partial unique index for active wishes.
+  // Update first, then insert only when no active row exists to preserve soft deletes.
+  const updateActiveWish = () =>
+    adminClient
+      .from('christmas_wishes')
+      .update(wishValues)
+      .eq('ornament_id', ornament.id)
+      .eq('category', category)
+      .eq('item_number', itemNumber)
+      .is('deleted_at', null)
+      .select('id')
+      .maybeSingle();
+
+  let { data: wish, error } = await updateActiveWish();
+  if (error) throwChristmasWishWriteError(error);
+
+  if (!wish) {
+    const insertResult = await adminClient
+      .from('christmas_wishes')
+      .insert({
         ornament_id: ornament.id,
         category,
         item_number: itemNumber,
-        content,
-        link_url: linkUrl,
-        created_by: userId,
-      },
-      { onConflict: 'ornament_id,category,item_number' }
-    )
-    .select('id')
-    .single();
-  if (error || !wish) {
-    if (error?.message.includes('unavailable outside'))
-      throw new ChristmasTreeRequestError(error.message, 403);
-    throw new Error('Failed to save Christmas wish');
+        ...wishValues,
+      })
+      .select('id')
+      .single();
+    wish = insertResult.data;
+    error = insertResult.error;
+
+    // A concurrent first save can win after the update check. Retry as an update.
+    if (error?.code === '23505') {
+      const retryResult = await updateActiveWish();
+      wish = retryResult.data;
+      error = retryResult.error;
+    }
   }
+
+  if (error || !wish) throwChristmasWishWriteError(error);
 
   logActivity(adminClient, {
     userId,
@@ -354,6 +385,13 @@ export async function upsertChristmasWish(
       hasLink: Boolean(linkUrl),
     },
   });
+}
+
+function throwChristmasWishWriteError(error: { message: string } | null): never {
+  if (error?.message.includes('unavailable outside')) {
+    throw new ChristmasTreeRequestError(error.message, 403);
+  }
+  throw new Error('Failed to save Christmas wish');
 }
 
 export async function deleteChristmasWish(

@@ -75,6 +75,12 @@ test.describe('Christmas Tree layout stability', () => {
     page,
   }, testInfo) => {
     let hasOrnament = false;
+    const savedWishPayloads: Array<{
+      category: 'personal';
+      itemNumber: number;
+      content: string;
+      linkUrl: string;
+    }> = [];
     const consoleErrors: Array<string> = [];
     const failedRequests: Array<string> = [];
 
@@ -120,6 +126,28 @@ test.describe('Christmas Tree layout stability', () => {
       await route.fulfill({
         contentType: 'application/json',
         body: JSON.stringify({ data: populatedSnapshot }),
+      });
+    });
+    await page.route('**/api/christmas-tree/wishes', async (route) => {
+      if (route.request().method() !== 'PUT') return route.fallback();
+      const payload = route.request().postDataJSON() as (typeof savedWishPayloads)[number];
+      savedWishPayloads.push(payload);
+      const wishes = savedWishPayloads.map((wish) => ({
+        ornament_id: 'ornament-1',
+        category: wish.category,
+        item_number: wish.itemNumber,
+        content: wish.content,
+        link_url: wish.linkUrl || null,
+        submitted_at: '2026-10-16T01:00:00Z',
+      }));
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: {
+            ...populatedSnapshot,
+            ornaments: populatedSnapshot.ornaments.map((ornament) => ({ ...ornament, wishes })),
+          },
+        }),
       });
     });
 
@@ -178,6 +206,16 @@ test.describe('Christmas Tree layout stability', () => {
     await expect(
       page.getByRole('region', { name: 'Wish for SN' }).getByPlaceholder('Optional link')
     ).toHaveCount(0);
+    for (const itemNumber of [1, 2, 3]) {
+      const editor = page.getByTestId(`wish-editor-personal-${itemNumber}`);
+      await editor
+        .getByPlaceholder(`Personal wish ${itemNumber}`)
+        .fill(`Personal wish number ${itemNumber}`);
+      await editor.getByRole('button', { name: /Save wish|Save changes/ }).click();
+      await expect.poll(() => savedWishPayloads.length).toBe(itemNumber);
+    }
+    expect(savedWishPayloads.map(({ itemNumber }) => itemNumber)).toEqual([1, 2, 3]);
+    await expect(page.getByText('Failed to save Christmas wish')).toHaveCount(0);
     const afterBox = await canvas.boundingBox();
     if (!afterBox) throw new Error('Christmas Tree canvas was not measurable after placement');
     expect(Math.abs(afterBox.height - beforeBox.height)).toBeLessThanOrEqual(2);
