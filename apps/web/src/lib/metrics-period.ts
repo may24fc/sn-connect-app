@@ -143,6 +143,55 @@ export function calendarMonthKey(now: Date, timeZone: MetricTimeZone): string {
   return `${local.year}-${String(local.month).padStart(2, '0')}`;
 }
 
+export type CalendarMonthRange = { fromMonth: string; toMonth: string };
+
+export function calendarQuarterKeyFromMonth(monthKey: string): string {
+  const match = /^(\d{4})-(\d{2})$/.exec(monthKey);
+  if (!match) throw new RangeError('Month must use YYYY-MM format.');
+  const month = Number(match[2]);
+  if (month < 1 || month > 12) throw new RangeError('Month is not valid.');
+  return `${match[1]}-Q${Math.ceil(month / 3)}`;
+}
+
+export function calendarQuarterMonthRange(quarterKey: string): CalendarMonthRange {
+  const match = /^(\d{4})-Q([1-4])$/.exec(quarterKey);
+  if (!match) throw new RangeError('Quarter must use YYYY-Q1 through YYYY-Q4 format.');
+  const startMonth = (Number(match[2]) - 1) * 3 + 1;
+  return {
+    fromMonth: `${match[1]}-${String(startMonth).padStart(2, '0')}`,
+    toMonth: `${match[1]}-${String(startMonth + 2).padStart(2, '0')}`,
+  };
+}
+
+export function calendarQuarterOptions(currentMonth: string, years = 5) {
+  const currentYear = Number(calendarQuarterKeyFromMonth(currentMonth).slice(0, 4));
+  const monthNames = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  return Array.from({ length: years * 4 }, (_, index) => {
+    const absoluteQuarter = currentYear * 4 + 3 - index;
+    const year = Math.floor(absoluteQuarter / 4);
+    const quarter = (absoluteQuarter % 4) + 1;
+    const value = `${year}-Q${quarter}`;
+    const { fromMonth, toMonth } = calendarQuarterMonthRange(value);
+    return {
+      value,
+      label: `Q${quarter} ${year} (${monthNames[Number(fromMonth.slice(5)) - 1]}–${monthNames[Number(toMonth.slice(5)) - 1]})`,
+    };
+  });
+}
+
 export function yearPeriodOptions(firstYear: number, now: Date, timeZone: MetricTimeZone) {
   const latestYear = Math.max(firstYear, zonedParts(now, resolvedTimeZone(timeZone)).year);
   return [

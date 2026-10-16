@@ -1477,7 +1477,7 @@ export function MarketingAdSpendDashboard({
                             <TableHead>Payment Method</TableHead>
                             <TableHead>Amount</TableHead>
                             <TableHead>Invoice</TableHead>
-                            <TableHead>Actions</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -1527,8 +1527,8 @@ export function MarketingAdSpendDashboard({
                                     <span className="text-sm text-zinc-500">No invoice</span>
                                   )}
                                 </TableCell>
-                                <TableCell>
-                                  <div className="flex items-center gap-2">
+                                <TableCell className="text-right">
+                                  <div className="flex items-center justify-end gap-2">
                                     <Button
                                       type="button"
                                       onClick={() => handleEditEntry(row)}
@@ -1823,7 +1823,7 @@ export function MarketingAdSpendDashboard({
                   <TableHead>Payment Method</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Invoice</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1862,8 +1862,8 @@ export function MarketingAdSpendDashboard({
                           <span className="text-sm text-zinc-500">No invoice</span>
                         )}
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
                           <Button
                             type="button"
                             onClick={() => handleEditEntryFromModal(row)}

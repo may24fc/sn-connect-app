@@ -1,7 +1,12 @@
 'use client';
 
 import { usePeriodRequestGuard } from '@/hooks/usePeriodRequestGuard';
-import { calendarMonthKey } from '@/lib/metrics-period';
+import {
+  calendarMonthKey,
+  calendarQuarterKeyFromMonth,
+  calendarQuarterMonthRange,
+  calendarQuarterOptions,
+} from '@/lib/metrics-period';
 import { UHP_VP_CATEGORY_LABELS } from '@/lib/uhp';
 import {
   Button,
@@ -14,10 +19,16 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
   useToast,
 } from '@hr-portal/ui';
 import { Loader2, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
-import { type FormEvent, useCallback, useEffect, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { UhpAccessManagerButton } from './UhpAccessManagerDialog';
 import { UhpWorkspaceHeader } from './UhpWorkspaceHeader';
 
@@ -31,7 +42,7 @@ type CategorySummary = {
 };
 type Summary = {
   reportingMonth: string;
-  categories: CategorySummary[];
+  categories: Array<CategorySummary>;
   totalActualVp: number;
   totalTargetVp: number;
   totalForecastVp: number;
@@ -46,6 +57,7 @@ type Entry = {
   amount: number | null;
   currency: string | null;
 };
+type PeriodMode = 'month' | 'quarter';
 
 function updateSummaryEntries(
   summary: Summary | null,
@@ -74,12 +86,21 @@ function updateSummaryEntries(
 
 export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) {
   const { addToast } = useToast();
-  const [month, setMonth] = useState(() => calendarMonthKey(new Date(), 'viewer'));
+  const currentMonth = useMemo(() => calendarMonthKey(new Date(), 'viewer'), []);
+  const [periodMode, setPeriodMode] = useState<PeriodMode>('month');
+  const [month, setMonth] = useState(currentMonth);
+  const [quarter, setQuarter] = useState(() => calendarQuarterKeyFromMonth(currentMonth));
+  const periodRange =
+    periodMode === 'month'
+      ? { fromMonth: month, toMonth: month }
+      : calendarQuarterMonthRange(quarter);
+  const periodKey = `${periodMode}:${periodRange.fromMonth}:${periodRange.toMonth}`;
+  const quarterOptions = useMemo(() => calendarQuarterOptions(currentMonth), [currentMonth]);
   const { begin: beginPeriodRequest, isCurrent: isCurrentPeriodRequest } =
-    usePeriodRequestGuard(month);
+    usePeriodRequestGuard(periodKey);
   const [summary, setSummary] = useState<Summary | null>(null);
-  const [entries, setEntries] = useState<Entry[]>([]);
-  const [loadedMonth, setLoadedMonth] = useState<string | null>(null);
+  const [entries, setEntries] = useState<Array<Entry>>([]);
+  const [loadedPeriod, setLoadedPeriod] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -93,23 +114,27 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
     const requestId = beginPeriodRequest();
     setLoading(true);
     setLoadError(false);
+    const query = new URLSearchParams({
+      fromMonth: periodRange.fromMonth,
+      toMonth: periodRange.toMonth,
+    });
     try {
       const [summaryResponse, entriesResponse] = await Promise.all([
-        fetch(`/api/uhp/volume-points/summary?month=${month}`),
-        fetch(`/api/uhp/volume-points/entries?month=${month}`),
+        fetch(`/api/uhp/volume-points/summary?${query}`),
+        fetch(`/api/uhp/volume-points/entries?${query}`),
       ]);
       const summaryPayload = await summaryResponse.json();
       const entriesPayload = await entriesResponse.json();
-      if (!summaryResponse.ok || !entriesResponse.ok)
+      if (!(summaryResponse.ok && entriesResponse.ok))
         throw new Error(
           summaryPayload.error ?? entriesPayload.error ?? 'Failed to load volume points'
         );
-      if (!isCurrentPeriodRequest(month, requestId)) return;
+      if (!isCurrentPeriodRequest(periodKey, requestId)) return;
       setSummary(summaryPayload.data);
       setEntries(entriesPayload.data);
-      setLoadedMonth(month);
+      setLoadedPeriod(periodKey);
     } catch (error) {
-      if (!isCurrentPeriodRequest(month, requestId)) return;
+      if (!isCurrentPeriodRequest(periodKey, requestId)) return;
       setLoadError(true);
       addToast({
         variant: 'error',
@@ -117,9 +142,16 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
         description: error instanceof Error ? error.message : 'Please try again.',
       });
     } finally {
-      if (isCurrentPeriodRequest(month, requestId)) setLoading(false);
+      if (isCurrentPeriodRequest(periodKey, requestId)) setLoading(false);
     }
-  }, [addToast, beginPeriodRequest, isCurrentPeriodRequest, month]);
+  }, [
+    addToast,
+    beginPeriodRequest,
+    isCurrentPeriodRequest,
+    periodKey,
+    periodRange.fromMonth,
+    periodRange.toMonth,
+  ]);
   useEffect(() => {
     void load();
   }, [load]);
@@ -162,7 +194,7 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
           method: editingEntry ? 'PATCH' : 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            reportingMonth: `${month}-01`,
+            reportingMonth: `${orderDate.slice(0, 7)}-01`,
             category,
             memberName,
             orderDate,
@@ -275,22 +307,12 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
     <div className="space-y-6 p-4 sm:p-6 lg:p-8">
       <UhpWorkspaceHeader
         title="Volume Points Tracker"
-        description="Monthly and overall UHP volume points, migrated from the manual workbook. The daily Telegram digest is sent at 12:00 PM PHT even when nothing changed."
+        description="Monthly, quarterly, and overall UHP volume points, migrated from the manual workbook. The daily Telegram digest is sent at 12:00 PM PHT even when nothing changed."
         actions={
-          <div className="flex flex-wrap gap-2">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             {isAdmin && <UhpAccessManagerButton module="volume_points" label="Volume Points" />}
-            <Input
-              type="month"
-              value={month}
-              onChange={(event) => {
-                if (event.target.value) setMonth(event.target.value);
-              }}
-              className="w-40"
-            />
-            <Button variant="outline" onClick={openTargets}>
-              Set targets
-            </Button>
             <Button
+              className="sm:min-w-32"
               onClick={() => {
                 setEditingEntry(null);
                 setShowForm((value) => !value);
@@ -302,6 +324,67 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
           </div>
         }
       />
+      <Card>
+        <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="vp-period-mode">View by</Label>
+              <Select
+                value={periodMode}
+                onValueChange={(value) => {
+                  const nextMode = value as PeriodMode;
+                  setPeriodMode(nextMode);
+                  setShowTargets(false);
+                }}
+              >
+                <SelectTrigger id="vp-period-mode" className="w-full sm:w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="month">Month</SelectItem>
+                  <SelectItem value="quarter">Quarter</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="vp-period">Period</Label>
+              {periodMode === 'month' ? (
+                <Input
+                  id="vp-period"
+                  type="month"
+                  value={month}
+                  onChange={(event) => {
+                    if (event.target.value) setMonth(event.target.value);
+                  }}
+                  className="w-full sm:w-48"
+                />
+              ) : (
+                <Select value={quarter} onValueChange={setQuarter}>
+                  <SelectTrigger id="vp-period" className="w-full sm:w-56">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {quarterOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          </div>
+          {periodMode === 'month' ? (
+            <Button variant="outline" onClick={openTargets} className="w-full sm:w-auto">
+              Set monthly targets
+            </Button>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Quarterly targets and forecasts are the totals of their three months.
+            </p>
+          )}
+        </CardContent>
+      </Card>
       {showForm && (
         <Card>
           <CardContent className="p-5">
@@ -341,7 +424,14 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
                   id="vp-date"
                   name="orderDate"
                   type="date"
-                  defaultValue={editingEntry?.order_date ?? new Date().toISOString().slice(0, 10)}
+                  min={`${periodRange.fromMonth}-01`}
+                  max={`${periodRange.toMonth}-${new Date(Number(periodRange.toMonth.slice(0, 4)), Number(periodRange.toMonth.slice(5)), 0).getDate()}`}
+                  defaultValue={
+                    editingEntry?.order_date ??
+                    (currentMonth >= periodRange.fromMonth && currentMonth <= periodRange.toMonth
+                      ? new Date().toISOString().slice(0, 10)
+                      : `${periodRange.fromMonth}-01`)
+                  }
                   required
                 />
               </div>
@@ -460,14 +550,14 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
           </CardContent>
         </Card>
       )}
-      {loading || (loadedMonth !== month && !loadError) ? (
+      {loading || (loadedPeriod !== periodKey && !loadError) ? (
         <div className="py-16 text-center text-muted-foreground">
           <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
           Loading volume points...
         </div>
-      ) : loadError && loadedMonth !== month ? (
+      ) : loadError && loadedPeriod !== periodKey ? (
         <div className="py-16 text-center text-muted-foreground">
-          Could not load volume points for this month.
+          Could not load volume points for this period.
           <Button variant="outline" className="ml-3" onClick={() => void load()}>
             Retry
           </Button>
@@ -504,115 +594,114 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
             <CardContent className="p-0">
               <div className="flex items-center justify-between border-b p-4 font-medium">
                 <span>Category progress</span>
-                <Button variant="ghost" size="sm" onClick={() => void load()}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void load()}
+                  aria-label="Refresh volume points"
+                >
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="border-b bg-muted/40 text-xs uppercase text-muted-foreground">
-                    <tr>
-                      <th className="px-4 py-3">Category</th>
-                      <th className="px-4 py-3">Actual</th>
-                      <th className="px-4 py-3">Target</th>
-                      <th className="px-4 py-3">Target %</th>
-                      <th className="px-4 py-3">Forecast</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {summary?.categories.map((row) => (
-                      <tr key={row.category} className="border-b last:border-0">
-                        <td className="px-4 py-3 font-medium">
-                          {
-                            UHP_VP_CATEGORY_LABELS[
-                              row.category as keyof typeof UHP_VP_CATEGORY_LABELS
-                            ]
-                          }
-                        </td>
-                        <td className="px-4 py-3">{row.actualVp.toLocaleString()}</td>
-                        <td className="px-4 py-3">{row.targetVp.toLocaleString()}</td>
-                        <td className="px-4 py-3">{row.targetPercent}%</td>
-                        <td className="px-4 py-3">{row.forecastVp.toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Actual</TableHead>
+                    <TableHead>Target</TableHead>
+                    <TableHead>Target %</TableHead>
+                    <TableHead>Forecast</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {summary?.categories.map((row) => (
+                    <TableRow key={row.category}>
+                      <TableCell className="font-medium">
+                        {
+                          UHP_VP_CATEGORY_LABELS[
+                            row.category as keyof typeof UHP_VP_CATEGORY_LABELS
+                          ]
+                        }
+                      </TableCell>
+                      <TableCell>{row.actualVp.toLocaleString()}</TableCell>
+                      <TableCell>{row.targetVp.toLocaleString()}</TableCell>
+                      <TableCell>{row.targetPercent}%</TableCell>
+                      <TableCell>{row.forecastVp.toLocaleString()}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-0">
               <div className="border-b p-4 font-medium">Entries ({entries.length})</div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="border-b bg-muted/40 text-xs uppercase text-muted-foreground">
-                    <tr>
-                      <th className="px-4 py-3">Date</th>
-                      <th className="px-4 py-3">Member</th>
-                      <th className="px-4 py-3">Category</th>
-                      <th className="px-4 py-3">Actions</th>
-                      <th className="px-4 py-3">Order</th>
-                      <th className="px-4 py-3">VP</th>
-                      <th className="px-4 py-3">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {entries.length ? (
-                      entries.map((entry) => (
-                        <tr key={entry.id} className="border-b last:border-0">
-                          <td className="px-4 py-3">{entry.order_date}</td>
-                          <td className="px-4 py-3 font-medium">{entry.member_name}</td>
-                          <td className="px-4 py-3">
-                            {
-                              UHP_VP_CATEGORY_LABELS[
-                                entry.category as keyof typeof UHP_VP_CATEGORY_LABELS
-                              ]
-                            }
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex gap-1">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  setEditingEntry(entry);
-                                  setShowForm(true);
-                                }}
-                                aria-label={`Edit ${entry.member_name}`}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => void deleteEntry(entry)}
-                                aria-label={`Delete ${entry.member_name}`}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">{entry.order_id ?? '—'}</td>
-                          <td className="px-4 py-3">
-                            {Number(entry.volume_points).toLocaleString()}
-                          </td>
-                          <td className="px-4 py-3">
-                            {entry.amount == null
-                              ? '—'
-                              : `${entry.currency ?? ''} ${Number(entry.amount).toLocaleString()}`}
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={7} className="p-8 text-center text-muted-foreground">
-                          No entries for this month.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Member</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Order</TableHead>
+                    <TableHead>VP</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {entries.length ? (
+                    entries.map((entry) => (
+                      <TableRow key={entry.id}>
+                        <TableCell>{entry.order_date}</TableCell>
+                        <TableCell className="font-medium">{entry.member_name}</TableCell>
+                        <TableCell>
+                          {
+                            UHP_VP_CATEGORY_LABELS[
+                              entry.category as keyof typeof UHP_VP_CATEGORY_LABELS
+                            ]
+                          }
+                        </TableCell>
+                        <TableCell>{entry.order_id ?? '—'}</TableCell>
+                        <TableCell>{Number(entry.volume_points).toLocaleString()}</TableCell>
+                        <TableCell>
+                          {entry.amount == null
+                            ? '—'
+                            : `${entry.currency ?? ''} ${Number(entry.amount).toLocaleString()}`}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setEditingEntry(entry);
+                                setShowForm(true);
+                              }}
+                              aria-label={`Edit ${entry.member_name}`}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => void deleteEntry(entry)}
+                              aria-label={`Delete ${entry.member_name}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={7} className="p-8 text-center text-muted-foreground">
+                        No entries for this period.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </>

@@ -20,10 +20,26 @@
 - [Optimistic reply-card unit tests](../../../tests/lib/uhp-outreach-summary.test.ts)
 - [Application-wide dropdown regression test](../../../tests/components/uhp-modern-selects.test.ts)
 - [Shared calendar bounds](../../../apps/web/src/lib/metrics-period.ts), [period request guard](../../../apps/web/src/hooks/usePeriodRequestGuard.ts), and [Volume Points page](../../../apps/web/src/components/uhp/UhpVolumePointsPage.tsx) - viewer-local period boundaries and latest-response safety.
+- [Volume Points summary range API](../../../apps/web/src/app/api/uhp/volume-points/summary/route.ts), [entries range API](../../../apps/web/src/app/api/uhp/volume-points/entries/route.ts), [quarter browser regression](../../../e2e/uhp-volume-points-quarter.spec.ts), and [calendar-boundary tests](../../../tests/lib/metrics-period.test.ts) - monthly/quarterly KPI selection, aggregate targets, responsive controls, and table conventions.
 - [Cohort metrics route](../../../apps/web/src/app/api/uhp/clients/metrics/route.ts), [cohort calculation](../../../apps/web/src/lib/uhp.ts), [cohort API test](../../../tests/api/uhp-outreach-cohort-route.test.ts), [calendar-boundary tests](../../../tests/lib/metrics-period.test.ts), and [cohort summary tests](../../../tests/lib/uhp-outreach-summary.test.ts) - late replies attributed to the selected outreach period.
 - [WE form status activity query](../../../apps/web/src/app/api/uhp/_lib.ts), [deduplicated evaluation summary](../../../apps/web/src/lib/uhp.ts), [summary tests](../../../tests/lib/uhp-outreach-summary.test.ts), [period query test](../../../tests/api/uhp-outreach-period.test.ts), and [browser regression](../../../e2e/uhp-wellness-evaluation.spec.ts) - status milestone and appointment attribution.
 
 ## Records
+
+### Implemented - 2026-10-16: Quarterly Volume Points KPI and table consistency
+
+- Problem/evidence: Volume Points could only show one month, its four header controls wrapped awkwardly at common widths, and its Entries Actions column interrupted the business data instead of following the Control Hub convention at the right edge. A repository audit also found three older action-column headers/cells without the dominant right alignment.
+- Reference review: [Carbon Data Table guidance](https://www.carbondesignsystem.com/building-blocks/core/components/data-table/guidelines) places global table controls in a toolbar and permits fewer than three inline row actions. [Microsoft Fluent Toolbar guidance](https://learn.microsoft.com/en-us/fluent-ui/web-components/components/toolbar) groups related controls into one semantic control area. These patterns informed the separate labeled period toolbar, one visually primary Add entry action, and compact edit/delete actions in the final right-aligned column.
+- Delivered solution: Add a Month/Quarter selector with five years of quarter choices; send explicit inclusive `fromMonth`/`toMonth` bounds; sum entries and the three monthly target/forecast rows for quarterly KPI cards; retain monthly target editing only in Month view; constrain entry dates to the selected range and derive their reporting month from the chosen order date. Move the period selector out of the crowded page-header actions, migrate both VP tables to the shared Control Hub table primitives, put Actions last/right, and align the three audited older table outliers without changing their behavior. Period selection remains server-confirmed; entry mutations retain their existing optimistic update, rollback, and reconciliation.
+- Code paths: Volume Points page, summary/entries APIs, calendar helpers/tests, and browser regression in Relevant Code Map; Directory, AI Spending, and Marketing Ad Spend action columns.
+- Validation: the full `pnpm build` passed. `pnpm exec vitest run tests/lib/metrics-period.test.ts tests/lib/uhp-volume-points.test.ts` passed 10 tests; `pnpm --filter @hr-portal/web typecheck` passed; focused Biome reported no errors and three complexity warnings in `UhpVolumePointsPage.tsx`. Playwright passed against the normal local server and local Supabase on `/uhp/volume-points` as super admin at 1440x900 and 390x844. It verified Q4 requests use October through December, totals update, Actions is the final header, controls remain visible, no page overflow occurs, and no console errors are introduced. A second focused Playwright check verified the right-aligned Actions header on Directory, AI Spending, and Marketing Ad Spend at 1440x900. Screenshots were inspected. No latency claim is made because this work targets reporting capability and layout consistency rather than response-time improvement.
+
+```mermaid
+flowchart LR
+  S[Month or quarter selection] --> R[Inclusive reporting-month range]
+  R --> A[Aggregate entries and monthly targets]
+  A --> K[KPI cards and consistent tables]
+```
 
 ### Implemented - 2026-10-15: Custom Outreach metrics date range
 
@@ -267,6 +283,7 @@ flowchart LR
 
 ## Change Log
 
+- 2026-10-16: Added quarterly Volume Points KPI ranges, reorganized responsive controls, adopted shared table primitives, and normalized action-column placement/alignment; the full build plus focused unit, type, lint, and browser checks passed.
 - 2026-10-15: Extracted the calendar and draft/Apply/Clear range behavior into shared components, removed duplicate Marketing Reports DayPickers, and passed the final two-route desktop/mobile browser audit. No speed or bundle-size claim is made.
 - 2026-10-15: Added an inclusive custom Outreach metrics range using the established calendar and server-confirmed Apply behavior; passed focused tests and the secured desktop/mobile browser audit. Latency comparison remains deferred without a valid pre-edit baseline.
 - 2026-10-14: Moved the active portal reminder evaluation to 05:30 PHT while preserving the 5th/16th deadlines, weekend-to-Friday adjustment, destination, and credentials; 21 focused tests passed.

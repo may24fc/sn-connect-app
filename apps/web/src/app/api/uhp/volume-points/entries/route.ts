@@ -11,13 +11,24 @@ export async function GET(request: NextRequest) {
   const auth = await requireUhpModule('volume_points');
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
   const month = request.nextUrl.searchParams.get('month');
+  const fromMonth = request.nextUrl.searchParams.get('fromMonth') ?? month;
+  const toMonth = request.nextUrl.searchParams.get('toMonth') ?? fromMonth;
+  const validMonth = /^\d{4}-(0[1-9]|1[0-2])$/;
+  if (
+    (fromMonth && !validMonth.test(fromMonth)) ||
+    (toMonth && !validMonth.test(toMonth)) ||
+    (fromMonth && toMonth && fromMonth > toMonth)
+  ) {
+    return NextResponse.json({ error: 'Invalid month range' }, { status: 400 });
+  }
   let query = auth.context.admin
     .from('uhp_vp_entries')
     .select('*')
     .is('deleted_at', null)
     .order('order_date', { ascending: false })
     .order('created_at', { ascending: false });
-  if (month && /^\d{4}-\d{2}$/.test(month)) query = query.eq('reporting_month', `${month}-01`);
+  if (fromMonth) query = query.gte('reporting_month', `${fromMonth}-01`);
+  if (toMonth) query = query.lte('reporting_month', `${toMonth}-01`);
   const { data, error } = await query.limit(1000);
   if (error)
     return NextResponse.json({ error: 'Failed to load volume-point entries' }, { status: 500 });

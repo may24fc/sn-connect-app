@@ -4,13 +4,13 @@ import { InviteUserModal } from '@/components/admin/InviteUserModal';
 import { TerminationReasonField } from '@/components/admin/TerminationReasonField';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
+import { PersonSearchSelect } from '@/components/people/PersonSearchSelect';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreateDepartment, useDepartments } from '@/hooks/useDepartments';
-import { useCreateDivision, useDivisions } from '@/hooks/useDivisions';
 import { useDirectory, useDirectoryExport } from '@/hooks/useDirectory';
 import type { DirectoryEntry, DirectoryFilters, DirectoryResponse } from '@/hooks/useDirectory';
+import { useCreateDivision, useDivisions } from '@/hooks/useDivisions';
 import { useEmployee } from '@/hooks/useEmployees';
-import { PersonSearchSelect } from '@/components/people/PersonSearchSelect';
 import {
   Avatar,
   AvatarFallback,
@@ -21,6 +21,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  CountBadge,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -36,7 +37,6 @@ import {
   Input,
   Label,
   MultiSelectFilter,
-  CountBadge,
   Select,
   SelectContent,
   SelectItem,
@@ -65,17 +65,17 @@ import {
   Eye,
   MoreHorizontal,
   Pencil,
+  Plus,
   RotateCcw,
   Save,
   Search,
   Target,
   Trash2,
-  UserMinus,
-  Users,
   UserCheck,
+  UserMinus,
   UserPlus,
   UserX,
-  Plus,
+  Users,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
@@ -160,7 +160,9 @@ export default function AdminDirectoryPage(): ReactNode {
 
   // Edit termination details (date + comment) state
   const [terminationDateDialogOpen, setTerminationDateDialogOpen] = useState(false);
-  const [employeeToEditTermination, setEmployeeToEditTermination] = useState<DirectoryEntry | null>(null);
+  const [employeeToEditTermination, setEmployeeToEditTermination] = useState<DirectoryEntry | null>(
+    null
+  );
   const [editTerminationDate, setEditTerminationDate] = useState('');
   const [editTerminationReason, setEditTerminationReason] = useState('');
 
@@ -206,9 +208,7 @@ export default function AdminDirectoryPage(): ReactNode {
   const createDepartmentMutation = useCreateDepartment();
   const createDivisionMutation = useCreateDivision();
 
-  const updateDirectoryEntries = (
-    update: (entry: DirectoryEntry) => DirectoryEntry
-  ) => {
+  const updateDirectoryEntries = (update: (entry: DirectoryEntry) => DirectoryEntry) => {
     queryClient.setQueriesData<DirectoryResponse>({ queryKey: ['directory'] }, (current) =>
       current ? { ...current, data: current.data.map(update) } : current
     );
@@ -260,7 +260,9 @@ export default function AdminDirectoryPage(): ReactNode {
     },
     onMutate: async (entry) => {
       await queryClient.cancelQueries({ queryKey: ['directory'] });
-      const previousDirectory = queryClient.getQueriesData<DirectoryResponse>({ queryKey: ['directory'] });
+      const previousDirectory = queryClient.getQueriesData<DirectoryResponse>({
+        queryKey: ['directory'],
+      });
       updateDirectoryEntries((current) =>
         current.user_id === entry.user_id ? { ...current, status: 'active' } : current
       );
@@ -274,7 +276,9 @@ export default function AdminDirectoryPage(): ReactNode {
       addToast({ title: 'Employee restored to active', variant: 'success' });
     },
     onError: (_error, _entry, context) => {
-      context?.previousDirectory.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
+      context?.previousDirectory.forEach(([queryKey, data]) =>
+        queryClient.setQueryData(queryKey, data)
+      );
       addToast({ title: 'Failed to restore account', variant: 'error' });
     },
   });
@@ -299,14 +303,18 @@ export default function AdminDirectoryPage(): ReactNode {
         }),
       });
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Failed to update termination details' }));
+        const error = await response
+          .json()
+          .catch(() => ({ error: 'Failed to update termination details' }));
         throw new Error(error.error || 'Failed to update termination details');
       }
       return response.json();
     },
     onMutate: async ({ entry, date, reason }) => {
       await queryClient.cancelQueries({ queryKey: ['directory'] });
-      const previousDirectory = queryClient.getQueriesData<DirectoryResponse>({ queryKey: ['directory'] });
+      const previousDirectory = queryClient.getQueriesData<DirectoryResponse>({
+        queryKey: ['directory'],
+      });
       updateDirectoryEntries((current) =>
         current.user_id === entry.user_id
           ? {
@@ -324,7 +332,9 @@ export default function AdminDirectoryPage(): ReactNode {
       addToast({ title: 'Termination details updated', variant: 'success' });
     },
     onError: (error, _variables, context) => {
-      context?.previousDirectory.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
+      context?.previousDirectory.forEach(([queryKey, data]) =>
+        queryClient.setQueryData(queryKey, data)
+      );
       addToast({
         title: 'Failed to update termination details',
         ...(error instanceof Error ? { description: error.message } : {}),
@@ -372,7 +382,9 @@ export default function AdminDirectoryPage(): ReactNode {
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Failed to deactivate account' }));
+        const error = await response
+          .json()
+          .catch(() => ({ error: 'Failed to deactivate account' }));
         throw new Error(error.error || 'Failed to deactivate account');
       }
 
@@ -380,7 +392,9 @@ export default function AdminDirectoryPage(): ReactNode {
     },
     onMutate: async (entry) => {
       await queryClient.cancelQueries({ queryKey: ['directory'] });
-      const previousDirectory = queryClient.getQueriesData<DirectoryResponse>({ queryKey: ['directory'] });
+      const previousDirectory = queryClient.getQueriesData<DirectoryResponse>({
+        queryKey: ['directory'],
+      });
       updateDirectoryEntries((current) =>
         current.user_id === entry.user_id ? { ...current, status: 'inactive' } : current
       );
@@ -394,7 +408,9 @@ export default function AdminDirectoryPage(): ReactNode {
       addToast({ title: 'Account deactivated', variant: 'success' });
     },
     onError: (_error, _entry, context) => {
-      context?.previousDirectory.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
+      context?.previousDirectory.forEach(([queryKey, data]) =>
+        queryClient.setQueryData(queryKey, data)
+      );
       addToast({ title: 'Failed to deactivate account', variant: 'error' });
     },
   });
@@ -428,7 +444,9 @@ export default function AdminDirectoryPage(): ReactNode {
     },
     onMutate: async ({ employeeId, data }) => {
       await queryClient.cancelQueries({ queryKey: ['directory'] });
-      const previousDirectory = queryClient.getQueriesData<DirectoryResponse>({ queryKey: ['directory'] });
+      const previousDirectory = queryClient.getQueriesData<DirectoryResponse>({
+        queryKey: ['directory'],
+      });
       updateDirectoryEntries((current) =>
         current.employee_id !== employeeId
           ? current
@@ -450,7 +468,9 @@ export default function AdminDirectoryPage(): ReactNode {
       addToast({ title: 'Employee updated', variant: 'success' });
     },
     onError: (error, _variables, context) => {
-      context?.previousDirectory.forEach(([queryKey, data]) => queryClient.setQueryData(queryKey, data));
+      context?.previousDirectory.forEach(([queryKey, data]) =>
+        queryClient.setQueryData(queryKey, data)
+      );
       addToast({
         title: 'Failed to update employee',
         ...(error instanceof Error ? { description: error.message } : {}),
@@ -532,12 +552,15 @@ export default function AdminDirectoryPage(): ReactNode {
       options: ReadonlyArray<{ id: string; name: string }>,
       name: string | null
     ): string =>
-      options.find((option) => option.name.trim().toLowerCase() === (name ?? '').trim().toLowerCase())
-        ?.id ?? '';
+      options.find(
+        (option) => option.name.trim().toLowerCase() === (name ?? '').trim().toLowerCase()
+      )?.id ?? '';
     setEditDepartment(
       entry.department_id || matchByName(departmentsData?.data ?? [], entry.department_name)
     );
-    setEditDivision(entry.division_id || matchByName(divisionsData?.data ?? [], entry.division_name));
+    setEditDivision(
+      entry.division_id || matchByName(divisionsData?.data ?? [], entry.division_name)
+    );
     setEditPosition(entry.position || '');
     setEditStartDate(entry.start_date || '');
     setEditManagerId(null);
@@ -623,8 +646,7 @@ export default function AdminDirectoryPage(): ReactNode {
       setShowCreateDepartmentForm(false);
       addToast({ title: 'Department created', variant: 'success' });
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to create department';
+      const message = error instanceof Error ? error.message : 'Failed to create department';
       setCreateDepartmentError(message);
       addToast({ title: message, variant: 'error' });
     }
@@ -797,7 +819,13 @@ export default function AdminDirectoryPage(): ReactNode {
       )}
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'active' | 'former'); setPage(1); }}>
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => {
+          setActiveTab(v as 'active' | 'former');
+          setPage(1);
+        }}
+      >
         <TabsList>
           <TabsTrigger value="active">Active</TabsTrigger>
           <TabsTrigger value="former">Former</TabsTrigger>
@@ -805,89 +833,89 @@ export default function AdminDirectoryPage(): ReactNode {
       </Tabs>
       {/* Filters — only shown on active tab */}
       {activeTab === 'active' && (
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
-                strokeWidth={1.5}
-              />
-              <Input
-                placeholder="Search by name, email, or position..."
-                value={search}
-                maxLength={200}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
-                className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
-              />
-            </div>
-            <MultiSelectFilter
-              label="Roles"
-              options={roleOptions}
-              selected={roleFilters}
-              onSelectionChange={(selected) => {
-                setRoleFilters(selected);
-                setPage(1);
-              }}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+              strokeWidth={1.5}
             />
-            <MultiSelectFilter
-              label="Departments"
-              options={departmentOptions}
-              selected={departmentFilters}
-              onSelectionChange={(selected) => {
-                setDepartmentFilters(selected);
+            <Input
+              placeholder="Search by name, email, or position..."
+              value={search}
+              maxLength={200}
+              onChange={(e) => {
+                setSearch(e.target.value);
                 setPage(1);
               }}
+              className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
             />
-            <MultiSelectFilter
-              label="Divisions"
-              options={divisionOptions}
-              selected={divisionFilters}
-              onSelectionChange={(selected) => {
-                setDivisionFilters(selected);
-                setPage(1);
-              }}
-            />
-            <Select
-              value={statusFilter}
-              onValueChange={(v) => {
-                setStatusFilter(v === 'all' ? '' : v);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="probation">Probation</SelectItem>
-                <SelectItem value="on_leave">On Leave</SelectItem>
-                <SelectItem value="terminated">Terminated</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select
-              value={employmentTypeFilter}
-              onValueChange={(v) => {
-                setEmploymentTypeFilter(v === 'all' ? '' : v);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Employment Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Employment Type</SelectItem>
-                <SelectItem value="regular">Regular</SelectItem>
-                <SelectItem value="probationary">Probationary</SelectItem>
-                <SelectItem value="associate">Associate</SelectItem>
-                <SelectItem value="project_based">Project Based</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
-        )}
+          <MultiSelectFilter
+            label="Roles"
+            options={roleOptions}
+            selected={roleFilters}
+            onSelectionChange={(selected) => {
+              setRoleFilters(selected);
+              setPage(1);
+            }}
+          />
+          <MultiSelectFilter
+            label="Departments"
+            options={departmentOptions}
+            selected={departmentFilters}
+            onSelectionChange={(selected) => {
+              setDepartmentFilters(selected);
+              setPage(1);
+            }}
+          />
+          <MultiSelectFilter
+            label="Divisions"
+            options={divisionOptions}
+            selected={divisionFilters}
+            onSelectionChange={(selected) => {
+              setDivisionFilters(selected);
+              setPage(1);
+            }}
+          />
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => {
+              setStatusFilter(v === 'all' ? '' : v);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="probation">Probation</SelectItem>
+              <SelectItem value="on_leave">On Leave</SelectItem>
+              <SelectItem value="terminated">Terminated</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            value={employmentTypeFilter}
+            onValueChange={(v) => {
+              setEmploymentTypeFilter(v === 'all' ? '' : v);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Employment Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Employment Type</SelectItem>
+              <SelectItem value="regular">Regular</SelectItem>
+              <SelectItem value="probationary">Probationary</SelectItem>
+              <SelectItem value="associate">Associate</SelectItem>
+              <SelectItem value="project_based">Project Based</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {/* Table */}
       <Card>
@@ -905,8 +933,8 @@ export default function AdminDirectoryPage(): ReactNode {
             {pagination && pagination.totalPages > 1 && (
               <div className="flex items-center gap-3">
                 <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                  {(page - 1) * pageSize + 1}-
-                  {Math.min(page * pageSize, pagination.total)} of {pagination.total}
+                  {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, pagination.total)} of{' '}
+                  {pagination.total}
                 </span>
                 <div className="flex items-center gap-1">
                   <Button
@@ -937,7 +965,9 @@ export default function AdminDirectoryPage(): ReactNode {
         <CardContent className="p-0">
           {isLoading ? (
             <EmptyState
-              icon={<div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-600 border-t-transparent" />}
+              icon={
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-600 border-t-transparent" />
+              }
               title="Loading directory"
               description="Fetching employee records and current filter results."
               size="sm"
@@ -965,25 +995,68 @@ export default function AdminDirectoryPage(): ReactNode {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <SortableTableHead column="full_name" sortColumn={sortBy} sortDirection={sortOrder} onSort={handleSort} className="w-[250px]">Employee</SortableTableHead>
+                    <SortableTableHead
+                      column="full_name"
+                      sortColumn={sortBy}
+                      sortDirection={sortOrder}
+                      onSort={handleSort}
+                      className="w-[250px]"
+                    >
+                      Employee
+                    </SortableTableHead>
                     <TableHead>Role</TableHead>
-                    <SortableTableHead column="department_name" sortColumn={sortBy} sortDirection={sortOrder} onSort={handleSort}>Department</SortableTableHead>
-                    <SortableTableHead column="division_name" sortColumn={sortBy} sortDirection={sortOrder} onSort={handleSort}>Division</SortableTableHead>
+                    <SortableTableHead
+                      column="department_name"
+                      sortColumn={sortBy}
+                      sortDirection={sortOrder}
+                      onSort={handleSort}
+                    >
+                      Department
+                    </SortableTableHead>
+                    <SortableTableHead
+                      column="division_name"
+                      sortColumn={sortBy}
+                      sortDirection={sortOrder}
+                      onSort={handleSort}
+                    >
+                      Division
+                    </SortableTableHead>
                     <TableHead>Position</TableHead>
                     {activeTab === 'former' ? (
                       <>
-                        <SortableTableHead column="start_date" sortColumn={sortBy} sortDirection={sortOrder} onSort={handleSort}>Start Date</SortableTableHead>
+                        <SortableTableHead
+                          column="start_date"
+                          sortColumn={sortBy}
+                          sortDirection={sortOrder}
+                          onSort={handleSort}
+                        >
+                          Start Date
+                        </SortableTableHead>
                         <TableHead>Terminated</TableHead>
                         <TableHead>Reason</TableHead>
                       </>
                     ) : (
                       <>
-                        <SortableTableHead column="status" sortColumn={sortBy} sortDirection={sortOrder} onSort={handleSort}>Status</SortableTableHead>
-                        <SortableTableHead column="start_date" sortColumn={sortBy} sortDirection={sortOrder} onSort={handleSort}>Start Date</SortableTableHead>
+                        <SortableTableHead
+                          column="status"
+                          sortColumn={sortBy}
+                          sortDirection={sortOrder}
+                          onSort={handleSort}
+                        >
+                          Status
+                        </SortableTableHead>
+                        <SortableTableHead
+                          column="start_date"
+                          sortColumn={sortBy}
+                          sortDirection={sortOrder}
+                          onSort={handleSort}
+                        >
+                          Start Date
+                        </SortableTableHead>
                         <TableHead>Contact</TableHead>
                       </>
                     )}
-                    <TableHead className="w-[100px]">Actions</TableHead>
+                    <TableHead className="w-[100px] text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1074,18 +1147,14 @@ export default function AdminDirectoryPage(): ReactNode {
                           </TableCell>
                         </>
                       )}
-                      <TableCell>
+                      <TableCell className="text-right">
                         <div
                           className="flex items-center justify-end"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                title="Actions"
-                              >
+                              <Button variant="ghost" size="icon-sm" title="Actions">
                                 <MoreHorizontal className="h-4 w-4" strokeWidth={1.5} />
                               </Button>
                             </DropdownMenuTrigger>
@@ -1098,7 +1167,9 @@ export default function AdminDirectoryPage(): ReactNode {
                               </DropdownMenuItem>
                               {entry.employee_id && (
                                 <DropdownMenuItem
-                                  onClick={() => router.push(`/admin/performance/employee/${entry.employee_id}`)}
+                                  onClick={() =>
+                                    router.push(`/admin/performance/employee/${entry.employee_id}`)
+                                  }
                                 >
                                   <Target className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
                                   View Performance
@@ -1109,8 +1180,13 @@ export default function AdminDirectoryPage(): ReactNode {
                                   <>
                                     <DropdownMenuSeparator />
                                     {entry.employee_id && (
-                                      <DropdownMenuItem onClick={() => handleEditTerminationClick(entry)}>
-                                        <CalendarClock className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                                      <DropdownMenuItem
+                                        onClick={() => handleEditTerminationClick(entry)}
+                                      >
+                                        <CalendarClock
+                                          className="mr-2 h-3.5 w-3.5"
+                                          strokeWidth={1.5}
+                                        />
                                         Edit Termination Details
                                       </DropdownMenuItem>
                                     )}
@@ -1120,14 +1196,18 @@ export default function AdminDirectoryPage(): ReactNode {
                                     </DropdownMenuItem>
                                     {isManageableDirectoryEntry(entry) &&
                                       (isSuperAdmin ||
-                                        (entry.role !== 'admin' && entry.role !== 'super_admin')) && (
+                                        (entry.role !== 'admin' &&
+                                          entry.role !== 'super_admin')) && (
                                         <>
                                           <DropdownMenuSeparator />
                                           <DropdownMenuItem
                                             className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
                                             onClick={() => handlePermanentDeleteClick(entry)}
                                           >
-                                            <Trash2 className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                                            <Trash2
+                                              className="mr-2 h-3.5 w-3.5"
+                                              strokeWidth={1.5}
+                                            />
                                             Delete Permanently
                                           </DropdownMenuItem>
                                         </>
@@ -1139,23 +1219,25 @@ export default function AdminDirectoryPage(): ReactNode {
                                   {isAdminOrSuperAdmin && entry.employee_id && (
                                     <>
                                       <DropdownMenuSeparator />
-                                      <DropdownMenuItem
-                                        onClick={() => handleEditClick(entry)}
-                                      >
+                                      <DropdownMenuItem onClick={() => handleEditClick(entry)}>
                                         <Pencil className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
                                         Edit Employee Details
                                       </DropdownMenuItem>
                                     </>
                                   )}
-                                  {isAdminOrSuperAdmin && isManageableDirectoryEntry(entry) && entry.status !== 'inactive' && (
-                                    <>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem onClick={() => handleDeactivateClick(entry)}>
-                                        <UserX className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                                        Deactivate
-                                      </DropdownMenuItem>
-                                    </>
-                                  )}
+                                  {isAdminOrSuperAdmin &&
+                                    isManageableDirectoryEntry(entry) &&
+                                    entry.status !== 'inactive' && (
+                                      <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                          onClick={() => handleDeactivateClick(entry)}
+                                        >
+                                          <UserX className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                                          Deactivate
+                                        </DropdownMenuItem>
+                                      </>
+                                    )}
                                   {isAdminOrSuperAdmin && isManageableDirectoryEntry(entry) && (
                                     <>
                                       <DropdownMenuSeparator />
@@ -1195,7 +1277,8 @@ export default function AdminDirectoryPage(): ReactNode {
               <span className="font-semibold text-zinc-900 dark:text-zinc-100">
                 {employeeToTerminate?.full_name}
               </span>
-              ? Their record will be preserved in the <strong>Former Employees</strong> tab with a termination date. This can be reversed using the Restore action.
+              ? Their record will be preserved in the <strong>Former Employees</strong> tab with a
+              termination date. This can be reversed using the Restore action.
             </DialogDescription>
           </DialogHeader>
           <TerminationReasonField
@@ -1221,7 +1304,10 @@ export default function AdminDirectoryPage(): ReactNode {
               variant="destructive"
               onClick={() => {
                 if (employeeToTerminate) {
-                  terminateEmployeeMutation.mutate({ entry: employeeToTerminate, reason: terminateReason });
+                  terminateEmployeeMutation.mutate({
+                    entry: employeeToTerminate,
+                    reason: terminateReason,
+                  });
                 }
               }}
               disabled={terminateEmployeeMutation.isPending}
@@ -1315,9 +1401,10 @@ export default function AdminDirectoryPage(): ReactNode {
               <span className="font-semibold text-zinc-900 dark:text-zinc-100">
                 {employeeToDelete?.full_name || employeeToDelete?.email}
               </span>
-              &apos;s login and personal data (contact, bank and payroll details, documents, self-evaluations,
-              access). Shared work such as tasks, tickets, reports, invoices and payments stays, still showing
-              their name. <strong>This cannot be undone</strong> and they cannot be restored afterwards.
+              &apos;s login and personal data (contact, bank and payroll details, documents,
+              self-evaluations, access). Shared work such as tasks, tickets, reports, invoices and
+              payments stays, still showing their name. <strong>This cannot be undone</strong> and
+              they cannot be restored afterwards.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
@@ -1326,7 +1413,7 @@ export default function AdminDirectoryPage(): ReactNode {
             </Label>
             <Input
               id="confirm-permanent-delete"
-                maxLength={120}
+              maxLength={120}
               value={deleteConfirmText}
               autoComplete="off"
               onChange={(event) => setDeleteConfirmText(event.target.value)}
@@ -1368,7 +1455,8 @@ export default function AdminDirectoryPage(): ReactNode {
               <span className="font-semibold text-zinc-900 dark:text-zinc-100">
                 {employeeToRestore?.full_name}
               </span>{' '}
-              to <strong>active</strong> status and clear their termination date. They will reappear in the Active Employees tab.
+              to <strong>active</strong> status and clear their termination date. They will reappear
+              in the Active Employees tab.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -1487,11 +1575,11 @@ export default function AdminDirectoryPage(): ReactNode {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-department">Department</Label>
-              <Select
-                value={editDepartment}
-                onValueChange={setEditDepartment}
-              >
-                <SelectTrigger id="edit-department" disabled={departmentsLoading && editableDepartments.length === 0}>
+              <Select value={editDepartment} onValueChange={setEditDepartment}>
+                <SelectTrigger
+                  id="edit-department"
+                  disabled={departmentsLoading && editableDepartments.length === 0}
+                >
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1532,7 +1620,7 @@ export default function AdminDirectoryPage(): ReactNode {
                       <Label htmlFor="new-department-name">New department name</Label>
                       <Input
                         id="new-department-name"
-                maxLength={150}
+                        maxLength={150}
                         value={newDepartmentName}
                         onChange={(event) => setNewDepartmentName(event.target.value)}
                         placeholder="Enter department name"
@@ -1573,11 +1661,11 @@ export default function AdminDirectoryPage(): ReactNode {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-division">Division</Label>
-              <Select
-                value={editDivision}
-                onValueChange={setEditDivision}
-              >
-                <SelectTrigger id="edit-division" disabled={divisionsLoading && editableDivisions.length === 0}>
+              <Select value={editDivision} onValueChange={setEditDivision}>
+                <SelectTrigger
+                  id="edit-division"
+                  disabled={divisionsLoading && editableDivisions.length === 0}
+                >
                   <SelectValue placeholder="Select division" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1618,7 +1706,7 @@ export default function AdminDirectoryPage(): ReactNode {
                       <Label htmlFor="new-division-name">New division name</Label>
                       <Input
                         id="new-division-name"
-                maxLength={150}
+                        maxLength={150}
                         value={newDivisionName}
                         onChange={(event) => setNewDivisionName(event.target.value)}
                         placeholder="Enter division name"
@@ -1693,7 +1781,8 @@ export default function AdminDirectoryPage(): ReactNode {
                 onChange={(event) => setEditStartDate(event.target.value)}
               />
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                This updates the employee&apos;s hire date used for milestone and anniversary calculations.
+                This updates the employee&apos;s hire date used for milestone and anniversary
+                calculations.
               </p>
             </div>
           </div>

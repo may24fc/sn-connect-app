@@ -3,7 +3,6 @@
 import { AiSpendingAccessManagerButton } from '@/components/admin/AiSpendingAccessManagerPanel';
 import { MetricsPeriodSelect } from '@/components/data-display/MetricsPeriodSelect';
 import { useAuth } from '@/contexts/AuthContext';
-import { yearPeriodOptions } from '@/lib/metrics-period';
 import {
   type AiExpense,
   type AiExpenseProvider,
@@ -16,6 +15,7 @@ import {
   useUpdateAiExpense,
   useUpdateAiExpenseProvider,
 } from '@/hooks/useAiExpenses';
+import { yearPeriodOptions } from '@/lib/metrics-period';
 import {
   AI_EXPENSE_CURRENCIES,
   type AI_SPEND_TYPES,
@@ -186,7 +186,10 @@ export default function AiSpendingPage() {
     const byProvider = new Map<string, number>();
 
     for (const expense of periodFilteredExpenses) {
-      byProvider.set(expense.provider_id, (byProvider.get(expense.provider_id) ?? 0) + expense.amount_cents);
+      byProvider.set(
+        expense.provider_id,
+        (byProvider.get(expense.provider_id) ?? 0) + expense.amount_cents
+      );
     }
 
     return Array.from(byProvider.entries())
@@ -227,7 +230,10 @@ export default function AiSpendingPage() {
     return {
       monthTotal,
       monthCount,
-      yearlyTotal: selectedPeriod === 'all' ? yearlyTotal : periodFilteredExpenses.reduce((sum, expense) => sum + expense.amount_cents, 0),
+      yearlyTotal:
+        selectedPeriod === 'all'
+          ? yearlyTotal
+          : periodFilteredExpenses.reduce((sum, expense) => sum + expense.amount_cents, 0),
       allTimeTotal,
     };
   }, [expenses, periodFilteredExpenses, selectedPeriod]);
@@ -237,7 +243,9 @@ export default function AiSpendingPage() {
   const monthCardLabel =
     selectedPeriod === 'all' || isSelectedCurrentYear
       ? 'This month'
-      : new Date(Date.UTC(selectedPeriodYear ?? currentYear, new Date().getMonth(), 1)).toLocaleDateString('en-AU', {
+      : new Date(
+          Date.UTC(selectedPeriodYear ?? currentYear, new Date().getMonth(), 1)
+        ).toLocaleDateString('en-AU', {
           month: 'long',
           year: 'numeric',
         });
@@ -246,7 +254,10 @@ export default function AiSpendingPage() {
       ? `${dashboardTotals.monthCount} entries this month.`
       : `${dashboardTotals.monthCount} entries in ${monthCardLabel}.`;
   const yearCardLabel = selectedPeriod === 'all' ? 'This year' : selectedPeriod;
-  const yearCardDescription = selectedPeriod === 'all' ? 'Year-to-date AI spend total.' : `AI spend total for ${selectedPeriod}.`;
+  const yearCardDescription =
+    selectedPeriod === 'all'
+      ? 'Year-to-date AI spend total.'
+      : `AI spend total for ${selectedPeriod}.`;
 
   const filteredEntries = useMemo(() => {
     const search = searchFilter.trim().toLowerCase();
@@ -272,7 +283,9 @@ export default function AiSpendingPage() {
         return true;
       }
 
-      const providerName = (entry.provider?.name ?? expenseProviderName(expenses, entry.provider_id)).toLowerCase();
+      const providerName = (
+        entry.provider?.name ?? expenseProviderName(expenses, entry.provider_id)
+      ).toLowerCase();
       const accountEmail = (entry.account_email ?? '').toLowerCase();
       const transactionId = (entry.transaction_id ?? '').toLowerCase();
 
@@ -282,7 +295,14 @@ export default function AiSpendingPage() {
         transactionId.includes(search)
       );
     });
-  }, [dateFromFilter, dateToFilter, periodFilteredExpenses, providerFilterId, searchFilter, spendTypeFilter]);
+  }, [
+    dateFromFilter,
+    dateToFilter,
+    periodFilteredExpenses,
+    providerFilterId,
+    searchFilter,
+    spendTypeFilter,
+  ]);
 
   const paginatedEntries = useMemo(() => {
     const start = (entryPage - 1) * entryPageSize;
@@ -303,7 +323,14 @@ export default function AiSpendingPage() {
 
   useEffect(() => {
     setEntryPage(1);
-  }, [selectedPeriod, providerFilterId, spendTypeFilter, dateFromFilter, dateToFilter, searchFilter]);
+  }, [
+    selectedPeriod,
+    providerFilterId,
+    spendTypeFilter,
+    dateFromFilter,
+    dateToFilter,
+    searchFilter,
+  ]);
 
   function resetForm() {
     setEditingId(null);
@@ -349,7 +376,12 @@ export default function AiSpendingPage() {
   }
 
   function submitEntry() {
-    if (!form.providerId || !form.transactionDate || !form.accountEmail.trim() || !form.reason.trim()) {
+    if (
+      !form.providerId ||
+      !form.transactionDate ||
+      !form.accountEmail.trim() ||
+      !form.reason.trim()
+    ) {
       addToast({
         title: 'Missing details',
         description: 'Provider, date, account/email, and reason are required.',
@@ -427,7 +459,11 @@ export default function AiSpendingPage() {
   function addProvider() {
     const name = newProviderName.trim();
     if (!name) {
-      addToast({ title: 'Missing details', description: 'Enter a provider name.', variant: 'error' });
+      addToast({
+        title: 'Missing details',
+        description: 'Enter a provider name.',
+        variant: 'error',
+      });
       return;
     }
 
@@ -437,10 +473,18 @@ export default function AiSpendingPage() {
         onSuccess: (response: { data: AiExpenseProvider }) => {
           setNewProviderName('');
           setForm((current) => ({ ...current, providerId: response.data.id }));
-          addToast({ title: 'Provider added', description: `"${name}" is now available.`, variant: 'success' });
+          addToast({
+            title: 'Provider added',
+            description: `"${name}" is now available.`,
+            variant: 'success',
+          });
         },
         onError: (error: Error) => {
-          addToast({ title: 'Failed to add provider', description: error.message, variant: 'error' });
+          addToast({
+            title: 'Failed to add provider',
+            description: error.message,
+            variant: 'error',
+          });
         },
       }
     );
@@ -474,7 +518,11 @@ export default function AiSpendingPage() {
 
     const name = editingProviderName.trim();
     if (!name) {
-      addToast({ title: 'Missing details', description: 'Enter a provider name.', variant: 'error' });
+      addToast({
+        title: 'Missing details',
+        description: 'Enter a provider name.',
+        variant: 'error',
+      });
       return;
     }
 
@@ -484,10 +532,18 @@ export default function AiSpendingPage() {
         onSuccess: () => {
           setEditingProviderId(null);
           setEditingProviderName('');
-          addToast({ title: 'Provider updated', description: 'Provider name was updated.', variant: 'success' });
+          addToast({
+            title: 'Provider updated',
+            description: 'Provider name was updated.',
+            variant: 'success',
+          });
         },
         onError: (error: Error) => {
-          addToast({ title: 'Failed to update provider', description: error.message, variant: 'error' });
+          addToast({
+            title: 'Failed to update provider',
+            description: error.message,
+            variant: 'error',
+          });
         },
       }
     );
@@ -502,10 +558,18 @@ export default function AiSpendingPage() {
       { id: provider.id },
       {
         onSuccess: () => {
-          addToast({ title: 'Provider deleted', description: 'Provider removed successfully.', variant: 'success' });
+          addToast({
+            title: 'Provider deleted',
+            description: 'Provider removed successfully.',
+            variant: 'success',
+          });
         },
         onError: (error: Error) => {
-          addToast({ title: 'Failed to delete provider', description: error.message, variant: 'error' });
+          addToast({
+            title: 'Failed to delete provider',
+            description: error.message,
+            variant: 'error',
+          });
         },
       }
     );
@@ -523,9 +587,15 @@ export default function AiSpendingPage() {
     <div className="flex h-full flex-col gap-6 p-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">Personal Finance</p>
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">AI Spending Tracker</h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Manual tracking for AI subscriptions and API spend.</p>
+          <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+            Personal Finance
+          </p>
+          <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+            AI Spending Tracker
+          </h1>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            Manual tracking for AI subscriptions and API spend.
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -543,7 +613,12 @@ export default function AiSpendingPage() {
             />
           </div>
 
-          <Button type="button" variant="outline" size="sm" onClick={() => setIsProviderDialogOpen(true)}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsProviderDialogOpen(true)}
+          >
             Manage providers
           </Button>
           {canManageAccess ? <AiSpendingAccessManagerButton /> : null}
@@ -558,7 +633,11 @@ export default function AiSpendingPage() {
         </div>
       ) : null}
 
-      <Tabs value={tab} onValueChange={(value) => setTab(value as 'dashboard' | 'manual')} className="space-y-6">
+      <Tabs
+        value={tab}
+        onValueChange={(value) => setTab(value as 'dashboard' | 'manual')}
+        className="space-y-6"
+      >
         <TabsList className="w-fit max-w-full justify-start overflow-x-auto">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="manual">Manual Entries</TabsTrigger>
@@ -592,7 +671,9 @@ export default function AiSpendingPage() {
                 <CardTitle>{formatCurrency(dashboardTotals.allTimeTotal, 'AUD')}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">Total lifetime AI spending across all records.</p>
+                <p className="text-sm text-muted-foreground">
+                  Total lifetime AI spending across all records.
+                </p>
               </CardContent>
             </Card>
 
@@ -603,7 +684,9 @@ export default function AiSpendingPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  {providerBreakdown[0] ? formatCurrency(providerBreakdown[0].totalCents, 'AUD') : 'No spend logged yet.'}
+                  {providerBreakdown[0]
+                    ? formatCurrency(providerBreakdown[0].totalCents, 'AUD')
+                    : 'No spend logged yet.'}
                 </p>
               </CardContent>
             </Card>
@@ -634,7 +717,9 @@ export default function AiSpendingPage() {
                       providerBreakdown.map((row) => (
                         <TableRow key={row.providerId}>
                           <TableCell>{row.providerName}</TableCell>
-                          <TableCell className="text-right font-medium">{formatCurrency(row.totalCents, 'AUD')}</TableCell>
+                          <TableCell className="text-right font-medium">
+                            {formatCurrency(row.totalCents, 'AUD')}
+                          </TableCell>
                         </TableRow>
                       ))
                     )}
@@ -645,9 +730,15 @@ export default function AiSpendingPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">{selectedPeriod === 'all' ? 'Monthly spend (all-time)' : `Monthly spend (${selectedPeriod})`}</CardTitle>
+                <CardTitle className="text-base">
+                  {selectedPeriod === 'all'
+                    ? 'Monthly spend (all-time)'
+                    : `Monthly spend (${selectedPeriod})`}
+                </CardTitle>
                 <CardDescription>
-                  {selectedPeriod === 'all' ? 'Tracks monthly totals across all years.' : 'Tracks monthly totals and entry counts.'}
+                  {selectedPeriod === 'all'
+                    ? 'Tracks monthly totals across all years.'
+                    : 'Tracks monthly totals and entry counts.'}
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
@@ -665,7 +756,9 @@ export default function AiSpendingPage() {
                         <TableRow key={row.month}>
                           <TableCell>{row.month}</TableCell>
                           <TableCell>{row.entries}</TableCell>
-                          <TableCell className="text-right font-medium">{formatCurrency(row.totalCents, 'AUD')}</TableCell>
+                          <TableCell className="text-right font-medium">
+                            {formatCurrency(row.totalCents, 'AUD')}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -690,10 +783,7 @@ export default function AiSpendingPage() {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="grid gap-3 border-b border-zinc-200 p-4 md:grid-cols-2 xl:grid-cols-5 dark:border-zinc-800">
-                  <Select
-                    value={providerFilterId}
-                    onValueChange={setProviderFilterId}
-                  >
+                  <Select value={providerFilterId} onValueChange={setProviderFilterId}>
                     <SelectTrigger aria-label="Filter by provider">
                       <SelectValue />
                     </SelectTrigger>
@@ -709,9 +799,7 @@ export default function AiSpendingPage() {
 
                   <Select
                     value={spendTypeFilter}
-                    onValueChange={(value) =>
-                      setSpendTypeFilter(value as ManualSpendTypeFilter)
-                    }
+                    onValueChange={(value) => setSpendTypeFilter(value as ManualSpendTypeFilter)}
                   >
                     <SelectTrigger aria-label="Filter by spend type">
                       <SelectValue />
@@ -742,7 +830,7 @@ export default function AiSpendingPage() {
 
                   <Input
                     value={searchFilter}
-                maxLength={200}
+                    maxLength={200}
                     onChange={(event) => setSearchFilter(event.target.value)}
                     placeholder="Search provider/email/txn"
                   />
@@ -776,7 +864,7 @@ export default function AiSpendingPage() {
                         <TableHead>Transaction ID</TableHead>
                         <TableHead>Reason</TableHead>
                         <TableHead className="text-right">Amount</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -795,23 +883,46 @@ export default function AiSpendingPage() {
                       ) : (
                         paginatedEntries.map((entry) => (
                           <TableRow key={entry.id}>
-                            <TableCell>{new Date(`${entry.transaction_date}T00:00:00`).toLocaleDateString('en-AU')}</TableCell>
-                            <TableCell>{entry.provider?.name ?? expenseProviderName(expenses, entry.provider_id)}</TableCell>
+                            <TableCell>
+                              {new Date(`${entry.transaction_date}T00:00:00`).toLocaleDateString(
+                                'en-AU'
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {entry.provider?.name ??
+                                expenseProviderName(expenses, entry.provider_id)}
+                            </TableCell>
                             <TableCell>
                               <Badge variant="outline">{entry.spend_type}</Badge>
                             </TableCell>
-                            <TableCell className="font-mono text-xs">{entry.account_email || '-'}</TableCell>
-                            <TableCell className="font-mono text-xs">{entry.transaction_id}</TableCell>
+                            <TableCell className="font-mono text-xs">
+                              {entry.account_email || '-'}
+                            </TableCell>
+                            <TableCell className="font-mono text-xs">
+                              {entry.transaction_id}
+                            </TableCell>
                             <TableCell className="max-w-[280px] truncate" title={entry.reason}>
                               {entry.reason}
                             </TableCell>
-                            <TableCell className="text-right font-medium">{formatCurrency(entry.amount_cents, entry.currency)}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <Button type="button" variant="outline" size="sm" onClick={() => editEntry(entry)}>
+                            <TableCell className="text-right font-medium">
+                              {formatCurrency(entry.amount_cents, entry.currency)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => editEntry(entry)}
+                                >
                                   Edit
                                 </Button>
-                                <Button type="button" variant="destructive" size="sm" onClick={() => deleteEntry(entry.id)}>
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => deleteEntry(entry.id)}
+                                >
                                   Delete
                                 </Button>
                               </div>
@@ -826,7 +937,9 @@ export default function AiSpendingPage() {
                 {filteredEntries.length > 0 ? (
                   <div className="flex items-center justify-between border-t border-zinc-200 px-4 py-3 text-sm dark:border-zinc-800">
                     <span className="text-zinc-500">
-                      Showing {(entryPage - 1) * entryPageSize + 1}-{Math.min(entryPage * entryPageSize, filteredEntries.length)} of {filteredEntries.length}
+                      Showing {(entryPage - 1) * entryPageSize + 1}-
+                      {Math.min(entryPage * entryPageSize, filteredEntries.length)} of{' '}
+                      {filteredEntries.length}
                     </span>
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-2">
@@ -870,7 +983,9 @@ export default function AiSpendingPage() {
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => setEntryPage((current) => Math.min(totalPages, current + 1))}
+                          onClick={() =>
+                            setEntryPage((current) => Math.min(totalPages, current + 1))
+                          }
                           disabled={entryPage === totalPages}
                         >
                           Next
@@ -1069,14 +1184,17 @@ export default function AiSpendingPage() {
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none ring-0 focus:border-ring"
               />
             </div>
-
           </div>
 
           <div className="flex gap-3 border-t border-border pt-4">
             <Button type="button" onClick={submitEntry} disabled={isMutating} className="flex-1">
               {isMutating ? 'Saving...' : editingId ? 'Update entry' : 'Save entry'}
             </Button>
-            <Button type="button" variant="outline" onClick={() => setIsManualEntryDialogOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsManualEntryDialogOpen(false)}
+            >
               Cancel
             </Button>
           </div>
@@ -1087,7 +1205,9 @@ export default function AiSpendingPage() {
         <DialogContent className="max-h-[85vh] max-w-2xl overflow-hidden">
           <DialogHeader>
             <DialogTitle>Manage AI providers</DialogTitle>
-            <DialogDescription>Add, edit, or remove providers for manual entries.</DialogDescription>
+            <DialogDescription>
+              Add, edit, or remove providers for manual entries.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="max-h-[calc(85vh-7rem)] space-y-4 overflow-y-auto pr-1">
@@ -1108,16 +1228,31 @@ export default function AiSpendingPage() {
                 <div className="px-2 py-4 text-sm text-zinc-500">No providers yet.</div>
               ) : (
                 providers.map((provider) => (
-                  <div key={provider.id} className="flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2">
+                  <div
+                    key={provider.id}
+                    className="flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2"
+                  >
                     {editingProviderId === provider.id ? (
-                      <Input value={editingProviderName} maxLength={60} onChange={(event) => setEditingProviderName(event.target.value)} className="h-8 flex-1" />
+                      <Input
+                        value={editingProviderName}
+                        maxLength={60}
+                        onChange={(event) => setEditingProviderName(event.target.value)}
+                        className="h-8 flex-1"
+                      />
                     ) : (
                       <span className="flex-1 truncate text-sm">{provider.name}</span>
                     )}
                     <div className="flex items-center gap-1">
                       {editingProviderId === provider.id ? (
                         <>
-                          <Button type="button" variant="outline" size="sm" className="h-7 px-2" onClick={saveProviderEdit} disabled={updateProvider.isPending}>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2"
+                            onClick={saveProviderEdit}
+                            disabled={updateProvider.isPending}
+                          >
                             Save
                           </Button>
                           <Button
@@ -1135,7 +1270,13 @@ export default function AiSpendingPage() {
                         </>
                       ) : (
                         <>
-                          <Button type="button" variant="ghost" size="sm" className="h-7 px-2" onClick={() => startProviderEdit(provider)}>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2"
+                            onClick={() => startProviderEdit(provider)}
+                          >
                             Edit
                           </Button>
                           <Button

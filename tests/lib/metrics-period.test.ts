@@ -2,12 +2,29 @@ import {
   calendarDateRangeBounds,
   calendarMonthKey,
   calendarPeriodBounds,
+  calendarQuarterKeyFromMonth,
+  calendarQuarterMonthRange,
+  calendarQuarterOptions,
   previousCalendarPeriodBounds,
   yearPeriodOptions,
 } from '@/lib/metrics-period';
 import { describe, expect, it } from 'vitest';
 
 describe('metric calendar periods', () => {
+  it('maps quarters to inclusive reporting-month ranges', () => {
+    expect(calendarQuarterKeyFromMonth('2026-10')).toBe('2026-Q4');
+    expect(calendarQuarterMonthRange('2026-Q4')).toEqual({
+      fromMonth: '2026-10',
+      toMonth: '2026-12',
+    });
+    expect(calendarQuarterOptions('2026-10', 1)).toEqual([
+      { value: '2026-Q4', label: 'Q4 2026 (Oct–Dec)' },
+      { value: '2026-Q3', label: 'Q3 2026 (Jul–Sep)' },
+      { value: '2026-Q2', label: 'Q2 2026 (Apr–Jun)' },
+      { value: '2026-Q1', label: 'Q1 2026 (Jan–Mar)' },
+    ]);
+  });
+
   it('converts an inclusive custom date range using viewer-local boundaries', () => {
     expect(calendarDateRangeBounds('2026-10-05', '2026-10-12', 'Asia/Manila')).toEqual({
       from: '2026-10-04T16:00:00.000Z',
