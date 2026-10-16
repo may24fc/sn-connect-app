@@ -60,9 +60,11 @@ function buildSupabaseMocks(options: TestContextOptions) {
       return {
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
-            single: vi.fn(async () => ({
-              data: { role: actorRole },
-              error: null,
+            is: vi.fn(() => ({
+              single: vi.fn(async () => ({
+                data: { role: actorRole },
+                error: null,
+              })),
             })),
           })),
         })),
@@ -92,6 +94,8 @@ function buildSupabaseMocks(options: TestContextOptions) {
       error: null,
     };
   });
+  const usersUpsert = vi.fn(async () => ({ error: null }));
+  const employeesInsert = vi.fn(async () => ({ error: null }));
 
   const adminSupabase = {
     auth: {
@@ -116,7 +120,7 @@ function buildSupabaseMocks(options: TestContextOptions) {
               })),
             })),
           })),
-          upsert: vi.fn(async () => ({ error: null })),
+          upsert: usersUpsert,
         };
       }
 
@@ -140,7 +144,7 @@ function buildSupabaseMocks(options: TestContextOptions) {
               })),
             })),
           })),
-          insert: vi.fn(async () => ({ error: null })),
+          insert: employeesInsert,
         };
       }
 
@@ -148,7 +152,7 @@ function buildSupabaseMocks(options: TestContextOptions) {
     }),
   };
 
-  return { serverSupabase, adminSupabase, invitedUserId };
+  return { serverSupabase, adminSupabase, invitedUserId, usersUpsert, employeesInsert };
 }
 
 describe('/api/users/invite route', () => {
@@ -194,6 +198,7 @@ describe('/api/users/invite route', () => {
       metadata: {
         invitedBy: 'actor-1',
         invitedRole: 'employee',
+        accountKind: 'workforce',
         reinvite: false,
         requiresOnboarding: true,
       },
@@ -240,11 +245,48 @@ describe('/api/users/invite route', () => {
       metadata: {
         invitedBy: 'actor-1',
         invitedRole: 'employee',
+        accountKind: 'workforce',
         reinvite: true,
         requiresOnboarding: true,
       },
       dedupeKey: `user-invite:${invitedUserId}:refresh:pending_onboarding`,
       dedupeWindowHours: 1,
     });
+  });
+
+  it('creates a privileged leadership identity outside the workforce population', async () => {
+    const { serverSupabase, adminSupabase, usersUpsert, employeesInsert } = buildSupabaseMocks({
+      actorRole: 'super_admin',
+      inviteRole: 'super_admin',
+    });
+
+    vi.mocked(createSupabaseServerClient).mockResolvedValue(serverSupabase as never);
+    vi.mocked(createSupabaseAdminClient).mockReturnValue(adminSupabase as never);
+
+    const response = await POST(
+      new Request('http://localhost/api/users/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'control@example.com',
+          role: 'super_admin',
+          firstName: 'Control',
+          lastName: 'Account',
+          accountKind: 'privileged',
+          accountPurpose: 'Production configuration verification',
+        }),
+      }) as never
+    );
+
+    expect(response.status).toBe(201);
+    expect(usersUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        account_kind: 'privileged',
+        account_purpose: 'Production configuration verification',
+        sponsor_user_id: 'actor-1',
+      }),
+      { onConflict: 'id' }
+    );
+    expect(employeesInsert).not.toHaveBeenCalled();
   });
 });

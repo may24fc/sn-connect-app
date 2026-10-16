@@ -11,6 +11,9 @@ The implementation centralizes population filtering in the database view and rej
 - [Live review authorization](../../../apps/web/src/lib/review-access.ts)
 - [Review Hub](../../../apps/web/src/app/review/page.tsx)
 - [Account Inventory](../../../apps/web/src/app/(app)/(admin)/super-admin/account-inventory/page.tsx)
+- [Privileged account migration](../../../supabase/migrations/20261016000002_add_privileged_account_kind.sql)
+- [Leadership invite](../../../apps/web/src/components/admin/InviteUserModal.tsx)
+- [Invitation API](../../../apps/web/src/app/api/users/invite/route.ts)
 - [Guarded reset](../../../scripts/review/reset-review-environment.mjs)
 
 ## Optimization Entries
@@ -33,6 +36,12 @@ The implementation centralizes population filtering in the database view and rej
 - **Solution:** Isolated `review_demo_items`, structured feedback, one active engagement, seven-day expiry, and a dry-run-first reset script guarded by the explicit review environment.
 - **Validation:** Local schema objects and synthetic seed records exist. External review deployment remains deferred.
 
+### Implemented — Privileged human identity classification
+
+- **Problem/evidence:** A leadership role and workforce membership were implicitly coupled, forcing operational verification accounts into Directory and OKR/KPI populations.
+- **Solution:** Add a distinct `privileged` account kind for human admin/super-admin identities. Creation and reclassification require an explicit selection and recorded purpose; authorization remains role-based, while the workforce-only view excludes the identity from people-derived surfaces. Classification writes are server-confirmed and audited.
+- **Validation:** Local migration and rollback-only SQL exclusion assertion passed; web TypeScript passed; 9 focused API/auth tests and 7 Playwright checks passed. Desktop and mobile screenshots were inspected. No production data changed.
+
 ## Visual Guide
 
 ```mermaid
@@ -47,6 +56,8 @@ flowchart LR
   I[Workforce identity] --> J[Workforce-only directory view]
   J --> K[Directory / OKRs / people selectors]
   L[Test or service identity] -. excluded .-> J
+  M[Privileged human admin] --> N[Role-based app permissions]
+  M -. excluded .-> J
 ```
 
 ## Measurements
@@ -79,6 +90,7 @@ The control route also regressed and all routes showed intermittent p95 outliers
 
 ## Change Log
 
+- 2026-10-16: Added explicit privileged non-workforce leadership creation and audited reclassification. Kept the mutation server-confirmed; production deployment and Cef Admin reclassification remain deferred.
 - 2026-10-15: Applied the migration to local and production. No post-migration production latency was captured. The `employee_directory` view gained one column and one indexed filter (`idx_users_account_kind`), so a production latency check is worthwhile before any speed claim.
 - 2026-10-15: Corrected the expiry cron to answer Vercel's `GET` (it was `POST`-only), added route tests, and published the [deployment runbook](deployment-runbook.md). No latency-relevant code path changed.
 - 2026-10-15: Audited identity leakage, implemented centralized classification and layered reviewer access, captured the local baseline, and deferred external environment provisioning and production remediation.

@@ -2,10 +2,13 @@ import { queryKeys } from '@/lib/query-keys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export type InviteUserRole = 'employee' | 'associate' | 'admin' | 'super_admin';
+export type LeadershipAccountKind = 'workforce' | 'privileged';
 
 interface InviteUserPayload {
   email: string;
   role: InviteUserRole;
+  accountKind?: LeadershipAccountKind;
+  accountPurpose?: string;
   firstName: string;
   lastName: string;
   departmentId?: string | undefined;

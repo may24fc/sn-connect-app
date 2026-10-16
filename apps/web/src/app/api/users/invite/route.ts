@@ -17,6 +17,8 @@ const inviteUserSchema = z.object({
   role: z.enum(inviteableRoles, {
     required_error: 'Role must be employee, associate, admin, or super_admin',
   }),
+  accountKind: z.enum(['workforce', 'privileged']).default('workforce'),
+  accountPurpose: z.string().trim().min(10).max(500).optional(),
   firstName: z.string().min(1, 'First name is required').max(120),
   lastName: z.string().min(1, 'Last name is required').max(120),
   departmentId: z.string().uuid().optional(),
@@ -79,11 +81,25 @@ export async function POST(request: NextRequest) {
       probationMode,
       probationAuto90,
       probationEndDate,
+      accountKind,
+      accountPurpose,
     } = parsed.data;
 
     const isPrivilegedInvite = privilegedInviteRoles.includes(
       role as (typeof privilegedInviteRoles)[number]
     );
+    if (accountKind === 'privileged' && !isPrivilegedInvite) {
+      return NextResponse.json(
+        { error: 'Only admin and super admin roles can use privileged non-workforce accounts' },
+        { status: 400 }
+      );
+    }
+    if (accountKind === 'privileged' && !accountPurpose) {
+      return NextResponse.json(
+        { error: 'An account purpose is required for privileged non-workforce accounts' },
+        { status: 400 }
+      );
+    }
     const requiresOnboarding = !isPrivilegedInvite;
     const inviteProbationMode = role === 'employee' ? (probationMode ?? 'under_probation') : 'no_probation';
     const inviteProbationAuto90 = role === 'employee' ? (probationAuto90 ?? true) : false;
@@ -213,6 +229,9 @@ export async function POST(request: NextRequest) {
         department_id: departmentId || null,
         division_id: divisionId || null,
         created_by: user.id,
+        account_kind: accountKind,
+        account_purpose: accountKind === 'privileged' ? accountPurpose : null,
+        sponsor_user_id: accountKind === 'privileged' ? user.id : null,
         deleted_at: null,
       },
       { onConflict: 'id' }
@@ -229,7 +248,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (isPrivilegedInvite) {
+    if (isPrivilegedInvite && accountKind === 'workforce') {
       const departmentName = departmentId
         ? (await resolveDepartmentById(supabaseAdmin, departmentId)).name
         : 'Unassigned';
@@ -277,7 +296,7 @@ export async function POST(request: NextRequest) {
         .update({ deleted_at: new Date().toISOString() })
         .eq('user_id', invitedUserId)
         .is('deleted_at', null);
-    } else {
+    } else if (!isPrivilegedInvite) {
       const { error: createProfileError } = await supabaseAdmin.from('onboarding_profiles').upsert(
         {
           user_id: invitedUserId,
@@ -312,6 +331,7 @@ export async function POST(request: NextRequest) {
         email,
         role,
         reinvite: isReinvite,
+        accountKind,
         departmentId: departmentId ?? null,
         divisionId: divisionId ?? null,
         inviteProbationMode,
@@ -333,6 +353,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         invitedBy: user.id,
         invitedRole: role,
+        accountKind,
         reinvite: isReinvite,
         requiresOnboarding,
       },
@@ -362,6 +383,7 @@ export async function POST(request: NextRequest) {
           email,
           temporaryPassword,
           role,
+          accountKind,
           status: nextStatus,
           reinvite: isReinvite,
           emailSent: inviteEmailResult.sent,

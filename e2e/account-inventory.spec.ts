@@ -40,6 +40,32 @@ test.beforeEach(async ({ page }) => {
             created_at: '2026-10-15T00:00:00Z',
           },
         ],
+        leadershipAccounts: [
+          {
+            id: 'cef-admin',
+            email: 'cef.admin@example.com',
+            role: 'super_admin',
+            status: 'active',
+            account_kind: 'workforce',
+            account_purpose: null,
+          },
+          {
+            id: 'may-admin',
+            email: 'may@24fitclub.com.au',
+            role: 'super_admin',
+            status: 'active',
+            account_kind: 'workforce',
+            account_purpose: null,
+          },
+          {
+            id: 'steven-admin',
+            email: 'steven@24fitclub.com.au',
+            role: 'super_admin',
+            status: 'active',
+            account_kind: 'workforce',
+            account_purpose: null,
+          },
+        ],
       },
     })
   );
@@ -67,6 +93,38 @@ test('super admin reviews non-workforce accounts and creates a server-confirmed 
   await expect(page.getByText(/Review invitation created/)).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath('account-inventory-desktop.png'),
+    fullPage: true,
+  });
+});
+
+test('super admin classifies one leadership account without changing the others', async ({
+  page,
+}, testInfo: TestInfo) => {
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.goto('/super-admin/account-inventory');
+
+  await page.getByLabel('Leadership account').selectOption('cef-admin');
+  await page.getByLabel('Population').selectOption('privileged');
+  await page
+    .getByLabel('Account purpose')
+    .fill('Production configuration and permission verification');
+
+  const requestPromise = page.waitForRequest(
+    (request) =>
+      request.url().endsWith('/api/account-inventory') && request.method() === 'PATCH'
+  );
+  await page.getByRole('button', { name: 'Save classification' }).click();
+  const request = await requestPromise;
+  expect(request.postDataJSON()).toEqual({
+    userId: 'cef-admin',
+    accountKind: 'privileged',
+    purpose: 'Production configuration and permission verification',
+  });
+  await expect(page.getByText(/Account classification updated/)).toBeVisible();
+  await expect(page.getByRole('option', { name: /may@24fitclub.com.au/ })).toBeAttached();
+  await expect(page.getByRole('option', { name: /steven@24fitclub.com.au/ })).toBeAttached();
+  await page.screenshot({
+    path: testInfo.outputPath('leadership-classification-desktop.png'),
     fullPage: true,
   });
 });

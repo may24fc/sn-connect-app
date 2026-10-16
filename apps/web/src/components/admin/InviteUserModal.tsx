@@ -2,7 +2,11 @@
 
 import { useDepartments } from '@/hooks/useDepartments';
 import { useDivisions } from '@/hooks/useDivisions';
-import { type InviteUserRole, useInviteUser } from '@/hooks/useUserManagement';
+import {
+  type InviteUserRole,
+  type LeadershipAccountKind,
+  useInviteUser,
+} from '@/hooks/useUserManagement';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Checkbox, useToast } from '@hr-portal/ui';
 import { FormGroup } from '@hr-portal/ui/components/forms';
@@ -40,20 +44,32 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-const inviteSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
-  role: z.enum(['employee', 'associate', 'admin', 'super_admin'], {
-    required_error: 'Role is required',
-  }),
-  probationMode: z.enum(['under_probation', 'no_probation']).optional(),
-  probationAuto90: z.boolean().optional(),
-  probationDays: z.coerce.number().int().min(1).max(365).optional(),
-  position: z.string().optional(),
-  departmentId: z.string().uuid('Invalid department ID').optional(),
-  divisionId: z.string().uuid('Invalid division ID').optional(),
-});
+const inviteSchema = z
+  .object({
+    email: z.string().email('Invalid email address'),
+    firstName: z.string().min(1, 'First name is required'),
+    lastName: z.string().min(1, 'Last name is required'),
+    role: z.enum(['employee', 'associate', 'admin', 'super_admin'], {
+      required_error: 'Role is required',
+    }),
+    accountKind: z.enum(['workforce', 'privileged']),
+    accountPurpose: z.string().trim().max(500).optional(),
+    probationMode: z.enum(['under_probation', 'no_probation']).optional(),
+    probationAuto90: z.boolean().optional(),
+    probationDays: z.coerce.number().int().min(1).max(365).optional(),
+    position: z.string().optional(),
+    departmentId: z.string().uuid('Invalid department ID').optional(),
+    divisionId: z.string().uuid('Invalid division ID').optional(),
+  })
+  .superRefine((value, context) => {
+    if (value.accountKind === 'privileged' && (value.accountPurpose?.length ?? 0) < 10) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['accountPurpose'],
+        message: 'Describe why this non-workforce account is needed',
+      });
+    }
+  });
 
 type InviteFormData = z.infer<typeof inviteSchema>;
 const UNASSIGNED_ORG_VALUE = '__org_unassigned__';
@@ -105,7 +121,8 @@ export function InviteUserModal({
   } = useForm<InviteFormData>({
     resolver: zodResolver(inviteSchema),
     defaultValues: {
-      role: defaultRole || 'employee',
+      role: defaultRole || allowedRoles?.[0] || 'employee',
+      accountKind: 'workforce',
       probationMode: 'under_probation',
       probationAuto90: true,
       probationDays: 90,
@@ -145,6 +162,10 @@ export function InviteUserModal({
         firstName: data.firstName,
         lastName: data.lastName,
         role: data.role,
+        accountKind: data.accountKind,
+        ...(data.accountKind === 'privileged' && data.accountPurpose
+          ? { accountPurpose: data.accountPurpose.trim() }
+          : {}),
         position: data.position,
         departmentId: data.departmentId,
         divisionId: data.divisionId,
@@ -230,6 +251,7 @@ export function InviteUserModal({
   };
 
   const selectedRole = watch('role');
+  const accountKind = watch('accountKind');
   const probationMode = watch('probationMode') ?? 'under_probation';
   const probationAuto90 = watch('probationAuto90') ?? true;
   const probationDays = watch('probationDays') ?? 90;
@@ -237,6 +259,7 @@ export function InviteUserModal({
   const selectedRoleLabel = roleLabels[selectedRole];
   const modalTitle = defaultRole ? `Invite New ${roleLabels[defaultRole]}` : 'Invite New User';
   const isPrivilegedRole = selectedRole === 'admin' || selectedRole === 'super_admin';
+  const isNonWorkforceLeadership = isPrivilegedRole && accountKind === 'privileged';
   const description = isPrivilegedRole
     ? 'Create a privileged account. These users are activated immediately and should be invited only when elevated access is required.'
     : 'Create a new user account. They will receive login credentials to complete their onboarding.';
@@ -325,7 +348,14 @@ export function InviteUserModal({
                 >
                   <Select
                     value={selectedRole}
-                    onValueChange={(value) => setValue('role', value as InviteUserRole)}
+                    onValueChange={(value) => {
+                      const role = value as InviteUserRole;
+                      setValue('role', role);
+                      if (role !== 'admin' && role !== 'super_admin') {
+                        setValue('accountKind', 'workforce');
+                        setValue('accountPurpose', undefined);
+                      }
+                    }}
                     disabled={inviteUser.isPending || !!defaultRole}
                   >
                     <SelectTrigger id="role" className={errors.role ? 'border-rose-500' : ''}>
@@ -341,28 +371,89 @@ export function InviteUserModal({
                   </Select>
                 </FormGroup>
 
-                <FormGroup
-                  label="Probation Status"
-                  htmlFor="probation-status"
-                  required
-                  showOptional={false}
-                  icon={<CalendarDays className="h-3.5 w-3.5" />}
-                >
-                  <Select
-                    value={probationMode}
-                    onValueChange={(value) => setValue('probationMode', value as 'under_probation' | 'no_probation')}
-                    disabled={inviteUser.isPending || !isEmployeeRole}
+                {isEmployeeRole && (
+                  <FormGroup
+                    label="Probation Status"
+                    htmlFor="probation-status"
+                    required
+                    showOptional={false}
+                    icon={<CalendarDays className="h-3.5 w-3.5" />}
                   >
-                    <SelectTrigger id="probation-status">
-                      <SelectValue placeholder="Select probation status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="under_probation">Probationary</SelectItem>
-                      <SelectItem value="no_probation">Confirmed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormGroup>
+                    <Select
+                      value={probationMode}
+                      onValueChange={(value) =>
+                        setValue(
+                          'probationMode',
+                          value as 'under_probation' | 'no_probation'
+                        )
+                      }
+                      disabled={inviteUser.isPending}
+                    >
+                      <SelectTrigger id="probation-status">
+                        <SelectValue placeholder="Select probation status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="under_probation">Probationary</SelectItem>
+                        <SelectItem value="no_probation">Confirmed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormGroup>
+                )}
               </div>
+
+              {isPrivilegedRole && (
+                <div className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+                  <FormGroup
+                    label="Account population"
+                    htmlFor="account-kind"
+                    required
+                    showOptional={false}
+                  >
+                    <Select
+                      value={accountKind}
+                      onValueChange={(value) =>
+                        setValue('accountKind', value as LeadershipAccountKind, {
+                          shouldValidate: true,
+                        })
+                      }
+                      disabled={inviteUser.isPending}
+                    >
+                      <SelectTrigger id="account-kind">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="workforce">Workforce leader</SelectItem>
+                        <SelectItem value="privileged">Privileged non-workforce account</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormGroup>
+
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    {isNonWorkforceLeadership
+                      ? 'Keeps this role’s application permissions, but excludes the identity from Directory, OKRs/KPIs, headcount, people selectors, and workforce reporting.'
+                      : 'Included in official employee and performance data as a member of the workforce.'}
+                  </p>
+
+                  {isNonWorkforceLeadership && (
+                    <FormGroup
+                      label="Account purpose"
+                      htmlFor="account-purpose"
+                      required
+                      showOptional={false}
+                      error={errors.accountPurpose?.message}
+                    >
+                      <Input
+                        id="account-purpose"
+                        maxLength={500}
+                        placeholder="For example: production configuration verification"
+                        {...register('accountPurpose')}
+                        disabled={inviteUser.isPending}
+                        error={!!errors.accountPurpose}
+                      />
+                    </FormGroup>
+                  )}
+                </div>
+              )}
 
               {isEmployeeRole && probationMode === 'under_probation' && (
                 <div className="space-y-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3.5 dark:border-zinc-800 dark:bg-zinc-900/60">
@@ -411,6 +502,9 @@ export function InviteUserModal({
               {isPrivilegedRole && (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-3.5 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
                   Privileged invites skip onboarding and become active immediately. Only create this account if elevated access is required.
+                  {isNonWorkforceLeadership
+                    ? ' This account is still fully auditable and remains visible in Account Inventory.'
+                    : ''}
                 </div>
               )}
 

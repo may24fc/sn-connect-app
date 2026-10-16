@@ -3,7 +3,7 @@ import { resolveUserDisplayName } from '@/lib/user-display';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export type UserRoleType = 'employee' | 'associate' | 'admin' | 'super_admin' | 'reviewer';
-export type AccountKindType = 'workforce' | 'reviewer' | 'test' | 'service';
+export type AccountKindType = 'workforce' | 'privileged' | 'reviewer' | 'test' | 'service';
 
 export type UserStatusType =
   | 'active'

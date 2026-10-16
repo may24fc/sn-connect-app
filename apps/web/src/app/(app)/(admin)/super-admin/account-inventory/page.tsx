@@ -8,25 +8,74 @@ type Account = {
   email: string | null;
   role: string;
   status: string;
-  account_kind: 'reviewer' | 'test' | 'service';
+  account_kind: 'privileged' | 'reviewer' | 'test' | 'service';
   account_purpose: string | null;
   access_expires_at: string | null;
   created_at: string;
 };
 
+type LeadershipAccount = {
+  id: string;
+  email: string | null;
+  role: 'admin' | 'super_admin';
+  status: string;
+  account_kind: 'workforce' | 'privileged';
+  account_purpose: string | null;
+};
+
 export default function AccountInventoryPage() {
   const [accounts, setAccounts] = useState<Array<Account>>([]);
+  const [leadershipAccounts, setLeadershipAccounts] = useState<Array<LeadershipAccount>>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [invite, setInvite] = useState({ email: '', displayName: '', purpose: '' });
   const [sending, setSending] = useState(false);
+  const [classification, setClassification] = useState({
+    userId: '',
+    accountKind: 'workforce' as 'workforce' | 'privileged',
+    purpose: '',
+  });
+  const [savingClassification, setSavingClassification] = useState(false);
 
   const loadAccounts = useCallback(async () => {
     const response = await fetch('/api/account-inventory', { cache: 'no-store' });
-    if (response.ok) setAccounts((await response.json()).data);
+    if (response.ok) {
+      const body = await response.json();
+      setAccounts(body.data);
+      setLeadershipAccounts(body.leadershipAccounts ?? []);
+    }
     else setMessage('Account inventory could not be loaded.');
     setLoading(false);
   }, []);
+
+  function selectLeadershipAccount(userId: string) {
+    const account = leadershipAccounts.find((candidate) => candidate.id === userId);
+    setClassification({
+      userId,
+      accountKind: account?.account_kind ?? 'workforce',
+      purpose: account?.account_purpose ?? '',
+    });
+  }
+
+  async function saveClassification(event: FormEvent) {
+    event.preventDefault();
+    setSavingClassification(true);
+    setMessage(null);
+    const response = await fetch('/api/account-inventory', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(classification),
+    });
+    const body = await response.json();
+    if (response.ok) {
+      setMessage('Account classification updated. Workforce-derived screens will update immediately.');
+      setClassification({ userId: '', accountKind: 'workforce', purpose: '' });
+      await loadAccounts();
+    } else {
+      setMessage(body.error ?? 'Account classification could not be updated.');
+    }
+    setSavingClassification(false);
+  }
 
   useEffect(() => {
     void loadAccounts();
@@ -60,15 +109,95 @@ export default function AccountInventoryPage() {
         <p className="text-sm font-semibold text-teal-700">Identity governance</p>
         <h1 className="text-3xl font-semibold tracking-tight">Account Inventory</h1>
         <p className="mt-2 text-slate-600">
-          Reviewer, test, and service identities are managed here and never appear as employees.
+          Privileged, reviewer, test, and service identities are managed here and never appear as
+          employees.
         </p>
       </header>
 
       {message ? (
-        <output className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
+        <output className="block rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
           {message}
         </output>
       ) : null}
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex items-start gap-3">
+          <ShieldCheck className="mt-1 h-6 w-6 text-teal-700" />
+          <div>
+            <h2 className="text-xl font-semibold">Classify a leadership account</h2>
+            <p className="text-sm text-slate-600">
+              Authorization stays unchanged. A privileged non-workforce account keeps its admin
+              access but is removed from official people and performance populations.
+            </p>
+          </div>
+        </div>
+        <form onSubmit={saveClassification} className="mt-5 grid gap-4 md:grid-cols-2">
+          <label className="text-sm font-medium">
+            Leadership account
+            <select
+              required
+              aria-label="Leadership account"
+              value={classification.userId}
+              onChange={(event) => selectLeadershipAccount(event.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+            >
+              <option value="">Select an account</option>
+              {leadershipAccounts.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.email ?? account.id} · {account.role.replace('_', ' ')}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-sm font-medium">
+            Population
+            <select
+              aria-label="Population"
+              value={classification.accountKind}
+              onChange={(event) =>
+                setClassification((value) => ({
+                  ...value,
+                  accountKind: event.target.value as 'workforce' | 'privileged',
+                }))
+              }
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+            >
+              <option value="workforce">Workforce leader</option>
+              <option value="privileged">Privileged non-workforce account</option>
+            </select>
+          </label>
+          {classification.accountKind === 'privileged' ? (
+            <label className="text-sm font-medium md:col-span-2">
+              Account purpose
+              <textarea
+                required
+                minLength={10}
+                maxLength={500}
+                rows={3}
+                value={classification.purpose}
+                onChange={(event) =>
+                  setClassification((value) => ({ ...value, purpose: event.target.value }))
+                }
+                placeholder="Why does this account need privileged production access?"
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+              />
+            </label>
+          ) : null}
+          <p className="text-xs text-slate-600 md:col-span-2">
+            This does not change the account’s role or permissions. Classification changes are
+            recorded in the audit log.
+          </p>
+          <div className="flex justify-end md:col-span-2">
+            <button
+              type="submit"
+              disabled={savingClassification || !classification.userId}
+              className="rounded-lg bg-teal-800 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {savingClassification ? 'Saving…' : 'Save classification'}
+            </button>
+          </div>
+        </form>
+      </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-start gap-3">
