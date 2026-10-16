@@ -1758,9 +1758,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/users/invite/route.ts": {
-    "mtime": 1791775713.2723875,
-    "seen": 1791775894.5562804,
-    "ast_hash": "3526b3834a883535ca3251a4f199397e",
+    "mtime": 1792115519.484101,
+    "seen": 1792116116.5115402,
+    "ast_hash": "4f255d795cc2c934d98d275b671c08cb",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/webhooks/drive/route.ts": {
@@ -1962,9 +1962,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/admin/InviteUserModal.tsx": {
-    "mtime": 1791283931.4889002,
-    "seen": 1791285258.674249,
-    "ast_hash": "4b095028f11d0bf78db33cdf016e4e8d",
+    "mtime": 1792115863.297896,
+    "seen": 1792116116.5116208,
+    "ast_hash": "0ad513261e5b749be12ecb52441e0888",
     "semantic_hash": ""
   },
   "apps/web/src/components/admin/MarketingAdSpendAccessManagerDialog.tsx": {
@@ -3030,10 +3030,10 @@
     "semantic_hash": ""
   },
   "apps/web/src/hooks/useUserManagement.ts": {
-    "mtime": 1788257422.5313208,
-    "seen": 1789664611.8289266,
-    "ast_hash": "a18195bc6c13ece26f11041aa839dec8",
-    "semantic_hash": "a18195bc6c13ece26f11041aa839dec8"
+    "mtime": 1792115515.1002128,
+    "seen": 1792116116.5120432,
+    "ast_hash": "035c7021d0a5f646bd69a66e1c0aca01",
+    "semantic_hash": ""
   },
   "apps/web/src/hooks/useWeeklyCommitments.ts": {
     "mtime": 1788257422.5313208,
@@ -7704,10 +7704,10 @@
     "semantic_hash": ""
   },
   "tests/api/users-invite-route.test.ts": {
-    "mtime": 1788257423.7640018,
-    "seen": 1789664611.82948,
-    "ast_hash": "33d4461eb5f7df16fcff03cb105d063c",
-    "semantic_hash": "33d4461eb5f7df16fcff03cb105d063c"
+    "mtime": 1792115675.2594829,
+    "seen": 1792116116.5130959,
+    "ast_hash": "e2635f138af8c7d39496e6d0094389b4",
+    "semantic_hash": ""
   },
   "tests/app/api/auth/forgot-password.test.ts": {
     "mtime": 1791776118.6924853,
@@ -10170,9 +10170,9 @@
     "semantic_hash": ""
   },
   "docs/apps/web/architecture/optimistic-ui.md": {
-    "mtime": 1792052799.5488176,
-    "seen": 1792065710.9633033,
-    "ast_hash": "1b4cb8b01b6f74a1ba1ff9cc5f32fc23",
+    "mtime": 1792115893.485976,
+    "seen": 1792116116.5133054,
+    "ast_hash": "59b3e238a852b360efa5077bf86469df",
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpAccessManagerDialog.tsx": {
@@ -11844,9 +11844,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/lib/auth/user-bootstrap.ts": {
-    "mtime": 1792053211.5712783,
-    "seen": 1792065710.9616585,
-    "ast_hash": "e79dc4363cb668d4dee5af062920f9d9",
+    "mtime": 1792115515.0090244,
+    "seen": 1792116116.5120773,
+    "ast_hash": "2fd6c319fef90233b31812e67771d4e7",
     "semantic_hash": ""
   },
   "tests/contexts/AuthContext.test.tsx": {
@@ -13170,15 +13170,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(admin)/super-admin/account-inventory/page.tsx": {
-    "mtime": 1792053122.4108324,
-    "seen": 1792065710.960572,
-    "ast_hash": "ea7305cb19afc23b0068c7bd73d724a5",
+    "mtime": 1792115783.940441,
+    "seen": 1792116116.5107586,
+    "ast_hash": "c6f53db6ffee611d5a4c8ad8c2d50967",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/account-inventory/route.ts": {
-    "mtime": 1792053089.0957367,
-    "seen": 1792065710.9608057,
-    "ast_hash": "b48f1befa71794604f5d725f6fae04c6",
+    "mtime": 1792115599.2314377,
+    "seen": 1792116116.5109453,
+    "ast_hash": "4246bffc364ee0518c5e3fc9782bd811",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/cron/review-expire/route.ts": {
@@ -13248,9 +13248,9 @@
     "semantic_hash": ""
   },
   "e2e/account-inventory.spec.ts": {
-    "mtime": 1792055385.285558,
-    "seen": 1792065710.9619956,
-    "ast_hash": "caf6caa138886a9fda3b7e9bded2745a",
+    "mtime": 1792115625.0793464,
+    "seen": 1792116116.5124676,
+    "ast_hash": "e0ac1868a5b91fd5d49630ab4f92991e",
     "semantic_hash": ""
   },
   "e2e/controlled-reviewer-access.spec.ts": {
@@ -13314,15 +13314,15 @@
     "semantic_hash": ""
   },
   "docs/features/controlled-reviewer-access/optimization.md": {
-    "mtime": 1792054384.641445,
-    "seen": 1792065710.9634132,
-    "ast_hash": "baa9984df4db632674780d7ddddb3a2c",
+    "mtime": 1792115890.2242668,
+    "seen": 1792116116.513358,
+    "ast_hash": "c5d8904763a23f1fa77bce1320ad435c",
     "semantic_hash": ""
   },
   "docs/features/controlled-reviewer-access/task-tracker.md": {
-    "mtime": 1792055466.0719466,
-    "seen": 1792065710.9634147,
-    "ast_hash": "d843f2c6544e1adadb0b99265a4f74ca",
+    "mtime": 1792115883.5053194,
+    "seen": 1792116116.5133588,
+    "ast_hash": "2118c58f90304c57afcae0f3d5f558bc",
     "semantic_hash": ""
   },
   "e2e/uhp-volume-points-quarter.spec.ts": {
@@ -13371,6 +13371,30 @@
     "mtime": 1792115127.7883146,
     "seen": 1792115225.0804064,
     "ast_hash": "73a62361091cc8cd4b2d03aafb9eecfe",
+    "semantic_hash": ""
+  },
+  "e2e/leadership-account-classification.spec.ts": {
+    "mtime": 1792115784.0728526,
+    "seen": 1792116116.5124822,
+    "ast_hash": "042f1c4d9d3dabbce999a868a7240ff0",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261016000002_add_privileged_account_kind.sql": {
+    "mtime": 1792115514.906175,
+    "seen": 1792116116.513036,
+    "ast_hash": "9da9ec147c827fd1c06a458a9c4fc21b",
+    "semantic_hash": ""
+  },
+  "tests/api/account-inventory-route.test.ts": {
+    "mtime": 1792115638.7253764,
+    "seen": 1792116116.5130472,
+    "ast_hash": "fe2c9f53c968353550a88e5ae2dcd97c",
+    "semantic_hash": ""
+  },
+  "tests/sql/privileged-account-kind-local.sql": {
+    "mtime": 1792115883.402153,
+    "seen": 1792116116.5132048,
+    "ast_hash": "6ea6d73618f8570e30308d2c52572b6f",
     "semantic_hash": ""
   }
 }
