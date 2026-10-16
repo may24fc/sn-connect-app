@@ -15,6 +15,8 @@ Correctness and user-flow behavior were implemented and audited. Latency measure
 - [Performance realtime hook](../../../apps/web/src/hooks/usePerformanceRealtime.ts) - avoids opening a real Supabase websocket during mock-auth browser verification.
 - [Directory API regression tests](../../../tests/api/directory-route.test.ts) - covers former inclusion, cutoff application, and invalid dates.
 - [Historical roster browser test](../../../e2e/okr-kpi-historical-roster.spec.ts) - covers desktop and mobile/dark rendering with cycle-scoped fixtures.
+- [Quarter workforce policy migration](../../../supabase/migrations/20261016000001_require_former_employee_quarter_data.sql) - centralizes active/former membership and exact-cycle evidence rules.
+- [Quarter roster SQL assertions](../../../tests/sql/okr-kpi-former-quarter-roster-local.sql) - proves exclusion without data, inclusion with data, and isolation between quarters.
 
 ## Visual Guide
 
@@ -22,12 +24,23 @@ Correctness and user-flow behavior were implemented and audited. Latency measure
 flowchart LR
     A[Admin selects quarter] --> B[Cycle end date sent to Directory API]
     B --> C[employee_directory filters users.created_at]
-    C --> D[Current and former accounts created by quarter end]
-    D --> E[Cycle OKRs/KPIs joined in the UI]
-    E --> F[Selected quarter retained in employee detail]
+    C --> D{Current workforce?}
+    D -->|Yes| E[Include when created by quarter end]
+    D -->|Former| F{Exact-cycle OKR, KPI, or review?}
+    F -->|Yes| E
+    F -->|No| G[Exclude before pagination]
+    E --> H[Selected quarter retained in employee detail]
 ```
 
 ## Optimization Entries
+
+### Implemented - Evidence-gated former employee roster
+
+- Status: `Implemented`
+- Problem/evidence: employment overlap alone exposed terminated employees in a selected quarter even when they had no saved performance data for that quarter.
+- Solution: centralize quarter eligibility in a database function, require exact-cycle OKR, KPI, or performance-review evidence for terminated workforce accounts, and apply the resulting user IDs in the Directory API before count and pagination. Reviewer, test, and service identities remain ineligible through the workforce check.
+- Code paths: quarter workforce policy migration, Directory API/hook, admin OKR/KPI roster, SQL assertions, API tests, and browser test in the Relevant Code Map.
+- Validation: both migrations applied to local Supabase; rollback-only SQL assertions passed, including isolation between parallel cycles with identical dates; Directory API tests passed 8/8; web TypeScript passed; focused Chromium desktop and 390px mobile checks passed with screenshots reviewed. Production was not changed.
 
 ### Implemented - Cycle-scoped historical roster correctness
 
@@ -74,4 +87,5 @@ pnpm performance:latency --compare <before-json> <after-json>
 
 ## Change Log
 
+- 2026-10-16: Replaced termination-overlap eligibility with exact-cycle evidence for former employees and validated the rule locally through SQL, API, type, and browser checks.
 - 2026-10-15: Implemented cycle-aware historical roster filtering and former-employee access; audited comparable product behavior; completed focused automated UI/API checks; deferred SQL and latency validation because local Supabase was unavailable.

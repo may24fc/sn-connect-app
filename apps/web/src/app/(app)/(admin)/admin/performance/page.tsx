@@ -331,6 +331,7 @@ export default function AdminPerformancePage(): ReactNode {
     sortOrder: 'asc' as const,
     includeTerminated: true,
     ...(selectedCycle ? { createdThrough: selectedCycle.endDate } : {}),
+    ...(selectedCycle ? { performanceCycleId: selectedCycle.id } : {}),
   };
 
   const { data, isLoading } = useDirectory(filters, { enabled: Boolean(selectedCycle) });

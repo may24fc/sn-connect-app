@@ -100,6 +100,7 @@ export async function GET(request: NextRequest) {
     const excludeTerminated = searchParams.get('exclude_terminated') === 'true';
     const includeTerminated = searchParams.get('include_terminated') === 'true';
     const createdThrough = searchParams.get('created_through') || '';
+    const performanceCycleId = searchParams.get('performance_cycle_id') || '';
     const sortBy = searchParams.get('sort_by') || 'full_name';
     const sortOrder = searchParams.get('sort_order') === 'desc' ? false : true;
     const page = Number.parseInt(searchParams.get('page') || '1', 10);
@@ -113,6 +114,32 @@ export async function GET(request: NextRequest) {
 
     // Build query on the employee_directory view
     let query = supabase.from('employee_directory').select('*', { count: 'exact' });
+
+    if (performanceCycleId) {
+      if (!UUID_PATTERN.test(performanceCycleId)) {
+        return NextResponse.json(
+          { error: 'performance_cycle_id must be a valid UUID' },
+          { status: 400 }
+        );
+      }
+
+      const { data: eligibleRows, error: eligibilityError } = await supabase.rpc(
+        'quarter_workforce_eligible_user_ids',
+        { target_cycle_id: performanceCycleId }
+      );
+
+      if (eligibilityError) {
+        return NextResponse.json(
+          { error: 'Failed to resolve quarter workforce eligibility' },
+          { status: 500 }
+        );
+      }
+
+      const eligibleUserIds = (eligibleRows || []).map(
+        (row: { user_id: string }) => row.user_id
+      );
+      query = query.in('user_id', eligibleUserIds);
+    }
 
     if (userIdFilters.length > 0) {
       query = query.in('user_id', userIdFilters);

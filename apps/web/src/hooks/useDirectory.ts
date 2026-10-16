@@ -20,6 +20,8 @@ export interface DirectoryFilters {
   includeTerminated?: boolean;
   /** Only include accounts created on or before this ISO date (YYYY-MM-DD). */
   createdThrough?: string;
+  /** Apply the workforce roster policy for this performance cycle. */
+  performanceCycleId?: string;
   /** Restrict results to these users (used to resolve already-selected people). */
   userIds?: string[];
 }
@@ -117,6 +119,9 @@ export function useDirectory(filters: DirectoryFilters = {}, options: { enabled?
       if (filters.excludeTerminated) params.append('exclude_terminated', 'true');
       if (filters.includeTerminated) params.append('include_terminated', 'true');
       if (filters.createdThrough) params.append('created_through', filters.createdThrough);
+      if (filters.performanceCycleId) {
+        params.append('performance_cycle_id', filters.performanceCycleId);
+      }
       if (filters.userIds?.length) params.append('user_ids', filters.userIds.join(','));
 
       const query = params.toString();

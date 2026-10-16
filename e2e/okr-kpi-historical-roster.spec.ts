@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 const cycles = [
   {
-    id: 'cycle-q2-2026',
+    id: '10000000-0000-4000-8000-000000000002',
     name: 'Q2 2026',
     description: null,
     start_date: '2026-04-01',
@@ -15,7 +15,7 @@ const cycles = [
     updated_at: '2026-07-01T00:00:00.000Z',
   },
   {
-    id: 'cycle-q3-2026',
+    id: '10000000-0000-4000-8000-000000000003',
     name: 'Q3 2026',
     description: null,
     start_date: '2026-07-01',
@@ -70,6 +70,15 @@ const futureEmployee = {
   email: 'future@example.com',
 };
 
+const formerEmployeeWithoutQuarterData = {
+  ...formerEmployee,
+  user_id: 'former-no-data-user',
+  employee_id: 'former-no-data-employee',
+  full_name: 'Former Without Quarter Data',
+  first_name: 'Former Without',
+  email: 'former-no-data@example.com',
+};
+
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem(
@@ -82,7 +91,10 @@ test.beforeEach(async ({ page }) => {
         isOnboardingComplete: true,
       })
     );
-    localStorage.setItem('admin-performance-selected-cycle-id', 'cycle-q2-2026');
+    localStorage.setItem(
+      'admin-performance-selected-cycle-id',
+      '10000000-0000-4000-8000-000000000002'
+    );
   });
 
   await page.route('**/api/**', async (route) => {
@@ -100,7 +112,7 @@ test.beforeEach(async ({ page }) => {
             {
               id: 'former-okr',
               employee_id: 'former-employee',
-              cycle_id: 'cycle-q2-2026',
+              cycle_id: '10000000-0000-4000-8000-000000000002',
               objective: 'Complete historical objective',
               description: null,
               key_results: [],
@@ -144,7 +156,7 @@ test.beforeEach(async ({ page }) => {
             {
               id: 'former-okr',
               employee_id: 'former-employee',
-              cycle_id: 'cycle-q2-2026',
+              cycle_id: '10000000-0000-4000-8000-000000000002',
               objective: 'Complete historical objective',
               description: null,
               key_results: [],
@@ -173,10 +185,11 @@ test.beforeEach(async ({ page }) => {
     if (url.pathname === '/api/directory') {
       const isHistoricalRequest =
         url.searchParams.get('include_terminated') === 'true' &&
-        url.searchParams.get('created_through') === '2026-06-30';
+        url.searchParams.get('created_through') === '2026-06-30' &&
+        url.searchParams.get('performance_cycle_id') === '10000000-0000-4000-8000-000000000002';
       const data = isHistoricalRequest
         ? [activeEmployee, formerEmployee]
-        : [activeEmployee, formerEmployee, futureEmployee];
+        : [activeEmployee, formerEmployee, formerEmployeeWithoutQuarterData, futureEmployee];
       await route.fulfill({
         json: {
           data,
@@ -217,7 +230,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('selected quarter includes former staff and excludes accounts created later', async ({
+test('selected quarter includes former staff only with quarter data and excludes later accounts', async ({
   page,
 }, testInfo) => {
   const consoleErrors: Array<string> = [];
@@ -239,6 +252,7 @@ test('selected quarter includes former staff and excludes accounts created later
   await expect(page.getByText('Former', { exact: true })).toBeVisible();
   await expect(page.getByText('Existing Employee', { exact: true })).toBeVisible();
   await expect(page.getByText('Future Employee', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Former Without Quarter Data', { exact: true })).toHaveCount(0);
   await expect(page.getByText('100%')).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath('desktop-historical-roster.png'),

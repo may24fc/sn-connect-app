@@ -332,4 +332,63 @@ describe('/api/directory route', () => {
     expect(response.status).toBe(400);
     expect(pageQuery.lte).not.toHaveBeenCalled();
   });
+
+  it('applies cycle workforce eligibility before paginating the directory', async () => {
+    const eligibleUserId = '10000000-0000-4000-8000-000000000010';
+    const cycleId = '10000000-0000-4000-8000-000000000002';
+    const pageQuery = createThenableQuery({ data: [], error: null, count: 0 });
+    const aggregateQuery = createThenableQuery({ data: [], error: null });
+    let directoryCallCount = 0;
+    const rpc = vi.fn(async () => ({
+      data: [{ user_id: eligibleUserId }],
+      error: null,
+    }));
+
+    vi.mocked(createSupabaseServerClient).mockResolvedValue({
+      auth: {
+        getUser: vi.fn(async () => ({
+          data: { user: { id: 'viewer-admin', app_metadata: { db_role: 'admin' } } },
+          error: null,
+        })),
+      },
+      rpc,
+      from: vi.fn(() => {
+        directoryCallCount += 1;
+        return directoryCallCount === 1 ? pageQuery : aggregateQuery;
+      }),
+    } as never);
+
+    const response = await GET(
+      new NextRequest(
+        `http://localhost/api/directory?include_terminated=true&performance_cycle_id=${cycleId}`
+      )
+    );
+
+    expect(response.status).toBe(200);
+    expect(rpc).toHaveBeenCalledWith('quarter_workforce_eligible_user_ids', {
+      target_cycle_id: cycleId,
+    });
+    expect(pageQuery.in).toHaveBeenCalledWith('user_id', [eligibleUserId]);
+    expect(pageQuery.range).toHaveBeenCalledWith(0, 19);
+  });
+
+  it('rejects an invalid performance cycle id', async () => {
+    const pageQuery = createThenableQuery({ data: [], error: null, count: 0 });
+    vi.mocked(createSupabaseServerClient).mockResolvedValue({
+      auth: {
+        getUser: vi.fn(async () => ({
+          data: { user: { id: 'viewer-admin', app_metadata: { db_role: 'admin' } } },
+          error: null,
+        })),
+      },
+      from: vi.fn(() => pageQuery),
+    } as never);
+
+    const response = await GET(
+      new NextRequest('http://localhost/api/directory?performance_cycle_id=not-a-uuid')
+    );
+
+    expect(response.status).toBe(400);
+    expect(pageQuery.in).not.toHaveBeenCalled();
+  });
 });
