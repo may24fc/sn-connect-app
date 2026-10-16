@@ -34,7 +34,22 @@ describe('/api/account-inventory PATCH', () => {
   it('reclassifies an eligible leadership account without changing its role', async () => {
     const updateEq = vi.fn(async () => ({ error: null }));
     const update = vi.fn(() => ({ eq: updateEq }));
+    const updateUserById = vi.fn(async () => ({ data: {}, error: null }));
     const admin = {
+      auth: {
+        admin: {
+          getUserById: vi.fn(async () => ({
+            data: {
+              user: {
+                id: targetUserId,
+                app_metadata: { db_role: 'super_admin', account_kind: 'workforce' },
+              },
+            },
+            error: null,
+          })),
+          updateUserById,
+        },
+      },
       from: vi.fn((table: string) => {
         if (table !== 'users') throw new Error(`Unexpected table: ${table}`);
         return {
@@ -46,6 +61,8 @@ describe('/api/account-inventory PATCH', () => {
                     id: targetUserId,
                     role: 'super_admin',
                     account_kind: 'workforce',
+                    account_purpose: null,
+                    sponsor_user_id: null,
                   },
                   error: null,
                 })),
@@ -77,6 +94,9 @@ describe('/api/account-inventory PATCH', () => {
       sponsor_user_id: 'super-admin-actor',
     });
     expect(updateEq).toHaveBeenCalledWith('id', targetUserId);
+    expect(updateUserById).toHaveBeenCalledWith(targetUserId, {
+      app_metadata: { db_role: 'super_admin', account_kind: 'privileged' },
+    });
     expect(logActivity).toHaveBeenCalledWith(
       admin,
       expect.objectContaining({
@@ -84,6 +104,65 @@ describe('/api/account-inventory PATCH', () => {
         recordId: targetUserId,
       })
     );
+  });
+
+  it('rolls back the database classification when auth metadata synchronization fails', async () => {
+    const updateEq = vi.fn(async () => ({ error: null }));
+    const update = vi.fn(() => ({ eq: updateEq }));
+    const admin = {
+      auth: {
+        admin: {
+          getUserById: vi.fn(async () => ({
+            data: { user: { id: targetUserId, app_metadata: { db_role: 'super_admin' } } },
+            error: null,
+          })),
+          updateUserById: vi.fn(async () => ({
+            data: null,
+            error: { message: 'auth unavailable' },
+          })),
+        },
+      },
+      from: vi.fn(() => ({
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            is: vi.fn(() => ({
+              single: vi.fn(async () => ({
+                data: {
+                  id: targetUserId,
+                  role: 'super_admin',
+                  account_kind: 'workforce',
+                  account_purpose: null,
+                  sponsor_user_id: null,
+                },
+                error: null,
+              })),
+            })),
+          })),
+        })),
+        update,
+      })),
+    };
+    vi.mocked(createSupabaseAdminClient).mockReturnValue(admin as never);
+
+    const response = await PATCH(
+      new Request('http://localhost/api/account-inventory', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: targetUserId,
+          accountKind: 'privileged',
+          purpose: 'Production configuration verification',
+        }),
+      }) as never
+    );
+
+    expect(response.status).toBe(500);
+    expect(update).toHaveBeenLastCalledWith({
+      account_kind: 'workforce',
+      account_purpose: null,
+      sponsor_user_id: null,
+    });
+    expect(logActivity).not.toHaveBeenCalled();
   });
 
   it('requires a recorded purpose for privileged accounts', async () => {

@@ -91,7 +91,7 @@ export async function PATCH(request: NextRequest) {
   const admin = createSupabaseAdminClient();
   const { data: target, error: targetError } = await admin
     .from('users')
-    .select('id, role, account_kind')
+    .select('id, role, account_kind, account_purpose, sponsor_user_id')
     .eq('id', parsed.data.userId)
     .is('deleted_at', null)
     .single();
@@ -120,6 +120,11 @@ export async function PATCH(request: NextRequest) {
     }
   }
 
+  const { data: targetAuth, error: targetAuthError } = await admin.auth.admin.getUserById(target.id);
+  if (targetAuthError || !targetAuth.user) {
+    return NextResponse.json({ error: 'Target authentication account not found' }, { status: 404 });
+  }
+
   const { error: updateError } = await admin
     .from('users')
     .update({
@@ -131,6 +136,27 @@ export async function PATCH(request: NextRequest) {
     .eq('id', target.id);
   if (updateError) {
     return NextResponse.json({ error: 'Failed to update account classification' }, { status: 500 });
+  }
+
+  const { error: authUpdateError } = await admin.auth.admin.updateUserById(target.id, {
+    app_metadata: {
+      ...targetAuth.user.app_metadata,
+      account_kind: parsed.data.accountKind,
+    },
+  });
+  if (authUpdateError) {
+    await admin
+      .from('users')
+      .update({
+        account_kind: target.account_kind,
+        account_purpose: target.account_purpose,
+        sponsor_user_id: target.sponsor_user_id,
+      })
+      .eq('id', target.id);
+    return NextResponse.json(
+      { error: 'Failed to synchronize authentication classification' },
+      { status: 500 }
+    );
   }
 
   logActivity(admin, {

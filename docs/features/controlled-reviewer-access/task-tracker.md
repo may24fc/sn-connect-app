@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Core identity classification, workforce filtering, privileged leadership classification, reviewer authorization, synthetic Review Hub, account inventory, and local validation are implemented and verified. The new privileged-account migration and requested production reclassification remain undeployed.
+Core identity classification, workforce filtering, privileged leadership classification, reviewer authorization, synthetic Review Hub, account inventory, and local validation are implemented and verified. The privileged-account migration is deployed and Cef Admin is classified as a non-workforce privileged account in production.
 
 Optimization and measurement details: [optimization.md](optimization.md).
 
@@ -10,6 +10,7 @@ Optimization and measurement details: [optimization.md](optimization.md).
 
 ### Done
 - [x] Add explicit privileged non-workforce leadership accounts - 2026-10-16; added `account_kind = privileged`, leadership-invite population/purpose controls, server-side validation, employee-profile suppression, audited Account Inventory reclassification, and auth typing. Local migration, SQL exclusion assertion, web TypeScript, 9 focused API/auth tests, and 7 Playwright tests passed; desktop/mobile screenshots were reviewed. Mutations are server-confirmed because identity classification is security-sensitive.
+- [x] Reclassify Cef Admin in production - 2026-10-16; confirmed migrations `20261016000001` and `20261016000002` in linked production history, then changed only `cefjumaoas29@gmail.com` from `workforce` to `privileged` with May as audit sponsor and a recorded purpose. Verified the database and Auth metadata both report `privileged`, `employee_directory` returns zero rows for Cef, and the audit event exists. `may@24fitclub.com.au` and `steven@24fitclub.com.au` remain `workforce`.
 - [x] Add first-class account populations and workforce eligibility - 2026-10-15; `supabase/migrations/20261015000002_controlled_reviewer_access.sql`; applied to local Supabase and validated with `tests/sql/controlled-reviewer-access-local.sql`.
 - [x] Exclude reviewer/test/service identities from the shared Directory and historical performance roster inputs - 2026-10-15; workforce-only `employee_directory`, `is_workforce_account`, and `is_quarter_workforce_eligible`; directory/performance focused tests passed.
 - [x] Add environment-gated reviewer authorization and seven-day engagements - 2026-10-15; middleware, auth bootstrap, invitation/session/expiry endpoints, and default-deny review API checks; typecheck and auth tests passed.
@@ -27,7 +28,6 @@ Optimization and measurement details: [optimization.md](optimization.md).
 - [ ] None.
 
 ### Deferred
-- [ ] Reclassify the existing Cef Admin production account as `privileged` while leaving `may@24fitclub.com.au` and `steven@24fitclub.com.au` unchanged - requires an explicit production deployment and data-change request after `20261016000002_add_privileged_account_kind.sql` is deployed; no email-based migration or hardcoded exception will be used.
 - [ ] Provision the isolated Demo/Review deployment and Supabase project - requires owner-controlled Vercel/Supabase project creation, secrets, custom URL, and scheduled `/api/cron/review-expire`; resume when deployment access is explicitly provided, following [deployment-runbook.md](deployment-runbook.md).
 - [ ] Disable and audit the real Accounting tester and production latency account - production changes require an explicit production remediation request; resume with the exact account IDs and approved retention/audit window. The migration is now in production, so the accounts can be classified.
 
@@ -38,6 +38,7 @@ Optimization and measurement details: [optimization.md](optimization.md).
 - [ ] None.
 
 ## Session History
+- 2026-10-16 (production correction): On explicit owner instruction, reclassified Cef Admin as `privileged` through a project-ref-guarded operation and recorded May as sponsor. Verified database/Auth agreement, workforce-directory exclusion, audit evidence, and unchanged workforce classifications for May and Steven. Added a reusable guarded operations script and Auth metadata synchronization/rollback to the Account Inventory API.
 - 2026-10-16: Added a first-class privileged human identity population, separate from authorization role. Leadership invites can choose workforce or privileged non-workforce, and super admins can reclassify an existing eligible leadership account through Account Inventory with a required purpose and audit event. Applied and verified locally only; no production account was changed.
 - 2026-10-15 (anomalies): Identified both flagged production accounts read-only. Took no action on the already-deleted one. Soft-deleted the active orphan and banned its login on the owner's instruction, with an audit entry. Verified it left the directory view. The Accounting tester and latency-account item is unchanged (the latency account is already `test`).
 - 2026-10-15 (migration): Applied `20261015000002` locally (already present; SQL assertions re-run) and to production after a dry run listed only that migration. Code depending on it can now be pushed. The read-only production classification report was then run and found 2 accounts needing review (see Deferred); nothing was changed. The migration also set `latency-bench@example.com` to `test`, which removes it from production directory and performance views. No other production data was read or changed.

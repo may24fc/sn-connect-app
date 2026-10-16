@@ -90,7 +90,8 @@ The control route also regressed and all routes showed intermittent p95 outliers
 
 ## Change Log
 
-- 2026-10-16: Added explicit privileged non-workforce leadership creation and audited reclassification. Kept the mutation server-confirmed; production deployment and Cef Admin reclassification remain deferred.
+- 2026-10-16: Reclassified Cef Admin as `privileged` in production and verified database/Auth agreement, workforce-directory exclusion, audit evidence, and unchanged May/Steven classifications. Added a project-ref-guarded operations script and made Account Inventory synchronize Auth metadata with database rollback on failure.
+- 2026-10-16: Added explicit privileged non-workforce leadership creation and audited reclassification. Kept the mutation server-confirmed.
 - 2026-10-15: Applied the migration to local and production. No post-migration production latency was captured. The `employee_directory` view gained one column and one indexed filter (`idx_users_account_kind`), so a production latency check is worthwhile before any speed claim.
 - 2026-10-15: Corrected the expiry cron to answer Vercel's `GET` (it was `POST`-only), added route tests, and published the [deployment runbook](deployment-runbook.md). No latency-relevant code path changed.
 - 2026-10-15: Audited identity leakage, implemented centralized classification and layered reviewer access, captured the local baseline, and deferred external environment provisioning and production remediation.
