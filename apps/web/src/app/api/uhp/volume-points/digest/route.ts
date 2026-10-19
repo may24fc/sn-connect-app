@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   const [entriesResult, changedResult, targetsResult] = await Promise.all([
     admin
       .from('uhp_vp_entries')
-      .select('category, volume_points')
+      .select('member_name, category, volume_points')
       .eq('reporting_month', reportingMonth)
       .is('deleted_at', null),
     admin
@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
       intervalStartedAt,
       intervalEndedAt: now.toISOString(),
       reportingMonth,
+      monthlyEntries: entriesResult.data ?? [],
       changedEntries: changedResult.data ?? [],
       changeCount: changedResult.data?.length ?? 0,
       categories,
