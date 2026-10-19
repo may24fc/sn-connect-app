@@ -72,8 +72,8 @@
     "semantic_hash": ""
   },
   "apps/web/next-env.d.ts": {
-    "mtime": 1792065989.8380458,
-    "seen": 1792114392.0534651,
+    "mtime": 1792119401.5862448,
+    "seen": 1792373717.3936608,
     "ast_hash": "90426577ad8f38459f3e566411c85589",
     "semantic_hash": ""
   },
@@ -234,9 +234,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/ai/sources/[id]/versions/route.ts": {
-    "mtime": 1791775583.094964,
-    "seen": 1791775894.5551472,
-    "ast_hash": "986c7a574df3aa66d690591929a5a60e",
+    "mtime": 1792118604.5257726,
+    "seen": 1792373717.393917,
+    "ast_hash": "8a6fa2c76b4f93b03ad977ea9cc84cfb",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/ai/sources/route.ts": {
@@ -402,9 +402,9 @@
     "semantic_hash": "6989519086ede9e6ad551ffa53ae3a27"
   },
   "apps/web/src/app/api/audit-logs/route.ts": {
-    "mtime": 1791787595.660228,
-    "seen": 1791788039.251071,
-    "ast_hash": "ed4fdeccaad11e8a32ea66caa2907067",
+    "mtime": 1792118877.4295223,
+    "seen": 1792373717.3939428,
+    "ast_hash": "274ffb7858280a3d8f9b8b02cbf0ce44",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/auth/callback/route.ts": {
@@ -1134,9 +1134,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/performance/individual/[employeeId]/route.ts": {
-    "mtime": 1792049898.6267116,
-    "seen": 1792050566.0286849,
-    "ast_hash": "0c967a6b006d3fec3af269a5c362c7ef",
+    "mtime": 1792119185.238821,
+    "seen": 1792373717.3940685,
+    "ast_hash": "bc7ab7c4ea5eea4f0653d428cd94fc71",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/performance/kpis/[id]/evidence/route.ts": {
@@ -3174,8 +3174,8 @@
     "semantic_hash": "7a0dc3198c754c2a24e5a4a5466f950f"
   },
   "apps/web/src/lib/generated/application-update-summary.generated.ts": {
-    "mtime": 1792117374.410257,
-    "seen": 1792117645.1787462,
+    "mtime": 1792118948.243767,
+    "seen": 1792373717.3944616,
     "ast_hash": "7322821048c7b2c5f9f9ddca7c61261a",
     "semantic_hash": "7322821048c7b2c5f9f9ddca7c61261a"
   },
@@ -7614,10 +7614,10 @@
     "semantic_hash": "41cce3f797b31bd48e67076957552c9d"
   },
   "tests/api/audit-logs-route.test.ts": {
-    "mtime": 1788257423.7538235,
-    "seen": 1789664611.8294697,
-    "ast_hash": "327c9007faebe69be46a1e04ea71ac28",
-    "semantic_hash": "327c9007faebe69be46a1e04ea71ac28"
+    "mtime": 1792118736.5027692,
+    "seen": 1792373717.3951972,
+    "ast_hash": "f3a29fd138090b7af4cdae3fbcf58f3d",
+    "semantic_hash": ""
   },
   "tests/api/collection-resources-route.test.ts": {
     "mtime": 1788257423.7548316,
@@ -10056,9 +10056,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/uhp/volume-points/digest/route.ts": {
-    "mtime": 1790156487.4933493,
-    "seen": 1790156807.5185485,
-    "ast_hash": "60e373ff245266371a9baba124929f73",
+    "mtime": 1792373432.9251087,
+    "seen": 1792373717.394165,
+    "ast_hash": "d1e4ccf1b1e6f308295dc596db5d6926",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/uhp/volume-points/entries/[id]/route.ts": {
@@ -10152,9 +10152,9 @@
     "semantic_hash": ""
   },
   "n8n/workflows/uhp-volume-points-daily-digest.json": {
-    "mtime": 1791940486.92206,
-    "seen": 1791940769.9000359,
-    "ast_hash": "cbe17915a17c86d7c947387137bd61b9",
+    "mtime": 1792373664.4356737,
+    "seen": 1792373717.3947139,
+    "ast_hash": "9c7f2a49c85f2f47f1a42ef052a2ac5e",
     "semantic_hash": ""
   },
   "scripts/backfill/import-uhp-workspace.mjs": {
@@ -10188,9 +10188,9 @@
     "semantic_hash": ""
   },
   "n8n/workflows/uhp-workflows.test.ts": {
-    "mtime": 1791940885.0047965,
-    "seen": 1791941033.9938378,
-    "ast_hash": "7db5c21eb4000413500712b1882f8401",
+    "mtime": 1792373433.4109206,
+    "seen": 1792373717.3947146,
+    "ast_hash": "4c04482767f4b6e0881bdcfa8277308b",
     "semantic_hash": ""
   },
   "scripts/backfill/import-uhp-workspace.test.ts": {
@@ -10488,9 +10488,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(admin)/admin/performance/employee/[id]/page.tsx": {
-    "mtime": 1792049915.796738,
-    "seen": 1792050566.0282333,
-    "ast_hash": "0934ecd7806bd1b17f1840c033796c9a",
+    "mtime": 1792118587.7198052,
+    "seen": 1792373717.3937073,
+    "ast_hash": "43441cd3907c3a21d2b47afc6faa7bde",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(admin)/admin/performance/evaluations/page.tsx": {
@@ -10524,9 +10524,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(admin)/admin/performance/page.tsx": {
-    "mtime": 1792114652.865245,
-    "seen": 1792115103.8058047,
-    "ast_hash": "71fb1b915f249e2b05aa1f173844980c",
+    "mtime": 1792118517.1369855,
+    "seen": 1792373717.3937135,
+    "ast_hash": "a5b88c88b1483aec884980f5cef4d51d",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(admin)/admin/performance/self-evaluation/page.tsx": {
@@ -11910,15 +11910,15 @@
     "semantic_hash": ""
   },
   "docs/features/ultimate-health-project/optimization.md": {
-    "mtime": 1792115214.7635999,
-    "seen": 1792115225.0812466,
-    "ast_hash": "74622150e4ab510686005b216368887b",
+    "mtime": 1792373562.9995966,
+    "seen": 1792373717.3954923,
+    "ast_hash": "a9728bd75c6c75d52845038036ede330",
     "semantic_hash": ""
   },
   "docs/features/ultimate-health-project/task-tracker.md": {
-    "mtime": 1792115214.6575222,
-    "seen": 1792115225.0812476,
-    "ast_hash": "381c544b92f45bcea1d8bd272363825a",
+    "mtime": 1792373591.9358275,
+    "seen": 1792373717.395493,
+    "ast_hash": "5973fce6392271e7edb8641896759995",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/users/[id]/permanent/route.ts": {
@@ -12138,9 +12138,9 @@
     "semantic_hash": ""
   },
   "docs/features/user-identity-display/task-tracker.md": {
-    "mtime": 1791795134.9021652,
-    "seen": 1791796902.4116635,
-    "ast_hash": "c98ef4dd5a79bfee526c8032b604b760",
+    "mtime": 1792119515.3431177,
+    "seen": 1792373717.3954947,
+    "ast_hash": "e2c666be095baf2b7cb2466e8e7110ad",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/finance/page.tsx": {
@@ -13068,9 +13068,9 @@
     "semantic_hash": ""
   },
   "docs/features/user-identity-display/optimization.md": {
-    "mtime": 1791795135.0496328,
-    "seen": 1791796902.4116604,
-    "ast_hash": "8ea2fc9c609b8c966552b02b5bf63ca2",
+    "mtime": 1792119513.1619105,
+    "seen": 1792373717.3954937,
+    "ast_hash": "508a654d400b5c48a5758bc1f1db433a",
     "semantic_hash": ""
   },
   "supabase/migrations/20261013000001_finance_property_terms.sql": {
@@ -13146,9 +13146,9 @@
     "semantic_hash": ""
   },
   "e2e/okr-kpi-historical-roster.spec.ts": {
-    "mtime": 1792115125.6575992,
-    "seen": 1792115225.0803983,
-    "ast_hash": "c5465a2cd4409a4245be8e822c348f55",
+    "mtime": 1792118768.4678478,
+    "seen": 1792373717.3946803,
+    "ast_hash": "e7e63866173e06f8b61950074d4be6b5",
     "semantic_hash": ""
   },
   "supabase/migrations/20261015000001_add_user_created_at_to_employee_directory.sql": {
@@ -13158,15 +13158,15 @@
     "semantic_hash": ""
   },
   "docs/features/okr-kpi-cycle-roster/optimization.md": {
-    "mtime": 1792115349.9188216,
-    "seen": 1792115423.6141095,
-    "ast_hash": "0dbac1eeacc32a9e8d9e126e94d8c535",
+    "mtime": 1792118879.507556,
+    "seen": 1792373717.3954842,
+    "ast_hash": "bf2cb24a2617f7b34927b8d5689e6e44",
     "semantic_hash": ""
   },
   "docs/features/okr-kpi-cycle-roster/task-tracker.md": {
-    "mtime": 1792115349.8150127,
-    "seen": 1792115423.6141105,
-    "ast_hash": "7319d54ea3d6b8dd0d6742021714d9ae",
+    "mtime": 1792118879.3546188,
+    "seen": 1792373717.3954852,
+    "ast_hash": "cf098a52321f3996f5ea80abd88e9a2a",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(admin)/super-admin/account-inventory/page.tsx": {
@@ -13401,6 +13401,12 @@
     "mtime": 1792117270.8079028,
     "seen": 1792117645.1792085,
     "ast_hash": "886f8cae60b7021ff8bdf0a65b1a178b",
+    "semantic_hash": ""
+  },
+  "Control Hub & Telegram Community Proposal_Cef.md": {
+    "mtime": 1792371282.6987083,
+    "seen": 1792373717.395361,
+    "ast_hash": "03b8646e7fbbfaaad68a5cb510ea0ba8",
     "semantic_hash": ""
   }
 }
