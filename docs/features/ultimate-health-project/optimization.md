@@ -6,7 +6,7 @@
 - [Authenticated n8n callback route](../../../apps/web/src/app/api/uhp/reminders/runs/route.ts)
 - [Callback secret validation](../../../apps/web/src/app/api/uhp/_lib.ts)
 - [Reminder workflow definition](../../../n8n/workflows/uhp-herbalife-portal-reminders.json)
-- [Volume Points digest workflow](../../../n8n/workflows/uhp-volume-points-daily-digest.json) and [Outreach summary workflow](../../../n8n/workflows/uhp-outreach-weekly-summary.json) - Telegram message layout.
+- [Volume Points digest API](../../../apps/web/src/app/api/uhp/volume-points/digest/route.ts), [Volume Points digest workflow](../../../n8n/workflows/uhp-volume-points-daily-digest.json), and [Outreach summary workflow](../../../n8n/workflows/uhp-outreach-weekly-summary.json) - Telegram message data and layout.
 - [Workflow regression tests](../../../n8n/workflows/uhp-workflows.test.ts)
 - [Reminder-date calculation tests](../../../apps/web/src/lib/uhp-reminders.test.ts)
 - [Outreach Tracker period selector](../../../apps/web/src/components/uhp/UhpClientTrackerPage.tsx)
@@ -25,6 +25,13 @@
 - [WE form status activity query](../../../apps/web/src/app/api/uhp/_lib.ts), [deduplicated evaluation summary](../../../apps/web/src/lib/uhp.ts), [summary tests](../../../tests/lib/uhp-outreach-summary.test.ts), [period query test](../../../tests/api/uhp-outreach-period.test.ts), and [browser regression](../../../e2e/uhp-wellness-evaluation.spec.ts) - status milestone and appointment attribution.
 
 ## Records
+
+### Implemented - 2026-10-19: Complete monthly WHO ORDERED digest table
+
+- Problem/evidence: The digest built `WHO ORDERED` only from entries updated after the previous successful run. On a no-change day, Telegram therefore said there were no orders even while the selected month's Control Hub Entries table contained member orders.
+- Delivered solution: Return all non-deleted entries for the current reporting month from the authenticated digest API. Keep the prior-run delta solely for the independent change-status line. Aggregate monthly rows by member, sort names, and render a `NAME | VP` heading with each member's total VP; show “No orders for this month” only when the monthly table is actually empty. The formatter retains a `changedEntries` fallback so an n8n update remains compatible while the corresponding web deployment rolls out.
+- Code paths: Volume Points digest API, Volume Points n8n workflow, and workflow regression tests in Relevant Code Map.
+- Validation: the full `pnpm build` passed. `pnpm exec vitest run n8n/workflows/uhp-workflows.test.ts` passed 18 tests, including a no-change digest with populated monthly entries; `pnpm --filter @hr-portal/web typecheck` passed. This correction changes message completeness rather than latency, so no performance claim or measurement applies.
 
 ### Implemented - 2026-10-16: Quarterly Volume Points KPI and table consistency
 
@@ -72,7 +79,7 @@ flowchart LR
 ### Implemented - 2026-10-14: Digest feedback and schedule alignment
 
 - Problem/evidence: Telegram feedback requested the weekly Outreach digest at 09:00 Friday, three distinct booking lines, member names under Volume Points orders, and removal of target VP. Both the repository and live n8n still used Friday 17:00, one combined booking line, and target-bearing VP rows without member names.
-- Delivered solution: Schedule Outreach at `0 9 * * 5` in the existing `Asia/Manila` workflow timezone. Preserve the existing combined Wellness evaluations metric for the app while exposing separate form-milestone and wellness-call counts to the digest. Build the VP "WHO ORDERED" section from entries changed since the previous daily digest, grouped by member, and omit target values.
+- Delivered solution: Schedule Outreach at `0 9 * * 5` in the existing `Asia/Manila` workflow timezone. Preserve the existing combined Wellness evaluations metric for the app while exposing separate form-milestone and wellness-call counts to the digest. Build the VP "WHO ORDERED" section from entries changed since the previous daily digest, grouped by member, and omit target values. The 2026-10-19 record supersedes the delta-only source so current digests show the complete reporting-month member table.
 - Code paths: [Outreach summary calculation](../../../apps/web/src/lib/uhp.ts), [summary tests](../../../tests/lib/uhp-outreach-summary.test.ts), [VP workflow](../../../n8n/workflows/uhp-volume-points-daily-digest.json), [Outreach workflow](../../../n8n/workflows/uhp-outreach-weekly-summary.json), and [workflow tests](../../../n8n/workflows/uhp-workflows.test.ts).
 - Validation: 31 focused tests and web TypeScript passed. The inactive live VP and Outreach workflows were synced and read back; Outreach is Friday 09:00 PHT, VP remains daily 12:00 PHT, and recipients, credentials, and inactive states were unchanged. The web app must be deployed before Outreach activation so production returns the new booking fields.
 
@@ -283,6 +290,7 @@ flowchart LR
 
 ## Change Log
 
+- 2026-10-19: Corrected Volume Points `WHO ORDERED` to list all reporting-month members and aggregated VP under `NAME | VP`, even when no entries changed since the previous digest; 18 workflow tests and web TypeScript passed.
 - 2026-10-16: Added quarterly Volume Points KPI ranges, reorganized responsive controls, adopted shared table primitives, and normalized action-column placement/alignment; the full build plus focused unit, type, lint, and browser checks passed.
 - 2026-10-15: Extracted the calendar and draft/Apply/Clear range behavior into shared components, removed duplicate Marketing Reports DayPickers, and passed the final two-route desktop/mobile browser audit. No speed or bundle-size claim is made.
 - 2026-10-15: Added an inclusive custom Outreach metrics range using the established calendar and server-confirmed Apply behavior; passed focused tests and the secured desktop/mobile browser audit. Latency comparison remains deferred without a valid pre-edit baseline.

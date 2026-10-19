@@ -110,6 +110,11 @@ describe('UHP n8n workflows', () => {
     const digest = {
       reportingMonth: '2026-10-01',
       categories: [{ label: 'Repeat Customers', actualVp: 99.8, targetVp: 200 }],
+      monthlyEntries: [
+        { member_name: 'Jordan', volume_points: 10 },
+        { member_name: 'Alex', volume_points: 40 },
+        { member_name: 'Alex', volume_points: 2.5 },
+      ],
       changedEntries: [],
       totalActualVp: 99.8,
       changeCount: 0,
@@ -120,7 +125,9 @@ describe('UHP n8n workflows', () => {
     const noChangeMessage = format({ data: digest }, lookup)[0].json.telegramText;
     expect(noChangeMessage).toContain('Repeat Customers: 99.8 VP');
     expect(noChangeMessage).toContain('WHO ORDERED\n');
-    expect(noChangeMessage).toContain('No orders since the previous digest');
+    expect(noChangeMessage).toContain('NAME | VP');
+    expect(noChangeMessage).toContain('Alex | 42.5 VP');
+    expect(noChangeMessage).toContain('Jordan | 10 VP');
     expect(noChangeMessage).toContain('No changes since the previous digest.');
     expect(noChangeMessage).not.toContain('target');
 
@@ -138,8 +145,8 @@ describe('UHP n8n workflows', () => {
       },
       lookup
     )[0].json.telegramText;
-    expect(changedMessage).toContain('Alex: 42.5 VP');
-    expect(changedMessage).toContain('Jordan: 10 VP');
+    expect(changedMessage).toContain('Alex | 42.5 VP');
+    expect(changedMessage).toContain('Jordan | 10 VP');
     expect(changedMessage).toContain('3 updated entries since the previous digest.');
     expect(
       format({ data: { ...digest, intervalStartedAt: '2026-10-12T02:41:00.41+00:00' } }, lookup)[0]
