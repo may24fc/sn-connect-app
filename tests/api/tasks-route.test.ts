@@ -28,6 +28,18 @@ vi.mock('@/lib/notifications/create-notification', () => ({
   getUserDisplayName: vi.fn(),
 }));
 
+vi.mock('@/lib/work-management/permissions', () => ({
+  getManagedMemberIds: vi.fn(
+    async (_client: unknown, userId: string, role: string | null) =>
+      role === 'admin' || role === 'super_admin' ? null : [userId]
+  ),
+  getWorkManagementScope: vi.fn(async (_client: unknown, _userId: string, role: string | null) => ({
+    isGlobal: role === 'admin' || role === 'super_admin',
+    departmentId: null,
+    ledDepartmentIds: [],
+  })),
+}));
+
 import { getTaskAuthedContext } from '@/app/api/tasks/_lib';
 import { GET } from '@/app/api/tasks/route';
 
@@ -63,6 +75,7 @@ function createTaskListAdminClient() {
     or: vi.fn(() => query),
     overlaps: vi.fn(() => query),
     range: vi.fn(() => query),
+    in: vi.fn(() => query),
     // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are awaitable.
     then: (
       onFulfilled?: (value: typeof result) => unknown,

@@ -8,6 +8,15 @@ vi.mock('@/app/api/projects/_lib', () => ({
   isProjectAdmin: vi.fn((role: string | null) => role === 'admin' || role === 'super_admin'),
 }));
 
+vi.mock('@/lib/work-management/permissions', () => ({
+  getManagedMemberIds: vi.fn(async () => null),
+  getWorkManagementScope: vi.fn(async () => ({
+    isGlobal: true,
+    departmentId: null,
+    ledDepartmentIds: [],
+  })),
+}));
+
 interface QueryResult {
   data: Array<Record<string, unknown>> | null;
   error: Record<string, unknown> | null;

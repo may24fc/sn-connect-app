@@ -1,6 +1,11 @@
 import { logActivity } from '@/lib/audit';
 import { createNotification, getUserDisplayName } from '@/lib/notifications/create-notification';
 import { taskUpdateSchema } from '@/lib/schemas/task.schema';
+import {
+  canAssignUser,
+  canManageProject,
+  isGlobalWorkManager,
+} from '@/lib/work-management/permissions';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
   TASK_ASSIGNER_ROLE,
@@ -73,16 +78,28 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const { data: authorizationTask } = await supabaseAdmin
       .from('tasks')
-      .select('assigned_to, assigned_by, blocked_reason')
+      .select('assigned_to, assigned_by, blocked_reason, project_id')
       .eq('id', id)
       .is('deleted_at', null)
       .maybeSingle();
     if (!authorizationTask) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
+    const hasDepartmentAuthority = isGlobalWorkManager(role)
+      ? true
+      : authorizationTask.assigned_to
+        ? await canAssignUser(
+          supabaseAdmin,
+          user.id,
+          role,
+          authorizationTask.assigned_to,
+          authorizationTask.project_id
+        )
+        : authorizationTask.project_id
+          ? await canManageProject(supabaseAdmin, authorizationTask.project_id, user.id, role)
+          : false;
     if (
-      role !== TASK_ASSIGNER_ROLE &&
-      role !== 'admin' &&
+      !hasDepartmentAuthority &&
       authorizationTask.assigned_to !== user.id &&
       authorizationTask.assigned_by !== user.id
     ) {
@@ -130,9 +147,21 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       updates.description = parsed.data.description || null;
     }
     if (parsed.data.assignedTo !== undefined) {
-      if (role !== TASK_ASSIGNER_ROLE && role !== 'admin') {
+      if (!hasDepartmentAuthority) {
+        return NextResponse.json({ error: 'Task reassignment access denied' }, { status: 403 });
+      }
+      if (
+        parsed.data.assignedTo &&
+        !(await canAssignUser(
+          supabaseAdmin,
+          user.id,
+          role,
+          parsed.data.assignedTo,
+          authorizationTask.project_id
+        ))
+      ) {
         return NextResponse.json(
-          { error: 'Only super-admin can re-assign tasks' },
+          { error: 'You can only reassign work to eligible members of a department you lead' },
           { status: 403 }
         );
       }

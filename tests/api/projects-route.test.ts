@@ -1,6 +1,15 @@
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/lib/work-management/permissions', () => ({
+  canAssignUser: vi.fn(async () => true),
+  getWorkManagementScope: vi.fn(async () => ({
+    isGlobal: true,
+    departmentId: null,
+    ledDepartmentIds: [],
+  })),
+}));
+
 vi.mock('@/app/api/projects/_lib', () => ({
   getProjectAuthedContext: vi.fn(),
   isProjectAdmin: vi.fn(() => false),
@@ -30,6 +39,14 @@ function createAdminClient(contributorError: { message: string } | null) {
     }
     if (table === 'project_contributors') {
       return { upsert };
+    }
+    if (table === 'users') {
+      const usersQuery = {
+        select: vi.fn(() => usersQuery),
+        eq: vi.fn(() => usersQuery),
+        maybeSingle: vi.fn(async () => ({ data: { department_id: null }, error: null })),
+      };
+      return usersQuery;
     }
     throw new Error(`Unexpected table: ${table}`);
   });

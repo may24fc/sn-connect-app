@@ -76,7 +76,10 @@ export interface WorkTrackerResponse {
   scope: WorkTrackerScope;
   days: WorkTrackerRange;
   canAssignTasks: boolean;
+  canViewTeam: boolean;
+  teamLabel: 'Team visibility' | 'My department';
   usageAvailable: boolean;
+  usageRestricted: boolean;
   person?: PersonWorkSummary;
   people?: Array<PersonWorkSummary>;
   projects?: Array<ProjectWorkSummary>;

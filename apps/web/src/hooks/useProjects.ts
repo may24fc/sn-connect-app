@@ -6,7 +6,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 export type ProjectStatus = 'planning' | 'active' | 'on_hold' | 'completed' | 'archived';
 export type ProjectHealth = 'on_track' | 'at_risk' | 'overdue' | 'blocked';
 export type MilestonePeriodType = 'month' | 'week';
-export type MilestoneStatus = 'not_started' | 'in_progress' | 'submitted' | 'approved' | 'overdue';
+export type MilestoneStatus =
+  | 'not_started'
+  | 'in_progress'
+  | 'submitted'
+  | 'approved'
+  | 'completed'
+  | 'overdue';
 export type ChecklistItemStatus = 'todo' | 'done';
 
 /** Display identity for a person attached to a project, resolved from the employee directory. */
@@ -86,6 +92,7 @@ export interface ProjectDocumentationCreateResponse {
 
 export interface ProjectDetail extends ProjectRecord {
   contributors: ProjectContributorRecord[];
+  can_manage: boolean;
 }
 
 export interface MilestoneRecord {
@@ -104,6 +111,8 @@ export interface MilestoneRecord {
   submitted_by: string | null;
   approved_at: string | null;
   approved_by: string | null;
+  completed_at: string | null;
+  completed_by: string | null;
   position: number;
   // v2 fields
   complexity_tier: 'routine' | 'standard' | 'complex' | 'epic' | null;
@@ -435,6 +444,27 @@ export function useDeleteMilestone() {
       });
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
+    },
+  });
+}
+
+/** Completion is server-confirmed because it atomically and irreversibly distributes XP. */
+export function useCompleteMilestone() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { milestoneId: string; projectId: string }) =>
+      jsonFetch<{ data: MilestoneRecord }>(
+        `/api/projects/milestones/${input.milestoneId}/submit`,
+        { method: 'POST' }
+      ),
+    onSuccess: (_data, vars) => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.projects.milestones(vars.projectId),
+      });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.workTracker.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gamification.all });
     },
   });
 }

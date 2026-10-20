@@ -1,10 +1,14 @@
-import { getProjectAuthedContext, isProjectAdmin } from '@/app/api/projects/_lib';
+import { getProjectAuthedContext } from '@/app/api/projects/_lib';
 import {
   type DirectoryPerson,
   loadDirectoryPeople,
   normalizeDepartmentName,
 } from '@/lib/people/directory-people';
 import { type NextRequest, NextResponse } from 'next/server';
+import {
+  getManagedMemberIds,
+  getWorkManagementScope,
+} from '@/lib/work-management/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -108,8 +112,10 @@ export async function GET(request: NextRequest) {
   const scope = request.nextUrl.searchParams.get('scope') === 'team' ? 'team' : 'mine';
   const requestedDays = Number.parseInt(request.nextUrl.searchParams.get('days') ?? '30', 10);
   const days = [7, 30, 90].includes(requestedDays) ? requestedDays : 30;
+  const managementScope = await getWorkManagementScope(supabaseAdmin, user.id, role);
+  const canViewTeam = managementScope.isGlobal || managementScope.ledDepartmentIds.length > 0;
 
-  if (scope === 'team' && !isProjectAdmin(role)) {
+  if (scope === 'team' && !canViewTeam) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -185,20 +191,41 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to load work tracker' }, { status: 500 });
   }
 
-  const staff = (staffResult.data ?? []) as Array<StaffRow>;
-  const projects = (projectsResult.data ?? []) as Array<ProjectRow>;
+  const managedMemberIds = await getManagedMemberIds(supabaseAdmin, user.id, role);
+  const managedMemberSet = managedMemberIds ? new Set(managedMemberIds) : null;
+  const allStaff = (staffResult.data ?? []) as Array<StaffRow>;
+  const allProjects = (projectsResult.data ?? []) as Array<ProjectRow>;
+  let departmentProjectIds: Set<string> | null = null;
+  if (!managementScope.isGlobal && managementScope.ledDepartmentIds.length > 0) {
+    const { data: departmentProjects } = await supabaseAdmin
+      .from('project_departments')
+      .select('project_id')
+      .in('department_id', managementScope.ledDepartmentIds)
+      .eq('status', 'active');
+    departmentProjectIds = new Set((departmentProjects ?? []).map((row) => row.project_id));
+  }
+  const staff = scope === 'team' && managedMemberSet
+    ? allStaff.filter((member) => managedMemberSet.has(member.user_id))
+    : allStaff;
+  const projects = scope === 'team' && departmentProjectIds
+    ? allProjects.filter((project) => departmentProjectIds.has(project.id))
+    : allProjects;
   if (usageResult.error) {
     console.warn('GET /api/work-tracker: hub usage analytics are unavailable:', usageResult.error);
   }
 
-  const tasks = (taskRows ?? []).map((task) => ({
+  const allTasks = (taskRows ?? []).map((task) => ({
     ...(task as Omit<TaskRow, 'project_id'>),
     project_id: taskProjectLinksAvailable
       ? ((task as { project_id?: string | null }).project_id ?? null)
       : null,
   }));
-  const usage = (usageResult.error ? [] : (usageResult.data ?? [])) as Array<UsageRow>;
-  const usageAvailable = !usageResult.error;
+  const tasks = scope === 'team' && managedMemberSet
+    ? allTasks.filter((task) => !!task.assigned_to && managedMemberSet.has(task.assigned_to))
+    : allTasks;
+  const canSeeUsage = managementScope.isGlobal;
+  const usage = (canSeeUsage && !usageResult.error ? (usageResult.data ?? []) : []) as Array<UsageRow>;
+  const usageAvailable = canSeeUsage && !usageResult.error;
   const projectById = new Map(projects.map((project) => [project.id, project]));
   const milestoneById = new Map(
     (milestonesResult.data ?? []).map((milestone) => [milestone.id, milestone.title])
@@ -340,7 +367,11 @@ export async function GET(request: NextRequest) {
       (task) => task.project_id === project.id && task.status !== 'cancelled'
     );
     const nextMilestone = milestones
-      .filter((milestone) => milestone.project_id === project.id && milestone.status !== 'approved')
+      .filter(
+        (milestone) =>
+          milestone.project_id === project.id &&
+          !['approved', 'completed'].includes(milestone.status)
+      )
       .sort((left, right) => left.due_date.localeCompare(right.due_date))[0];
     return {
       id: project.id,
@@ -381,8 +412,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       scope,
       days,
-      canAssignTasks: role === 'super_admin' || role === 'admin',
+      canAssignTasks: canViewTeam,
+      canViewTeam,
+      teamLabel: managementScope.isGlobal ? 'Team visibility' : 'My department',
       usageAvailable,
+      usageRestricted: !canSeeUsage,
       person: buildSummary(matchingStaff),
       projects: visibleProjects.map(buildProjectSummary),
     });
@@ -393,8 +427,11 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     scope,
     days,
-    canAssignTasks: role === 'super_admin' || role === 'admin',
+    canAssignTasks: canViewTeam,
+    canViewTeam,
+    teamLabel: managementScope.isGlobal ? 'Team visibility' : 'My department',
     usageAvailable,
+    usageRestricted: !canSeeUsage,
     people,
     projects: visibleProjects.map(buildProjectSummary),
     unassignedTaskCount: tasks.filter(

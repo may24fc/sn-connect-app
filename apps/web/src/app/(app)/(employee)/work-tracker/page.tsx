@@ -126,9 +126,12 @@ export default function WorkTrackerPage() {
   const requestedView = searchParams.get('view');
   const view: WorkTrackerView =
     requestedView === 'roadmap' || requestedView === 'execution' ? requestedView : 'team';
-  const canViewTeam = user?.role === 'admin' || user?.role === 'super_admin';
+  const isGlobalManager = user?.role === 'admin' || user?.role === 'super_admin';
   const scope: WorkTrackerScope =
-    canViewTeam && searchParams.get('scope') !== 'mine' ? 'team' : 'mine';
+    (isGlobalManager && searchParams.get('scope') !== 'mine') ||
+    searchParams.get('scope') === 'team'
+      ? 'team'
+      : 'mine';
   const requestedDays = Number(searchParams.get('days'));
   const days: WorkTrackerRange = requestedDays === 7 || requestedDays === 90 ? requestedDays : 30;
   const requestedWorkType = searchParams.get('type');
@@ -161,7 +164,8 @@ export default function WorkTrackerPage() {
         workItemPriority(left) - workItemPriority(right) ||
         right.updatedAt.localeCompare(left.updatedAt)
     );
-  const canEditTasks = scope === 'mine' || user?.role === 'super_admin' || user?.role === 'admin';
+  const canViewTeam = isGlobalManager || data?.canViewTeam === true;
+  const canEditTasks = scope === 'mine' || data?.canAssignTasks === true;
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -169,7 +173,7 @@ export default function WorkTrackerPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Work Tracker</h1>
           <p className="text-sm text-muted-foreground">
-            Projects, assigned tasks, progress, risks, and Control Hub activity in one place.
+            Projects, assigned tasks, progress, and risks in one place.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -203,12 +207,12 @@ export default function WorkTrackerPage() {
                 onClick={() => updateParams({ scope: 'team' })}
               >
                 <Users className="mr-2 h-4 w-4" />
-                Team visibility
+                {data?.teamLabel ?? 'Team visibility'}
               </Button>
             ) : null}
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Activity and completed work</span>
+            <span className="text-xs text-muted-foreground">Completed work period</span>
             <Select value={String(days)} onValueChange={(value) => updateParams({ days: value })}>
               <SelectTrigger className="w-40" aria-label="Activity and completion period">
                 <SelectValue />
@@ -248,6 +252,7 @@ export default function WorkTrackerPage() {
           <TeamTable
             people={data?.people ?? []}
             usageAvailable={data?.usageAvailable ?? true}
+            usageRestricted={data?.usageRestricted ?? false}
             selectedUserId={selectedPerson?.userId ?? null}
             onSelect={(userId) => {
               setSelectedUserId(userId);
@@ -263,6 +268,7 @@ export default function WorkTrackerPage() {
             person={selectedPerson}
             days={days}
             usageAvailable={data?.usageAvailable ?? true}
+            usageRestricted={data?.usageRestricted ?? false}
           />
           <section className="space-y-3">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -332,6 +338,7 @@ export default function WorkTrackerPage() {
                 person={selectedPerson}
                 days={days}
                 usageAvailable={data?.usageAvailable ?? true}
+                usageRestricted={data?.usageRestricted ?? false}
               />
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -404,10 +411,12 @@ function SummaryCards({
   person,
   days,
   usageAvailable,
+  usageRestricted,
 }: {
   person: PersonWorkSummary;
   days: WorkTrackerRange;
   usageAvailable: boolean;
+  usageRestricted: boolean;
 }) {
   const cards = [
     {
@@ -428,14 +437,18 @@ function SummaryCards({
       detail: `${person.overdueCount} overdue · ${person.blockedCount} blocked`,
       icon: AlertTriangle,
     },
-    {
-      label: 'Hub activity',
-      value: usageAvailable ? `${person.activeDays}/${days}` : 'Unavailable',
-      detail: usageAvailable
-        ? `${person.sessionCount} sessions · ${formatLastActive(person.lastActiveAt)}`
-        : 'Activity tracking data is temporarily unavailable.',
-      icon: Clock3,
-    },
+    ...(!usageRestricted
+      ? [
+          {
+            label: 'Hub activity',
+            value: usageAvailable ? `${person.activeDays}/${days}` : 'Unavailable',
+            detail: usageAvailable
+              ? `${person.sessionCount} sessions · ${formatLastActive(person.lastActiveAt)}`
+              : 'Activity tracking data is temporarily unavailable.',
+            icon: Clock3,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -459,11 +472,13 @@ function SummaryCards({
 function TeamTable({
   people,
   usageAvailable,
+  usageRestricted,
   selectedUserId,
   onSelect,
 }: {
   people: Array<PersonWorkSummary>;
   usageAvailable: boolean;
+  usageRestricted: boolean;
   selectedUserId: string | null;
   onSelect: (userId: string) => void;
 }) {
@@ -493,9 +508,11 @@ function TeamTable({
       <CardHeader>
         <CardTitle className="text-base">Current staff workload</CardTitle>
         <p className="text-xs text-muted-foreground">
-          {usageAvailable
-            ? 'Listed alphabetically. Hub activity indicates use, not productivity or reward eligibility.'
-            : 'Work data is available, but activity tracking is temporarily unavailable.'}
+          {usageRestricted
+            ? 'Department view shows work data only. Hub activity remains restricted to administrators.'
+            : usageAvailable
+              ? 'Listed alphabetically. Hub activity indicates use, not productivity or reward eligibility.'
+              : 'Work data is available, but activity tracking is temporarily unavailable.'}
         </p>
       </CardHeader>
       <CardContent className="overflow-x-auto p-0">
@@ -506,8 +523,8 @@ function TeamTable({
               <th className="px-4 py-3">Projects</th>
               <th className="px-4 py-3">Tasks</th>
               <th className="px-4 py-3">Attention</th>
-              <th className="px-4 py-3">Active days</th>
-              <th className="px-4 py-3">Last active</th>
+              {!usageRestricted ? <th className="px-4 py-3">Active days</th> : null}
+              {!usageRestricted ? <th className="px-4 py-3">Last active</th> : null}
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -554,14 +571,18 @@ function TeamTable({
                     <span className="text-muted-foreground">None</span>
                   )}
                 </td>
-                <td className="px-4 py-3">
-                  {usageAvailable
-                    ? `${person.activeDays} days · ${person.sessionCount} sessions`
-                    : 'Unavailable'}
-                </td>
-                <td className="px-4 py-3 text-xs text-muted-foreground">
-                  {usageAvailable ? formatLastActive(person.lastActiveAt) : 'Unavailable'}
-                </td>
+                {!usageRestricted ? (
+                  <td className="px-4 py-3">
+                    {usageAvailable
+                      ? `${person.activeDays} days · ${person.sessionCount} sessions`
+                      : 'Unavailable'}
+                  </td>
+                ) : null}
+                {!usageRestricted ? (
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {usageAvailable ? formatLastActive(person.lastActiveAt) : 'Unavailable'}
+                  </td>
+                ) : null}
               </tr>
             ))}
           </tbody>

@@ -9,60 +9,6 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-async function syncMilestoneCompletionFromProgress(
-  supabaseAdmin: ReturnType<typeof import('@/lib/supabase/server').createSupabaseAdminClient>,
-  milestoneId: string,
-  actorUserId: string
-): Promise<void> {
-  const { data: milestone, error: milestoneError } = await supabaseAdmin
-    .from('project_milestones')
-    .select('id, status, progress_pct')
-    .eq('id', milestoneId)
-    .is('deleted_at', null)
-    .maybeSingle();
-
-  if (milestoneError || !milestone) {
-    if (milestoneError) {
-      console.error('syncMilestoneCompletionFromProgress: failed to load milestone', milestoneId, milestoneError);
-    }
-    return;
-  }
-
-  const progressPct = Number(milestone.progress_pct ?? 0);
-  if (progressPct < 100 && milestone.status === 'approved') {
-    const { error: revertError } = await supabaseAdmin
-      .from('project_milestones')
-      .update({
-        status: progressPct === 0 ? 'not_started' : 'in_progress',
-        submitted_at: null,
-        submitted_by: null,
-        approved_at: null,
-        approved_by: null,
-      })
-      .eq('id', milestoneId);
-    if (revertError) {
-      console.error('syncMilestoneCompletionFromProgress: failed to revert milestone status', milestoneId, revertError);
-    }
-    return;
-  }
-
-  if (progressPct >= 100 && milestone.status !== 'approved') {
-    const { error: approveError } = await supabaseAdmin
-      .from('project_milestones')
-      .update({
-        status: 'approved',
-        submitted_at: new Date().toISOString(),
-        submitted_by: actorUserId,
-        approved_at: new Date().toISOString(),
-        approved_by: actorUserId,
-      })
-      .eq('id', milestoneId);
-    if (approveError) {
-      console.error('syncMilestoneCompletionFromProgress: failed to auto-approve milestone (XP not awarded)', milestoneId, approveError);
-    }
-  }
-}
-
 /**
  * GET /api/projects/milestones/{id}/checklist
  * POST /api/projects/milestones/{id}/checklist  → create one item
@@ -149,8 +95,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     recordId: data!.id,
     metadata: { milestoneId },
   });
-
-  await syncMilestoneCompletionFromProgress(supabaseAdmin, milestoneId, user.id);
 
   return NextResponse.json({ data }, { status: 201 });
 }

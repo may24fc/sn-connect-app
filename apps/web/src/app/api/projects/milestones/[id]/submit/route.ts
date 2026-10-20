@@ -33,7 +33,7 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  if (milestone.status === 'approved') {
+  if (milestone.status === 'approved' || milestone.status === 'completed') {
     return NextResponse.json({ error: 'Already completed' }, { status: 409 });
   }
 
@@ -47,17 +47,17 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
   const { data, error } = await supabaseAdmin
     .from('project_milestones')
     .update({
-      status: 'approved',
-      submitted_at: milestone.status === 'submitted' ? undefined : new Date().toISOString(),
-      submitted_by: milestone.status === 'submitted' ? undefined : user.id,
-      approved_at: new Date().toISOString(),
-      approved_by: user.id,
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+      completed_by: user.id,
     })
     .eq('id', id)
+    .neq('status', 'completed')
     .select('*')
-    .single();
+    .maybeSingle();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!data) return NextResponse.json({ error: 'Already completed' }, { status: 409 });
 
   logActivity(supabase, {
     userId: user.id,

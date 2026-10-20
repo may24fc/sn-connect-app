@@ -2,7 +2,8 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { logActivity } from '@/lib/audit';
 import { normalizeDepartmentName, normalizePersonName } from '@/lib/people/directory-people';
 import { contributorAddSchema } from '@/lib/schemas/project.schema';
-import { getProjectAuthedContext, isProjectAdmin } from '../../_lib';
+import { getProjectAuthedContext } from '../../_lib';
+import { canManageProject } from '@/lib/work-management/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,14 +35,7 @@ async function ensureCanManageContributors(
   userId: string,
   role: string | null
 ): Promise<boolean> {
-  if (isProjectAdmin(role)) return true;
-  const { data } = await supabaseAdmin
-    .from('projects')
-    .select('lead_user_id, supervisor_id')
-    .eq('id', projectId)
-    .maybeSingle();
-  if (!data) return false;
-  return data.lead_user_id === userId || data.supervisor_id === userId;
+  return canManageProject(supabaseAdmin, projectId, userId, role);
 }
 
 /**

@@ -1491,6 +1491,51 @@ export type Database = {
         }
         Relationships: []
       }
+      department_leads: {
+        Row: {
+          appointed_at: string
+          appointed_by: string
+          department_id: string
+          id: string
+          revoked_at: string | null
+          revoked_by: string | null
+          user_id: string
+        }
+        Insert: {
+          appointed_at?: string
+          appointed_by: string
+          department_id: string
+          id?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          user_id: string
+        }
+        Update: {
+          appointed_at?: string
+          appointed_by?: string
+          department_id?: string
+          id?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "department_leads_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "department_leads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       divisions: {
         Row: {
           created_at: string
@@ -6304,6 +6349,48 @@ export type Database = {
           },
         ]
       }
+      milestone_reward_runs: {
+        Row: {
+          completed_at: string
+          eligible_task_count: number
+          milestone_id: string
+          project_id: string
+          total_points: number
+          triggered_by: string | null
+        }
+        Insert: {
+          completed_at?: string
+          eligible_task_count: number
+          milestone_id: string
+          project_id: string
+          total_points: number
+          triggered_by?: string | null
+        }
+        Update: {
+          completed_at?: string
+          eligible_task_count?: number
+          milestone_id?: string
+          project_id?: string
+          total_points?: number
+          triggered_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "milestone_reward_runs_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: true
+            referencedRelation: "project_milestones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "milestone_reward_runs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_change_requests: {
         Row: {
           changes: Json
@@ -6560,6 +6647,57 @@ export type Database = {
           },
         ]
       }
+      project_departments: {
+        Row: {
+          department_id: string
+          id: string
+          invited_at: string
+          invited_by: string
+          project_id: string
+          responded_at: string | null
+          responded_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          department_id: string
+          id?: string
+          invited_at?: string
+          invited_by: string
+          project_id: string
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          department_id?: string
+          id?: string
+          invited_at?: string
+          invited_by?: string
+          project_id?: string
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_departments_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_departments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_documentations: {
         Row: {
           content: string
@@ -6620,6 +6758,8 @@ export type Database = {
           complexity_tier:
             | Database["public"]["Enums"]["milestone_complexity_tier"]
             | null
+          completed_at: string | null
+          completed_by: string | null
           created_at: string
           deleted_at: string | null
           department: string | null
@@ -6645,6 +6785,8 @@ export type Database = {
           complexity_tier?:
             | Database["public"]["Enums"]["milestone_complexity_tier"]
             | null
+          completed_at?: string | null
+          completed_by?: string | null
           created_at?: string
           deleted_at?: string | null
           department?: string | null
@@ -6670,6 +6812,8 @@ export type Database = {
           complexity_tier?:
             | Database["public"]["Enums"]["milestone_complexity_tier"]
             | null
+          completed_at?: string | null
+          completed_by?: string | null
           created_at?: string
           deleted_at?: string | null
           department?: string | null
@@ -11547,6 +11691,7 @@ export type Database = {
         | "in_progress"
         | "submitted"
         | "approved"
+        | "completed"
         | "overdue"
       notification_type:
         | "task_assigned"

@@ -2,9 +2,13 @@ import { parsePagination } from '@/lib/api/pagination';
 import { logActivity } from '@/lib/audit';
 import { createNotification, getUserDisplayName } from '@/lib/notifications/create-notification';
 import { taskCreateSchema } from '@/lib/schemas/task.schema';
+import {
+  canAssignUser,
+  getManagedMemberIds,
+  getWorkManagementScope,
+} from '@/lib/work-management/permissions';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
-  TASK_ASSIGNER_ROLE,
   attachTaskPeople,
   getTaskAuthedContext,
   getTaskWriteErrorMessage,
@@ -81,9 +85,14 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     // The admin client bypasses RLS, so visibility must be enforced here.
-    // Super-admins oversee all staff tasks. Everyone else sees tasks assigned to them.
-    if (role !== TASK_ASSIGNER_ROLE && role !== 'admin') {
-      query = query.eq('assigned_to', user.id);
+    // Global managers see all tasks; department leads see only their department; members see self.
+    const managedMemberIds = await getManagedMemberIds(supabaseAdmin, user.id, role);
+    if (managedMemberIds !== null) {
+      const visibleAssigneeIds = managedMemberIds.length > 0 ? managedMemberIds : [user.id];
+      query =
+        visibleAssigneeIds.length === 1
+          ? query.eq('assigned_to', visibleAssigneeIds[0])
+          : query.in('assigned_to', visibleAssigneeIds);
     }
 
     if (search) {
@@ -196,7 +205,8 @@ export async function POST(request: NextRequest) {
 
     const { supabaseAdmin, user, role } = auth.context;
 
-    const isAssigner = role === TASK_ASSIGNER_ROLE || role === 'admin';
+    const managementScope = await getWorkManagementScope(supabaseAdmin, user.id, role);
+    const isAssigner = managementScope.isGlobal || managementScope.ledDepartmentIds.length > 0;
 
     const body = await request.json();
     const parsed = taskCreateSchema.safeParse(body);
@@ -221,6 +231,20 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           { error: assigneeValidation.error },
           { status: assigneeValidation.status }
+        );
+      }
+      if (
+        !(await canAssignUser(
+          supabaseAdmin,
+          user.id,
+          role,
+          assignedTo,
+          parsed.data.projectId ?? null
+        ))
+      ) {
+        return NextResponse.json(
+          { error: 'You can only assign work to eligible members of a department you lead' },
+          { status: 403 }
         );
       }
     }

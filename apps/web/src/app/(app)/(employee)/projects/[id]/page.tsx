@@ -3,6 +3,7 @@
 import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
 import { AttachmentDeleteButton } from '@/components/attachments/AttachmentDeleteButton';
 import { ProjectDescriptionFields } from '@/components/projects/ProjectDescriptionFields';
+import { ManageProjectDepartmentsDialog } from '@/components/projects/ManageProjectDepartmentsDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   type ProjectDescriptionSections,
@@ -25,6 +26,7 @@ import {
   useCreateChecklistItem,
   useCreateProjectDocumentation,
   useCreateMilestone,
+  useCompleteMilestone,
   useDeleteProjectDocumentation,
   useDeleteChecklistItem,
   useDeleteMilestone,
@@ -70,6 +72,7 @@ import {
 } from '@hr-portal/ui';
 import {
   ArrowLeft,
+  Building2,
   CheckCircle2,
   ChevronLeft,
   CircleHelp,
@@ -146,7 +149,7 @@ function MilestoneXpBadge({
   className?: string;
 }) {
   const isLocked = status === 'not_started';
-  const isEarned = status === 'approved';
+  const isEarned = status === 'approved' || status === 'completed';
 
   return (
     <span
@@ -256,7 +259,7 @@ function useMilestoneApprovalCelebration(milestoneId: string, status: string) {
   const [celebrating, setCelebrating] = useState(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || status !== 'approved') {
+    if (typeof window === 'undefined' || !['approved', 'completed'].includes(status)) {
       return;
     }
     const key = `xp-celebrated:${milestoneId}`;
@@ -319,7 +322,7 @@ export default function ProjectDetailPage() {
     projectId,
   });
   const isLead = !!project && project.lead_user_id === user?.id;
-  const canEditProject = isLead || (isAdmin && !isReadOnlyAdminView);
+  const canEditProject = !!project?.can_manage && !isReadOnlyAdminView;
   const canAddDocumentation =
     !!project &&
     !isReadOnlyAdminView &&
@@ -332,8 +335,13 @@ export default function ProjectDetailPage() {
   // The contributors API allows the project lead, the supervisor, and admins.
   // Admins land on this page in read-only mode, so they manage from the admin view.
   const canManageContributors =
-    !!project && !isReadOnlyAdminView && (isLead || project.supervisor_id === user?.id);
+    !!project && !isReadOnlyAdminView && project.can_manage;
+  const canCompleteMilestones =
+    !!project &&
+    !isReadOnlyAdminView &&
+    (isLead || project.contributors.some((contributor) => contributor.user_id === user?.id));
   const [manageContributorsOpen, setManageContributorsOpen] = useState(false);
+  const [manageDepartmentsOpen, setManageDepartmentsOpen] = useState(false);
 
   const [docLink, setDocLink] = useState('');
   const [docLabel, setDocLabel] = useState('');
@@ -653,6 +661,14 @@ export default function ProjectDetailPage() {
                   Manage contributors
                 </Button>
               ) : null}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setManageDepartmentsOpen(true)}
+              >
+                <Building2 className="mr-2 h-4 w-4" />
+                Departments
+              </Button>
             </div>
           </div>
           {canEditProject ? (
@@ -953,6 +969,7 @@ export default function ProjectDetailPage() {
                     weeks={weeks}
                     projectId={projectId}
                     canEdit={canEditProject}
+                    canComplete={canCompleteMilestones}
                     projectEndDate={project.target_end_date}
                     onAddWeek={() => {
                       setCreateParent(month);
@@ -1046,6 +1063,14 @@ export default function ProjectDetailPage() {
           leadUserId={project.lead_user_id}
         />
       ) : null}
+      {project ? (
+        <ManageProjectDepartmentsDialog
+          open={manageDepartmentsOpen}
+          onOpenChange={setManageDepartmentsOpen}
+          projectId={project.id}
+          canManage={project.can_manage}
+        />
+      ) : null}
     </div>
   );
 }
@@ -1055,6 +1080,7 @@ interface MonthColumnProps {
   weeks: MilestoneRecord[];
   projectId: string;
   canEdit: boolean;
+  canComplete: boolean;
   projectEndDate: string;
   onAddWeek: () => void;
 }
@@ -1064,11 +1090,13 @@ function MonthColumn({
   weeks,
   projectId,
   canEdit,
+  canComplete,
   projectEndDate,
   onAddWeek,
 }: MonthColumnProps) {
   const { addToast } = useToast();
   const deleteMilestone = useDeleteMilestone();
+  const completeMilestone = useCompleteMilestone();
   const { data: monthChecklistResp, isLoading: loadingMonthChecklist } = useMilestoneChecklist(
     month.id
   );
@@ -1083,6 +1111,23 @@ function MonthColumn({
     } catch (error) {
       addToast({
         title: 'Delete failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'error',
+      });
+    }
+  }
+
+  async function handleComplete() {
+    try {
+      await completeMilestone.mutateAsync({ milestoneId: month.id, projectId });
+      addToast({
+        title: 'Milestone completed',
+        description: 'XP was distributed from completed tasks.',
+        variant: 'success',
+      });
+    } catch (error) {
+      addToast({
+        title: 'Could not complete milestone',
         description: error instanceof Error ? error.message : 'Unknown error',
         variant: 'error',
       });
@@ -1167,6 +1212,17 @@ function MonthColumn({
           </div>
           <div className="mt-2 flex items-center gap-2">
             <MilestoneStatusBadge status={displayStatus} />
+            {canComplete &&
+            displayProgressPct >= 100 &&
+            !['approved', 'completed'].includes(month.status) ? (
+              <Button
+                size="sm"
+                onClick={() => void handleComplete()}
+                disabled={completeMilestone.isPending}
+              >
+                {completeMilestone.isPending ? 'Completing…' : 'Complete milestone'}
+              </Button>
+            ) : null}
           </div>
           <div className="mt-2 flex flex-wrap gap-1">
             {canEdit && maxWeeks >= 1 ? (
@@ -1203,6 +1259,7 @@ function MonthColumn({
                   week={week}
                   projectId={projectId}
                   canEdit={canEdit}
+                  canComplete={canComplete}
                   canEditChecklist={canEdit}
                   projectEndDate={projectEndDate}
                 />
@@ -1263,12 +1320,14 @@ function WeekCard({
   week,
   projectId,
   canEdit,
+  canComplete,
   canEditChecklist,
   projectEndDate,
 }: {
   week: MilestoneRecord;
   projectId: string;
   canEdit: boolean;
+  canComplete: boolean;
   canEditChecklist?: boolean;
   projectEndDate: string;
 }) {
@@ -1276,6 +1335,7 @@ function WeekCard({
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const deleteMilestone = useDeleteMilestone();
+  const completeMilestone = useCompleteMilestone();
   const { addToast } = useToast();
 
   async function handleDelete() {
@@ -1286,6 +1346,23 @@ function WeekCard({
     } catch (error) {
       addToast({
         title: 'Delete failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'error',
+      });
+    }
+  }
+
+  async function handleComplete() {
+    try {
+      await completeMilestone.mutateAsync({ milestoneId: week.id, projectId });
+      addToast({
+        title: 'Milestone completed',
+        description: 'XP was distributed from completed tasks.',
+        variant: 'success',
+      });
+    } catch (error) {
+      addToast({
+        title: 'Could not complete milestone',
         description: error instanceof Error ? error.message : 'Unknown error',
         variant: 'error',
       });
@@ -1352,6 +1429,18 @@ function WeekCard({
           </div>
           {open ? (
             <div className="mt-2 border-t border-zinc-100 pt-2 dark:border-zinc-800">
+              {canComplete &&
+              week.progress_pct >= 100 &&
+              !['approved', 'completed'].includes(week.status) ? (
+                <Button
+                  size="sm"
+                  className="mb-2 w-full"
+                  onClick={() => void handleComplete()}
+                  disabled={completeMilestone.isPending}
+                >
+                  {completeMilestone.isPending ? 'Completing…' : 'Complete milestone'}
+                </Button>
+              ) : null}
               <ChecklistSection
                 milestone={week}
                 projectId={projectId}

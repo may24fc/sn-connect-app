@@ -4,6 +4,7 @@ import { validatePersonAssignment } from '@/lib/people/assignment-validation';
 import { loadDirectoryPeople } from '@/lib/people/directory-people';
 import { projectUpdateSchema } from '@/lib/schemas/project.schema';
 import { getProjectAuthedContext, isProjectAdmin, userCanAccessProject } from '../_lib';
+import { canManageProject } from '@/lib/work-management/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,6 +62,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     (total: number, event: { points: number | null }) => total + (event.points ?? 0),
     0
   );
+  const canManage = await canManageProject(supabaseAdmin, id, user.id, role);
 
   return NextResponse.json({
     data: {
@@ -76,6 +78,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
           avatar_url: person?.avatarUrl ?? null,
         };
       }),
+      can_manage: canManage,
     },
   });
 }
@@ -86,7 +89,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const { supabaseAdmin, supabase, user, role } = auth.context;
-  const allowed = await userCanAccessProject(supabaseAdmin, id, user.id, role);
+  const allowed = await canManageProject(supabaseAdmin, id, user.id, role);
   if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   let body: unknown;
@@ -174,20 +177,9 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 
   const { supabaseAdmin, supabase, user, role } = auth.context;
 
-  // Only lead, supervisor, or admin may soft-delete.
-  const { data: project } = await supabaseAdmin
-    .from('projects')
-    .select('lead_user_id, supervisor_id')
-    .eq('id', id)
-    .maybeSingle();
-
-  if (!project) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-
-  const isPrivileged =
-    isProjectAdmin(role) ||
-    project.lead_user_id === user.id ||
-    project.supervisor_id === user.id;
-  if (!isPrivileged) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!(await canManageProject(supabaseAdmin, id, user.id, role))) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
 
   const { error } = await supabaseAdmin
     .from('projects')

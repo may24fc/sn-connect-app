@@ -1,6 +1,7 @@
 'use client';
 
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
+import { ManageDepartmentLeadsDialog } from '@/components/admin/ManageDepartmentLeadsDialog';
 import { TerminationReasonField } from '@/components/admin/TerminationReasonField';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
@@ -143,6 +144,7 @@ export default function AdminDirectoryPage(): ReactNode {
   const [page, setPage] = useState(1);
   const pageSize = 20;
   const [inviteLeadershipOpen, setInviteLeadershipOpen] = useState(false);
+  const [manageDepartmentLeadsOpen, setManageDepartmentLeadsOpen] = useState(false);
 
   // Tab state
   const [activeTab, setActiveTab] = useState<'active' | 'former'>('active');
@@ -766,10 +768,16 @@ export default function AdminDirectoryPage(): ReactNode {
         </div>
         <div className="flex items-center gap-2">
           {isSuperAdmin && (
-            <Button size="sm" onClick={() => setInviteLeadershipOpen(true)}>
-              <UserPlus className="h-4 w-4 mr-2" strokeWidth={1.5} />
-              Invite Leadership
-            </Button>
+            <>
+              <Button variant="outline" size="sm" onClick={() => setManageDepartmentLeadsOpen(true)}>
+                <Users className="mr-2 h-4 w-4" strokeWidth={1.5} />
+                Manage departments
+              </Button>
+              <Button size="sm" onClick={() => setInviteLeadershipOpen(true)}>
+                <UserPlus className="h-4 w-4 mr-2" strokeWidth={1.5} />
+                Invite Leadership
+              </Button>
+            </>
           )}
           <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
             <Download className="h-4 w-4 mr-2" strokeWidth={1.5} />
@@ -1528,6 +1536,11 @@ export default function AdminDirectoryPage(): ReactNode {
         open={inviteLeadershipOpen}
         onOpenChange={setInviteLeadershipOpen}
         allowedRoles={['admin', 'super_admin']}
+      />
+      <ManageDepartmentLeadsDialog
+        open={manageDepartmentLeadsOpen}
+        onOpenChange={setManageDepartmentLeadsOpen}
+        departments={editableDepartments}
       />
 
       {/* Edit Employee Dialog */}

@@ -1,5 +1,6 @@
 import { normalizeDbRoleClaim } from '@/lib/auth/role';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
+import { getWorkManagementScope } from '@/lib/work-management/permissions';
 
 export const PROJECT_ADMIN_ROLES: readonly string[] = [
   'admin',
@@ -89,7 +90,19 @@ export async function userCanAccessProject(
     .eq('user_id', userId)
     .maybeSingle();
 
-  return !!contrib;
+  if (contrib) return true;
+
+  const scope = await getWorkManagementScope(supabaseAdmin, userId, role);
+  if (scope.ledDepartmentIds.length === 0) return false;
+  const { data: projectDepartment } = await supabaseAdmin
+    .from('project_departments')
+    .select('id')
+    .eq('project_id', projectId)
+    .in('department_id', scope.ledDepartmentIds)
+    .in('status', ['active', 'pending'])
+    .limit(1)
+    .maybeSingle();
+  return !!projectDepartment;
 }
 
 export async function userCanApproveMilestone(

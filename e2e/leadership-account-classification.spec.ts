@@ -18,9 +18,23 @@ test.beforeEach(async ({ page }) => {
   await page.route('**/api/**', async (route) => {
     const url = new URL(route.request().url());
     if (url.pathname === '/api/directory') {
+      const isLeadPicker = url.searchParams.get('page_size') === '500';
       await route.fulfill({
         json: {
-          data: [],
+          data: isLeadPicker
+            ? [
+                {
+                  user_id: 'employee-1',
+                  full_name: 'Alex Operations',
+                  role: 'employee',
+                  status: 'active',
+                  department_id: 'operations',
+                  department_name: 'Operations',
+                  position: 'Operations Associate',
+                  avatar_url: null,
+                },
+              ]
+            : [],
           metadata: {
             total: 0,
             active: 0,
@@ -35,7 +49,20 @@ test.beforeEach(async ({ page }) => {
       });
       return;
     }
-    if (url.pathname === '/api/departments' || url.pathname === '/api/divisions') {
+    if (url.pathname === '/api/departments/leads') {
+      await route.fulfill({ json: { data: [] } });
+      return;
+    }
+    if (url.pathname === '/api/departments') {
+      await route.fulfill({
+        json: {
+          data: [{ id: 'operations', name: 'Operations' }],
+          pagination: { page: 1, pageSize: 200, total: 1, totalPages: 1 },
+        },
+      });
+      return;
+    }
+    if (url.pathname === '/api/divisions') {
       await route.fulfill({
         json: { data: [], pagination: { page: 1, pageSize: 200, total: 0, totalPages: 0 } },
       });
@@ -53,6 +80,33 @@ test.beforeEach(async ({ page }) => {
     }
     await route.fulfill({ json: { data: [] } });
   });
+});
+
+test('super-admin can open department lead management at desktop and mobile sizes', async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.goto('/admin/directory', { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: 'Manage departments' }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'Manage department leads' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText(/Multiple co-leads are supported/)).toBeVisible();
+  await dialog.getByRole('combobox', { name: 'Department', exact: true }).click();
+  await page.getByRole('option', { name: 'Operations' }).click();
+  await dialog.getByLabel('New department lead').click();
+  await expect(page.getByRole('option', { name: 'Alex Operations' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.screenshot({ path: testInfo.outputPath('department-leads-desktop.png') });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const bounds = await dialog.evaluate((element) => ({
+    left: element.getBoundingClientRect().left,
+    right: element.getBoundingClientRect().right,
+  }));
+  expect(bounds.left).toBeGreaterThanOrEqual(14);
+  expect(bounds.right).toBeLessThanOrEqual(376);
+  await page.screenshot({ path: testInfo.outputPath('department-leads-mobile.png') });
 });
 
 test('leadership invite explicitly separates workforce and privileged identities', async ({

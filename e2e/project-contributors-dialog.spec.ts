@@ -19,6 +19,7 @@ const project = {
   created_at: '2026-10-01T00:00:00.000Z',
   updated_at: '2026-10-12T00:00:00.000Z',
   deleted_at: null,
+  can_manage: true,
   contributors: [
     {
       user_id: 'associate-1',
@@ -61,6 +62,42 @@ test.beforeEach(async ({ page }) => {
 
   await page.route('**/api/**', async (route) => {
     const url = new URL(route.request().url());
+    if (url.pathname === '/api/projects/project-1/departments') {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({ status: 202, json: { data: { id: 'pending-dept' } } });
+      } else {
+        await route.fulfill({
+          json: {
+            data: [
+              {
+                id: 'project-dept-1',
+                department_id: 'ops',
+                status: 'active',
+                invited_by: 'associate-1',
+                invited_at: '2026-10-01T00:00:00.000Z',
+                responded_by: 'associate-1',
+                responded_at: '2026-10-01T00:00:00.000Z',
+                department: { name: 'Operations' },
+                actions: { accept: false, reject: false, cancel: false, detach: true },
+              },
+            ],
+          },
+        });
+      }
+      return;
+    }
+    if (url.pathname === '/api/departments') {
+      await route.fulfill({
+        json: {
+          data: [
+            { id: 'ops', name: 'Operations' },
+            { id: 'marketing', name: 'Marketing' },
+          ],
+          pagination: { page: 1, pageSize: 200, total: 2, totalPages: 1 },
+        },
+      });
+      return;
+    }
     if (url.pathname === '/api/projects/project-1/contributors') {
       await route.fulfill({ json: { data: candidates, total: candidates.length } });
       return;
@@ -80,6 +117,31 @@ test.beforeEach(async ({ page }) => {
     }
     await route.fulfill({ json: { data: [] } });
   });
+});
+
+test('project departments explain shared ownership and remain usable on mobile', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto('/projects/project-1', { waitUntil: 'domcontentloaded' });
+  await page.getByRole('button', { name: 'Departments' }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'Project departments' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText(/grant no management access until/)).toBeVisible();
+  await expect(dialog.getByText('Operations', { exact: true })).toBeVisible();
+  await expect(dialog.getByText('active', { exact: true })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('project-departments-desktop.png') });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const bounds = await dialog.evaluate((element) => ({
+    left: element.getBoundingClientRect().left,
+    right: element.getBoundingClientRect().right,
+    scrollWidth: element.scrollWidth,
+    clientWidth: element.clientWidth,
+  }));
+  expect(bounds.left).toBeGreaterThanOrEqual(14);
+  expect(bounds.right).toBeLessThanOrEqual(376);
+  expect(bounds.scrollWidth).toBe(bounds.clientWidth);
+  await page.screenshot({ path: testInfo.outputPath('project-departments-mobile.png') });
 });
 
 test('manage contributors is prominent and the dialog stays contained', async ({ page }) => {

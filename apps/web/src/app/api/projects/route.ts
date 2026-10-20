@@ -3,6 +3,10 @@ import { logActivity } from '@/lib/audit';
 import { validatePersonAssignment } from '@/lib/people/assignment-validation';
 import { loadDirectoryPeople } from '@/lib/people/directory-people';
 import { projectCreateSchema } from '@/lib/schemas/project.schema';
+import {
+  canAssignUser,
+  getWorkManagementScope,
+} from '@/lib/work-management/permissions';
 import { getProjectAuthedContext, isProjectAdmin } from './_lib';
 
 export const dynamic = 'force-dynamic';
@@ -35,13 +39,23 @@ export async function GET(request: NextRequest) {
   if (health) query = query.eq('health', health);
   if (leadUserId) query = query.eq('lead_user_id', leadUserId);
 
-  // Non-admins are limited to projects they participate in.
+  // Non-admins are limited to projects they participate in or actively lead by department.
   if (!isProjectAdmin(role) || mineOnly) {
     const { data: contribRows } = await supabaseAdmin
       .from('project_contributors')
       .select('project_id')
       .eq('user_id', user.id);
     const contribIds = (contribRows ?? []).map((r: { project_id: string }) => r.project_id);
+    const managementScope = await getWorkManagementScope(supabaseAdmin, user.id, role);
+    let departmentProjectIds: Array<string> = [];
+    if (!mineOnly && managementScope.ledDepartmentIds.length > 0) {
+      const { data: departmentProjects } = await supabaseAdmin
+        .from('project_departments')
+        .select('project_id')
+        .in('department_id', managementScope.ledDepartmentIds)
+        .in('status', ['active', 'pending']);
+      departmentProjectIds = (departmentProjects ?? []).map((row) => row.project_id);
+    }
 
     const orFilters = [
       `lead_user_id.eq.${user.id}`,
@@ -50,6 +64,9 @@ export async function GET(request: NextRequest) {
     ];
     if (contribIds.length > 0) {
       orFilters.push(`id.in.(${contribIds.join(',')})`);
+    }
+    if (departmentProjectIds.length > 0) {
+      orFilters.push(`id.in.(${departmentProjectIds.join(',')})`);
     }
     query = query.or(orFilters.join(','));
   }
@@ -228,6 +245,15 @@ export async function POST(request: NextRequest) {
 
   const input = parsed.data;
 
+  if (
+    !(await canAssignUser(supabaseAdmin, user.id, role, input.leadUserId, null))
+  ) {
+    return NextResponse.json(
+      { error: 'You can only create projects for yourself or members of a department you lead' },
+      { status: 403 }
+    );
+  }
+
   if (input.supervisorId) {
     // The supervisor gains manage rights over the project, so only admins may assign one.
     if (!isProjectAdmin(role)) {
@@ -284,6 +310,29 @@ export async function POST(request: NextRequest) {
       console.error('POST /api/projects failed to roll back the project:', rollbackError.message);
     }
     return NextResponse.json({ error: 'Failed to create project' }, { status: 500 });
+  }
+
+  const { data: leadUser } = await supabaseAdmin
+    .from('users')
+    .select('department_id')
+    .eq('id', input.leadUserId)
+    .maybeSingle();
+  if (leadUser?.department_id) {
+    const { error: projectDepartmentError } = await supabaseAdmin
+      .from('project_departments')
+      .insert({
+        project_id: created.id,
+        department_id: leadUser.department_id,
+        status: 'active',
+        invited_by: user.id,
+        responded_by: user.id,
+        responded_at: new Date().toISOString(),
+      });
+    if (projectDepartmentError) {
+      console.error('POST /api/projects failed to add project department:', projectDepartmentError);
+      await supabaseAdmin.from('projects').delete().eq('id', created.id);
+      return NextResponse.json({ error: 'Failed to create project' }, { status: 500 });
+    }
   }
 
   logActivity(supabase, {

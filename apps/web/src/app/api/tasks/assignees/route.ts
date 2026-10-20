@@ -1,9 +1,9 @@
 import {
   TASK_ASSIGNABLE_ROLES,
-  TASK_ASSIGNER_ROLE,
   getTaskAuthedContext,
 } from '@/app/api/tasks/_lib';
 import { loadDirectoryPeople } from '@/lib/people/directory-people';
+import { getManagedMemberIds } from '@/lib/work-management/permissions';
 import { NextResponse } from 'next/server';
 
 interface TaskAssigneeOption {
@@ -24,19 +24,23 @@ export async function GET() {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    const { supabase, role } = auth.context;
+    const { supabaseAdmin, user, role } = auth.context;
 
-    if (role !== TASK_ASSIGNER_ROLE && role !== 'admin') {
+    const managedMemberIds = await getManagedMemberIds(supabaseAdmin, user.id, role);
+    if (managedMemberIds?.length === 0) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { data: users, error: usersError } = await supabase
+    let usersQuery = supabaseAdmin
       .from('users')
       .select('id, role')
       .in('role', TASK_ASSIGNABLE_ROLES)
       .is('deleted_at', null)
-      .neq('status', 'terminated')
-      .order('created_at', { ascending: true });
+      .neq('status', 'terminated');
+    if (managedMemberIds) usersQuery = usersQuery.in('id', managedMemberIds);
+    const { data: users, error: usersError } = await usersQuery.order('created_at', {
+      ascending: true,
+    });
 
     if (usersError) {
       console.error('Failed to fetch task assignee users:', usersError);
@@ -50,7 +54,7 @@ export async function GET() {
     }
 
     const people = await loadDirectoryPeople(
-      supabase,
+      supabaseAdmin,
       userRows.map((entry) => entry.id)
     );
 

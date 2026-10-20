@@ -12,6 +12,11 @@
 - [Tasks API tests](../../../tests/api/tasks-route.test.ts) and [Work Tracker API tests](../../../tests/api/work-tracker-route.test.ts): filtering, sorting, and completion-date checks.
 - [Work Tracker browser tests](../../../e2e/work-tracker-experience.spec.ts): roadmap, navigation, board, mobile, empty, and retry states.
 - [Prior Kanban task tracker](../work-tracker-kanban/task-tracker.md): completed drag, keyboard, blocker, and rollback work.
+- [Work-management permissions](../../../apps/web/src/lib/work-management/permissions.ts): canonical department scope and project/assignee authorization.
+- [Department leads API](../../../apps/web/src/app/api/departments/leads/route.ts): super-admin-only appointments and eligibility validation.
+- [Project departments API](../../../apps/web/src/app/api/projects/[id]/departments/route.ts): invite, accept, reject, cancel, and detach workflow.
+- [Department-lead migration](../../../supabase/migrations/20261020000001_department_leads_and_work_management.sql): governance tables, RLS, completion ledger, and XP allocation.
+- [Department-lead browser test](../../../e2e/department-lead-work-tracker.spec.ts): privacy-safe department workload at desktop and mobile widths.
 
 ## Visual Guide
 
@@ -89,3 +94,40 @@ flowchart LR
 
 - 2026-10-12: Audited Work Tracker end to end, distinguished confirmed code behavior from proposed UX changes, researched official reference products, and prioritized completeness and metric integrity before visual polish. No product code was changed.
 - 2026-10-12: Implemented local UI/API improvements and added focused API/browser coverage. No production deployment. Baseline measurement was unavailable because local services did not respond; no performance delta claimed. Remaining areas are listed above.
+- 2026-10-20: Implemented and validated department-lead governance, shared-project invitations, scoped assignment, privacy-safe department reporting, explicit milestone completion, and deterministic exactly-once XP distribution. The two owning migrations were applied and ledger-verified in local and production Supabase. No latency improvement was targeted or claimed.
+
+## Department Lead Governance Update — 2026-10-20
+
+### Implemented — least-privilege department management
+
+- Problem/evidence: assignment was global-admin-only, while granting ordinary project participation broad management rights would expose people and projects outside a lead's department.
+- Delivered solution: super-admins can appoint multiple active leads only from active users in the same canonical department. Every management request revalidates the appointment against the user's current department, and assignee selection is limited to that department. Admins and super-admins retain global scope.
+- Validation: focused project/task/Work Tracker API tests passed 13/13; web typecheck passed. Local Supabase migration and lint ran; lint reported one unrelated pre-existing `get_knowledge_source_versions` error.
+- References: [Linear member roles](https://linear.app/docs/members-roles), [Linear issue assignment](https://linear.app/docs/assigning-issues), and [Jira project roles](https://support.atlassian.com/jira/kb/grant-access-to-single-jira-project-that-uses-a-shared-permission-scheme/).
+
+### Implemented — explicit shared-project consent
+
+- Problem/evidence: a project may need contributors from multiple departments, but silently attaching a department would grant visibility and management scope without the target lead's consent.
+- Delivered solution: project managers invite another department; a lead of that department accepts or rejects it before access activates. Invite cancellation and self-detachment are explicit, and at least one active department must remain. Global admins may directly attach or remove departments.
+- Validation: project-department dialog and actions were exercised in Chromium at desktop and mobile widths. The dialog stayed contained and communicated pending/active states.
+- Reference: [Asana permissions overview](https://help.asana.com/s/article/permissions-overview).
+
+### Implemented — private team visibility and auditable rewards
+
+- Problem/evidence: department leads need operational workload visibility, not employee login/session telemetry. Automatic milestone approval also made reward timing implicit and could not represent contribution fairly.
+- Delivered solution: lead team scope returns department projects/tasks while omitting Hub usage data and columns. A 100% milestone requires an explicit Complete action. Its fixed XP pool is split by completed-task count using deterministic largest remainder, falls back to the project lead when needed, and is protected by a unique reward run.
+- Validation: desktop 1440x900 and mobile 390x844 screenshots were inspected; the department scope and privacy notice rendered without Hub columns. A rolled-back local SQL transaction verified 100/50 XP for a 2:1 task split and no duplicate on a repeat completion.
+
+```mermaid
+flowchart LR
+    A[Super-admin appoints eligible lead] --> B[Canonical department scope]
+    B --> C[Lead assigns department member]
+    B --> D[Project manager invites department]
+    D --> E{Target lead decision}
+    E -->|Accept| F[Active shared project access]
+    E -->|Reject| G[No access granted]
+    F --> H[Tasks completed]
+    H --> I[Contributor explicitly completes 100% milestone]
+    I --> J[Unique reward run]
+    J --> K[Task-weighted XP ledger]
+```
