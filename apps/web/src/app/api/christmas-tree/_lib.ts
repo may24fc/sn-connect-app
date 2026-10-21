@@ -65,36 +65,26 @@ export async function getActiveChristmasEvent(
 }
 
 function categoryState(event: ChristmasEventRow, category: WishRow['category']) {
-  const now = Date.now();
-  const windows: Record<
-    WishRow['category'],
-    { opensAt: string; closesAt: string; lockedTeaser: string }
-  > = {
+  const windows: Record<WishRow['category'], { opensAt: string; closesAt: string }> = {
     personal: {
       opensAt: event.october_opens_at,
       closesAt: event.october_closes_at,
-      lockedTeaser: 'Locked until October 1',
     },
     for_others: {
       opensAt: event.november_opens_at,
       closesAt: event.november_closes_at,
-      lockedTeaser: 'Locked until November 1',
     },
     for_sn: {
       opensAt: event.december_opens_at,
       closesAt: event.december_closes_at,
-      lockedTeaser: 'Locked until December 1',
     },
   };
   const window = windows[category];
-  const opensAt = new Date(window.opensAt).getTime();
-  const closesAt = new Date(window.closesAt).getTime();
 
   return {
-    isUnlocked: now >= opensAt,
-    isEditable: now >= opensAt && now <= closesAt,
-    teaser:
-      now < opensAt ? window.lockedTeaser : now > closesAt ? 'Submission window closed' : null,
+    isUnlocked: true,
+    isEditable: true,
+    teaser: null,
     opensAt: window.opensAt,
     closesAt: window.closesAt,
   };

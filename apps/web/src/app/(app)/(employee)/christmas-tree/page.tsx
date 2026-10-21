@@ -28,6 +28,10 @@ import {
   DialogTitle,
   Input,
   Skeleton,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   Textarea,
   Tooltip,
   TooltipContent,
@@ -826,115 +830,108 @@ function WishPanel({
           Wishes become visible to the team as soon as you submit them.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-5">
-        {(Object.keys(categoryDetails) as Array<WishCategory>).map((category) => {
-          const detail = categoryDetails[category];
-          const state = getCategoryState(data, category);
-          return (
-            <section
-              aria-labelledby={`${category}-wish-heading`}
-              className="space-y-3"
-              key={category}
-            >
-              <div>
-                <h2 className="font-medium" id={`${category}-wish-heading`}>
-                  {detail.title}
-                </h2>
-                <p className="text-sm text-muted-foreground">{detail.description}</p>
-              </div>
-              {!state.isUnlocked ? (
-                <div className="flex items-center gap-2 rounded-md border border-dashed p-3 text-sm text-muted-foreground">
-                  <LockKeyhole className="h-4 w-4" />
-                  {state.teaser}
-                </div>
-              ) : (
-                Array.from({ length: detail.count }, (_, index) => {
-                  const itemNumber = index + 1;
-                  const key = `${category}-${itemNumber}`;
-                  const draft = drafts[key] ?? { content: '', linkUrl: '' };
-                  const hasDraft = Boolean(draft.content.trim());
-                  const savedWish = myWishes.find(
-                    (wish) => wish.category === category && wish.item_number === itemNumber
-                  );
-                  const allowsLink = category === 'personal';
-                  return (
-                    <div className="space-y-2" data-testid={`wish-editor-${key}`} key={key}>
-                      <Textarea
-                        disabled={!state.isEditable || isPending || isDeleting}
-                        maxLength={500}
-                        onChange={(event) =>
-                          setDrafts((current) => ({
-                            ...current,
-                            [key]: { ...draft, content: event.target.value },
-                          }))
-                        }
-                        placeholder={
-                          detail.count > 1 ? `Personal wish ${itemNumber}` : 'Write your wish'
-                        }
-                        showCounter={false}
-                        value={draft.content}
-                      />
-                      {allowsLink ? (
-                        <Input
-                          aria-label={`Optional link for personal wish ${itemNumber}`}
-                          disabled={!state.isEditable || isPending || isDeleting}
-                          maxLength={2048}
+      <CardContent>
+        <Tabs className="space-y-4" defaultValue="personal">
+          <TabsList aria-label="Christmas wish type" className="grid w-full grid-cols-3">
+            <TabsTrigger value="personal">Personal</TabsTrigger>
+            <TabsTrigger value="for_others">Others</TabsTrigger>
+            <TabsTrigger value="for_sn">SN</TabsTrigger>
+          </TabsList>
+          {(Object.keys(categoryDetails) as Array<WishCategory>).map((category) => {
+            const detail = categoryDetails[category];
+            return (
+              <TabsContent className="mt-0" key={category} value={category}>
+                <section aria-labelledby={`${category}-wish-heading`} className="space-y-3">
+                  <div>
+                    <h2 className="font-medium" id={`${category}-wish-heading`}>
+                      {detail.title}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">{detail.description}</p>
+                  </div>
+                  {Array.from({ length: detail.count }, (_, index) => {
+                    const itemNumber = index + 1;
+                    const key = `${category}-${itemNumber}`;
+                    const draft = drafts[key] ?? { content: '', linkUrl: '' };
+                    const hasDraft = Boolean(draft.content.trim());
+                    const savedWish = myWishes.find(
+                      (wish) => wish.category === category && wish.item_number === itemNumber
+                    );
+                    const allowsLink = category === 'personal';
+                    return (
+                      <div className="space-y-2" data-testid={`wish-editor-${key}`} key={key}>
+                        <Textarea
+                          disabled={isPending || isDeleting}
+                          maxLength={500}
                           onChange={(event) =>
                             setDrafts((current) => ({
                               ...current,
-                              [key]: { ...draft, linkUrl: event.target.value },
+                              [key]: { ...draft, content: event.target.value },
                             }))
                           }
-                          placeholder="Optional link (https://...)"
-                          type="url"
-                          value={draft.linkUrl}
-                        />
-                      ) : null}
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          disabled={!state.isEditable || isPending || isDeleting || !hasDraft}
-                          onClick={() =>
-                            onSave({
-                              category,
-                              itemNumber,
-                              content: draft.content.trim(),
-                              linkUrl: allowsLink ? draft.linkUrl.trim() : '',
-                            })
+                          placeholder={
+                            detail.count > 1 ? `Personal wish ${itemNumber}` : 'Write your wish'
                           }
-                          size="sm"
-                          type="button"
-                        >
-                          {savedWish ? 'Save changes' : 'Save wish'}
-                        </Button>
-                        {savedWish ? (
+                          showCounter={false}
+                          value={draft.content}
+                        />
+                        {allowsLink ? (
+                          <Input
+                            aria-label={`Optional link for personal wish ${itemNumber}`}
+                            disabled={isPending || isDeleting}
+                            maxLength={2048}
+                            onChange={(event) =>
+                              setDrafts((current) => ({
+                                ...current,
+                                [key]: { ...draft, linkUrl: event.target.value },
+                              }))
+                            }
+                            placeholder="Optional link (https://...)"
+                            type="url"
+                            value={draft.linkUrl}
+                          />
+                        ) : null}
+                        <div className="flex flex-wrap gap-2">
                           <Button
-                            disabled={!state.isEditable || isPending || isDeleting}
-                            onClick={() => onDelete({ category, itemNumber })}
+                            disabled={isPending || isDeleting || !hasDraft}
+                            onClick={() =>
+                              onSave({
+                                category,
+                                itemNumber,
+                                content: draft.content.trim(),
+                                linkUrl: allowsLink ? draft.linkUrl.trim() : '',
+                              })
+                            }
                             size="sm"
                             type="button"
-                            variant="ghost"
                           >
-                            <Trash2 className="mr-1.5 h-4 w-4" />
-                            Remove
+                            {savedWish ? 'Save changes' : 'Save wish'}
                           </Button>
+                          {savedWish ? (
+                            <Button
+                              disabled={isPending || isDeleting}
+                              onClick={() => onDelete({ category, itemNumber })}
+                              size="sm"
+                              type="button"
+                              variant="ghost"
+                            >
+                              <Trash2 className="mr-1.5 h-4 w-4" />
+                              Remove
+                            </Button>
+                          ) : null}
+                        </div>
+                        {savedWish ? (
+                          <p className="text-xs text-muted-foreground">
+                            Removing it hides the wish from the tree; you can add it again anytime.
+                          </p>
                         ) : null}
                       </div>
-                      {savedWish && state.isEditable ? (
-                        <p className="text-xs text-muted-foreground">
-                          Removing it hides the wish from the tree; you can add a new one while this
-                          window is open.
-                        </p>
-                      ) : null}
-                      {!state.isEditable ? (
-                        <p className="text-xs text-muted-foreground">{state.teaser}</p>
-                      ) : null}
-                    </div>
-                  );
-                })
-              )}
-            </section>
-          );
-        })}
+                    );
+                  })}
+                </section>
+              </TabsContent>
+            );
+          })}
+        </Tabs>
       </CardContent>
     </Card>
   );
@@ -1160,10 +1157,4 @@ function ChristmasTreeError({ message }: { message: string }) {
       <CardContent className="py-4 text-sm">{message}</CardContent>
     </Card>
   );
-}
-
-function getCategoryState(data: ChristmasTreeSnapshot, category: WishCategory) {
-  const state = data.event.categories[category];
-  if (!state) throw new Error(`Missing Christmas wish category state: ${category}`);
-  return state;
 }

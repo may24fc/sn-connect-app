@@ -8,12 +8,12 @@ const activeEvent = {
   id: 'event-1',
   title: 'SN Christmas Wish Tree 2026',
   timezone: 'Asia/Manila',
-  october_opens_at: '2026-01-01T00:00:00Z',
-  october_closes_at: '2026-12-31T23:59:59Z',
-  november_opens_at: '2026-01-01T00:00:00Z',
-  november_closes_at: '2026-12-31T23:59:59Z',
-  december_opens_at: '2026-01-01T00:00:00Z',
-  december_closes_at: '2026-12-31T23:59:59Z',
+  october_opens_at: '2000-10-01T00:00:00Z',
+  october_closes_at: '2000-10-20T23:59:59Z',
+  november_opens_at: '2000-11-01T00:00:00Z',
+  november_closes_at: '2000-11-20T23:59:59Z',
+  december_opens_at: '2000-12-01T00:00:00Z',
+  december_closes_at: '2000-12-20T23:59:59Z',
   visible_until: '2027-01-15T23:59:59Z',
 };
 

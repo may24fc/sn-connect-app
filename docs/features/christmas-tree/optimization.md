@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Christmas wish persistence now respects the soft-delete uniqueness model, and the soundtrack is implemented with an explicit user control and a remembered opt-out. Browser autoplay policy and the cost of loading a third-party player remain external constraints.
+Christmas wish persistence respects the soft-delete uniqueness model, all wish categories are available through a compact tabbed editor, and the soundtrack has an explicit user control with a remembered opt-out. Browser autoplay policy and the cost of loading a third-party player remain external constraints.
 
 ## Relevant Code Map
 
@@ -11,6 +11,7 @@ Christmas wish persistence now respects the soft-delete uniqueness model, and th
 - [Christmas Tree schema](../../../apps/web/src/lib/schemas/christmas-tree.schema.ts) - wish-category limits and personal-only link normalization.
 - [Christmas Tree Playwright coverage](../../../e2e/christmas-tree-layout.spec.ts) - enable/disable, persistence, responsive, and error-state coverage.
 - [Christmas Tree API tests](../../../tests/api/christmas-tree-wish-write.test.ts) - first-save and edit persistence coverage.
+- [Always-available wish migration](../../../supabase/migrations/20261021000001_remove_christmas_wish_windows.sql) - removes month-based write and visibility restrictions while retaining event safeguards.
 - [Christmas Tree schema tests](../../../tests/schemas/christmas-tree.test.ts) - link policy and wish payload validation.
 - [Task tracker](./task-tracker.md) - delivery status and validation history.
 
@@ -40,6 +41,14 @@ Christmas wish persistence now respects the soft-delete uniqueness model, and th
 - **Solution:** Update the matching active row first and insert only when it does not exist. If concurrent first saves cause a unique violation, retry the update. This retains historical soft-deleted rows without weakening database constraints.
 - **Code paths:** `apps/web/src/app/api/christmas-tree/_lib.ts`, `tests/api/christmas-tree-wish-write.test.ts`, `e2e/christmas-tree-layout.spec.ts`.
 - **Validation:** Web type-check passed; the focused API suite passed 2/2 tests for first-save and edit paths; the focused Playwright suite passed 3/3 and saved all three Personal Wishes without displaying the save-error banner. No migration or latency claim was involved.
+
+### Always-available tabbed wish entry
+
+- **Status:** Implemented
+- **Problem/evidence:** Separate monthly windows prevented users from returning to earlier wish categories and left the wish card dominated by sequential sections or lock messages. The restriction existed in API category state, the database write trigger, and the wish visibility policy.
+- **Solution:** Keep every category editable while the Christmas Tree event is active, remove month predicates from the database write and read rules, and show Personal, Others, and SN as accessible tabs. Personal remains the only category with optional link fields.
+- **Code paths:** `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `apps/web/src/app/api/christmas-tree/_lib.ts`, `supabase/migrations/20261021000001_remove_christmas_wish_windows.sql`, `tests/api/christmas-tree-wish-write.test.ts`, `e2e/christmas-tree-layout.spec.ts`.
+- **Validation:** The migration applied to local Supabase; web type-check passed; focused API/schema tests passed 9/9; focused Playwright passed 3/3 after saving three Personal wishes, one Others wish, and one SN wish, with desktop/mobile screenshots reviewed. Database lint surfaced only a pre-existing unrelated knowledge-source function error.
 
 ## Measurements
 
@@ -72,3 +81,4 @@ flowchart LR
 - 2026-10-14: Removed irrelevant link fields from November and December wishes and enforced the same personal-only rule at the schema boundary.
 - 2026-10-14: Set soundtrack volume to 25% via the YouTube IFrame Player API; added the `iframe_api` script to the deferred third-party load measurement.
 - 2026-10-16: Replaced the wish upsert that was incompatible with the active-row partial unique index, added first-save/edit regression coverage, and verified all three Personal Wish submissions in Playwright.
+- 2026-10-21: Removed monthly wish restrictions across the API, database trigger, and visibility policy, and replaced the stacked editor with three accessible category tabs. Local migration and focused browser validation completed; production migration `20261021000001` was dry-run, applied to project `tccdupkjmwwxcvpqnpeb`, and verified in the linked migration history.

@@ -68,6 +68,20 @@ async function useMockEmployee(page: Parameters<typeof test>[0]['page']) {
       })
     );
   });
+  await page.route('**/api/**', async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === '/api/notifications') {
+      await route.fulfill({
+        json: {
+          data: [],
+          unreadCount: 0,
+          pagination: { page: 1, pageSize: 5, total: 0, totalPages: 0 },
+        },
+      });
+      return;
+    }
+    await route.fulfill({ json: { data: [] } });
+  });
 }
 
 test.describe('Christmas Tree layout stability', () => {
@@ -76,7 +90,7 @@ test.describe('Christmas Tree layout stability', () => {
   }, testInfo) => {
     let hasOrnament = false;
     const savedWishPayloads: Array<{
-      category: 'personal';
+      category: 'personal' | 'for_others' | 'for_sn';
       itemNumber: number;
       content: string;
       linkUrl: string;
@@ -198,14 +212,13 @@ test.describe('Christmas Tree layout stability', () => {
     await dropZone.click({ position: { x: dropBox.width * 0.5, y: dropBox.height * 0.45 } });
 
     await expect(page.getByText('Your Christmas Wishes')).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'Personal' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+    await expect(page.getByText(/Locked until|Submission window closed/)).toHaveCount(0);
     await expect(page.getByPlaceholder('Optional link (https://...)')).toHaveCount(3);
     await expect(page.getByLabel('Optional link for personal wish 1')).toBeVisible();
-    await expect(
-      page.getByRole('region', { name: 'Wish for Others' }).getByPlaceholder('Optional link')
-    ).toHaveCount(0);
-    await expect(
-      page.getByRole('region', { name: 'Wish for SN' }).getByPlaceholder('Optional link')
-    ).toHaveCount(0);
     for (const itemNumber of [1, 2, 3]) {
       const editor = page.getByTestId(`wish-editor-personal-${itemNumber}`);
       await editor
@@ -215,6 +228,30 @@ test.describe('Christmas Tree layout stability', () => {
       await expect.poll(() => savedWishPayloads.length).toBe(itemNumber);
     }
     expect(savedWishPayloads.map(({ itemNumber }) => itemNumber)).toEqual([1, 2, 3]);
+
+    await page.getByRole('tab', { name: 'Others' }).click();
+    const othersPanel = page.getByRole('tabpanel', { name: 'Others' });
+    await expect(othersPanel.getByRole('heading', { name: 'Wish for Others' })).toBeVisible();
+    await expect(othersPanel.getByPlaceholder('Optional link')).toHaveCount(0);
+    await othersPanel.getByPlaceholder('Write your wish').fill('A wish for someone else');
+    await othersPanel.getByRole('button', { name: 'Save wish' }).click();
+    await expect.poll(() => savedWishPayloads.length).toBe(4);
+
+    await page.getByRole('tab', { name: 'SN', exact: true }).click();
+    const snPanel = page.getByRole('tabpanel', { name: 'SN' });
+    await expect(snPanel.getByRole('heading', { name: 'Wish for SN' })).toBeVisible();
+    await expect(snPanel.getByPlaceholder('Optional link')).toHaveCount(0);
+    await snPanel.getByPlaceholder('Write your wish').fill('A wish for SN');
+    await snPanel.getByRole('button', { name: 'Save wish' }).click();
+    await expect.poll(() => savedWishPayloads.length).toBe(5);
+    expect(savedWishPayloads.map(({ category }) => category)).toEqual([
+      'personal',
+      'personal',
+      'personal',
+      'for_others',
+      'for_sn',
+    ]);
+    await page.getByRole('tab', { name: 'Personal' }).click();
     await expect(page.getByText('Failed to save Christmas wish')).toHaveCount(0);
     const afterBox = await canvas.boundingBox();
     if (!afterBox) throw new Error('Christmas Tree canvas was not measurable after placement');
