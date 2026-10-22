@@ -2,8 +2,11 @@ import type { buildChristmasTreeSnapshot } from '@/app/api/christmas-tree/_lib';
 import { STALE_TIMES } from '@/lib/query-client';
 import { queryKeys } from '@/lib/query-keys';
 import type {
+  ChristmasDecorationEnableInput,
   ChristmasOrnamentMoveInput,
   ChristmasOrnamentPlacementInput,
+  ChristmasStrandGeometry,
+  ChristmasStrandSaveInput,
   ChristmasWishDeleteInput,
   ChristmasWishUpsertInput,
 } from '@/lib/schemas/christmas-tree.schema';
@@ -108,6 +111,136 @@ export function useDeleteChristmasOrnament() {
       queryClient.setQueryData(queryKeys.christmasTree.current(), context?.previousSnapshot);
     },
     onSuccess: (data) => cacheLocalMutationSnapshot(queryClient, data),
+  });
+}
+
+export function useAdminDeleteChristmasOrnament() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ornamentId: string) =>
+      fetchJson<ChristmasTreeSnapshot>('/api/christmas-tree/ornament', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ornamentId }),
+      }),
+    onSuccess: (data) => cacheLocalMutationSnapshot(queryClient, data),
+  });
+}
+
+export function useEnableChristmasDecoration() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: ChristmasDecorationEnableInput) =>
+      fetchJson<ChristmasTreeSnapshot>('/api/christmas-tree/decorations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: (data) => cacheLocalMutationSnapshot(queryClient, data),
+  });
+}
+
+export function useSaveChristmasStrand() {
+  const queryClient = useQueryClient();
+  const versions = useRef(new Map<string, number>());
+  const confirmed = useRef(new Map<string, ChristmasStrandGeometry>());
+  const pending = useRef(new Map<string, Promise<ChristmasTreeSnapshot>>());
+  return useMutation({
+    mutationFn: (payload: ChristmasStrandSaveInput) => {
+      const send = () =>
+        fetchJson<ChristmasTreeSnapshot>('/api/christmas-tree/decorations', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      if (!payload.strandId) return send();
+      const strandId = payload.strandId;
+      const previous = pending.current.get(strandId);
+      const request = previous ? previous.catch(() => undefined).then(send) : send();
+      pending.current.set(strandId, request);
+      const clearPending = () => {
+        if (pending.current.get(strandId) === request) pending.current.delete(strandId);
+      };
+      void request.then(clearPending, clearPending);
+      return request;
+    },
+    onMutate: async (payload) => {
+      const strandId = payload.strandId;
+      if (!strandId) return { strandId: null, version: 0 };
+      const version = (versions.current.get(strandId) ?? 0) + 1;
+      versions.current.set(strandId, version);
+      const queryKey = queryKeys.christmasTree.current();
+      await queryClient.cancelQueries({ queryKey });
+      const old = queryClient.getQueryData<ChristmasTreeSnapshot>(queryKey);
+      const previousGeometry = old?.strands.find((strand) => strand.id === strandId)?.geometry;
+      if (previousGeometry && !confirmed.current.has(strandId)) {
+        confirmed.current.set(strandId, previousGeometry);
+      }
+      if (versions.current.get(strandId) === version) {
+        queryClient.setQueryData<ChristmasTreeSnapshot>(queryKey, (snapshot) =>
+          snapshot
+            ? {
+                ...snapshot,
+                strands: snapshot.strands.map((strand) =>
+                  strand.id === strandId ? { ...strand, geometry: payload.geometry } : strand
+                ),
+              }
+            : snapshot
+        );
+        localSnapshotUpdatedAt.set(queryClient, Date.now());
+      }
+      return { strandId, version };
+    },
+    onError: (_error, _payload, context) => {
+      if (!context?.strandId || versions.current.get(context.strandId) !== context.version) return;
+      const previousGeometry = confirmed.current.get(context.strandId);
+      if (!previousGeometry) return;
+      queryClient.setQueryData<ChristmasTreeSnapshot>(queryKeys.christmasTree.current(), (old) =>
+        old
+          ? {
+              ...old,
+              strands: old.strands.map((strand) =>
+                strand.id === context.strandId ? { ...strand, geometry: previousGeometry } : strand
+              ),
+            }
+          : old
+      );
+    },
+    onSuccess: (data, payload, context) => {
+      if (!payload.strandId) {
+        const current = queryClient.getQueryData<ChristmasTreeSnapshot>(
+          queryKeys.christmasTree.current()
+        );
+        cacheLocalMutationSnapshot(queryClient, {
+          ...data,
+          strands: data.strands.map((strand) => {
+            const moving = pending.current.has(strand.id);
+            const optimistic = current?.strands.find((item) => item.id === strand.id);
+            return moving && optimistic ? { ...strand, geometry: optimistic.geometry } : strand;
+          }),
+        });
+        return;
+      }
+      const saved = data.strands.find((strand) => strand.id === payload.strandId);
+      if (saved) confirmed.current.set(payload.strandId, saved.geometry);
+      if (versions.current.get(payload.strandId) !== context.version) return;
+      queryClient.setQueryData<ChristmasTreeSnapshot>(queryKeys.christmasTree.current(), (old) =>
+        old && saved
+          ? {
+              ...old,
+              strands: old.strands.map((strand) =>
+                strand.id === saved.id ? { ...strand, geometry: saved.geometry } : strand
+              ),
+            }
+          : data
+      );
+      localSnapshotUpdatedAt.set(queryClient, Date.now());
+    },
+    onSettled: (_data, _error, payload, context) => {
+      if (payload.strandId && versions.current.get(payload.strandId) !== context?.version) return;
+      if (pending.current.size > 0) return;
+      void queryClient.invalidateQueries({ queryKey: queryKeys.christmasTree.current() });
+    },
   });
 }
 
@@ -300,6 +433,16 @@ export function useChristmasTreeRealtime(
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'christmas_wishes' },
+        invalidate
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'christmas_tree_strands' },
+        invalidate
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'christmas_tree_events' },
         invalidate
       )
       .subscribe((nextStatus: REALTIME_SUBSCRIBE_STATES) => {

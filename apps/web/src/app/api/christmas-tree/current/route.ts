@@ -7,10 +7,10 @@ import {
 
 export async function GET() {
   try {
-    const { user } = await getChristmasTreeAuth();
+    const { user, role } = await getChristmasTreeAuth();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const data = await buildChristmasTreeSnapshot(getChristmasTreeAdminClient(), user.id);
+    const data = await buildChristmasTreeSnapshot(getChristmasTreeAdminClient(), user.id, role);
     return NextResponse.json({ data });
   } catch (error) {
     return NextResponse.json(

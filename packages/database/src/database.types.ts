@@ -1003,6 +1003,60 @@ export type Database = {
           },
         ]
       }
+      christmas_tree_strands: {
+        Row: {
+          id: string
+          event_id: string
+          kind: string
+          start_x: number
+          start_y: number
+          end_x: number
+          end_y: number
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          event_id: string
+          kind: string
+          start_x: number
+          start_y: number
+          end_x: number
+          end_y: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          event_id?: string
+          kind?: string
+          start_x?: number
+          start_y?: number
+          end_x?: number
+          end_y?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "christmas_tree_strands_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "christmas_tree_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "christmas_tree_strands_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       christmas_tree_events: {
         Row: {
           created_at: string
@@ -1011,14 +1065,17 @@ export type Database = {
           december_opens_at: string
           deleted_at: string | null
           event_key: string
+          garland_manually_enabled: boolean
           id: string
           is_active: boolean
+          lights_manually_enabled: boolean
           november_closes_at: string
           november_opens_at: string
           october_closes_at: string
           october_opens_at: string
           timezone: string
           title: string
+          star_manually_enabled: boolean
           updated_at: string
           visible_until: string
         }
@@ -1029,14 +1086,17 @@ export type Database = {
           december_opens_at: string
           deleted_at?: string | null
           event_key: string
+          garland_manually_enabled?: boolean
           id?: string
           is_active?: boolean
+          lights_manually_enabled?: boolean
           november_closes_at: string
           november_opens_at: string
           october_closes_at: string
           october_opens_at: string
           timezone?: string
           title: string
+          star_manually_enabled?: boolean
           updated_at?: string
           visible_until: string
         }
@@ -1047,14 +1107,17 @@ export type Database = {
           december_opens_at?: string
           deleted_at?: string | null
           event_key?: string
+          garland_manually_enabled?: boolean
           id?: string
           is_active?: boolean
+          lights_manually_enabled?: boolean
           november_closes_at?: string
           november_opens_at?: string
           october_closes_at?: string
           october_opens_at?: string
           timezone?: string
           title?: string
+          star_manually_enabled?: boolean
           updated_at?: string
           visible_until?: string
         }

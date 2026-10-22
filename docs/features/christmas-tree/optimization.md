@@ -2,20 +2,40 @@
 
 ## Current Status
 
-Christmas wish persistence respects the soft-delete uniqueness model, all wish categories are available through a compact tabbed editor, and the soundtrack has an explicit user control with a remembered opt-out. Browser autoplay policy and the cost of loading a third-party player remain external constraints.
+Christmas wish persistence respects the soft-delete uniqueness model, all wish categories are available through a compact tabbed editor, and the soundtrack has an explicit user control with a remembered opt-out. Admins can place multiple independent Garland and Lights strands directly on the tree; saved strands now remain visibly at their dropped position while a move is saved. Browser autoplay policy and the cost of loading a third-party player remain external constraints.
 
 ## Relevant Code Map
 
 - [Christmas Tree page](../../../apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx) - soundtrack preference, YouTube player, and visible control.
+- [Strand interaction](../../../apps/web/src/app/(app)/(employee)/christmas-tree/ChristmasTreeStrand.tsx) - fixed-size bulbs, sagging wire, independent drag and endpoint resize controls.
+- [Christmas Tree client mutations](../../../apps/web/src/hooks/useChristmasTree.ts) - optimistic saved-strand geometry, ordered writes, rollback, and server reconciliation.
 - [Christmas Tree API helpers](../../../apps/web/src/app/api/christmas-tree/_lib.ts) - active-wish update/insert persistence and concurrent-save recovery.
 - [Christmas Tree schema](../../../apps/web/src/lib/schemas/christmas-tree.schema.ts) - wish-category limits and personal-only link normalization.
 - [Christmas Tree Playwright coverage](../../../e2e/christmas-tree-layout.spec.ts) - enable/disable, persistence, responsive, and error-state coverage.
 - [Christmas Tree API tests](../../../tests/api/christmas-tree-wish-write.test.ts) - first-save and edit persistence coverage.
+- [Admin API tests](../../../tests/api/christmas-tree-admin-controls.test.ts) - strand create/update and admin authorization coverage.
+- [Strand migration](../../../supabase/migrations/20261022000002_add_christmas_tree_strand_geometry.sql) - independent rows per Garland or Lights strand.
 - [Always-available wish migration](../../../supabase/migrations/20261021000001_remove_christmas_wish_windows.sql) - removes month-based write and visibility restrictions while retaining event safeguards.
 - [Christmas Tree schema tests](../../../tests/schemas/christmas-tree.test.ts) - link policy and wish payload validation.
 - [Task tracker](./task-tracker.md) - delivery status and validation history.
 
 ## Optimizations
+
+### Immediate strand release response
+
+- **Status:** Implemented
+- **Problem/evidence:** Releasing a moved strand cleared its local drag geometry before the PATCH returned, briefly snapping it back to the old position. With a controlled 250 ms save delay, 30 browser samples measured release-to-stable visual p50 295.3 ms and p95 307.3 ms.
+- **Solution:** Keep the dropped geometry visible until the shared snapshot reflects it. For existing strands, update the Christmas Tree cache optimistically, serialize writes per strand to preserve drag order, and roll back to the last confirmed geometry on failure. New strand creation remains server-confirmed.
+- **Code paths:** `apps/web/src/app/(app)/(employee)/christmas-tree/ChristmasTreeStrand.tsx`, `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `apps/web/src/hooks/useChristmasTree.ts`, `e2e/christmas-tree-layout.spec.ts`, `docs/apps/web/architecture/optimistic-ui.md`.
+- **Validation:** Web type-check passed. Final focused Playwright with an intercepted 250 ms PATCH measured 30 after samples at p50 28.4 ms and p95 41.5 ms, verified rollback after a 500 response, and checked mobile overflow. The admin/super-admin placement regression passed in the same 3/3 browser run.
+
+### Direct, repeatable tree decoration placement
+
+- **Status:** Implemented
+- **Problem/evidence:** A one-click decoration could only appear at a fixed location; a single geometry slot would also overwrite an earlier strand, preventing admins from building a fuller tree. Scaling one graphic to make it longer would distort bulbs or Garland thickness.
+- **Solution:** Store each Garland and Lights strand as a separate row. Admins drag across the tree to add any number, drag a saved wire to move it, or pull either endpoint to resize it. A quadratic curve adds bounded sag as the span grows; the line uses non-scaling stroke width, and bulbs keep fixed pixel dimensions with count varying by span. Shared edits are server-confirmed because authorization and other viewers' state must be reconciled.
+- **Code paths:** `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `apps/web/src/app/(app)/(employee)/christmas-tree/ChristmasTreeStrand.tsx`, `apps/web/src/app/api/christmas-tree/_lib.ts`, `apps/web/src/hooks/useChristmasTree.ts`, `supabase/migrations/20261022000002_add_christmas_tree_strand_geometry.sql`, `e2e/christmas-tree-layout.spec.ts`.
+- **Validation:** Local migration applied; web type-check passed; focused API tests passed 7/7; focused Playwright passed 2/2 for admin and super-admin, with two strands of each type, endpoint resize, wire drag, reload persistence, desktop/mobile screenshots, no feature request failures, no console errors, and no horizontal overflow. No latency improvement is claimed or measured.
 
 ### User-controlled seasonal music
 
@@ -52,6 +72,21 @@ Christmas wish persistence respects the soft-delete uniqueness model, all wish c
 
 ## Measurements
 
+### Strand drag release, 2026-10-22
+
+- **Status:** Implemented
+- **Environment:** Commit `62e59369`, dirty worktree before and after; Windows local machine, Next dev and local Supabase. Browser journey used an admin with mocked auth on port 3002 and a controlled 250 ms PATCH. Read-only GET sampler used the local sample admin on port 3001. No production or staging traffic.
+- **Samples:** 30 measured browser drags with 3 warmups before and after; 30 GET samples per route with 3 warmups. All sampled GETs returned 200.
+
+| Metric | Before p50 | After p50 | Δ p50 | Before p95 | After p95 | Δ p95 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Drag release → stable strand position | 295.3 ms | 28.4 ms | -266.9 ms | 307.3 ms | 41.5 ms | -265.8 ms |
+| GET `/christmas-tree` total | 250.2 ms | 255.5 ms | +5.4 ms | 343.2 ms | 312.7 ms | -30.6 ms |
+| GET `/api/christmas-tree/current` total | 153.2 ms | 143.1 ms | -10.1 ms | 224.6 ms | 189.2 ms | -35.4 ms |
+| Control GET `/dashboard` total | 302.1 ms | 311.1 ms | +9.0 ms | 503.9 ms | 374.2 ms | -129.7 ms |
+
+The measured improvement is the local visual response after release, not server or network speed. GET deltas are within or confounded by control-route drift and are not claimed as an API speedup. Raw runs: `perf-results/christmas-tree/2026-10-22T04-47-42-549Z-before.json` and `2026-10-22T04-57-18-450Z-after.json` (gitignored).
+
 ### Third-party player page-load cost
 
 - **Status:** Deferred
@@ -60,6 +95,18 @@ Christmas wish persistence respects the soft-delete uniqueness model, all wish c
 - **Resume condition:** Create a separate pre-change worktree, run the same local employee journey with a Playwright resource-timing harness for at least 30 samples and 3 warmups, repeat against the current worktree, and record iframe/page-load p50 and p95 here. The closest server-route control command is `pnpm performance:latency --feature christmas-tree --targets "/christmas-tree,/api/christmas-tree/current" --label before` (and the identical command with `--label after`), but browser resource timing is additionally required for the media request and, since the volume change, the `youtube.com/iframe_api` script request.
 
 ## Visual Guide
+
+```mermaid
+flowchart LR
+    A[Admin drags across branches] --> B[Preview curved strand]
+    B --> C[Server validates and saves a new row]
+    C --> D[Tree snapshot and realtime refresh]
+    D --> E[Drag wire to move or endpoint to resize]
+    E --> F[Keep dropped shape and update local cache]
+    F --> G[Queue save for this strand]
+    G -->|Success| D
+    G -->|Failure| H[Restore last confirmed shape]
+```
 
 ```mermaid
 flowchart LR
@@ -76,6 +123,10 @@ flowchart LR
 ```
 
 ## Change Log
+
+- 2026-10-22: Removed the snap-back after a saved strand is released. Added optimistic geometry with rollback and ordered per-strand saves, then measured 30 browser drags before and after and read-only local GET controls. The final visual p50/p95 changed from 295.3/307.3 ms to 28.4/41.5 ms; no API speedup is claimed.
+
+- 2026-10-22: Replaced one-position Garland/Lights editing with repeatable, directly placed strands. Applied the new table to local Supabase, verified admin and super-admin interactions in Playwright, and retained fixed bulb and cable thickness while lengthening.
 
 - 2026-10-14: Implemented the persistent soundtrack control, documented browser autoplay and third-party-load tradeoffs, and deferred numeric browser-load comparison until a valid pre-change baseline can be captured.
 - 2026-10-14: Removed irrelevant link fields from November and December wishes and enforced the same personal-only rule at the schema boundary.

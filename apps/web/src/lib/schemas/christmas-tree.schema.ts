@@ -43,6 +43,39 @@ export const christmasOrnamentPlacementSchema = christmasOrnamentPositionSchema.
 
 export const christmasOrnamentMoveSchema = christmasOrnamentPositionSchema;
 
+export const christmasOrnamentDeleteSchema = z.object({
+  ornamentId: z.string().uuid().optional(),
+});
+
+export const christmasDecorationEnableSchema = z.object({
+  decoration: z.enum(['garland', 'lights', 'star']),
+});
+
+export const christmasStrandGeometrySchema = z
+  .object({
+    startX: z.number().finite().min(6).max(94),
+    startY: z.number().finite().min(10).max(80),
+    endX: z.number().finite().min(6).max(94),
+    endY: z.number().finite().min(10).max(80),
+  })
+  .refine((value) => value.endX - value.startX >= 12, {
+    message: 'The strand must span at least 12% of the tree width',
+  })
+  .refine(
+    (value) =>
+      [
+        [value.startX, value.startY],
+        [value.endX, value.endY],
+      ].every(([x, y]) => x !== undefined && y !== undefined && Math.abs(x - 50) <= (y - 7) * 0.57),
+    { message: 'Attach both ends to the green branches' }
+  );
+
+export const christmasStrandSaveSchema = z.object({
+  decoration: z.enum(['garland', 'lights']),
+  strandId: z.string().uuid().optional(),
+  geometry: christmasStrandGeometrySchema,
+});
+
 export const christmasWishUpsertSchema = z
   .object({
     category: z.enum(CHRISTMAS_WISH_CATEGORIES),
@@ -89,5 +122,9 @@ export const christmasWishDeleteSchema = z
 
 export type ChristmasOrnamentPlacementInput = z.infer<typeof christmasOrnamentPlacementSchema>;
 export type ChristmasOrnamentMoveInput = z.infer<typeof christmasOrnamentMoveSchema>;
+export type ChristmasOrnamentDeleteInput = z.infer<typeof christmasOrnamentDeleteSchema>;
+export type ChristmasDecorationEnableInput = z.infer<typeof christmasDecorationEnableSchema>;
+export type ChristmasStrandGeometry = z.infer<typeof christmasStrandGeometrySchema>;
+export type ChristmasStrandSaveInput = z.infer<typeof christmasStrandSaveSchema>;
 export type ChristmasWishUpsertInput = z.infer<typeof christmasWishUpsertSchema>;
 export type ChristmasWishDeleteInput = z.infer<typeof christmasWishDeleteSchema>;

@@ -1,4 +1,7 @@
 import { logActivity } from '@/lib/audit';
+import { getActiveUserRole } from '@/lib/auth/active-role';
+import type { KnownDbRole } from '@/lib/auth/role';
+import type { ChristmasStrandGeometry } from '@/lib/schemas/christmas-tree.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 
 export type ChristmasTreeAdminClient = ReturnType<typeof createSupabaseAdminClient>;
@@ -14,6 +17,9 @@ type ChristmasEventRow = {
   december_opens_at: string;
   december_closes_at: string;
   visible_until: string;
+  garland_manually_enabled: boolean;
+  lights_manually_enabled: boolean;
+  star_manually_enabled: boolean;
 };
 
 type OrnamentRow = {
@@ -41,7 +47,12 @@ export async function getChristmasTreeAuth() {
     error,
   } = await supabase.auth.getUser();
 
-  return { user: error ? null : user };
+  if (error || !user) return { user: null, role: null };
+  return { user, role: await getActiveUserRole(user.id) };
+}
+
+export function canManageChristmasTree(role: KnownDbRole | null): boolean {
+  return role === 'admin' || role === 'super_admin';
 }
 
 export function getChristmasTreeAdminClient(): ChristmasTreeAdminClient {
@@ -54,7 +65,7 @@ export async function getActiveChristmasEvent(
   const { data, error } = await adminClient
     .from('christmas_tree_events')
     .select(
-      'id, title, timezone, october_opens_at, october_closes_at, november_opens_at, november_closes_at, december_opens_at, december_closes_at, visible_until'
+      'id, title, timezone, october_opens_at, october_closes_at, november_opens_at, november_closes_at, december_opens_at, december_closes_at, visible_until, garland_manually_enabled, lights_manually_enabled, star_manually_enabled'
     )
     .eq('is_active', true)
     .is('deleted_at', null)
@@ -92,22 +103,32 @@ function categoryState(event: ChristmasEventRow, category: WishRow['category']) 
 
 export async function buildChristmasTreeSnapshot(
   adminClient: ChristmasTreeAdminClient,
-  userId: string
+  userId: string,
+  role: KnownDbRole | null = null
 ) {
   const event = await getActiveChristmasEvent(adminClient);
   if (!event) throw new Error('No active Christmas Tree event is configured');
 
-  const [{ data: ornaments, error: ornamentsError }, { data: state, error: stateError }] =
-    await Promise.all([
-      adminClient
-        .from('christmas_ornaments')
-        .select('id, user_id, asset_type, position_x, position_y')
-        .eq('event_id', event.id)
-        .is('deleted_at', null),
-      adminClient.rpc('get_christmas_tree_decoration_state', { p_event_id: event.id }),
-    ]);
+  const [
+    { data: ornaments, error: ornamentsError },
+    { data: state, error: stateError },
+    { data: strands, error: strandsError },
+  ] = await Promise.all([
+    adminClient
+      .from('christmas_ornaments')
+      .select('id, user_id, asset_type, position_x, position_y')
+      .eq('event_id', event.id)
+      .is('deleted_at', null),
+    adminClient.rpc('get_christmas_tree_decoration_state', { p_event_id: event.id }),
+    adminClient
+      .from('christmas_tree_strands')
+      .select('id, kind, start_x, start_y, end_x, end_y')
+      .eq('event_id', event.id)
+      .order('created_at', { ascending: true }),
+  ]);
 
-  if (ornamentsError || stateError) throw new Error('Failed to load Christmas Tree data');
+  if (ornamentsError || stateError || strandsError)
+    throw new Error('Failed to load Christmas Tree data');
 
   const eventOrnaments = (ornaments ?? []) as Array<OrnamentRow>;
   const ornamentIds = eventOrnaments.map((ornament) => ornament.id);
@@ -144,6 +165,17 @@ export async function buildChristmasTreeSnapshot(
       ),
     },
     decoration: state?.[0] ?? null,
+    strands: (strands ?? []).map((strand) => ({
+      id: strand.id,
+      kind: strand.kind as 'garland' | 'lights',
+      geometry: {
+        startX: Number(strand.start_x),
+        startY: Number(strand.start_y),
+        endX: Number(strand.end_x),
+        endY: Number(strand.end_y),
+      },
+    })),
+    permissions: { canManage: canManageChristmasTree(role) },
     myOrnament: mine,
     ornaments: eventOrnaments.map((ornament) => ({
       id: ornament.id,
@@ -429,29 +461,137 @@ export async function deleteChristmasWish(
 
 export async function deleteChristmasOrnament(
   adminClient: ChristmasTreeAdminClient,
-  userId: string
+  userId: string,
+  targetOrnamentId?: string,
+  canManage = false
 ) {
   const event = await getActiveChristmasEvent(adminClient);
   if (!event) throw new Error('No active Christmas Tree event is configured');
+
+  const targetQuery = adminClient
+    .from('christmas_ornaments')
+    .select('id, user_id')
+    .eq('event_id', event.id)
+    .is('deleted_at', null);
+  const { data: target, error: targetError } = targetOrnamentId
+    ? await targetQuery.eq('id', targetOrnamentId).maybeSingle()
+    : await targetQuery.eq('user_id', userId).maybeSingle();
+  if (targetError) throw new Error('Failed to find Christmas ball');
+  if (!target)
+    throw new ChristmasTreeRequestError('This Christmas ball has already been removed', 404);
+  if (target.user_id !== userId && !canManage) {
+    throw new ChristmasTreeRequestError(
+      'Only admins can remove another user’s Christmas ball',
+      403
+    );
+  }
 
   const { data: ornament, error } = await adminClient
     .from('christmas_ornaments')
     .update({ deleted_at: new Date().toISOString() })
     .eq('event_id', event.id)
-    .eq('user_id', userId)
+    .eq('id', target.id)
     .is('deleted_at', null)
     .select('id')
     .maybeSingle();
   if (error) throw new Error('Failed to remove Christmas ball');
   if (!ornament)
-    throw new ChristmasTreeRequestError('Your Christmas ball has already been removed', 404);
+    throw new ChristmasTreeRequestError('This Christmas ball has already been removed', 404);
 
   logActivity(adminClient, {
     userId,
     action: 'DELETE_CHRISTMAS_ORNAMENT',
     tableName: 'christmas_ornaments',
     recordId: ornament.id,
-    metadata: { eventId: event.id },
+    metadata: {
+      eventId: event.id,
+      ownerUserId: target.user_id,
+      removedByAdmin: target.user_id !== userId,
+    },
+  });
+}
+
+export async function enableChristmasDecoration(
+  adminClient: ChristmasTreeAdminClient,
+  userId: string,
+  decoration: 'garland' | 'lights' | 'star',
+  canManage: boolean
+) {
+  if (!canManage) {
+    throw new ChristmasTreeRequestError('Only admins can manage Christmas Tree decorations', 403);
+  }
+  const event = await getActiveChristmasEvent(adminClient);
+  if (!event) throw new Error('No active Christmas Tree event is configured');
+
+  const column = `${decoration}_manually_enabled` as const;
+  const { data: updatedEvent, error } = await adminClient
+    .from('christmas_tree_events')
+    .update({ [column]: true })
+    .eq('id', event.id)
+    .is('deleted_at', null)
+    .select('id')
+    .maybeSingle();
+  if (error) throw new Error('Failed to add Christmas Tree decoration');
+  if (!updatedEvent) throw new ChristmasTreeRequestError('Christmas Tree event not found', 404);
+
+  logActivity(adminClient, {
+    userId,
+    action: 'ENABLE_CHRISTMAS_TREE_DECORATION',
+    tableName: 'christmas_tree_events',
+    recordId: event.id,
+    metadata: { decoration },
+  });
+}
+
+export async function saveChristmasStrand(
+  adminClient: ChristmasTreeAdminClient,
+  userId: string,
+  decoration: 'garland' | 'lights',
+  geometry: ChristmasStrandGeometry,
+  canManage: boolean,
+  strandId?: string
+) {
+  if (!canManage) {
+    throw new ChristmasTreeRequestError('Only admins can manage Christmas Tree decorations', 403);
+  }
+  const event = await getActiveChristmasEvent(adminClient);
+  if (!event) throw new Error('No active Christmas Tree event is configured');
+
+  const coordinates = {
+    start_x: geometry.startX,
+    start_y: geometry.startY,
+    end_x: geometry.endX,
+    end_y: geometry.endY,
+  };
+  const saved = strandId
+    ? await adminClient
+        .from('christmas_tree_strands')
+        .update(coordinates)
+        .eq('id', strandId)
+        .eq('event_id', event.id)
+        .eq('kind', decoration)
+        .select('id')
+        .maybeSingle()
+    : await adminClient
+        .from('christmas_tree_strands')
+        .insert({ event_id: event.id, kind: decoration, created_by: userId, ...coordinates })
+        .select('id')
+        .single();
+  if (saved.error) throw new Error('Failed to save Christmas Tree strand');
+  if (!saved.data) throw new ChristmasTreeRequestError('Christmas Tree strand not found', 404);
+
+  const { error: eventError } = await adminClient
+    .from('christmas_tree_events')
+    .update({ [`${decoration}_manually_enabled`]: true })
+    .eq('id', event.id);
+  if (eventError) throw new Error('Failed to enable Christmas Tree decoration');
+
+  logActivity(adminClient, {
+    userId,
+    action: 'SAVE_CHRISTMAS_TREE_STRAND',
+    tableName: 'christmas_tree_strands',
+    recordId: saved.data.id,
+    metadata: { decoration, operation: strandId ? 'move' : 'create' },
   });
 }
 

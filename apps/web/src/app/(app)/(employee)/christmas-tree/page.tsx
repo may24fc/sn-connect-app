@@ -2,16 +2,21 @@
 
 import type { ChristmasTreeSnapshot } from '@/hooks/useChristmasTree';
 import {
+  useAdminDeleteChristmasOrnament,
   useChristmasTree,
   useDeleteChristmasOrnament,
   useDeleteChristmasWish,
+  useEnableChristmasDecoration,
   useMoveChristmasOrnament,
   usePlaceChristmasOrnament,
+  useSaveChristmasStrand,
   useUpsertChristmasWish,
 } from '@/hooks/useChristmasTree';
 import {
   CHRISTMAS_ORNAMENT_ASSETS,
   type ChristmasOrnamentPlacementInput,
+  type ChristmasStrandGeometry,
+  christmasStrandGeometrySchema,
 } from '@/lib/schemas/christmas-tree.schema';
 import {
   Badge,
@@ -57,6 +62,12 @@ import {
   useRef,
   useState,
 } from 'react';
+import {
+  ChristmasTreeStrand,
+  DEFAULT_STRANDS,
+  type StrandKind,
+  pointFromClient,
+} from './ChristmasTreeStrand';
 
 const ornamentColors: Record<(typeof CHRISTMAS_ORNAMENT_ASSETS)[number], string> = {
   red: 'bg-red-600 ring-red-200',
@@ -152,6 +163,9 @@ export default function ChristmasTreePage() {
   const placeOrnament = usePlaceChristmasOrnament();
   const moveOrnament = useMoveChristmasOrnament();
   const deleteOrnament = useDeleteChristmasOrnament();
+  const adminDeleteOrnament = useAdminDeleteChristmasOrnament();
+  const enableDecoration = useEnableChristmasDecoration();
+  const saveStrand = useSaveChristmasStrand();
   const upsertWish = useUpsertChristmasWish();
   const deleteWish = useDeleteChristmasWish();
   const [selectedOrnament, setSelectedOrnament] = useState<Ornament | null>(null);
@@ -162,6 +176,7 @@ export default function ChristmasTreePage() {
     clientY: number;
   } | null>(null);
   const [placementMessage, setPlacementMessage] = useState<string | null>(null);
+  const [strandPlacement, setStrandPlacement] = useState<StrandKind | null>(null);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [isMusicEnabled, setIsMusicEnabled] = useState<boolean | null>(null);
 
@@ -184,14 +199,56 @@ export default function ChristmasTreePage() {
     placeOrnament.error?.message ??
     moveOrnament.error?.message ??
     upsertWish.error?.message ??
-    deleteWish.error?.message;
-  const deleteOrnamentError = deleteOrnament.error?.message;
+    deleteWish.error?.message ??
+    enableDecoration.error?.message ??
+    saveStrand.error?.message;
+  const deleteOrnamentError = deleteOrnament.error?.message ?? adminDeleteOrnament.error?.message;
+  const isSelectedUsersOrnament = selectedOrnament?.id === data.myOrnament?.id;
+  const handleRemoveOrnament = () => {
+    if (!selectedOrnament) return;
+    const onSuccess = () => setSelectedOrnament(null);
+    if (isSelectedUsersOrnament) {
+      deleteOrnament.mutate(undefined, { onSuccess });
+      return;
+    }
+    if (!data.permissions.canManage) return;
+    const confirmed = window.confirm(
+      `Remove ${selectedOrnament.ownerName}'s Christmas ball and hide its wishes?`
+    );
+    if (confirmed) adminDeleteOrnament.mutate(selectedOrnament.id, { onSuccess });
+  };
   const handlePlaceOrnament = (assetType: OrnamentAsset, positionX: number, positionY: number) => {
     setPlacementMessage(null);
     setSelectedAssetType(null);
     setIsDraggingNewBall(false);
     setNewBallDragStart(null);
     placeOrnament.mutate({ assetType, positionX, positionY });
+  };
+  const handleSaveStrand = async (
+    decoration: StrandKind,
+    geometry: ChristmasStrandGeometry,
+    strandId?: string
+  ) => {
+    setPlacementMessage(null);
+    try {
+      await saveStrand.mutateAsync({ decoration, geometry, strandId });
+      if (!strandId) setStrandPlacement(null);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  const selectStrandPlacement = (decoration: StrandKind) => {
+    setSelectedAssetType(null);
+    setStrandPlacement((selected) => (selected === decoration ? null : decoration));
+    setPlacementMessage(null);
+    window.setTimeout(
+      () =>
+        document
+          .querySelector('[data-testid="christmas-tree-canvas"]')
+          ?.scrollIntoView({ behavior: 'smooth', block: 'center' }),
+      0
+    );
   };
   const togglePresentationMode = async () => {
     if (isPresentationMode) {
@@ -234,18 +291,18 @@ export default function ChristmasTreePage() {
           </div>
           <ChristmasTreeCanvas
             decoration={data.decoration}
+            strands={data.strands}
             fillHeight
             ornaments={data.ornaments}
             onSelect={setSelectedOrnament}
           />
           <OrnamentDialog
-            isRemoving={deleteOrnament.isPending}
-            isUsersOrnament={selectedOrnament?.id === data.myOrnament?.id}
+            canRemove={isSelectedUsersOrnament || data.permissions.canManage}
+            isRemoving={deleteOrnament.isPending || adminDeleteOrnament.isPending}
+            isUsersOrnament={isSelectedUsersOrnament}
             ornament={selectedOrnament}
             onOpenChange={(open) => !open && setSelectedOrnament(null)}
-            onRemove={() =>
-              deleteOrnament.mutate(undefined, { onSuccess: () => setSelectedOrnament(null) })
-            }
+            onRemove={handleRemoveOrnament}
           />
         </div>
       </div>
@@ -281,9 +338,34 @@ export default function ChristmasTreePage() {
         />
       ) : null}
 
+      {data.permissions.canManage ? (
+        <div className="xl:hidden">
+          <AdminDecorationControls
+            decoration={data.decoration}
+            strands={data.strands}
+            isPending={enableDecoration.isPending}
+            onEnable={(decoration) =>
+              decoration === 'star'
+                ? enableDecoration.mutate({ decoration })
+                : selectStrandPlacement(decoration)
+            }
+            placementMode={strandPlacement}
+          />
+        </div>
+      ) : null}
+
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.45fr)_380px]">
         <ChristmasTreeCanvas
           decoration={data.decoration}
+          strands={data.strands}
+          canEditStrands={data.permissions.canManage}
+          strandPlacement={strandPlacement}
+          onSaveStrand={handleSaveStrand}
+          onInvalidStrand={() =>
+            setPlacementMessage(
+              'Attach both ends to the branches and make the strand at least 12% of the tree width.'
+            )
+          }
           isDraggingNewBall={isDraggingNewBall}
           isMovePending={moveOrnament.isPending || placeOrnament.isPending}
           isPlacementPending={placeOrnament.isPending}
@@ -307,6 +389,21 @@ export default function ChristmasTreePage() {
           }
         />
         <section className="space-y-6">
+          {data.permissions.canManage ? (
+            <div className="hidden xl:block">
+              <AdminDecorationControls
+                decoration={data.decoration}
+                strands={data.strands}
+                isPending={enableDecoration.isPending}
+                onEnable={(decoration) =>
+                  decoration === 'star'
+                    ? enableDecoration.mutate({ decoration })
+                    : selectStrandPlacement(decoration)
+                }
+                placementMode={strandPlacement}
+              />
+            </div>
+          ) : null}
           {!data.myOrnament ? (
             <OrnamentPicker
               isPending={placeOrnament.isPending}
@@ -331,13 +428,12 @@ export default function ChristmasTreePage() {
       </div>
 
       <OrnamentDialog
-        isRemoving={deleteOrnament.isPending}
-        isUsersOrnament={selectedOrnament?.id === data.myOrnament?.id}
+        canRemove={isSelectedUsersOrnament || data.permissions.canManage}
+        isRemoving={deleteOrnament.isPending || adminDeleteOrnament.isPending}
+        isUsersOrnament={isSelectedUsersOrnament}
         ornament={selectedOrnament}
         onOpenChange={(open) => !open && setSelectedOrnament(null)}
-        onRemove={() =>
-          deleteOrnament.mutate(undefined, { onSuccess: () => setSelectedOrnament(null) })
-        }
+        onRemove={handleRemoveOrnament}
       />
     </div>
   );
@@ -413,6 +509,11 @@ function ChristmasMusicControl({
 
 function ChristmasTreeCanvas({
   decoration,
+  strands,
+  canEditStrands = false,
+  strandPlacement = null,
+  onSaveStrand,
+  onInvalidStrand,
   ornaments,
   onSelect,
   fillHeight = false,
@@ -428,6 +529,15 @@ function ChristmasTreeCanvas({
   usersOrnamentId = null,
 }: {
   decoration: ChristmasTreeSnapshot['decoration'];
+  strands?: ChristmasTreeSnapshot['strands'];
+  canEditStrands?: boolean;
+  strandPlacement?: StrandKind | null;
+  onSaveStrand?: (
+    kind: StrandKind,
+    geometry: ChristmasStrandGeometry,
+    strandId?: string
+  ) => Promise<boolean>;
+  onInvalidStrand?: () => void;
   ornaments: Array<Ornament>;
   onSelect: (ornament: Ornament) => void;
   fillHeight?: boolean;
@@ -443,6 +553,12 @@ function ChristmasTreeCanvas({
   usersOrnamentId?: string | null;
 }) {
   const treeRef = useRef<HTMLDivElement>(null);
+  const [treeElement, setTreeElement] = useState<HTMLDivElement | null>(null);
+  const [strandPreview, setStrandPreview] = useState<ChristmasStrandGeometry | null>(null);
+  const newStrandRef = useRef<{ pointerId: number; start: { x: number; y: number } } | null>(null);
+  useEffect(() => {
+    setTreeElement(treeRef.current);
+  }, []);
   const [previewPosition, setPreviewPosition] = useState<{
     assetType: OrnamentAsset;
     positionX: number;
@@ -608,8 +724,37 @@ function ChristmasTreeCanvas({
         <div
           className={cn(
             'relative mx-auto h-full w-full max-w-[640px] touch-none transition',
-            canPlace && placementAssetType && 'cursor-crosshair'
+            ((canPlace && placementAssetType) || strandPlacement) && 'cursor-crosshair'
           )}
+          onPointerDown={(event) => {
+            if (!strandPlacement || !onSaveStrand) return;
+            const point = pointFromClient(treeRef.current, event.clientX, event.clientY);
+            if (!point) return;
+            event.currentTarget.setPointerCapture(event.pointerId);
+            newStrandRef.current = { pointerId: event.pointerId, start: point };
+            setStrandPreview({ startX: point.x, startY: point.y, endX: point.x, endY: point.y });
+          }}
+          onPointerUp={(event) => {
+            const placing = newStrandRef.current;
+            if (!placing || placing.pointerId !== event.pointerId || !strandPlacement) return;
+            const point = pointFromClient(treeRef.current, event.clientX, event.clientY);
+            newStrandRef.current = null;
+            setStrandPreview(null);
+            if (!point) return;
+            const geometry = {
+              startX: Math.min(placing.start.x, point.x),
+              startY: placing.start.x <= point.x ? placing.start.y : point.y,
+              endX: Math.max(placing.start.x, point.x),
+              endY: placing.start.x <= point.x ? point.y : placing.start.y,
+            };
+            const parsed = christmasStrandGeometrySchema.safeParse(geometry);
+            if (parsed.success) onSaveStrand?.(strandPlacement, parsed.data);
+            else onInvalidStrand?.();
+          }}
+          onPointerCancel={() => {
+            newStrandRef.current = null;
+            setStrandPreview(null);
+          }}
           onClick={(event) => {
             if (placementAssetType && canPlace) {
               placeAtClientPoint(placementAssetType, event.clientX, event.clientY);
@@ -629,6 +774,18 @@ function ChristmasTreeCanvas({
             if (!movingOrnamentRef.current) setPreviewPosition(null);
           }}
           onPointerMove={(event) => {
+            const placing = newStrandRef.current;
+            if (placing?.pointerId === event.pointerId) {
+              const point = pointFromClient(treeRef.current, event.clientX, event.clientY);
+              if (point)
+                setStrandPreview({
+                  startX: Math.min(placing.start.x, point.x),
+                  startY: placing.start.x <= point.x ? placing.start.y : point.y,
+                  endX: Math.max(placing.start.x, point.x),
+                  endY: placing.start.x <= point.x ? point.y : placing.start.y,
+                });
+              return;
+            }
             if (!movingOrnamentRef.current) updateNewBallPreview(event.clientX, event.clientY);
           }}
           data-testid="christmas-tree-drop-zone"
@@ -647,14 +804,80 @@ function ChristmasTreeCanvas({
             <path d="M50 22 C43 31 29 49 13 68 Q50 63 87 68 C71 49 57 31 50 22Z" fill="#06694f" />
             <path d="M50 7 C45 15 32 34 17 55 Q50 51 83 55 C68 34 55 15 50 7Z" fill="#078662" />
           </svg>
-          {decoration?.garland_unlocked ? (
-            <div className="pointer-events-none absolute left-[17%] right-[17%] top-[44%] h-[13%] rotate-2 rounded-b-[50%] border-b-4 border-amber-300 drop-shadow-sm" />
+          {strandPlacement ? (
+            <div
+              aria-label={`Drag to place ${strandPlacement}`}
+              className="absolute inset-0 z-30 cursor-crosshair touch-none"
+              data-testid="christmas-strand-placement-zone"
+            />
           ) : null}
-          {decoration?.lights_unlocked ? (
-            <div className="pointer-events-none absolute left-[10%] right-[10%] top-[59%] h-[12%] -rotate-2 rounded-b-[50%] border-b-4 border-yellow-200 shadow-[0_5px_14px_rgba(253,224,71,.9)]" />
+          {(['garland', 'lights'] as const).flatMap((kind) => {
+            const saved = strands?.filter((strand) => strand.kind === kind) ?? [];
+            const isVisible =
+              kind === 'garland' ? decoration?.garland_unlocked : decoration?.lights_unlocked;
+            const displayed = saved.length
+              ? saved
+              : isVisible
+                ? [{ id: `legacy-${kind}`, kind, geometry: DEFAULT_STRANDS[kind] }]
+                : [];
+            return displayed.map((strand) => (
+              <ChristmasTreeStrand
+                editable={canEditStrands && !strandPlacement}
+                geometry={strand.geometry}
+                key={strand.id}
+                kind={kind}
+                onSave={(geometry) =>
+                  onSaveStrand?.(
+                    kind,
+                    geometry,
+                    strand.id.startsWith('legacy-') ? undefined : strand.id
+                  ) ?? Promise.resolve(false)
+                }
+                treeElement={treeElement}
+              />
+            ));
+          })}
+          {strandPlacement && strandPreview ? (
+            <ChristmasTreeStrand
+              editable={false}
+              geometry={strandPreview}
+              key="strand-preview"
+              kind={strandPlacement}
+              treeElement={treeElement}
+            />
           ) : null}
           {decoration?.star_unlocked ? (
-            <Sparkles className="absolute left-1/2 top-[2%] z-20 h-12 w-12 -translate-x-1/2 -translate-y-1/2 fill-amber-300 text-amber-400 drop-shadow" />
+            <div
+              className="pointer-events-none absolute left-1/2 top-[2%] z-20 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center"
+              data-testid="christmas-tree-star"
+            >
+              <span
+                aria-hidden="true"
+                className="christmas-tree-star-glow absolute -inset-3 rounded-full bg-amber-200/55 blur-xl"
+                data-testid="christmas-tree-star-glow"
+              />
+              <span
+                aria-hidden="true"
+                className="absolute -inset-1 rounded-full bg-yellow-200/35 blur-md"
+              />
+              <Sparkles
+                aria-hidden="true"
+                className="relative h-12 w-12 fill-amber-300 text-amber-400 drop-shadow-[0_0_8px_rgba(253,230,138,.8)]"
+              />
+              <style jsx>{`
+                .christmas-tree-star-glow {
+                  animation: christmas-star-breathe 3.8s ease-in-out infinite;
+                  transform-origin: center;
+                }
+                @keyframes christmas-star-breathe {
+                  0%, 100% { opacity: 0.55; transform: scale(0.88); }
+                  50% { opacity: 0.9; transform: scale(1.12); }
+                }
+                @media (prefers-reduced-motion: reduce) {
+                  .christmas-tree-star-glow { animation: none; opacity: 0.7; }
+                }
+              `}</style>
+            </div>
           ) : null}
           {ornaments.map((ornament) => (
             <button
@@ -940,12 +1163,14 @@ function WishPanel({
 function OrnamentDialog({
   ornament,
   onOpenChange,
+  canRemove,
   isUsersOrnament,
   isRemoving,
   onRemove,
 }: {
   ornament: Ornament | null;
   onOpenChange: (open: boolean) => void;
+  canRemove: boolean;
   isUsersOrnament: boolean;
   isRemoving: boolean;
   onRemove: () => void;
@@ -997,15 +1222,20 @@ function OrnamentDialog({
             ) : (
               <p className="text-sm text-muted-foreground">No wishes are available yet.</p>
             )}
-            {isUsersOrnament ? (
+            {canRemove ? (
               <div className="border-t pt-4">
                 <Button disabled={isRemoving} onClick={onRemove} type="button" variant="outline">
                   <Trash2 className="mr-2 h-4 w-4" />
-                  {isRemoving ? 'Removing…' : 'Remove my Christmas ball'}
+                  {isRemoving
+                    ? 'Removing…'
+                    : isUsersOrnament
+                      ? 'Remove my Christmas ball'
+                      : 'Remove Christmas ball'}
                 </Button>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  This removes your ball and its visible wishes from the tree. You can place a new
-                  ball afterward.
+                  {isUsersOrnament
+                    ? 'This removes your ball and its visible wishes from the tree. You can place a new ball afterward.'
+                    : 'Admin action: this removes the ball and hides its owner’s visible wishes.'}
                 </p>
               </div>
             ) : null}
@@ -1013,6 +1243,61 @@ function OrnamentDialog({
         ) : null}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function AdminDecorationControls({
+  decoration,
+  strands,
+  isPending,
+  onEnable,
+  placementMode,
+}: {
+  decoration: ChristmasTreeSnapshot['decoration'];
+  strands: ChristmasTreeSnapshot['strands'];
+  isPending: boolean;
+  onEnable: (decoration: 'garland' | 'lights' | 'star') => void;
+  placementMode: StrandKind | null;
+}) {
+  const controls = [
+    { key: 'garland' as const, label: 'Garland', enabled: decoration?.garland_unlocked },
+    { key: 'lights' as const, label: 'Lights', enabled: decoration?.lights_unlocked },
+    { key: 'star' as const, label: 'Tree star', enabled: decoration?.star_unlocked },
+  ];
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg">Tree decorations</CardTitle>
+        <CardDescription>
+          Choose Garland or Lights, then drag across the branches. Drag a placed strand to move it,
+          or pull its ends to resize it.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
+        {controls.map((control) => (
+          <Button
+            className="justify-start"
+            disabled={isPending || (control.key === 'star' && Boolean(control.enabled))}
+            key={control.key}
+            onClick={() => onEnable(control.key)}
+            type="button"
+            variant={
+              placementMode === control.key ? 'default' : control.enabled ? 'secondary' : 'outline'
+            }
+          >
+            <Gift className="mr-2 h-4 w-4" />
+            {placementMode === control.key
+              ? `Placing ${control.label}…`
+              : control.key === 'star' && control.enabled
+                ? 'Tree star added'
+                : strands.some((strand) => strand.kind === control.key)
+                  ? `Add another ${control.label}`
+                  : `Add ${control.label}`}
+          </Button>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 

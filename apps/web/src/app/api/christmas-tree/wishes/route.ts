@@ -14,7 +14,7 @@ import {
 
 export async function PUT(request: NextRequest) {
   try {
-    const { user } = await getChristmasTreeAuth();
+    const { user, role } = await getChristmasTreeAuth();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const parsed = christmasWishUpsertSchema.safeParse(await request.json());
     if (!parsed.success)
@@ -32,7 +32,9 @@ export async function PUT(request: NextRequest) {
       parsed.data.content,
       parsed.data.linkUrl
     );
-    return NextResponse.json({ data: await buildChristmasTreeSnapshot(adminClient, user.id) });
+    return NextResponse.json({
+      data: await buildChristmasTreeSnapshot(adminClient, user.id, role),
+    });
   } catch (error) {
     const status = error instanceof ChristmasTreeRequestError ? error.status : 500;
     return NextResponse.json(
@@ -44,7 +46,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { user } = await getChristmasTreeAuth();
+    const { user, role } = await getChristmasTreeAuth();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const parsed = christmasWishDeleteSchema.safeParse(await request.json());
     if (!parsed.success)
@@ -55,7 +57,9 @@ export async function DELETE(request: NextRequest) {
 
     const adminClient = getChristmasTreeAdminClient();
     await deleteChristmasWish(adminClient, user.id, parsed.data.category, parsed.data.itemNumber);
-    return NextResponse.json({ data: await buildChristmasTreeSnapshot(adminClient, user.id) });
+    return NextResponse.json({
+      data: await buildChristmasTreeSnapshot(adminClient, user.id, role),
+    });
   } catch (error) {
     const status = error instanceof ChristmasTreeRequestError ? error.status : 500;
     return NextResponse.json(
