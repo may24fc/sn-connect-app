@@ -444,27 +444,27 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/christmas-tree/_lib.ts": {
-    "mtime": 1792113224.579642,
-    "seen": 1792114392.0538096,
-    "ast_hash": "d26a8499c12b6a51f7ed628a69c22bbd",
+    "mtime": 1792643867.551649,
+    "seen": 1792644131.6980848,
+    "ast_hash": "7d509ee41d3550db27ab71e679f37c3e",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/christmas-tree/current/route.ts": {
-    "mtime": 1789142820.2536888,
-    "seen": 1789664611.8286066,
-    "ast_hash": "e278c9ef2220788efd810c3a8907cabf",
-    "semantic_hash": "e278c9ef2220788efd810c3a8907cabf"
+    "mtime": 1792639162.840586,
+    "seen": 1792640129.658934,
+    "ast_hash": "f8dcbc02517b129ae5712e61b18af937",
+    "semantic_hash": ""
   },
   "apps/web/src/app/api/christmas-tree/ornament/route.ts": {
-    "mtime": 1790245525.1076086,
-    "seen": 1790245923.0687551,
-    "ast_hash": "c4dcb5459dd5adc9399d8f6db8efe3ed",
+    "mtime": 1792639408.880249,
+    "seen": 1792640129.6589487,
+    "ast_hash": "e2f09963899ed37dd961e71805fa2ebb",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/christmas-tree/wishes/route.ts": {
-    "mtime": 1790582250.1936688,
-    "seen": 1790599138.0194051,
-    "ast_hash": "5a6fe7d3b2780d568b50b34aa93f9083",
+    "mtime": 1792639163.1196136,
+    "seen": 1792640129.658954,
+    "ast_hash": "bd90ddda9a4f35be4ac14fe1bad287dc",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/collections/[id]/resources/route.ts": {
@@ -2454,9 +2454,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/hooks/useChristmasTree.ts": {
-    "mtime": 1790582251.2019167,
-    "seen": 1790599138.0197365,
-    "ast_hash": "9bff94fba2ad475ad98334f8ff7fa9d1",
+    "mtime": 1792643678.943606,
+    "seen": 1792644131.6987085,
+    "ast_hash": "4240227537085a6c7756d00d19b4c164",
     "semantic_hash": ""
   },
   "apps/web/src/hooks/useCompanyPulse.ts": {
@@ -3174,8 +3174,8 @@
     "semantic_hash": "7a0dc3198c754c2a24e5a4a5466f950f"
   },
   "apps/web/src/lib/generated/application-update-summary.generated.ts": {
-    "mtime": 1792374353.3193338,
-    "seen": 1792473609.369906,
+    "mtime": 1792642608.7998543,
+    "seen": 1792644131.698914,
     "ast_hash": "7322821048c7b2c5f9f9ddca7c61261a",
     "semantic_hash": "7322821048c7b2c5f9f9ddca7c61261a"
   },
@@ -3420,9 +3420,9 @@
     "semantic_hash": "d2be90d498e6b1fec8662b9ae1642723"
   },
   "apps/web/src/lib/schemas/christmas-tree.schema.ts": {
-    "mtime": 1791942969.2392428,
-    "seen": 1792034888.8276753,
-    "ast_hash": "92041490e49506f118fd72208dc57fb8",
+    "mtime": 1792643561.0702443,
+    "seen": 1792644131.698972,
+    "ast_hash": "4f80653df7387053b6077ded031be7bf",
     "semantic_hash": ""
   },
   "apps/web/src/lib/schemas/crm.schema.ts": {
@@ -4806,9 +4806,9 @@
     "semantic_hash": ""
   },
   "packages/database/src/database.types.ts": {
-    "mtime": 1792471111.7922034,
-    "seen": 1792473609.3704896,
-    "ast_hash": "a76a74e4989b9e7e41570dd9bd255c4d",
+    "mtime": 1792643520.485929,
+    "seen": 1792644131.6992593,
+    "ast_hash": "0d54410fdccd628cdf5d0891e1fd3930",
     "semantic_hash": ""
   },
   "packages/database/src/enums.ts": {
@@ -10170,9 +10170,9 @@
     "semantic_hash": ""
   },
   "docs/apps/web/architecture/optimistic-ui.md": {
-    "mtime": 1792473225.7360663,
-    "seen": 1792473609.371594,
-    "ast_hash": "4c4fe6b7f94cb3e856b65bef3e704164",
+    "mtime": 1792643817.57444,
+    "seen": 1792644131.7002575,
+    "ast_hash": "f6f8d69e81d4a179a14ca15f26fa013b",
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpAccessManagerDialog.tsx": {
@@ -11028,9 +11028,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx": {
-    "mtime": 1792113126.0431278,
-    "seen": 1792114392.0536366,
-    "ast_hash": "68e4b5ff95143c12a6b309ddec262ded",
+    "mtime": 1792643867.5816462,
+    "seen": 1792644131.6979165,
+    "ast_hash": "10b5a95865a57b28830ea100eaafd078",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/dashboard/components/KPIEntryWidget.tsx": {
@@ -12840,15 +12840,15 @@
     "semantic_hash": ""
   },
   "docs/features/work-tracker/optimization.md": {
-    "mtime": 1792473449.4522798,
-    "seen": 1792473609.3717136,
-    "ast_hash": "613f51bc07c4552e728dc7cfe814ad29",
+    "mtime": 1792474077.5598571,
+    "seen": 1792580651.7779806,
+    "ast_hash": "a0a404c03bd92d8e50d5a22bb2153b0a",
     "semantic_hash": ""
   },
   "docs/features/work-tracker/task-tracker.md": {
-    "mtime": 1792473449.2547615,
-    "seen": 1792473609.3717148,
-    "ast_hash": "bbb881f5660e14556dcfa1e4249df865",
+    "mtime": 1792474077.2774048,
+    "seen": 1792580651.7779822,
+    "ast_hash": "2e78f142d3f0e2cf3effa654dd57334e",
     "semantic_hash": ""
   },
   "apps/web/src/lib/auth/password-reset-audit.ts": {
@@ -13104,15 +13104,15 @@
     "semantic_hash": ""
   },
   "e2e/christmas-tree-layout.spec.ts": {
-    "mtime": 1792113126.2487304,
-    "seen": 1792114392.0546608,
-    "ast_hash": "184c302eee4dd2402d0532c8de8b4247",
+    "mtime": 1792644108.309265,
+    "seen": 1792644131.6991754,
+    "ast_hash": "86152f46c8bdc8af6df275ed2a5d0eee",
     "semantic_hash": ""
   },
   "docs/features/christmas-tree/task-tracker.md": {
-    "mtime": 1792113411.4870408,
-    "seen": 1792114392.0555897,
-    "ast_hash": "a2fe0f07bbea8fa7ecebf6fd66e9ed8f",
+    "mtime": 1792642893.785844,
+    "seen": 1792644131.7003124,
+    "ast_hash": "84dd332a1eba17d6bd37d7758e1de1b6",
     "semantic_hash": ""
   },
   "apps/web/src/components/data-display/DateRangeFilter.tsx": {
@@ -13140,9 +13140,9 @@
     "semantic_hash": ""
   },
   "docs/features/christmas-tree/optimization.md": {
-    "mtime": 1792113415.646665,
-    "seen": 1792114392.055589,
-    "ast_hash": "dbf663552d4fe6f5dec986fb5d341cdf",
+    "mtime": 1792580910.9286935,
+    "seen": 1792640129.6668916,
+    "ast_hash": "d370eeb105bf460a6cb8b0aab6520bb3",
     "semantic_hash": ""
   },
   "e2e/okr-kpi-historical-roster.spec.ts": {
@@ -13332,9 +13332,9 @@
     "semantic_hash": ""
   },
   "tests/api/christmas-tree-wish-write.test.ts": {
-    "mtime": 1792113032.7138689,
-    "seen": 1792114392.055287,
-    "ast_hash": "de4065babad953134a87ac2c969f1506",
+    "mtime": 1792579189.044809,
+    "seen": 1792580651.7772672,
+    "ast_hash": "df1370d9b05293ab4c198c7141d7ed25",
     "semantic_hash": ""
   },
   "docs/features/sfo-performance/optimization.md": {
@@ -13404,9 +13404,9 @@
     "semantic_hash": ""
   },
   "Control Hub & Telegram Community Proposal_Cef.md": {
-    "mtime": 1792371282.6987083,
-    "seen": 1792373717.395361,
-    "ast_hash": "03b8646e7fbbfaaad68a5cb510ea0ba8",
+    "mtime": 1792580649.7001264,
+    "seen": 1792580651.7776594,
+    "ast_hash": "cbfa4fb6a62175365024b7b5ac9e2d53",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/departments/leads/route.ts": {
@@ -13464,9 +13464,45 @@
     "semantic_hash": ""
   },
   "docs/features/control-hub-telegram-community/implementation-plan.md": {
-    "mtime": 1792467705.2946603,
-    "seen": 1792473609.3716645,
-    "ast_hash": "68400145409309b757a874c98244858f",
+    "mtime": 1792475212.5091138,
+    "seen": 1792580651.777904,
+    "ast_hash": "e3f57f383c3b670b64030e7de04086c3",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261021000001_remove_christmas_wish_windows.sql": {
+    "mtime": 1792579188.7221558,
+    "seen": 1792580651.7772248,
+    "ast_hash": "2fe6a985e0492aaded8687b9500aafa5",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/api/christmas-tree/decorations/route.ts": {
+    "mtime": 1792643642.0502274,
+    "seen": 1792644131.6980872,
+    "ast_hash": "07fbd42a9df90f6a52efd301604c530e",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261022000001_add_christmas_tree_admin_controls.sql": {
+    "mtime": 1792639126.684798,
+    "seen": 1792640129.6657875,
+    "ast_hash": "6a23712e63794ea47662f67f0d13ed8e",
+    "semantic_hash": ""
+  },
+  "tests/api/christmas-tree-admin-controls.test.ts": {
+    "mtime": 1792643956.85609,
+    "seen": 1792644131.699965,
+    "ast_hash": "185daae8d4d3d4c772ef9c6914e4689d",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/(app)/(employee)/christmas-tree/ChristmasTreeStrand.tsx": {
+    "mtime": 1792644108.1142006,
+    "seen": 1792644131.697914,
+    "ast_hash": "73b5675727a6adbde5876fb5e532b05a",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261022000002_add_christmas_tree_strand_geometry.sql": {
+    "mtime": 1792643500.692796,
+    "seen": 1792644131.6998866,
+    "ast_hash": "49b2f16419f1dacc39824ae7d57d8948",
     "semantic_hash": ""
   }
 }
