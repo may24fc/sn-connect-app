@@ -51,6 +51,12 @@ export const christmasDecorationEnableSchema = z.object({
   decoration: z.enum(['garland', 'lights', 'star']),
 });
 
+export const christmasDecorationRemoveSchema = z.union([
+  z.object({ decoration: z.literal('star') }),
+  z.object({ strandId: z.string().uuid() }),
+]);
+export type ChristmasDecorationRemoveInput = z.infer<typeof christmasDecorationRemoveSchema>;
+
 export const christmasStrandGeometrySchema = z
   .object({
     startX: z.number().finite().min(6).max(94),

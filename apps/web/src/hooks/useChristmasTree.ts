@@ -3,6 +3,7 @@ import { STALE_TIMES } from '@/lib/query-client';
 import { queryKeys } from '@/lib/query-keys';
 import type {
   ChristmasDecorationEnableInput,
+  ChristmasDecorationRemoveInput,
   ChristmasOrnamentMoveInput,
   ChristmasOrnamentPlacementInput,
   ChristmasStrandGeometry,
@@ -133,6 +134,19 @@ export function useEnableChristmasDecoration() {
     mutationFn: (payload: ChristmasDecorationEnableInput) =>
       fetchJson<ChristmasTreeSnapshot>('/api/christmas-tree/decorations', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: (data) => cacheLocalMutationSnapshot(queryClient, data),
+  });
+}
+
+export function useRemoveChristmasDecoration() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: ChristmasDecorationRemoveInput) =>
+      fetchJson<ChristmasTreeSnapshot>('/api/christmas-tree/decorations', {
+        method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       }),

@@ -4,6 +4,7 @@ import {
   canManageChristmasTree,
   deleteChristmasOrnament,
   enableChristmasDecoration,
+  removeChristmasDecoration,
   saveChristmasStrand,
 } from '../../apps/web/src/app/api/christmas-tree/_lib';
 
@@ -194,5 +195,68 @@ describe('Christmas Tree admin controls', () => {
     expect(strandQuery.eq).toHaveBeenCalledWith('id', 'strand-1');
     expect(strandQuery.eq).toHaveBeenCalledWith('event_id', activeEvent.id);
     expect(strandQuery.eq).toHaveBeenCalledWith('kind', 'lights');
+  });
+
+  it('lets a manager remove the manually added star', async () => {
+    const { adminClient, update } = createDecorationAdminClient();
+
+    await removeChristmasDecoration(adminClient, 'admin-1', { decoration: 'star' }, true);
+
+    expect(update).toHaveBeenCalledWith({ star_manually_enabled: false });
+    expect(logActivity).toHaveBeenCalledWith(
+      adminClient,
+      expect.objectContaining({ action: 'REMOVE_CHRISTMAS_TREE_DECORATION' })
+    );
+  });
+
+  it.each([
+    { remainingCount: 0, shouldDisable: true },
+    { remainingCount: 1, shouldDisable: false },
+  ])(
+    'removes one saved strand with $remainingCount others left',
+    async ({ remainingCount, shouldDisable }) => {
+      const eventQuery = terminalQuery({ data: activeEvent, error: null });
+      const removedQuery = terminalQuery({ data: { id: 'strand-1', kind: 'lights' }, error: null });
+      const deleteStrand = vi.fn(() => removedQuery);
+      const countQuery = {
+        eq: vi.fn(),
+      };
+      countQuery.eq
+        .mockReturnValueOnce(countQuery)
+        .mockResolvedValueOnce({ count: remainingCount, error: null });
+      const selectStrands = vi.fn(() => countQuery);
+      const updateEvent = vi.fn(() => terminalQuery({ data: { id: activeEvent.id }, error: null }));
+      let eventCalls = 0;
+      let strandCalls = 0;
+      const from = vi.fn((table: string) => {
+        if (table === 'christmas_tree_events') {
+          eventCalls += 1;
+          return eventCalls === 1 ? eventQuery : { update: updateEvent };
+        }
+        if (table === 'christmas_tree_strands') {
+          strandCalls += 1;
+          return strandCalls === 1 ? { delete: deleteStrand } : { select: selectStrands };
+        }
+        throw new Error(`Unexpected table: ${table}`);
+      });
+      const adminClient = { from } as never;
+
+      await removeChristmasDecoration(adminClient, 'super-admin-1', { strandId: 'strand-1' }, true);
+
+      expect(removedQuery.eq).toHaveBeenCalledWith('id', 'strand-1');
+      expect(removedQuery.eq).toHaveBeenCalledWith('event_id', activeEvent.id);
+      if (shouldDisable)
+        expect(updateEvent).toHaveBeenCalledWith({ lights_manually_enabled: false });
+      else expect(updateEvent).not.toHaveBeenCalled();
+    }
+  );
+
+  it('rejects decoration removal by employees', async () => {
+    const { adminClient, update } = createDecorationAdminClient();
+
+    await expect(
+      removeChristmasDecoration(adminClient, 'employee-1', { decoration: 'star' }, false)
+    ).rejects.toMatchObject({ status: 403 });
+    expect(update).not.toHaveBeenCalled();
   });
 });

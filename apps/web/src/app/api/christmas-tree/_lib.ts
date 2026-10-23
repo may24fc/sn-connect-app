@@ -165,6 +165,11 @@ export async function buildChristmasTreeSnapshot(
       ),
     },
     decoration: state?.[0] ?? null,
+    manualDecorations: {
+      garland: event.garland_manually_enabled,
+      lights: event.lights_manually_enabled,
+      star: event.star_manually_enabled,
+    },
     strands: (strands ?? []).map((strand) => ({
       id: strand.id,
       kind: strand.kind as 'garland' | 'lights',
@@ -540,6 +545,73 @@ export async function enableChristmasDecoration(
     tableName: 'christmas_tree_events',
     recordId: event.id,
     metadata: { decoration },
+  });
+}
+
+export async function removeChristmasDecoration(
+  adminClient: ChristmasTreeAdminClient,
+  userId: string,
+  target: { decoration: 'star' } | { strandId: string },
+  canManage: boolean
+) {
+  if (!canManage) {
+    throw new ChristmasTreeRequestError('Only admins can manage Christmas Tree decorations', 403);
+  }
+  const event = await getActiveChristmasEvent(adminClient);
+  if (!event) throw new Error('No active Christmas Tree event is configured');
+
+  if ('decoration' in target) {
+    const { data, error } = await adminClient
+      .from('christmas_tree_events')
+      .update({ star_manually_enabled: false })
+      .eq('id', event.id)
+      .is('deleted_at', null)
+      .select('id')
+      .maybeSingle();
+    if (error) throw new Error('Failed to remove Christmas Tree star');
+    if (!data) throw new ChristmasTreeRequestError('Christmas Tree event not found', 404);
+    logActivity(adminClient, {
+      userId,
+      action: 'REMOVE_CHRISTMAS_TREE_DECORATION',
+      tableName: 'christmas_tree_events',
+      recordId: event.id,
+      metadata: { decoration: 'star' },
+    });
+    return;
+  }
+
+  const { data: removed, error } = await adminClient
+    .from('christmas_tree_strands')
+    .delete()
+    .eq('id', target.strandId)
+    .eq('event_id', event.id)
+    .select('id, kind')
+    .maybeSingle();
+  if (error) throw new Error('Failed to remove Christmas Tree strand');
+  if (!removed) throw new ChristmasTreeRequestError('Christmas Tree strand not found', 404);
+
+  const { count, error: countError } = await adminClient
+    .from('christmas_tree_strands')
+    .select('id', { count: 'exact', head: true })
+    .eq('event_id', event.id)
+    .eq('kind', removed.kind);
+  if (countError) throw new Error('Failed to check remaining Christmas Tree strands');
+  if (count === 0) {
+    const column = `${removed.kind}_manually_enabled` as
+      | 'garland_manually_enabled'
+      | 'lights_manually_enabled';
+    const { error: eventError } = await adminClient
+      .from('christmas_tree_events')
+      .update({ [column]: false })
+      .eq('id', event.id);
+    if (eventError) throw new Error('Failed to update Christmas Tree decoration');
+  }
+  logActivity(adminClient, {
+    userId,
+    action: 'REMOVE_CHRISTMAS_TREE_DECORATION',
+    tableName: 'christmas_tree_strands',
+    recordId: removed.id,
+    metadata: { decoration: removed.kind },
   });
 }
 

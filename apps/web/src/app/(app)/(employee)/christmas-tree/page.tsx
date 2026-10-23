@@ -9,6 +9,7 @@ import {
   useEnableChristmasDecoration,
   useMoveChristmasOrnament,
   usePlaceChristmasOrnament,
+  useRemoveChristmasDecoration,
   useSaveChristmasStrand,
   useUpsertChristmasWish,
 } from '@/hooks/useChristmasTree';
@@ -165,6 +166,7 @@ export default function ChristmasTreePage() {
   const deleteOrnament = useDeleteChristmasOrnament();
   const adminDeleteOrnament = useAdminDeleteChristmasOrnament();
   const enableDecoration = useEnableChristmasDecoration();
+  const removeDecoration = useRemoveChristmasDecoration();
   const saveStrand = useSaveChristmasStrand();
   const upsertWish = useUpsertChristmasWish();
   const deleteWish = useDeleteChristmasWish();
@@ -201,6 +203,7 @@ export default function ChristmasTreePage() {
     upsertWish.error?.message ??
     deleteWish.error?.message ??
     enableDecoration.error?.message ??
+    removeDecoration.error?.message ??
     saveStrand.error?.message;
   const deleteOrnamentError = deleteOrnament.error?.message ?? adminDeleteOrnament.error?.message;
   const isSelectedUsersOrnament = selectedOrnament?.id === data.myOrnament?.id;
@@ -249,6 +252,12 @@ export default function ChristmasTreePage() {
           ?.scrollIntoView({ behavior: 'smooth', block: 'center' }),
       0
     );
+  };
+  const handleRemoveDecoration = (target: { decoration: 'star' } | { strandId: string }) => {
+    const label = 'decoration' in target ? 'tree star' : 'strand';
+    if (window.confirm(`Remove this ${label} from the tree?`)) {
+      removeDecoration.mutate(target);
+    }
   };
   const togglePresentationMode = async () => {
     if (isPresentationMode) {
@@ -342,13 +351,15 @@ export default function ChristmasTreePage() {
         <div className="xl:hidden">
           <AdminDecorationControls
             decoration={data.decoration}
+            manualDecorations={data.manualDecorations}
             strands={data.strands}
-            isPending={enableDecoration.isPending}
+            isPending={enableDecoration.isPending || removeDecoration.isPending}
             onEnable={(decoration) =>
               decoration === 'star'
                 ? enableDecoration.mutate({ decoration })
                 : selectStrandPlacement(decoration)
             }
+            onRemove={handleRemoveDecoration}
             placementMode={strandPlacement}
           />
         </div>
@@ -393,13 +404,15 @@ export default function ChristmasTreePage() {
             <div className="hidden xl:block">
               <AdminDecorationControls
                 decoration={data.decoration}
+                manualDecorations={data.manualDecorations}
                 strands={data.strands}
-                isPending={enableDecoration.isPending}
+                isPending={enableDecoration.isPending || removeDecoration.isPending}
                 onEnable={(decoration) =>
                   decoration === 'star'
                     ? enableDecoration.mutate({ decoration })
                     : selectStrandPlacement(decoration)
                 }
+                onRemove={handleRemoveDecoration}
                 placementMode={strandPlacement}
               />
             </div>
@@ -1248,15 +1261,19 @@ function OrnamentDialog({
 
 function AdminDecorationControls({
   decoration,
+  manualDecorations,
   strands,
   isPending,
   onEnable,
+  onRemove,
   placementMode,
 }: {
   decoration: ChristmasTreeSnapshot['decoration'];
+  manualDecorations: ChristmasTreeSnapshot['manualDecorations'];
   strands: ChristmasTreeSnapshot['strands'];
   isPending: boolean;
   onEnable: (decoration: 'garland' | 'lights' | 'star') => void;
+  onRemove: (target: { decoration: 'star' } | { strandId: string }) => void;
   placementMode: StrandKind | null;
 }) {
   const controls = [
@@ -1274,27 +1291,76 @@ function AdminDecorationControls({
           or pull its ends to resize it.
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
+      <CardContent className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
         {controls.map((control) => (
-          <Button
-            className="justify-start"
-            disabled={isPending || (control.key === 'star' && Boolean(control.enabled))}
-            key={control.key}
-            onClick={() => onEnable(control.key)}
-            type="button"
-            variant={
-              placementMode === control.key ? 'default' : control.enabled ? 'secondary' : 'outline'
-            }
-          >
-            <Gift className="mr-2 h-4 w-4" />
-            {placementMode === control.key
-              ? `Placing ${control.label}…`
-              : control.key === 'star' && control.enabled
-                ? 'Tree star added'
-                : strands.some((strand) => strand.kind === control.key)
-                  ? `Add another ${control.label}`
-                  : `Add ${control.label}`}
-          </Button>
+          <div className="min-w-0 space-y-2" key={control.key}>
+            <div className="flex gap-2">
+              <Button
+                className="min-w-0 flex-1 justify-start"
+                disabled={isPending || (control.key === 'star' && Boolean(control.enabled))}
+                onClick={() => onEnable(control.key)}
+                type="button"
+                variant={
+                  placementMode === control.key
+                    ? 'default'
+                    : control.enabled
+                      ? 'secondary'
+                      : 'outline'
+                }
+              >
+                <Gift className="mr-2 h-4 w-4 shrink-0" />
+                <span className="truncate">
+                  {placementMode === control.key
+                    ? `Placing ${control.label}…`
+                    : control.key === 'star' && control.enabled
+                      ? 'Tree star added'
+                      : strands.some((strand) => strand.kind === control.key)
+                        ? `Add another ${control.label}`
+                        : `Add ${control.label}`}
+                </span>
+              </Button>
+              {control.key === 'star' && manualDecorations.star ? (
+                <Button
+                  aria-label="Remove tree star"
+                  disabled={isPending}
+                  onClick={() => onRemove({ decoration: 'star' })}
+                  size="icon"
+                  title="Remove manually added tree star"
+                  type="button"
+                  variant="outline"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              ) : null}
+            </div>
+            {control.key !== 'star' ? (
+              <div className="space-y-1">
+                {strands
+                  .filter((strand) => strand.kind === control.key)
+                  .map((strand, index) => (
+                    <div
+                      className="flex items-center justify-between gap-2 rounded-md bg-muted/50 px-3 py-1.5 text-sm"
+                      key={strand.id}
+                    >
+                      <span>
+                        {control.label} {index + 1}
+                      </span>
+                      <Button
+                        aria-label={`Remove ${control.label} ${index + 1}`}
+                        disabled={isPending}
+                        onClick={() => onRemove({ strandId: strand.id })}
+                        size="icon"
+                        title={`Remove ${control.label} ${index + 1}`}
+                        type="button"
+                        variant="ghost"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+              </div>
+            ) : null}
+          </div>
         ))}
       </CardContent>
     </Card>

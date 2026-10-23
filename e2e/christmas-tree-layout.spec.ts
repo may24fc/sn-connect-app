@@ -382,6 +382,7 @@ test.describe('Christmas Tree layout stability', () => {
     test(`${role} can add decorations and remove another user's ball`, async ({
       page,
     }, testInfo) => {
+      test.setTimeout(180_000);
       const consoleErrors: Array<string> = [];
       const failedRequests: Array<string> = [];
       let ornaments = [
@@ -395,6 +396,7 @@ test.describe('Christmas Tree layout stability', () => {
         },
       ];
       let currentDecoration = { ...decoration };
+      let manualDecorations = { garland: false, lights: false, star: false };
       const strands: Array<{
         id: string;
         kind: 'garland' | 'lights';
@@ -403,6 +405,7 @@ test.describe('Christmas Tree layout stability', () => {
       const snapshot = () => ({
         event: baseEvent,
         decoration: currentDecoration,
+        manualDecorations,
         strands: [...strands],
         permissions: { canManage: true },
         myOrnament: null,
@@ -419,10 +422,26 @@ test.describe('Christmas Tree layout stability', () => {
       });
       await page.route('**/api/christmas-tree/decorations', async (route) => {
         const payload = route.request().postDataJSON() as {
-          decoration: 'garland' | 'lights' | 'star';
+          decoration?: 'garland' | 'lights' | 'star';
           strandId?: string;
           geometry?: (typeof strands)[number]['geometry'];
         };
+        if (route.request().method() === 'DELETE') {
+          if (payload.strandId) {
+            const index = strands.findIndex((strand) => strand.id === payload.strandId);
+            if (index === -1) throw new Error('Strand not found');
+            const [removed] = strands.splice(index, 1);
+            if (removed && !strands.some((strand) => strand.kind === removed.kind)) {
+              manualDecorations = { ...manualDecorations, [removed.kind]: false };
+              currentDecoration = { ...currentDecoration, [`${removed.kind}_unlocked`]: false };
+            }
+          } else if (payload.decoration === 'star') {
+            manualDecorations = { ...manualDecorations, star: false };
+            currentDecoration = { ...currentDecoration, star_unlocked: false };
+          }
+          await route.fulfill({ json: { data: snapshot() } });
+          return;
+        }
         if (payload.geometry && payload.decoration !== 'star') {
           const existing = strands.find((strand) => strand.id === payload.strandId);
           if (existing) existing.geometry = payload.geometry;
@@ -433,6 +452,8 @@ test.describe('Christmas Tree layout stability', () => {
               geometry: payload.geometry,
             });
         }
+        if (!payload.decoration) throw new Error('Decoration kind missing');
+        manualDecorations = { ...manualDecorations, [payload.decoration]: true };
         currentDecoration = {
           ...currentDecoration,
           [`${payload.decoration}_unlocked`]: true,
@@ -551,6 +572,15 @@ test.describe('Christmas Tree layout stability', () => {
       await expect(starGlow).toHaveCSS('animation-name', 'none');
       await page.emulateMedia({ reducedMotion: 'no-preference' });
 
+      for (const label of ['Garland', 'Lights'] as const) {
+        page.once('dialog', (dialog) => dialog.accept());
+        await page.getByRole('button', { name: `Remove ${label} 1` }).click();
+        await expect(page.getByTestId(`christmas-tree-${label.toLowerCase()}`)).toHaveCount(1);
+      }
+      await page.reload();
+      await expect(page.getByTestId('christmas-tree-garland')).toHaveCount(1);
+      await expect(page.getByTestId('christmas-tree-lights')).toHaveCount(1);
+
       await page.getByRole('button', { name: "Open Sample Employee's Christmas ball" }).click();
       await expect(page.getByText('Admin action:')).toBeVisible();
       page.once('dialog', (dialog) => dialog.accept());
@@ -565,6 +595,18 @@ test.describe('Christmas Tree layout stability', () => {
       });
       await page.setViewportSize({ width: 390, height: 844 });
       await expect(page.getByRole('heading', { name: 'Tree decorations' })).toBeVisible();
+      for (const label of ['Garland', 'Lights'] as const) {
+        page.once('dialog', (dialog) => dialog.accept());
+        await page.getByRole('button', { name: `Remove ${label} 1` }).click();
+        await expect(page.getByTestId(`christmas-tree-${label.toLowerCase()}`)).toHaveCount(0);
+      }
+      page.once('dialog', (dialog) => dialog.accept());
+      await page.getByRole('button', { name: 'Remove tree star' }).click();
+      await expect(page.getByTestId('christmas-tree-star')).toHaveCount(0);
+      await page.reload();
+      await expect(page.getByTestId('christmas-tree-garland')).toHaveCount(0);
+      await expect(page.getByTestId('christmas-tree-lights')).toHaveCount(0);
+      await expect(page.getByTestId('christmas-tree-star')).toHaveCount(0);
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth > document.documentElement.clientWidth

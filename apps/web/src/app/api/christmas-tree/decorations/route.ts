@@ -1,5 +1,6 @@
 import {
   christmasDecorationEnableSchema,
+  christmasDecorationRemoveSchema,
   christmasStrandSaveSchema,
 } from '@/lib/schemas/christmas-tree.schema';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -10,6 +11,7 @@ import {
   enableChristmasDecoration,
   getChristmasTreeAdminClient,
   getChristmasTreeAuth,
+  removeChristmasDecoration,
   saveChristmasStrand,
 } from '../_lib';
 
@@ -30,6 +32,36 @@ export async function POST(request: NextRequest) {
       adminClient,
       user.id,
       parsed.data.decoration,
+      canManageChristmasTree(role)
+    );
+    return NextResponse.json({
+      data: await buildChristmasTreeSnapshot(adminClient, user.id, role),
+    });
+  } catch (error) {
+    const status = error instanceof ChristmasTreeRequestError ? error.status : 500;
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { user, role } = await getChristmasTreeAuth();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const parsed = christmasDecorationRemoveSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid decoration', details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+    const adminClient = getChristmasTreeAdminClient();
+    await removeChristmasDecoration(
+      adminClient,
+      user.id,
+      parsed.data,
       canManageChristmasTree(role)
     );
     return NextResponse.json({
