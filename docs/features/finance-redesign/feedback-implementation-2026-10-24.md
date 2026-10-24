@@ -20,9 +20,9 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 
 | Area | Status | Resume or completion condition |
 | --- | --- | --- |
-| Correctness and data repair, items 1â€“7 | Done locally | Four local migrations applied; web typecheck, focused tests, production build, and admin browser route matrix passed. |
-| Workflow and UI improvements, items 8â€“17 | Done locally | Unified review list, app-shell navigation/spacing, totals, forms, subscription/property fields, dialog edits, status colors, and Finance date formatting implemented. |
-| Additional testing findings, items 18â€“20 | Done locally | Self-approval controls, readable snapshot view, and next eligible payout implemented and focused checks passed. |
+| Correctness and data repair, items 1â€“7 | Deployed | Four migrations applied locally and to production; web typecheck, focused tests, production build, and admin browser route matrix passed. |
+| Workflow and UI improvements, items 8â€“17 | Deployed | Unified review list, app-shell navigation/spacing, totals, forms, subscription/property fields, dialog edits, status colors, and Finance date formatting implemented. |
+| Additional testing findings, items 18â€“20 | Deployed | Self-approval controls, readable snapshot view, and next eligible payout implemented and focused checks passed. |
 | Test-record cleanup | Done in production | The owner identified production project `tccdupkjmwwxcvpqnpeb`. A guarded dry run found exact IDs and dependencies; cleanup removed the reviewed records and a post-check found zero remaining reviewed IDs. |
 | On-hold policies | Deferred | Resume only when May/Tina supply the policy or sanitized Wise fixtures identified below. |
 
@@ -34,7 +34,7 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 - Added the prioritized To review list, semantic status badges, latest-data-month Overview selection, readable saved snapshots, next-month payout selection, and consistent Finance dates.
 - Removed duplicate page navigation, kept shared app typography and shell spacing, and verified the admin desktop/mobile route matrix with inspected screenshots.
 - Validation: four migrations applied to local Supabase; 7 focused Vitest assertions passed; web typecheck passed; production web build passed; the focused Finance Playwright run covered the complete admin route matrix, Wise, property workflow, expanded-detail, dark-mode, and subscriptions. A dedicated local Accounting account then passed the complete Finance/Properties route matrix at desktop and mobile widths with no captured console errors, failed local requests, or mobile overflow; representative screenshots were inspected.
-- No production migration was performed. The separately authorized production test-record cleanup is recorded below and in the feature tracker.
+- Production migrations `20261026000001` through `20261026000004` were deployed after an exact four-file dry run. Linked history matched afterward and a follow-up production dry run reported the database up to date. The separately authorized production test-record cleanup is recorded below and in the feature tracker.
 
 ## Feedback Inventory and Implementation Plan
 
