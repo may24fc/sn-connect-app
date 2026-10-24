@@ -1,3 +1,5 @@
+import { formatFinanceDate } from '@/lib/format';
+
 export type PayoutSequence = 1 | 2 | 3;
 
 export interface PayoutScheduleOption {
@@ -25,11 +27,9 @@ function toMonthLabel(date: Date): string {
   }).format(date);
 }
 
+/** Payout dates are UTC-midnight calendar days; shown as `6 Nov 2026` to match Finance dates. */
 function toShortDateLabel(date: Date): string {
-  const month = date.getUTCMonth() + 1;
-  const day = date.getUTCDate();
-  const year = date.getUTCFullYear();
-  return `${month}/${day}/${year}`;
+  return formatFinanceDate(date.toISOString().slice(0, 10));
 }
 
 function addMonths(date: Date, count: number): Date {

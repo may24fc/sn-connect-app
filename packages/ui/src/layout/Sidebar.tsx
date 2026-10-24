@@ -101,7 +101,7 @@ const employeeNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/dashboard', icon: Home },
   { label: 'Marketing Reports', href: '/reports', icon: FileText },
   {
-    label: 'OKRs & KPIs',
+    label: 'Evaluations',
     href: '/performance',
     icon: Target,
     activeFor: ['/performance/self-evaluation', '/my-performance'],
@@ -131,7 +131,7 @@ const internNavItems: Array<NavItem> = [
   { label: 'EOD Reports', href: '/associate/reports', icon: FileText },
   { label: 'Marketing Reports', href: '/reports', icon: FileText },
   {
-    label: 'OKRs & KPIs',
+    label: 'Evaluations',
     href: '/performance',
     icon: Target,
     activeFor: ['/performance/self-evaluation', '/my-performance'],
@@ -177,7 +177,7 @@ const adminNavItems: Array<NavItem> = [
     activeFor: ['/admin/war-room', '/admin/projects'],
   },
   {
-    label: 'OKRs & KPIs',
+    label: 'Evaluations',
     href: '/admin/performance',
     icon: Target,
     activeFor: ['/admin/performance/monthly-self-evaluations'],
@@ -225,7 +225,7 @@ const superAdminNavItems: Array<NavItem> = [
     activeFor: ['/admin/war-room', '/admin/projects', '/super-admin/tasks'],
   },
   {
-    label: 'OKRs & KPIs',
+    label: 'Evaluations',
     href: '/admin/performance',
     icon: Target,
     activeFor: ['/admin/performance/monthly-self-evaluations'],
