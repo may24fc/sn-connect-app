@@ -2,11 +2,14 @@
 
 ## Current Status
 
-The October 24 PDF feedback is implemented and validated locally. Migrations `20261026000001` through `20261026000004` remain **local only**. Finance uses shared Control Hub typography and AppShell spacing, a single sidebar navigation, corrected AUD/category data, server-derived matching, per-receipt metadata, original-currency subscriptions, versioned property cadence/details, readable snapshots, and the next eligible payout. Final-report, Wise-fixture, personal-expense sign-off, and threshold policies remain deferred. Test-record cleanup is blocked until the target environment is identified. See [feedback implementation](feedback-implementation-2026-10-24.md), [optimization record](optimization.md), and [pending decisions](pending-decisions.md).
+The October 24 PDF feedback is implemented and validated locally. Migrations `20261026000001` through `20261026000004` remain **local only**. Finance uses shared Control Hub typography and AppShell spacing, a single sidebar navigation, corrected AUD/category data, server-derived matching, per-receipt metadata, original-currency subscriptions, versioned property cadence/details, readable snapshots, and the next eligible payout. The reviewed test records have been removed from production, and a dedicated local Accounting account now supports real-auth Finance checks. Final-report, Wise-fixture, personal-expense sign-off, and threshold policies remain deferred. See [feedback implementation](feedback-implementation-2026-10-24.md), [optimization record](optimization.md), and [pending decisions](pending-decisions.md).
 
 ## Tasks
 
 ### Done
+
+- [x] Remove the reviewed Finance test records from production - 2026-10-24; production project `tccdupkjmwwxcvpqnpeb`; dry-run identified nine October expense rows, three existing test subscriptions (SUB1 was already absent), and three test properties with two rent payments, two maintenance rows, three effective-month terms, one expected-rent override, and one variance sign-off. The expense rows were soft deleted, the exact subscription/property trees were deleted, audit snapshots were retained, and a read-only post-check returned zero remaining reviewed IDs. No migration was applied.
+- [x] Add and verify a dedicated local Accounting browser account - 2026-10-24; `scripts/accounts/ensure-finance-accounting-account.mjs`, `e2e/finance-redesign.spec.ts`, local Supabase only; created `accounting@example.com` as an employee in the canonical Accounting department and updated the E2E role matrix. The complete Accounting Finance/Properties route matrix passed at 1440x900 and 390x844 with no captured console errors, failed local requests, or mobile overflow, and representative screenshots were inspected. A separate real-auth Playwright check passed visible Overview, Expenses, Staff Payments, and Reports navigation in 34.8 seconds.
 
 - [x] Implement the two October 2026 Finance feedback PDFs locally - 2026-10-24; Finance expense forms/routes, Overview, report controls, subscription catalog, Properties, payout schedule, Sidebar, four local migrations, focused tests, and `e2e/finance-redesign.spec.ts`; local migrations applied, 7 focused assertions and web typecheck passed, production web build passed, admin Finance/Properties/SFO route matrix passed at 1440px/390px with inspected screenshots and AppShell geometry checks, and focused subscription rerun passed. No production migration or cleanup was performed.
 
@@ -71,10 +74,11 @@ None.
 
 ### Blocked
 
-- [ ] Delete the PDF-listed `TEST` Finance, subscription, and property records - the PDFs do not identify local versus production; resume after the owner identifies the environment and a dry-run query confirms exact IDs and linked rows. Production deletion requires an explicit production request.
-- [ ] Repeat the current full Finance route matrix as Accounting - `employee@example.com` is an ordinary employee in the local seed and correctly receives a Finance 404; resume after a local Accounting role account or approved temporary local role assignment is available.
+None.
 
 ## Session History
+
+- 2026-10-24: The user identified the PDF test records as production data and authorized a local Accounting account when none existed. A guarded production dry run resolved the exact rows and dependencies before cleanup. Nine expenses were soft deleted; three subscriptions and three properties plus their linked rent, maintenance, terms, override, and variance sign-off rows were removed with audit evidence; zero reviewed IDs remained. Created a reusable local-only Accounting account script and verified Accounting Finance navigation and the full Finance/Properties desktop/mobile route matrix. The four October 26 Finance migrations remain local only.
 
 - 2026-10-24: Extracted both supplied feedback PDFs into a durable implementation plan, implemented all actionable feedback locally, and retained the policy-dependent items as deferred. Applied four new migrations to local Supabase only. Seven focused assertions, web typecheck, and the full production web build passed. The real-auth admin browser matrix passed Finance/Properties/SFO at desktop/mobile and screenshots confirmed shared shell spacing and font treatment; focused subscription rerun passed. Accounting verification remains blocked by the local seed role, and cleanup remains blocked by the unspecified target environment.
 

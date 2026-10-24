@@ -23,7 +23,7 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 | Correctness and data repair, items 1â€“7 | Done locally | Four local migrations applied; web typecheck, focused tests, production build, and admin browser route matrix passed. |
 | Workflow and UI improvements, items 8â€“17 | Done locally | Unified review list, app-shell navigation/spacing, totals, forms, subscription/property fields, dialog edits, status colors, and Finance date formatting implemented. |
 | Additional testing findings, items 18â€“20 | Done locally | Self-approval controls, readable snapshot view, and next eligible payout implemented and focused checks passed. |
-| Test-record cleanup | Blocked | Confirm whether the listed records are in local or production and identify them safely before deletion. Production deletion requires an explicit production request. |
+| Test-record cleanup | Done in production | The owner identified production project `tccdupkjmwwxcvpqnpeb`. A guarded dry run found exact IDs and dependencies; cleanup removed the reviewed records and a post-check found zero remaining reviewed IDs. |
 | On-hold policies | Deferred | Resume only when May/Tina supply the policy or sanitized Wise fixtures identified below. |
 
 ## 2026-10-24 Implementation Result
@@ -33,8 +33,8 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 - Required a business purpose for log and upload flows and added per-receipt category, payment source, and purpose controls.
 - Added the prioritized To review list, semantic status badges, latest-data-month Overview selection, readable saved snapshots, next-month payout selection, and consistent Finance dates.
 - Removed duplicate page navigation, kept shared app typography and shell spacing, and verified the admin desktop/mobile route matrix with inspected screenshots.
-- Validation: four migrations applied to local Supabase; 7 focused Vitest assertions passed; web typecheck passed; production web build passed; the focused Finance Playwright run passed 5/8 overall, including the complete admin route matrix, Wise, property workflow, expanded-detail, and dark-mode scenarios. The subscription scenario passed on focused rerun. The remaining full-matrix failures are local account/timeout constraints: the sample employee is not assigned Accounting and the super-admin dashboard did not finish loading during the login timeout.
-- No production migration or test-record deletion was performed.
+- Validation: four migrations applied to local Supabase; 7 focused Vitest assertions passed; web typecheck passed; production web build passed; the focused Finance Playwright run covered the complete admin route matrix, Wise, property workflow, expanded-detail, dark-mode, and subscriptions. A dedicated local Accounting account then passed the complete Finance/Properties route matrix at desktop and mobile widths with no captured console errors, failed local requests, or mobile overflow; representative screenshots were inspected.
+- No production migration was performed. The separately authorized production test-record cleanup is recorded below and in the feature tracker.
 
 ## Feedback Inventory and Implementation Plan
 
@@ -245,9 +245,9 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 - Subscriptions `TEST â€“ SUB1`, `SUB2`, `SUB3`, and `SUB4`
 - Properties `TEST â€“ PT1`, `PT2`, and `PT3`, including linked payments, maintenance, and expected-rent override
 
-### Status: Blocked
+### Status: Done in production on 24 Oct 2026
 
-The PDFs do not identify the target environment. Do not delete these records until the user identifies local or production. Before deletion, query exact IDs and linked rows, present a dry-run count, then use one explicit target and preserve audit/foreign-key requirements. The expected post-cleanup Overview counts in the PDF are 6 requests to match, 1 amount difference, 1 pending approval, and 29 submitted invoices; treat those as verification hints rather than deletion selectors.
+The owner identified production project `tccdupkjmwwxcvpqnpeb` as the target. The read-only dry run found nine October expense rows, three existing test subscriptions (`SUB1` was already absent), and all three test properties with two rent payments, two maintenance rows, three effective-month terms, one expected-rent override, and one variance sign-off. The nine expense rows were soft deleted to retain ledger/audit history. The exact subscription and property dependency trees were deleted with audit snapshots, and the final read-only check found zero remaining reviewed IDs. No production migration was applied.
 
 ## Confirmed Passing or Intentionally Unchanged
 

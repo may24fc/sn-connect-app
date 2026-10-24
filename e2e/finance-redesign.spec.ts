@@ -5,7 +5,7 @@ test.setTimeout(240_000);
 const accounts = [
   { name: 'admin', email: 'admin@example.com' },
   { name: 'super-admin', email: 'super-admin@example.com' },
-  { name: 'accounting', email: 'employee@example.com' },
+  { name: 'accounting', email: 'accounting@example.com' },
 ] as const;
 
 async function expectPageToUseAppShellSpacing(page: import('@playwright/test').Page) {
@@ -61,7 +61,6 @@ for (const account of accounts) {
     ).toBeVisible({
       timeout: 45_000,
     });
-
     const routes = [
       '/finance?month=2026-10',
       '/finance/expenses?tab=subscriptions',
@@ -143,6 +142,23 @@ for (const account of accounts) {
     expect(failedRequests).toEqual([]);
   });
 }
+
+test('accounting sees Finance navigation', async ({ page }) => {
+  await page.goto('/login');
+  await page.getByLabel('Email').fill('accounting@example.com');
+  await page.locator('#password').fill('password');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(
+    page.getByRole('heading', { name: /Good (morning|afternoon|evening)/i })
+  ).toBeVisible({ timeout: 90_000 });
+
+  await expect(page.getByRole('button', { name: 'Overview', exact: true })).toBeVisible({
+    timeout: 45_000,
+  });
+  await expect(page.getByRole('button', { name: 'Expenses', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Staff Payments', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Reports', exact: true })).toBeVisible();
+});
 
 test('leadership resolves a Wise exception and sees unknown confirmations listed', async ({
   page,
