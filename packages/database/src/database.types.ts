@@ -1003,60 +1003,6 @@ export type Database = {
           },
         ]
       }
-      christmas_tree_strands: {
-        Row: {
-          id: string
-          event_id: string
-          kind: string
-          start_x: number
-          start_y: number
-          end_x: number
-          end_y: number
-          created_by: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          event_id: string
-          kind: string
-          start_x: number
-          start_y: number
-          end_x: number
-          end_y: number
-          created_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          event_id?: string
-          kind?: string
-          start_x?: number
-          start_y?: number
-          end_x?: number
-          end_y?: number
-          created_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "christmas_tree_strands_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "christmas_tree_events"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "christmas_tree_strands_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       christmas_tree_events: {
         Row: {
           created_at: string
@@ -1073,9 +1019,9 @@ export type Database = {
           november_opens_at: string
           october_closes_at: string
           october_opens_at: string
+          star_manually_enabled: boolean
           timezone: string
           title: string
-          star_manually_enabled: boolean
           updated_at: string
           visible_until: string
         }
@@ -1094,9 +1040,9 @@ export type Database = {
           november_opens_at: string
           october_closes_at: string
           october_opens_at: string
+          star_manually_enabled?: boolean
           timezone?: string
           title: string
-          star_manually_enabled?: boolean
           updated_at?: string
           visible_until: string
         }
@@ -1115,13 +1061,81 @@ export type Database = {
           november_opens_at?: string
           october_closes_at?: string
           october_opens_at?: string
+          star_manually_enabled?: boolean
           timezone?: string
           title?: string
-          star_manually_enabled?: boolean
           updated_at?: string
           visible_until?: string
         }
         Relationships: []
+      }
+      christmas_tree_strands: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          end_x: number
+          end_y: number
+          event_id: string
+          id: string
+          kind: string
+          start_x: number
+          start_y: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          end_x: number
+          end_y: number
+          event_id: string
+          id?: string
+          kind: string
+          start_x: number
+          start_y: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          end_x?: number
+          end_y?: number
+          event_id?: string
+          id?: string
+          kind?: string
+          start_x?: number
+          start_y?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "christmas_tree_strands_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "christmas_tree_strands_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "christmas_tree_strands_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "christmas_tree_strands_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "christmas_tree_events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       christmas_wishes: {
         Row: {
@@ -1521,6 +1535,107 @@ export type Database = {
         }
         Relationships: []
       }
+      department_leads: {
+        Row: {
+          appointed_at: string
+          appointed_by: string
+          department_id: string
+          id: string
+          revoked_at: string | null
+          revoked_by: string | null
+          user_id: string
+        }
+        Insert: {
+          appointed_at?: string
+          appointed_by: string
+          department_id: string
+          id?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          user_id: string
+        }
+        Update: {
+          appointed_at?: string
+          appointed_by?: string
+          department_id?: string
+          id?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "department_leads_appointed_by_fkey"
+            columns: ["appointed_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "department_leads_appointed_by_fkey"
+            columns: ["appointed_by"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "department_leads_appointed_by_fkey"
+            columns: ["appointed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "department_leads_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "department_leads_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "department_leads_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "department_leads_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "department_leads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "department_leads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "department_leads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       departments: {
         Row: {
           created_at: string
@@ -1553,51 +1668,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-      }
-      department_leads: {
-        Row: {
-          appointed_at: string
-          appointed_by: string
-          department_id: string
-          id: string
-          revoked_at: string | null
-          revoked_by: string | null
-          user_id: string
-        }
-        Insert: {
-          appointed_at?: string
-          appointed_by: string
-          department_id: string
-          id?: string
-          revoked_at?: string | null
-          revoked_by?: string | null
-          user_id: string
-        }
-        Update: {
-          appointed_at?: string
-          appointed_by?: string
-          department_id?: string
-          id?: string
-          revoked_at?: string | null
-          revoked_by?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "department_leads_department_id_fkey"
-            columns: ["department_id"]
-            isOneToOne: false
-            referencedRelation: "departments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "department_leads_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       divisions: {
         Row: {
@@ -4134,6 +4204,7 @@ export type Database = {
           rubric_4: string | null
           self_rating: number | null
           status: string | null
+          submitted_at: string | null
           target_value: number
           unit: string | null
           updated_at: string
@@ -4159,6 +4230,7 @@ export type Database = {
           rubric_4?: string | null
           self_rating?: number | null
           status?: string | null
+          submitted_at?: string | null
           target_value: number
           unit?: string | null
           updated_at?: string
@@ -4184,6 +4256,7 @@ export type Database = {
           rubric_4?: string | null
           self_rating?: number | null
           status?: string | null
+          submitted_at?: string | null
           target_value?: number
           unit?: string | null
           updated_at?: string
@@ -4591,6 +4664,69 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      milestone_reward_runs: {
+        Row: {
+          completed_at: string
+          eligible_task_count: number
+          milestone_id: string
+          project_id: string
+          total_points: number
+          triggered_by: string | null
+        }
+        Insert: {
+          completed_at?: string
+          eligible_task_count: number
+          milestone_id: string
+          project_id: string
+          total_points: number
+          triggered_by?: string | null
+        }
+        Update: {
+          completed_at?: string
+          eligible_task_count?: number
+          milestone_id?: string
+          project_id?: string
+          total_points?: number
+          triggered_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "milestone_reward_runs_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: true
+            referencedRelation: "project_milestones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "milestone_reward_runs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "milestone_reward_runs_triggered_by_fkey"
+            columns: ["triggered_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "milestone_reward_runs_triggered_by_fkey"
+            columns: ["triggered_by"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "milestone_reward_runs_triggered_by_fkey"
+            columns: ["triggered_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_call_feedback: {
         Row: {
@@ -5320,6 +5456,7 @@ export type Database = {
           objective: string
           progress: number | null
           status: string | null
+          submitted_at: string | null
           updated_at: string
           weight: number | null
         }
@@ -5337,6 +5474,7 @@ export type Database = {
           objective: string
           progress?: number | null
           status?: string | null
+          submitted_at?: string | null
           updated_at?: string
           weight?: number | null
         }
@@ -5354,6 +5492,7 @@ export type Database = {
           objective?: string
           progress?: number | null
           status?: string | null
+          submitted_at?: string | null
           updated_at?: string
           weight?: number | null
         }
@@ -6236,6 +6375,150 @@ export type Database = {
         }
         Relationships: []
       }
+      performance_insight_conversations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          evaluation_kind: string
+          id: string
+          last_message_at: string
+          months_back: number
+          period_key: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          evaluation_kind: string
+          id?: string
+          last_message_at?: string
+          months_back?: number
+          period_key: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          evaluation_kind?: string
+          id?: string
+          last_message_at?: string
+          months_back?: number
+          period_key?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_insight_conversations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "performance_insight_conversations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "performance_insight_conversations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      performance_insight_messages: {
+        Row: {
+          content: string
+          context_meta: Json | null
+          context_snapshot_hash: string | null
+          conversation_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          id: string
+          input_tokens: number | null
+          model: string | null
+          output_tokens: number | null
+          role: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          context_meta?: Json | null
+          context_snapshot_hash?: string | null
+          conversation_id: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          role: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          context_meta?: Json | null
+          context_snapshot_hash?: string | null
+          conversation_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          role?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_insight_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "performance_insight_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_insight_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "performance_insight_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "performance_insight_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       performance_reviews: {
         Row: {
           completed_at: string | null
@@ -6408,48 +6691,6 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      milestone_reward_runs: {
-        Row: {
-          completed_at: string
-          eligible_task_count: number
-          milestone_id: string
-          project_id: string
-          total_points: number
-          triggered_by: string | null
-        }
-        Insert: {
-          completed_at?: string
-          eligible_task_count: number
-          milestone_id: string
-          project_id: string
-          total_points: number
-          triggered_by?: string | null
-        }
-        Update: {
-          completed_at?: string
-          eligible_task_count?: number
-          milestone_id?: string
-          project_id?: string
-          total_points?: number
-          triggered_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "milestone_reward_runs_milestone_id_fkey"
-            columns: ["milestone_id"]
-            isOneToOne: true
-            referencedRelation: "project_milestones"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "milestone_reward_runs_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -6753,10 +6994,52 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "project_departments_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "project_departments_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "project_departments_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "project_departments_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_departments_responded_by_fkey"
+            columns: ["responded_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "project_departments_responded_by_fkey"
+            columns: ["responded_by"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "project_departments_responded_by_fkey"
+            columns: ["responded_by"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -6818,11 +7101,11 @@ export type Database = {
         Row: {
           approved_at: string | null
           approved_by: string | null
+          completed_at: string | null
+          completed_by: string | null
           complexity_tier:
             | Database["public"]["Enums"]["milestone_complexity_tier"]
             | null
-          completed_at: string | null
-          completed_by: string | null
           created_at: string
           deleted_at: string | null
           department: string | null
@@ -6845,11 +7128,11 @@ export type Database = {
         Insert: {
           approved_at?: string | null
           approved_by?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
           complexity_tier?:
             | Database["public"]["Enums"]["milestone_complexity_tier"]
             | null
-          completed_at?: string | null
-          completed_by?: string | null
           created_at?: string
           deleted_at?: string | null
           department?: string | null
@@ -6872,11 +7155,11 @@ export type Database = {
         Update: {
           approved_at?: string | null
           approved_by?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
           complexity_tier?:
             | Database["public"]["Enums"]["milestone_complexity_tier"]
             | null
-          completed_at?: string | null
-          completed_by?: string | null
           created_at?: string
           deleted_at?: string | null
           department?: string | null
@@ -6914,6 +7197,27 @@ export type Database = {
           {
             foreignKeyName: "project_milestones_approved_by_fkey"
             columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_milestones_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "project_milestones_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "project_milestones_completed_by_fkey"
+            columns: ["completed_by"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
@@ -7273,6 +7577,277 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      recognition_nominations: {
+        Row: {
+          category: string
+          created_at: string
+          evidence_url: string | null
+          id: string
+          nominator_user_id: string
+          nominee_user_id: string
+          result_summary: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          work_period_end: string
+          work_period_start: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          evidence_url?: string | null
+          id?: string
+          nominator_user_id: string
+          nominee_user_id: string
+          result_summary: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          work_period_end: string
+          work_period_start: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          evidence_url?: string | null
+          id?: string
+          nominator_user_id?: string
+          nominee_user_id?: string
+          result_summary?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          work_period_end?: string
+          work_period_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recognition_nominations_nominator_user_id_fkey"
+            columns: ["nominator_user_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "recognition_nominations_nominator_user_id_fkey"
+            columns: ["nominator_user_id"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "recognition_nominations_nominator_user_id_fkey"
+            columns: ["nominator_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recognition_nominations_nominee_user_id_fkey"
+            columns: ["nominee_user_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "recognition_nominations_nominee_user_id_fkey"
+            columns: ["nominee_user_id"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "recognition_nominations_nominee_user_id_fkey"
+            columns: ["nominee_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recognition_nominations_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "recognition_nominations_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "recognition_nominations_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recognition_periods: {
+        Row: {
+          created_at: string
+          id: string
+          last_error: string | null
+          period_end: string
+          period_start: string
+          period_type: string
+          public_intro: string | null
+          published_at: string | null
+          published_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          telegram_message_id: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          period_end: string
+          period_start: string
+          period_type: string
+          public_intro?: string | null
+          published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          telegram_message_id?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          period_end?: string
+          period_start?: string
+          period_type?: string
+          public_intro?: string | null
+          published_at?: string | null
+          published_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          telegram_message_id?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recognition_periods_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "recognition_periods_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "recognition_periods_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recognition_periods_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "recognition_periods_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "recognition_periods_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recognition_selections: {
+        Row: {
+          category: string | null
+          created_at: string
+          display_order: number
+          evidence_refs: Json
+          id: string
+          period_id: string
+          public_reason: string
+          recipient_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          display_order?: number
+          evidence_refs?: Json
+          id?: string
+          period_id: string
+          public_reason: string
+          recipient_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          display_order?: number
+          evidence_refs?: Json
+          id?: string
+          period_id?: string
+          public_reason?: string
+          recipient_user_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recognition_selections_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "recognition_periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recognition_selections_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "recognition_selections_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "recognition_selections_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       report_metrics: {
         Row: {
@@ -7994,6 +8569,211 @@ export type Database = {
         }
         Relationships: []
       }
+      review_demo_items: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          kind: string
+          progress: number
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          kind: string
+          progress?: number
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          kind?: string
+          progress?: number
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_demo_items_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "review_demo_items_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "review_demo_items_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_engagements: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          expires_at: string
+          id: string
+          purpose: string
+          reviewer_user_id: string
+          sponsor_user_id: string
+          starts_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          expires_at: string
+          id?: string
+          purpose: string
+          reviewer_user_id: string
+          sponsor_user_id: string
+          starts_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          expires_at?: string
+          id?: string
+          purpose?: string
+          reviewer_user_id?: string
+          sponsor_user_id?: string
+          starts_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_engagements_reviewer_user_id_fkey"
+            columns: ["reviewer_user_id"]
+            isOneToOne: true
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "review_engagements_reviewer_user_id_fkey"
+            columns: ["reviewer_user_id"]
+            isOneToOne: true
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "review_engagements_reviewer_user_id_fkey"
+            columns: ["reviewer_user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_engagements_sponsor_user_id_fkey"
+            columns: ["sponsor_user_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "review_engagements_sponsor_user_id_fkey"
+            columns: ["sponsor_user_id"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "review_engagements_sponsor_user_id_fkey"
+            columns: ["sponsor_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_feedback: {
+        Row: {
+          category: string
+          created_at: string
+          engagement_id: string
+          id: string
+          reviewer_user_id: string
+          route: string
+          screenshot_url: string | null
+          severity: string
+          suggestion: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          engagement_id: string
+          id?: string
+          reviewer_user_id: string
+          route: string
+          screenshot_url?: string | null
+          severity: string
+          suggestion: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          engagement_id?: string
+          id?: string
+          reviewer_user_id?: string
+          route?: string
+          screenshot_url?: string | null
+          severity?: string
+          suggestion?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_feedback_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "review_engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_feedback_reviewer_user_id_fkey"
+            columns: ["reviewer_user_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "review_feedback_reviewer_user_id_fkey"
+            columns: ["reviewer_user_id"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "review_feedback_reviewer_user_id_fkey"
+            columns: ["reviewer_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_kpi_entries: {
         Row: {
           created_at: string
@@ -8470,6 +9250,105 @@ export type Database = {
           },
         ]
       }
+      telegram_account_links: {
+        Row: {
+          linked_at: string
+          private_chat_id: number
+          telegram_user_id: number
+          telegram_username: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          linked_at?: string
+          private_chat_id: number
+          telegram_user_id: number
+          telegram_username?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          linked_at?: string
+          private_chat_id?: number
+          telegram_user_id?: number
+          telegram_username?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_account_links_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "telegram_account_links_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "telegram_account_links_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telegram_ticket_delivery_events: {
+        Row: {
+          attempts: number
+          created_at: string
+          event_type: string
+          id: string
+          last_error: string | null
+          payload: Json
+          sent_at: string | null
+          status: string
+          telegram_message_id: number | null
+          ticket_id: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          event_type: string
+          id?: string
+          last_error?: string | null
+          payload: Json
+          sent_at?: string | null
+          status?: string
+          telegram_message_id?: number | null
+          ticket_id: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          event_type?: string
+          id?: string
+          last_error?: string | null
+          payload?: Json
+          sent_at?: string | null
+          status?: string
+          telegram_message_id?: number | null
+          ticket_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_ticket_delivery_events_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_attachments: {
         Row: {
           created_at: string
@@ -8654,6 +9533,62 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_telegram_origins: {
+        Row: {
+          chat_id: number
+          converted_by: string
+          created_at: string
+          source_message_id: number
+          ticket_id: string
+          topic_id: number
+        }
+        Insert: {
+          chat_id: number
+          converted_by: string
+          created_at?: string
+          source_message_id: number
+          ticket_id: string
+          topic_id: number
+        }
+        Update: {
+          chat_id?: number
+          converted_by?: string
+          created_at?: string
+          source_message_id?: number
+          ticket_id?: string
+          topic_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_telegram_origins_converted_by_fkey"
+            columns: ["converted_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ticket_telegram_origins_converted_by_fkey"
+            columns: ["converted_by"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ticket_telegram_origins_converted_by_fkey"
+            columns: ["converted_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_telegram_origins_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: true
+            referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
         ]
@@ -9880,6 +10815,9 @@ export type Database = {
       }
       users: {
         Row: {
+          access_expires_at: string | null
+          account_kind: Database["public"]["Enums"]["account_kind"]
+          account_purpose: string | null
           avatar_url: string | null
           created_at: string
           created_by: string | null
@@ -9889,10 +10827,14 @@ export type Database = {
           id: string
           manager_id: string | null
           role: Database["public"]["Enums"]["user_role"]
+          sponsor_user_id: string | null
           status: Database["public"]["Enums"]["user_status"]
           updated_at: string
         }
         Insert: {
+          access_expires_at?: string | null
+          account_kind?: Database["public"]["Enums"]["account_kind"]
+          account_purpose?: string | null
           avatar_url?: string | null
           created_at?: string
           created_by?: string | null
@@ -9902,10 +10844,14 @@ export type Database = {
           id: string
           manager_id?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          sponsor_user_id?: string | null
           status?: Database["public"]["Enums"]["user_status"]
           updated_at?: string
         }
         Update: {
+          access_expires_at?: string | null
+          account_kind?: Database["public"]["Enums"]["account_kind"]
+          account_purpose?: string | null
           avatar_url?: string | null
           created_at?: string
           created_by?: string | null
@@ -9915,6 +10861,7 @@ export type Database = {
           id?: string
           manager_id?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          sponsor_user_id?: string | null
           status?: Database["public"]["Enums"]["user_status"]
           updated_at?: string
         }
@@ -9950,6 +10897,27 @@ export type Database = {
           {
             foreignKeyName: "users_manager_id_fkey"
             columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "users_sponsor_user_id_fkey"
+            columns: ["sponsor_user_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "users_sponsor_user_id_fkey"
+            columns: ["sponsor_user_id"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "users_sponsor_user_id_fkey"
+            columns: ["sponsor_user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
@@ -10631,6 +11599,7 @@ export type Database = {
     Views: {
       employee_directory: {
         Row: {
+          account_kind: Database["public"]["Enums"]["account_kind"] | null
           address: string | null
           avatar_url: string | null
           birthday: string | null
@@ -10678,8 +11647,8 @@ export type Database = {
           school: string | null
           start_date: string | null
           status: Database["public"]["Enums"]["user_status"] | null
-          user_id: string | null
           user_created_at: string | null
+          user_id: string | null
         }
         Relationships: []
       }
@@ -11008,6 +11977,26 @@ export type Database = {
         }
         Returns: Json
       }
+      create_ticket_from_telegram: {
+        Args: {
+          p_submitted_by: string
+          p_converted_by: string
+          p_title: string
+          p_description: string
+          p_category: string
+          p_chat_id: number
+          p_topic_id: number
+          p_source_message_id: number
+        }
+        Returns: {
+          ticket_id: string
+          created: boolean
+        }[]
+      }
+      current_user_has_active_review_engagement: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       decide_finance_expense: {
         Args: {
           entry_id: string
@@ -11307,6 +12296,27 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_performance_cycle_workforce_eligible: {
+        Args: {
+          target_user_id: string
+          target_cycle_id: string
+        }
+        Returns: boolean
+      }
+      is_quarter_workforce_eligible: {
+        Args: {
+          target_user_id: string
+          period_start: string
+          period_end: string
+        }
+        Returns: boolean
+      }
+      is_workforce_account: {
+        Args: {
+          target_user_id: string
+        }
+        Returns: boolean
+      }
       ivfflat_bit_support: {
         Args: {
           "": unknown
@@ -11416,6 +12426,14 @@ export type Database = {
           p_user_id: string
         }
         Returns: undefined
+      }
+      quarter_workforce_eligible_user_ids: {
+        Args: {
+          target_cycle_id: string
+        }
+        Returns: {
+          user_id: string
+        }[]
       }
       recompute_user_domain_mastery: {
         Args: {
@@ -11677,6 +12695,7 @@ export type Database = {
       }
     }
     Enums: {
+      account_kind: "workforce" | "reviewer" | "test" | "service" | "privileged"
       ai_spend_type: "api" | "subscription"
       announcement_category:
         | "hr_updates"
@@ -11760,8 +12779,8 @@ export type Database = {
         | "in_progress"
         | "submitted"
         | "approved"
-        | "completed"
         | "overdue"
+        | "completed"
       notification_type:
         | "task_assigned"
         | "task_due"
@@ -11887,7 +12906,7 @@ export type Database = {
         | "resolved"
         | "closed"
       ticket_team: "hr" | "it"
-      user_role: "employee" | "associate" | "admin" | "super_admin"
+      user_role: "employee" | "associate" | "admin" | "super_admin" | "reviewer"
       user_status:
         | "active"
         | "on_leave"
@@ -11902,6 +12921,7 @@ export type Database = {
     }
   }
 }
+
 type PublicSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
@@ -11998,3 +13018,4 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
     ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+

@@ -497,6 +497,31 @@ export const generatePerformanceEvaluationSummarySchema =
     })
   );
 
+/** Insights ("Ask AI") ship for 5% reflections first; the tables accept every kind. */
+export const performanceInsightKindSchema = z.literal('five_percent');
+
+export const performanceInsightChatSchema = z.object({
+  conversationId: z.string().uuid().optional(),
+  evaluationKind: performanceInsightKindSchema,
+  periodKey: monthKeySchema,
+  monthsBack: z.number().int().min(0).max(6).optional().default(3),
+  message: z.string().trim().min(1, 'Ask a question').max(2000),
+});
+
+export const performanceInsightConversationListQuerySchema = z.object({
+  evaluationKind: performanceInsightKindSchema,
+  limit: z.coerce.number().int().min(1).max(50).optional().default(30),
+  offset: z.coerce.number().int().min(0).optional().default(0),
+});
+
+export const renamePerformanceInsightConversationSchema = z.object({
+  title: z.string().trim().min(1).max(120),
+});
+
+export const performanceInsightConversationIdSchema = z.string().uuid();
+
+export type PerformanceInsightChatInput = z.infer<typeof performanceInsightChatSchema>;
+
 export const fivePercentSummaryEmailQuerySchema = z.object({
   monthKey: monthKeySchema,
 });

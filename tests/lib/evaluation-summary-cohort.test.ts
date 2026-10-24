@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { chatMock } = vi.hoisted(() => ({ chatMock: vi.fn() }));
+const { completeTextMock } = vi.hoisted(() => ({ completeTextMock: vi.fn() }));
 
-vi.mock('@hr-portal/ai', () => ({ chat: chatMock }));
+vi.mock('@hr-portal/ai', () => ({ completeText: completeTextMock }));
 
 import {
   generatePerformanceEvaluationSummary,
@@ -50,8 +50,11 @@ describe('resolveSubmissionCohort', () => {
 
 describe('generatePerformanceEvaluationSummary cohort split', () => {
   beforeEach(() => {
-    chatMock.mockReset();
-    chatMock.mockResolvedValue({ message: '## Executive Form Summary' });
+    completeTextMock.mockReset();
+    completeTextMock.mockResolvedValue({
+      text: '## Executive Form Summary',
+      usage: { inputTokens: 0, outputTokens: 0 },
+    });
   });
 
   it('sends associates to the interns cohort and keeps user ids out of the prompt', async () => {
@@ -95,7 +98,12 @@ describe('generatePerformanceEvaluationSummary cohort split', () => {
       forceRegenerate: true,
     });
 
-    const prompt = chatMock.mock.calls[0]?.[0]?.[0]?.content as string;
+    const request = completeTextMock.mock.calls[0]?.[0] as {
+      systemPrompt: string;
+      messages: Array<{ content: string }>;
+    };
+    expect(request.systemPrompt).not.toContain('contact HR');
+    const prompt = request.messages[0]?.content as string;
     expect(prompt).toContain('"employeeSubmissions":1');
     expect(prompt).toContain('"internSubmissions":1');
     expect(prompt).not.toContain('user-employee');

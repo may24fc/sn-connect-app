@@ -26,7 +26,8 @@ import {
 } from '@hr-portal/ui';
 import { useEffect, useMemo, useState } from 'react';
 import { useEvaluationSummary } from './useEvaluationSummary';
-import { Sparkles } from 'lucide-react';
+import { MessagesSquare, Sparkles } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import {
   type FivePercentReflectionAdminListEntry,
   type FivePercentReflectionDetailField,
@@ -34,6 +35,11 @@ import {
   fivePercentReflectionDetailSections,
   getFivePercentAverageRank,
 } from './fivePercentReflectionDetailConfig';
+
+const ReflectionInsightsPanel = dynamic(
+  () => import('./insights/ReflectionInsightsPanel').then((module) => module.ReflectionInsightsPanel),
+  { ssr: false }
+);
 
 type AdminListResponse = {
   data?: FivePercentReflectionAdminListEntry[];
@@ -104,6 +110,9 @@ export function FivePercentReflectionAdminReview() {
   const [records, setRecords] = useState<FivePercentReflectionAdminListEntry[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [insightsOpen, setInsightsOpen] = useState(false);
+  // Load the panel chunk on first open, then keep it mounted to preserve its state.
+  const [hasOpenedInsights, setHasOpenedInsights] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -237,6 +246,16 @@ export function FivePercentReflectionAdminReview() {
                 {summaryState.isGenerating ? 'Regenerating...' : 'Regenerate Summary'}
               </Button>
             ) : null}
+            <Button
+              variant="outline"
+              onClick={() => {
+                setHasOpenedInsights(true);
+                setInsightsOpen(true);
+              }}
+            >
+              <MessagesSquare className="h-4 w-4" />
+              Ask AI
+            </Button>
             <FivePercentSummaryEmailButton
               monthKey={monthKey}
               monthLabel={formatMonthKey(monthKey)}
@@ -406,6 +425,13 @@ export function FivePercentReflectionAdminReview() {
           </CardContent>
         </Card>
       </div>
+      {hasOpenedInsights ? (
+        <ReflectionInsightsPanel
+          open={insightsOpen}
+          onOpenChange={setInsightsOpen}
+          monthKey={monthKey}
+        />
+      ) : null}
     </div>
   );
 }

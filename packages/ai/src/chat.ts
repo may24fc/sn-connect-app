@@ -364,6 +364,111 @@ export async function* chatStream(
 }
 
 /**
+ * Options for a streaming completion that supplies its own system prompt.
+ */
+export interface CompletionStreamOptions {
+  /** System prompt sent verbatim, with no knowledge-base context appended. */
+  systemPrompt: string;
+  /** The conversation history, oldest first. */
+  messages: ChatMessage[];
+  /** Model to use. Defaults to the package default chat model. */
+  model?: string;
+  /** Maximum tokens in the response. Defaults to 2048. */
+  maxTokens?: number;
+  /** Sent only when set, so models that reject custom temperatures keep their default. */
+  temperature?: number;
+  /** Aborts the upstream request, e.g. when the client disconnects. */
+  signal?: AbortSignal;
+  /** OpenAI API key. Falls back to OPENAI_API_KEY env var. */
+  apiKey?: string;
+}
+
+/**
+ * Streams a completion for callers that build their own context, such as
+ * structured-data assistants. Unlike `chatStream`, it never appends the
+ * knowledge-base context section or the "no context found" note.
+ *
+ * Yields `text_delta` events, then `done` with usage, or `error`.
+ */
+export async function* streamCompletion(
+  options: CompletionStreamOptions
+): AsyncGenerator<ChatStreamEvent> {
+  const client = createClient(options.apiKey);
+
+  try {
+    const stream = await client.chat.completions.create(
+      {
+        model: options.model ?? DEFAULT_CHAT_CONFIG.model,
+        max_completion_tokens: options.maxTokens ?? DEFAULT_CHAT_CONFIG.maxTokens,
+        ...(options.temperature === undefined ? {} : { temperature: options.temperature }),
+        stream: true,
+        stream_options: { include_usage: true },
+        messages: [
+          { role: 'system', content: options.systemPrompt },
+          ...options.messages.map((m) => ({ role: m.role, content: m.content })),
+        ],
+      },
+      options.signal ? { signal: options.signal } : undefined
+    );
+
+    let inputTokens = 0;
+    let outputTokens = 0;
+
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta?.content;
+      if (delta) {
+        yield { type: 'text_delta', text: delta };
+      }
+      if (chunk.usage) {
+        inputTokens = chunk.usage.prompt_tokens ?? 0;
+        outputTokens = chunk.usage.completion_tokens ?? 0;
+      }
+    }
+
+    yield {
+      type: 'done',
+      usage: { inputTokens, outputTokens },
+    };
+  } catch (error) {
+    yield {
+      type: 'error',
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+/**
+ * Non-streaming sibling of `streamCompletion`: sends the system prompt
+ * verbatim (no knowledge-base context or "no context found" note) and returns
+ * the full text. Errors propagate to the caller.
+ */
+export async function completeText(
+  options: CompletionStreamOptions
+): Promise<{ text: string; usage: { inputTokens: number; outputTokens: number } }> {
+  const client = createClient(options.apiKey);
+  const response = await client.chat.completions.create(
+    {
+      model: options.model ?? DEFAULT_CHAT_CONFIG.model,
+      max_completion_tokens: options.maxTokens ?? DEFAULT_CHAT_CONFIG.maxTokens,
+      ...(options.temperature === undefined ? {} : { temperature: options.temperature }),
+      messages: [
+        { role: 'system', content: options.systemPrompt },
+        ...options.messages.map((m) => ({ role: m.role, content: m.content })),
+      ],
+    },
+    options.signal ? { signal: options.signal } : undefined
+  );
+
+  return {
+    text: response.choices[0]?.message?.content ?? '',
+    usage: {
+      inputTokens: response.usage?.prompt_tokens ?? 0,
+      outputTokens: response.usage?.completion_tokens ?? 0,
+    },
+  };
+}
+
+/**
  * Sends a simple chat message without RAG context.
  * Useful for general conversation or follow-up questions
  * where context has already been established.

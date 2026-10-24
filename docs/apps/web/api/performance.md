@@ -6,7 +6,7 @@ Performance management system covering review cycles, performance reviews, OKRs 
 
 **Related hooks:** `usePerformanceCycles`, `usePerformanceReviews`, `useOKRs`, `useKPIs`, `useIndividualPerformance`  
 **Zod schema:** `apps/web/src/lib/schemas/performance.schema.ts`  
-**Database tables:** `review_cycles`, `performance_reviews`, `okrs`, `kpis`
+**Database tables:** `review_cycles`, `performance_reviews`, `okrs`, `kpis`, `five_percent_reflections`, `performance_insight_conversations`, `performance_insight_messages`
 
 ---
 
@@ -32,6 +32,11 @@ Performance management system covering review cycles, performance reviews, OKRs 
 | `PATCH` | `/api/performance/kpis` | Any | Update KPI |
 | `GET` | `/api/performance/five-percent-reflections` | Any (scoped) | List 5% reflections or admin review feed |
 | `POST` | `/api/performance/five-percent-reflections` | Employee | Submit 5% reflection and trigger delivery webhook |
+| `POST` | `/api/performance/insights/chat` | Admin | Ask a question about 5% reflections (SSE stream) |
+| `GET` | `/api/performance/insights/conversations` | Admin (own) | List saved insight conversations |
+| `GET` | `/api/performance/insights/conversations/[id]` | Admin (own) | Conversation messages and staleness |
+| `PATCH` | `/api/performance/insights/conversations/[id]` | Admin (own) | Rename a conversation |
+| `DELETE` | `/api/performance/insights/conversations/[id]` | Admin (own) | Soft-delete a conversation |
 | `GET` | `/api/performance/individual/[employeeId]` | Owner or admin | Full performance dashboard |
 
 ---
@@ -317,6 +322,64 @@ Creates a new 5% reflection for the current month. On successful insert, the API
 - Telegram should use `sendDocument`; n8n MCP validation confirms the node requires a binary file.
 - Gmail should use `send`; n8n MCP validation confirms the node requires `To`, `Subject`, `Email Type`, and `Message`.
 - Keep the separate hard-coded admin Telegram node outside the user preference branches.
+
+---
+
+## Reflection Insights (Ask AI)
+
+Saved, streaming question-and-answer conversations about 5% reflections for performance admins (`admin`, `super_admin`). Reflections are read through the RLS-scoped client, which requires migration `20261025000002`. Every route re-checks the role on each request. Conversation rows are visible only to their owner while they remain a performance admin (RLS on `performance_insight_conversations` / `performance_insight_messages`). Feature record: `docs/features/performance-reflection-insights/`.
+
+**Data sent to the model:** 5% reflections for the conversation's month (full text, shortened to fit the token budget when needed) plus condensed earlier months, with averages, medians, deltas, flags and the pending roster computed in code (`apps/web/src/lib/performance/insights/`). **Identifiers are sent only as tokens or placeholders:** teammates as `Person-07`; other people, places, and organizations mentioned in reflection text, the question, or replayed history as `Mention-003` (`mentions.ts`, local NLP); links, handles, ID numbers, addresses, and birth dates as `[url]`, `[handle]`, `[id-number]`, `[address]`, `[birth-date]` (`personal-details.ts`). Tokens in the streamed answer are restored on the server (`pseudonymize.ts`); placeholders are not. Departments, ranks, and other reflection content are still sent. Lower-case names are not detected. Emails and phone numbers are redacted. Employee text is escaped and the system prompt treats it as data, not instructions. Model: OpenAI `gpt-5.4-mini` through `streamCompletion` in `@hr-portal/ai`.
+
+**Audit and tracing:** `audit_logs` receives `performance_insight_query` (kind, period, window, question/answer length, tokens, model, truncation, TTFB/stream ms, outcome) and `performance_insight_conversation_delete`. No question, answer or reflection text is written to audit rows or LangWatch spans.
+
+### POST /api/performance/insights/chat
+
+Request (`performanceInsightChatSchema`):
+
+```json
+{
+  "conversationId": "uuid (optional; omitted starts a new conversation)",
+  "evaluationKind": "five_percent",
+  "periodKey": "2026-10",
+  "monthsBack": 3,
+  "message": "Whose family rank dropped the most?"
+}
+```
+
+- `message` is trimmed, 1-2000 characters. `monthsBack` is 0-6 (default 3).
+- An existing conversation keeps its stored `periodKey` and `monthsBack`; request values are ignored.
+- History is read from the database (last 10 completed messages); the client never sends it.
+
+Errors: `400` invalid input, `401`, `403` non-admin, `404` conversation not visible to the caller, `422` no reflections in the window, `429` rate limit (30 questions/hour, 150/day, counted across deleted conversations; `Retry-After` header and `details.retryAfterSeconds`), `503` OpenAI key missing.
+
+Success is `text/event-stream`, one `data: {json}` frame per event, in this order:
+
+| Event | Fields |
+| --- | --- |
+| `conversation` | `conversationId`, `title`, `created` |
+| `context` | `periodKey`, `monthsIncluded`, `submittedCount`, `pendingCount`, `truncated`, `priorMode` (`P0`/`P1`/`P2`), `dataChangedSinceLastAnswer` |
+| `content` | `text` (repeated) |
+| `done` | `messageId`, `usage: { inputTokens, outputTokens }` |
+| `error` | `code` (`llm_failed` or `persist_failed`), `message` (generic; upstream detail is logged server-side only) |
+
+The question is saved before streaming. The answer is saved with status `complete`, `error`, or `aborted` (client disconnect or Stop), along with the source snapshot hash used for staleness checks. `Server-Timing` exposes `insight_auth`, `insight_context`, and `insight_persist`.
+
+### GET /api/performance/insights/conversations
+
+Query: `evaluationKind=five_percent`, `limit` 1-50 (default 30), `offset` (default 0). Returns `{ data: { conversations, total } }`, newest activity first, caller's own conversations only.
+
+### GET /api/performance/insights/conversations/[id]
+
+Returns `{ data: { conversation, messages, currentSnapshotHash, isStale } }`. `isStale` is true when the latest answer was generated from different reflection data than the current window. `404` when the id is invalid or not visible.
+
+### PATCH /api/performance/insights/conversations/[id]
+
+Body `{ "title": "1-120 characters" }`. Returns `{ data: conversation }`.
+
+### DELETE /api/performance/insights/conversations/[id]
+
+Soft-deletes the conversation (its messages become invisible) and returns `204`.
 
 ---
 

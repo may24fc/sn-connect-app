@@ -419,6 +419,13 @@ export const queryKeys = {
     individual: (employeeId: string) =>
       [...queryKeys.performance.all, 'individual', employeeId] as const,
     team: () => [...queryKeys.performance.all, 'team'] as const,
+    insights: {
+      all: () => [...queryKeys.performance.all, 'insights'] as const,
+      conversations: (evaluationKind: string) =>
+        [...queryKeys.performance.insights.all(), 'conversations', evaluationKind] as const,
+      conversation: (id: string) =>
+        [...queryKeys.performance.insights.all(), 'conversation', id] as const,
+    },
   },
 
   // Payroll
