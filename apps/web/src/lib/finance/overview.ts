@@ -2,6 +2,11 @@ export type FinanceOverviewData = {
   month: string;
   recordedSpendAud: number;
   unconvertedEntries: number;
+  unconvertedTotals?: Array<{
+    currency: string;
+    amount: number;
+    entry_count: number;
+  }>;
   categoryBudgets: Array<{
     code: string;
     name: string;

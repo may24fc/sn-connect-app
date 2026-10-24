@@ -7,9 +7,9 @@ export interface ImageQualityReport {
   issues: string[];
 }
 
-const MIN_WIDTH = 1024;
-const MIN_HEIGHT = 768;
-const MIN_SHARPNESS_SCORE = 12;
+const MIN_LONG_SIDE = 1024;
+const MIN_SHORT_SIDE = 600;
+const MIN_SHARPNESS_SCORE = 6;
 const MIN_CONTRAST_SCORE = 28;
 
 function computeContrast(lumaValues: Uint8ClampedArray): number {
@@ -114,9 +114,11 @@ export async function validateReceiptImageQuality(file: File): Promise<ImageQual
 
   const issues: string[] = [];
 
-  if (width < MIN_WIDTH || height < MIN_HEIGHT) {
+  const longSide = Math.max(width, height);
+  const shortSide = Math.min(width, height);
+  if (longSide < MIN_LONG_SIDE || shortSide < MIN_SHORT_SIDE) {
     issues.push(
-      `Image resolution is too low (${width}x${height}). Minimum is ${MIN_WIDTH}x${MIN_HEIGHT}.`
+      `Image resolution is too low (${width}x${height}). Use an image at least ${MIN_LONG_SIDE}px on the long side and ${MIN_SHORT_SIDE}px on the short side.`
     );
   }
 

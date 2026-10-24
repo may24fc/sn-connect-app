@@ -133,4 +133,27 @@ describe('validateReceiptImageQuality', () => {
     expect(report.isValid).toBe(true);
     expect(report.issues).toHaveLength(0);
   });
+
+  it('accepts a clear portrait phone receipt with a 600px short side', async () => {
+    vi.stubGlobal(
+      'createImageBitmap',
+      vi.fn(async () => ({ width: 600, height: 1100, close: vi.fn() }))
+    );
+    vi.spyOn(document, 'createElement').mockImplementation(((tagName: string) => {
+      if (tagName !== 'canvas') return originalCreateElement(tagName as keyof HTMLElementTagNameMap);
+      return {
+        width: 0,
+        height: 0,
+        getContext: vi.fn(() => ({
+          drawImage: vi.fn(),
+          getImageData: vi.fn(() => ({ data: buildImageData(600, 1100, 'checkerboard') })),
+        })),
+      } as unknown as HTMLCanvasElement;
+    }) as typeof document.createElement);
+
+    const report = await validateReceiptImageQuality(
+      new File(['img'], 'portrait-receipt.jpg', { type: 'image/jpeg' })
+    );
+    expect(report.isValid).toBe(true);
+  });
 });

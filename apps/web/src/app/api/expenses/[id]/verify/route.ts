@@ -18,7 +18,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!capabilities.canMatch) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     const parsed = expenseMatchSchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) return NextResponse.json({ error: 'Invalid match body', details: parsed.error.flatten() }, { status: 400 });
-    if (id === parsed.data.counterpartEntryId || parsed.data.matchStatus === 'resolved') return NextResponse.json({ error: 'Choose a separate open counterpart' }, { status: 400 });
+    if (id === parsed.data.counterpartEntryId) return NextResponse.json({ error: 'Choose a separate open counterpart' }, { status: 400 });
     const { data: entries, error: loadError } = await admin.from('expense_entries').select('id,source_type').in('id', [id, parsed.data.counterpartEntryId]).is('deleted_at', null);
     if (loadError || entries?.length !== 2) return NextResponse.json({ error: 'Expense entries not found' }, { status: 404 });
     const requestEntry = entries.find((entry) => entry.source_type === 'staff_request');

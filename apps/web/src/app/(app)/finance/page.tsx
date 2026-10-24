@@ -7,6 +7,8 @@ export const dynamic = 'force-dynamic';
 
 const money = (amount: number) =>
   new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(amount);
+const moneyByCurrency = (amount: number, currency: string) =>
+  new Intl.NumberFormat('en-AU', { style: 'currency', currency }).format(amount);
 const monthLabel = (month: string) =>
   new Intl.DateTimeFormat('en-AU', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
     new Date(`${month}-01T00:00:00Z`)
@@ -19,8 +21,20 @@ export default async function FinanceOverview({
   if (!(context.ok && canReviewFinance(context.capabilities))) return notFound();
   const query = await searchParams;
   if (query.month !== undefined && !/^\d{4}-(0[1-9]|1[0-2])$/.test(query.month)) return notFound();
-  const month = query.month ?? new Date().toISOString().slice(0, 7);
-  const previousMonth = new Date(`${month}-01T00:00:00Z`);
+  let month = query.month;
+  if (!month) {
+    const latest = await (context.admin as any)
+      .from('expense_entries')
+      .select('transaction_date')
+      .is('deleted_at', null)
+      .order('transaction_date', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (latest.error) throw new Error('Could not determine the latest Finance month');
+    month = latest.data?.transaction_date?.slice(0, 7) ?? new Date().toISOString().slice(0, 7);
+  }
+  const selectedMonth = month as string;
+  const previousMonth = new Date(`${selectedMonth}-01T00:00:00Z`);
   previousMonth.setUTCMonth(previousMonth.getUTCMonth() - 1);
   const previous = previousMonth.toISOString().slice(0, 7);
   const db = context.admin as unknown as {
@@ -30,7 +44,7 @@ export default async function FinanceOverview({
     ) => Promise<{ data: FinanceOverviewData | null; error: { message: string } | null }>;
   };
   const [currentResult, previousResult] = await Promise.all([
-    db.rpc('finance_overview', { target_month: `${month}-01` }),
+    db.rpc('finance_overview', { target_month: `${selectedMonth}-01` }),
     db.rpc('finance_overview', { target_month: `${previous}-01` }),
   ]);
   if (currentResult.error || !currentResult.data || previousResult.error || !previousResult.data) {
@@ -97,7 +111,7 @@ export default async function FinanceOverview({
             name="month"
             type="month"
             required
-            defaultValue={month}
+            defaultValue={selectedMonth}
             className="rounded-md border bg-card px-3 py-2"
           />
           <button
@@ -108,26 +122,6 @@ export default async function FinanceOverview({
           </button>
         </form>
       </header>
-      <nav aria-label="Finance pages" className="flex flex-wrap gap-2 text-sm">
-        <Link
-          className="rounded-md border bg-card px-3 py-2 hover:bg-muted"
-          href="/finance/expenses"
-        >
-          Expenses
-        </Link>
-        <Link
-          className="rounded-md border bg-card px-3 py-2 hover:bg-muted"
-          href="/finance/staff-payments"
-        >
-          Staff Payments
-        </Link>
-        <Link
-          className="rounded-md border bg-card px-3 py-2 hover:bg-muted"
-          href="/finance/reports"
-        >
-          Reports
-        </Link>
-      </nav>
       <p className="text-xs text-muted-foreground">Open items across all months</p>
       <section
         aria-label="Finance action queue"
@@ -153,7 +147,7 @@ export default async function FinanceOverview({
         className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
       >
         <div className="rounded-xl border bg-card p-5">
-          <p className="text-sm text-muted-foreground">Recorded spend · {monthLabel(month)}</p>
+          <p className="text-sm text-muted-foreground">Recorded spend · {monthLabel(selectedMonth)}</p>
           <p className="mt-2 text-2xl font-bold tabular-nums">{money(summary.recordedSpendAud)}</p>
           <p className="mt-1 text-xs text-muted-foreground">
             {comparison.changePercent === null
@@ -174,7 +168,18 @@ export default async function FinanceOverview({
         <div className="rounded-xl border bg-card p-5">
           <p className="text-sm text-muted-foreground">Amounts awaiting FX conversion</p>
           <p className="mt-2 text-2xl font-bold tabular-nums">{summary.unconvertedEntries}</p>
-          <p className="mt-1 text-xs text-muted-foreground">Excluded from AUD spend totals</p>
+          {summary.unconvertedTotals?.length ? (
+            <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+              {summary.unconvertedTotals.map((item) => (
+                <li key={item.currency}>
+                  {moneyByCurrency(Number(item.amount), item.currency)} · {item.entry_count}{' '}
+                  {item.entry_count === 1 ? 'entry' : 'entries'}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-1 text-xs text-muted-foreground">No amounts are waiting for conversion</p>
+          )}
         </div>
         <div className="rounded-xl border bg-card p-5">
           <p className="text-sm text-muted-foreground">Categories with spend</p>
@@ -190,7 +195,7 @@ export default async function FinanceOverview({
         <section className="rounded-xl border bg-card p-5 lg:col-span-5">
           <h2 className="font-semibold">Recorded spend by payment source</h2>
           <p className="mb-3 text-xs text-muted-foreground">
-            {monthLabel(month)} · converted AUD direct payments
+            {monthLabel(selectedMonth)} · converted AUD direct payments
           </p>
           <dl className="space-y-2 text-sm">
             {[
@@ -209,7 +214,7 @@ export default async function FinanceOverview({
         <section className="rounded-xl border bg-card p-5 lg:col-span-7">
           <h2 className="font-semibold">Scheduled subscription renewals</h2>
           <p className="mb-3 text-xs text-muted-foreground">
-            Dates recorded for {monthLabel(month)} · payment is not confirmed by this schedule
+            Dates recorded for {monthLabel(selectedMonth)} · payment is not confirmed by this schedule
           </p>
           {summary.scheduledRenewals?.length ? (
             <ul className="max-h-64 space-y-2 overflow-y-auto text-sm">
@@ -244,7 +249,7 @@ export default async function FinanceOverview({
             <div>
               <h2 className="font-semibold">Spend by category</h2>
               <p className="text-xs text-muted-foreground">
-                {monthLabel(month)} · AUD amounts with a known conversion
+                {monthLabel(selectedMonth)} · AUD amounts with a known conversion
               </p>
             </div>
             <Link
@@ -296,12 +301,12 @@ export default async function FinanceOverview({
               <div>
                 <h2 className="font-semibold">Budgets</h2>
                 <p className="text-xs text-muted-foreground">
-                  Monthly limits · {monthLabel(month)}
+                  Monthly limits · {monthLabel(selectedMonth)}
                 </p>
               </div>
               <Link
                 className="text-sm font-medium text-teal-700 hover:underline"
-                href={`/finance/expenses?tab=subscriptions&month=${month}`}
+                href={`/finance/expenses?tab=subscriptions&month=${selectedMonth}`}
               >
                 Edit limits
               </Link>
@@ -326,7 +331,7 @@ export default async function FinanceOverview({
                 <tr className="border-b text-muted-foreground">
                   <th className="pb-2 font-medium">Category</th>
                   <th className="pb-2 text-right font-medium">{monthLabel(previous)}</th>
-                  <th className="pb-2 text-right font-medium">{monthLabel(month)}</th>
+                  <th className="pb-2 text-right font-medium">{monthLabel(selectedMonth)}</th>
                   <th className="pb-2 text-right font-medium">Change</th>
                 </tr>
               </thead>

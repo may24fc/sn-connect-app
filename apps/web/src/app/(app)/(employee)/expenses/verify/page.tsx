@@ -35,7 +35,6 @@ export default function ExpenseMatchingQueuePage() {
 
   const [selectedRequest, setSelectedRequest] = useState<ExpenseEntry | null>(null);
   const [selectedCounterpartId, setSelectedCounterpartId] = useState<string>('');
-  const [matchStatus, setMatchStatus] = useState<'matched' | 'variance_flagged' | 'resolved'>('matched');
   const [matchedNotes, setMatchedNotes] = useState('');
 
   const { data: requestsData, isLoading: isLoadingRequests } = useExpenses({
@@ -122,7 +121,6 @@ export default function ExpenseMatchingQueuePage() {
   const handleSelectRequest = (request: ExpenseEntry) => {
     setSelectedRequest(request);
     setSelectedCounterpartId('');
-    setMatchStatus('matched');
     setMatchedNotes('');
   };
 
@@ -137,7 +135,6 @@ export default function ExpenseMatchingQueuePage() {
         id: selectedRequest.id,
         match: {
           counterpartEntryId: selectedCounterpartId,
-          matchStatus,
           matchedNotes: matchedNotes || undefined,
         },
       },
@@ -277,18 +274,8 @@ export default function ExpenseMatchingQueuePage() {
                   </p>
                 </div>
 
-                <div className="grid gap-2">
-                  <p className="text-xs font-bold text-zinc-500">RESULT</p>
-                  <Select value={matchStatus} onValueChange={(value) => setMatchStatus(value as typeof matchStatus)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="matched">Matched (amounts align)</SelectItem>
-                      <SelectItem value="variance_flagged">Variance Flagged (escalate to leadership)</SelectItem>
-                      <SelectItem value="resolved">Resolved (manually reconciled)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="rounded-md bg-blue-50 px-3 py-2 text-xs text-blue-900 dark:bg-blue-950/30 dark:text-blue-100">
+                  The result is calculated from the two amounts. Differences are sent for review automatically.
                 </div>
 
                 <Textarea

@@ -1,9 +1,10 @@
-import AdminExpensesDashboard from '@/app/(app)/(admin)/admin/expenses/page';
-import { FinanceApprovalQueue } from '@/components/finance/FinanceApprovalQueue';
 import { FinanceApproverSettings } from '@/components/finance/FinanceApproverSettings';
 import { FinanceCatalogPanel } from '@/components/finance/FinanceCatalogPanel';
 import { FinanceExpenseExport } from '@/components/finance/FinanceExpenseExport';
+import { FinanceExpenseCorrection } from '@/components/finance/FinanceExpenseCorrection';
+import { FinanceUnifiedReviewQueue } from '@/components/finance/FinanceUnifiedReviewQueue';
 import { canReviewFinance, getFinanceContext } from '@/lib/finance/auth';
+import { formatFinanceDate } from '@/lib/format';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -59,8 +60,16 @@ type FinanceLedgerClient = {
 const money = (amount: number, currency: string) =>
   new Intl.NumberFormat('en-AU', { style: 'currency', currency }).format(amount);
 const label = (value: string | null) => (value ?? 'unknown').replaceAll('_', ' ');
-const badge =
-  'inline-block rounded-full bg-muted px-2 py-0.5 text-xs font-medium capitalize text-muted-foreground';
+const statusBadge = (value: string | null) => {
+  const base = 'inline-block rounded-full px-2 py-0.5 text-xs font-medium capitalize';
+  if (value === 'approved' || value === 'confirmed' || value === 'matched')
+    return `${base} bg-emerald-100 text-emerald-800`;
+  if (value === 'rejected' || value === 'variance_flagged')
+    return `${base} bg-red-100 text-red-800`;
+  if (value === 'unmatched' || value === 'unpaid')
+    return `${base} bg-orange-100 text-orange-800`;
+  return `${base} bg-amber-100 text-amber-900`;
+};
 
 export default async function FinanceExpenses({
   searchParams,
@@ -84,6 +93,11 @@ export default async function FinanceExpenses({
   let rows: Array<ExpenseRow> = [];
   let count = 0;
   let categories: Array<Category> = [];
+  let totals: {
+    count: number;
+    convertedAud: number;
+    totalsByCurrency: Array<{ currency: string; amount: number; entry_count: number }>;
+  } | null = null;
   const category = query.category ?? '';
   const search = query.q?.trim() ?? '';
   if (search.length > 100) return notFound();
@@ -119,6 +133,15 @@ export default async function FinanceExpenses({
     if (result.error) throw new Error('Could not load expense ledger');
     rows = result.data ?? [];
     count = result.count ?? 0;
+    const totalResult = await (context.admin as any).rpc('finance_expense_filtered_totals', {
+      target_month: month ? `${month}-01` : null,
+      target_payment_source:
+        tab === 'personal_card' || tab === 'company_card' ? tab : null,
+      target_category: category || null,
+      vendor_search: search || null,
+    });
+    if (totalResult.error) throw new Error('Could not load filtered expense totals');
+    totals = totalResult.data;
   }
   const params = new URLSearchParams({ tab });
   if (month) params.set('month', month);
@@ -167,17 +190,6 @@ export default async function FinanceExpenses({
           </Link>
         </div>
       </header>
-      <nav aria-label="Finance pages" className="flex flex-wrap gap-2 text-sm">
-        <Link href="/finance" className="rounded-md border bg-card px-3 py-2">
-          Overview
-        </Link>
-        <Link href="/finance/staff-payments" className="rounded-md border bg-card px-3 py-2">
-          Staff Payments
-        </Link>
-        <Link href="/finance/reports" className="rounded-md border bg-card px-3 py-2">
-          Reports
-        </Link>
-      </nav>
       <section className="rounded-xl border bg-card px-4 pb-3 pt-1">
         <nav aria-label="Expense views" className="flex flex-wrap gap-1 border-b">
           {tabs.map(([key, name]) => (
@@ -202,13 +214,7 @@ export default async function FinanceExpenses({
       {tab === 'review' ? (
         <>
           {context.capabilities.role === 'super_admin' ? <FinanceApproverSettings /> : null}
-          <FinanceApprovalQueue />
-          <section
-            aria-label="Reconciliation workbench"
-            className="[&>div]:!max-h-none [&>div]:!bg-transparent [&>div]:!p-0 [&>div>div:first-child]:hidden"
-          >
-            <AdminExpensesDashboard />
-          </section>
+          <FinanceUnifiedReviewQueue />
         </>
       ) : tab === 'subscriptions' ? (
         <FinanceCatalogPanel
@@ -271,6 +277,17 @@ export default async function FinanceExpenses({
             aria-label="Expense ledger"
             className="overflow-x-auto rounded-xl border bg-card"
           >
+            {totals ? (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b bg-muted/30 px-4 py-3 text-sm">
+                <strong>{totals.count} expenses</strong>
+                {totals.totalsByCurrency.map((item) => (
+                  <span key={item.currency}>{money(Number(item.amount), item.currency)}</span>
+                ))}
+                <span className="text-muted-foreground">
+                  {money(Number(totals.convertedAud), 'AUD')} converted total
+                </span>
+              </div>
+            ) : null}
             <table className="w-full min-w-[940px] text-left text-sm">
               <thead className="border-b bg-[#fafbf9] text-xs uppercase tracking-wide text-[#838c8e]">
                 <tr>
@@ -284,6 +301,7 @@ export default async function FinanceExpenses({
                     'Payment',
                     'Match',
                     'Receipt',
+                    'Actions',
                   ].map((title) => (
                     <th key={title} scope="col" className="p-3 font-semibold">
                       {title}
@@ -294,7 +312,7 @@ export default async function FinanceExpenses({
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.id} className="border-b last:border-0">
-                    <td className="whitespace-nowrap p-3 tabular-nums">{row.transaction_date}</td>
+                    <td className="whitespace-nowrap p-3 tabular-nums">{formatFinanceDate(row.transaction_date)}</td>
                     <td className="p-3">
                       <span className="font-medium">{row.vendor_name}</span>
                       {row.source_system === 'ai_spending' ? (
@@ -323,15 +341,18 @@ export default async function FinanceExpenses({
                       ) : null}
                     </td>
                     <td className="p-3">
-                      <span className={badge}>{label(row.approval_state)}</span>
+                      <span className={statusBadge(row.approval_state)}>{label(row.approval_state)}</span>
                     </td>
                     <td className="p-3">
-                      <span className={badge}>{label(row.payment_status)}</span>
+                      <span className={statusBadge(row.payment_status)}>{label(row.payment_status)}</span>
                     </td>
                     <td className="p-3">
-                      <span className={badge}>{label(row.match_status)}</span>
+                      <span className={statusBadge(row.match_status)}>{row.match_status === 'variance_flagged' ? 'Amount differs' : label(row.match_status)}</span>
                     </td>
                     <td className="p-3">{row.receipt_document_id ? 'Attached' : 'Awaiting'}</td>
+                    <td className="p-3">
+                      <FinanceExpenseCorrection id={row.id} paymentSource={row.payment_source} paymentStatus={row.payment_status} />
+                    </td>
                   </tr>
                 ))}
               </tbody>

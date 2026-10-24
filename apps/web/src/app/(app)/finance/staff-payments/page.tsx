@@ -56,17 +56,6 @@ export default async function StaffPaymentsPage() {
           My invoices
         </Link>
       </header>
-      <nav aria-label="Finance pages" className="flex flex-wrap gap-2 text-sm">
-        <Link href="/finance" className="rounded-md border bg-card px-3 py-2">
-          Overview
-        </Link>
-        <Link href="/finance/expenses" className="rounded-md border bg-card px-3 py-2">
-          Expenses
-        </Link>
-        <Link href="/finance/reports" className="rounded-md border bg-card px-3 py-2">
-          Reports
-        </Link>
-      </nav>
       {leadership ? (
         <>
           <section aria-label="Invoice status" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

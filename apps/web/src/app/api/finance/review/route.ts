@@ -14,7 +14,16 @@ export async function GET() {
     .neq('match_status', 'variance_flagged').neq('match_status', 'resolved')
     .order('transaction_date', { ascending: false }).limit(200);
   if (error) return NextResponse.json({ error: 'Could not load approval queue' }, { status: 500 });
-  return NextResponse.json({ data: (data ?? []).filter((row: { id: string; matched_entry_id: string | null; source_type: string }) => !row.matched_entry_id || row.source_type === 'staff_request') });
+  return NextResponse.json({
+    data: (data ?? [])
+      .filter((row: { id: string; matched_entry_id: string | null; source_type: string }) =>
+        !row.matched_entry_id || row.source_type === 'staff_request'
+      )
+      .map((row: { submitted_by: string }) => ({
+        ...row,
+        can_decide: row.submitted_by !== context.user.id,
+      })),
+  });
 }
 
 export async function POST(request: NextRequest) {

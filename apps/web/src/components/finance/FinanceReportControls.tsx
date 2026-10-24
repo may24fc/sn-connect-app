@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 type Snapshot = { id: string; status: string; exception_count: number; created_at: string };
+type SnapshotView = Snapshot & { report_month: string; report_data: Record<string, unknown> };
 type ReportData = {
   report: {
     anomalies: Array<unknown>;
@@ -22,6 +23,7 @@ export function FinanceReportControls({ month }: { month: string }) {
   const [data, setData] = useState<ReportData | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [selectedSnapshot, setSelectedSnapshot] = useState<SnapshotView | null>(null);
   const load = useCallback(async () => {
     try {
       const response = await fetch(`/api/finance/reports?month=${month}`, { cache: 'no-store' });
@@ -49,6 +51,22 @@ export function FinanceReportControls({ month }: { month: string }) {
       else setError(result.error ?? 'Could not save report');
     } catch {
       setError('Could not save report. Try again.');
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function viewSnapshot(id: string) {
+    setBusy(true);
+    setError('');
+    try {
+      const response = await fetch(`/api/finance/reports?month=${month}&snapshot=${id}`, {
+        cache: 'no-store',
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? 'Could not load saved snapshot');
+      setSelectedSnapshot(body.data as SnapshotView);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not load saved snapshot');
     } finally {
       setBusy(false);
     }
@@ -163,14 +181,14 @@ export function FinanceReportControls({ month }: { month: string }) {
               <li key={item.id} className="rounded-lg border p-2">
                 {item.status === 'final' ? 'Final' : 'Draft'} ·{' '}
                 {new Date(item.created_at).toLocaleString()} · {item.exception_count} exceptions ·{' '}
-                <a
+                <button
+                  type="button"
+                  disabled={busy}
                   className="font-medium text-[#16505f] underline"
-                  href={`/api/finance/reports?month=${month}&snapshot=${item.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  onClick={() => void viewSnapshot(item.id)}
                 >
                   View saved snapshot
-                </a>
+                </button>
                 {' · '}
                 <a
                   className="font-medium text-[#16505f] underline"
@@ -185,6 +203,36 @@ export function FinanceReportControls({ month }: { month: string }) {
           <p className="text-muted-foreground">No snapshots for this month.</p>
         )}
       </div>
+      {selectedSnapshot ? (
+        <section className="rounded-lg border bg-muted/30 p-4 text-sm" aria-label="Saved snapshot details">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="font-semibold">Saved {selectedSnapshot.status} snapshot</h3>
+              <p className="text-xs text-muted-foreground">
+                {selectedSnapshot.report_month} · {new Date(selectedSnapshot.created_at).toLocaleString()} ·{' '}
+                {selectedSnapshot.exception_count} exceptions
+              </p>
+            </div>
+            <button type="button" className="rounded border px-2 py-1" onClick={() => setSelectedSnapshot(null)}>
+              Close
+            </button>
+          </div>
+          <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {Object.entries(selectedSnapshot.report_data)
+              .filter(([, value]) => typeof value === 'number' || typeof value === 'string')
+              .slice(0, 12)
+              .map(([key, value]) => (
+                <div key={key} className="rounded border bg-card p-3">
+                  <dt className="text-xs text-muted-foreground">{key.replaceAll('_', ' ')}</dt>
+                  <dd className="mt-1 font-semibold">{String(value)}</dd>
+                </div>
+              ))}
+          </dl>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Use the CSV download for the complete retained detail.
+          </p>
+        </section>
+      ) : null}
       <p className="rounded-lg bg-[#e6f0f1] p-3 text-xs text-[#0f3f4b]">
         A draft may record open exceptions. Final snapshots are paused until Finance confirms the
         complete blocking policy. Export a saved snapshot above for a retained CSV; the PDF is a

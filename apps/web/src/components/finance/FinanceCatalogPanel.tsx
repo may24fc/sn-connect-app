@@ -1,6 +1,7 @@
 'use client';
 
 import { subscriptionChecks } from '@/lib/finance/subscription-checks';
+import { formatFinanceDate } from '@/lib/format';
 import { useCallback, useEffect, useState } from 'react';
 
 type Category = { code: string; name: string; example: string };
@@ -11,6 +12,8 @@ type Subscription = {
   category_code: string;
   payment_source: string;
   monthly_amount_aud: number | null;
+  billing_amount: number | null;
+  billing_currency: string;
   seats: number | null;
   last_charged: string | null;
   next_renewal: string | null;
@@ -31,6 +34,7 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
   const [showBudgetControls, setShowBudgetControls] = useState(false);
   const [vendor, setVendor] = useState('');
   const [amount, setAmount] = useState('');
+  const [currency, setCurrency] = useState('AUD');
   const [seats, setSeats] = useState('');
   const [nextRenewal, setNextRenewal] = useState('');
   const [category, setCategory] = useState('software');
@@ -93,7 +97,7 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
     }
     setSaving(true);
     setError('');
-    const monthlyAmountAud = amount.trim() ? Number(amount) : null;
+    const billingAmount = amount.trim() ? Number(amount) : null;
     const response = await fetch('/api/finance/catalog', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -102,7 +106,8 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
         vendorName: vendor,
         categoryCode: category,
         paymentSource: source,
-        monthlyAmountAud,
+        billingAmount,
+        billingCurrency: currency,
         seats: seats.trim() ? Number(seats) : null,
         nextRenewal: nextRenewal || null,
         notes: null,
@@ -112,6 +117,7 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
     if (response.ok) {
       setVendor('');
       setAmount('');
+      setCurrency('AUD');
       setSeats('');
       setNextRenewal('');
       void load();
@@ -172,8 +178,8 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
                   'Category',
                   'Paid with',
                   'Seats',
-                  'Monthly',
-                  'Yearly',
+                  'Monthly billing',
+                  'Annualized AUD',
                   'Last charged',
                   'Next renewal',
                   'Check',
@@ -199,9 +205,12 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
                     {item.seats === null ? 'Not recorded' : item.seats}
                   </td>
                   <td className="border-b p-3 tabular-nums">
-                    {item.monthly_amount_aud === null
+                    {item.billing_amount === null
                       ? 'Unknown'
-                      : money(Number(item.monthly_amount_aud))}
+                      : new Intl.NumberFormat('en-AU', {
+                          style: 'currency',
+                          currency: item.billing_currency,
+                        }).format(Number(item.billing_amount))}
                   </td>
                   <td className="border-b p-3 tabular-nums">
                     {item.monthly_amount_aud === null
@@ -209,7 +218,7 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
                       : money(Number(item.monthly_amount_aud) * 12)}
                   </td>
                   <td className="border-b p-3">{item.last_charged ?? 'No linked charge'}</td>
-                  <td className="border-b p-3">{item.next_renewal ?? 'Not set'}</td>
+                  <td className="border-b p-3">{item.next_renewal ? formatFinanceDate(item.next_renewal) : 'Not set'}</td>
                   <td className="border-b p-3">
                     <span
                       className={`rounded-full px-2 py-1 text-xs font-semibold ${item.active ? 'bg-[#e5f4ea] text-[#0f8a3c]' : 'bg-muted text-muted-foreground'}`}
@@ -275,7 +284,7 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
             </select>
           </label>
           <label>
-            Monthly AUD
+            Monthly amount
             <input
               type="number"
               min="0"
@@ -284,6 +293,18 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
               onChange={(event) => setAmount(event.target.value)}
               className="ml-2 w-28 rounded border p-2"
             />
+          </label>
+          <label>
+            Currency
+            <select
+              value={currency}
+              onChange={(event) => setCurrency(event.target.value)}
+              className="ml-2 rounded border p-2"
+            >
+              {['AUD', 'USD', 'PHP', 'EUR', 'GBP', 'SGD', 'JPY'].map((code) => (
+                <option value={code} key={code}>{code}</option>
+              ))}
+            </select>
           </label>
           <label>
             Seats

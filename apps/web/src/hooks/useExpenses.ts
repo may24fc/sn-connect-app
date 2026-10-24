@@ -234,6 +234,11 @@ export function useQueueExpenseIngestion() {
       businessJustification?: string | undefined;
       categoryCode?: string;
       paymentSource?: string;
+      metadataByFile?: Record<string, {
+        businessJustification: string;
+        categoryCode: string;
+        paymentSource: string;
+      }>;
       concurrency?: number | undefined;
     }): Promise<{
       summary: { total: number; queued: number; failed: number };
@@ -263,14 +268,19 @@ export function useQueueExpenseIngestion() {
           }
 
           const file: File = maybeFile;
+          const fileKey = `${file.name}:${file.size}:${file.lastModified}`;
+          const metadata = params.metadataByFile?.[fileKey];
           const formData = new FormData();
           formData.append('file', file);
 
-          if (params.businessJustification?.trim()) {
-            formData.append('businessJustification', params.businessJustification.trim());
+          const purpose = metadata?.businessJustification ?? params.businessJustification;
+          if (purpose?.trim()) {
+            formData.append('businessJustification', purpose.trim());
           }
-          if (params.categoryCode) formData.append('categoryCode', params.categoryCode);
-          if (params.paymentSource) formData.append('paymentSource', params.paymentSource);
+          const categoryCode = metadata?.categoryCode ?? params.categoryCode;
+          const paymentSource = metadata?.paymentSource ?? params.paymentSource;
+          if (categoryCode) formData.append('categoryCode', categoryCode);
+          if (paymentSource) formData.append('paymentSource', paymentSource);
 
           try {
             const response = await fetch('/api/expenses/ingest', {

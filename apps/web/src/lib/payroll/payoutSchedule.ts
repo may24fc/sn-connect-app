@@ -134,7 +134,7 @@ export function getPayoutScheduleOptions(referenceDate: Date = new Date()): Payo
   const firstDisabled = nowUtcMs > getPayoutCutoffUtcMs(payouts.firstPayout);
   const secondDisabled = nowUtcMs > getPayoutCutoffUtcMs(payouts.secondPayout);
 
-  return [
+  const options: PayoutScheduleOption[] = [
     {
       key: `${monthKey}:1`,
       monthKey,
@@ -150,6 +150,21 @@ export function getPayoutScheduleOptions(referenceDate: Date = new Date()): Payo
       disabled: secondDisabled,
     },
   ];
+
+  if (firstDisabled && secondDisabled) {
+    const nextMonth = addMonths(currentMonth, 1);
+    const nextPayouts = getMonthPayoutDates(nextMonth);
+    const nextMonthKey = toMonthKey(nextMonth);
+    options.push({
+      key: `${nextMonthKey}:1`,
+      monthKey: nextMonthKey,
+      sequence: 1,
+      label: `${toMonthLabel(nextMonth)} - 1st Payout (${toShortDateLabel(nextPayouts.firstPayout)})`,
+      disabled: false,
+    });
+  }
+
+  return options;
 }
 
 export function buildPayoutScheduleTag(monthKey: string, sequence: PayoutSequence): string {

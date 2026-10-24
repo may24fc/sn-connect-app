@@ -17,6 +17,7 @@ const categoryCode = z.enum([
   'other',
 ]);
 const paymentSource = z.enum(['unknown', 'personal_card', 'company_card', 'bank_transfer']);
+const billingCurrency = z.enum(['AUD', 'USD', 'PHP', 'EUR', 'GBP', 'SGD', 'JPY']);
 const monthPattern = /^\d{4}-(0[1-9]|1[0-2])-01$/;
 const CATALOG_PAGE_SIZE = 1000;
 const CATALOG_MAX_ROWS = 10000;
@@ -63,7 +64,8 @@ const mutation = z.discriminatedUnion('kind', [
     vendorName: z.string().trim().min(1).max(255),
     categoryCode,
     paymentSource,
-    monthlyAmountAud: z.number().nonnegative().max(1e10).nullable(),
+    billingAmount: z.number().nonnegative().max(1e10).nullable(),
+    billingCurrency,
     seats: z.number().int().nonnegative().nullable(),
     nextRenewal: z.string().date().nullable(),
     notes: z.string().max(2000).nullable(),
@@ -166,7 +168,10 @@ export async function POST(request: NextRequest) {
       vendor_name: parsed.data.vendorName,
       category_code: parsed.data.categoryCode,
       payment_source: parsed.data.paymentSource,
-      monthly_amount_aud: parsed.data.monthlyAmountAud,
+      billing_amount: parsed.data.billingAmount,
+      billing_currency: parsed.data.billingCurrency,
+      monthly_amount_aud:
+        parsed.data.billingCurrency === 'AUD' ? parsed.data.billingAmount : null,
       seats: parsed.data.seats,
       next_renewal: parsed.data.nextRenewal,
       notes: parsed.data.notes,

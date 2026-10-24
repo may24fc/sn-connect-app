@@ -37,7 +37,7 @@ export const expenseLogRequestSchema = z.object({
   totalAmount: z.number().positive('Total amount must be greater than 0'),
   taxAmount: z.number().nonnegative().optional().nullable(),
   currency: z.enum(SUPPORTED_CURRENCIES),
-  businessJustification: z.string().max(2000).optional().nullable(),
+  businessJustification: z.string().trim().min(1, 'Business purpose is required').max(2000),
 });
 
 export type ExpenseLogRequestInput = z.infer<typeof expenseLogRequestSchema>;
@@ -48,7 +48,6 @@ export type ExpenseLogRequestInput = z.infer<typeof expenseLogRequestSchema>;
  */
 export const expenseMatchSchema = z.object({
   counterpartEntryId: z.string().uuid('A counterpart entry must be selected'),
-  matchStatus: z.enum(['matched', 'variance_flagged', 'resolved']),
   matchedNotes: z.string().max(2000).optional().nullable(),
 });
 

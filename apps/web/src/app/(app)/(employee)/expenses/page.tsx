@@ -54,8 +54,12 @@ export default function EmployeeExpensesPage() {
   const { user } = useAuth();
   const { addToast } = useToast();
   const { capabilities } = useExpensesAccess();
-  const [justification, setBusinessJustification] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploadMetadata, setUploadMetadata] = useState<Record<string, {
+    businessJustification: string;
+    categoryCode: FinanceCategoryCode;
+    paymentSource: string;
+  }>>({});
   const [uploadOpen, setUploadOpen] = useState(false);
   const [logRequestOpen, setLogRequestOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -65,8 +69,6 @@ export default function EmployeeExpensesPage() {
   const [requestVendor, setRequestVendor] = useState('');
   const [requestDate, setRequestDate] = useState('');
   const [requestCategory, setRequestCategory] = useState<FinanceCategoryCode>('software');
-  const [uploadCategory, setUploadCategory] = useState<FinanceCategoryCode>('software');
-  const [uploadPaymentSource, setUploadPaymentSource] = useState('unknown');
   const [requestCurrency, setRequestCurrency] = useState<(typeof CURRENCIES)[number]>('AUD');
   const [requestTotalAmount, setRequestTotalAmount] = useState('');
   const [requestTaxAmount, setRequestTaxAmount] = useState('');
@@ -104,6 +106,14 @@ export default function EmployeeExpensesPage() {
   }, [hasQueuedExpense, refetch]);
 
   const handleFileSelect = (files: File[]) => {
+    setUploadMetadata((current) => {
+      const next = { ...current };
+      for (const file of files) {
+        const key = `${file.name}:${file.size}:${file.lastModified}`;
+        next[key] ??= { businessJustification: '', categoryCode: 'software', paymentSource: 'unknown' };
+      }
+      return next;
+    });
     setSelectedFiles((currentFiles) => {
       const mergedFiles = [...currentFiles];
 
@@ -126,7 +136,18 @@ export default function EmployeeExpensesPage() {
   };
 
   const handleRemoveFile = (index: number) => {
-    setSelectedFiles((prev) => prev.filter((_, fileIndex) => fileIndex !== index));
+    setSelectedFiles((prev) => {
+      const removed = prev[index];
+      if (removed) {
+        const key = `${removed.name}:${removed.size}:${removed.lastModified}`;
+        setUploadMetadata((current) => {
+          const next = { ...current };
+          delete next[key];
+          return next;
+        });
+      }
+      return prev.filter((_, fileIndex) => fileIndex !== index);
+    });
   };
 
   const handleUploadSubmit = async () => {
@@ -134,6 +155,19 @@ export default function EmployeeExpensesPage() {
       addToast({
         title: 'File Required',
         description: 'Please drag or select at least one receipt file to continue.',
+        variant: 'error',
+      });
+      return;
+    }
+
+    const missingPurpose = selectedFiles.find((file) => {
+      const key = `${file.name}:${file.size}:${file.lastModified}`;
+      return !uploadMetadata[key]?.businessJustification.trim();
+    });
+    if (missingPurpose) {
+      addToast({
+        title: 'Business Purpose Required',
+        description: `Enter the business purpose for ${missingPurpose.name}.`,
         variant: 'error',
       });
       return;
@@ -182,9 +216,7 @@ export default function EmployeeExpensesPage() {
     uploadMutation.mutate(
       {
         files: validatedFiles,
-        businessJustification: justification || undefined,
-        categoryCode: uploadCategory,
-        paymentSource: uploadPaymentSource,
+        metadataByFile: uploadMetadata,
         concurrency: 3,
       },
       {
@@ -197,9 +229,7 @@ export default function EmployeeExpensesPage() {
 
           setUploadOpen(false);
           setSelectedFiles([]);
-          setBusinessJustification('');
-          setUploadCategory('software');
-          setUploadPaymentSource('unknown');
+          setUploadMetadata({});
         },
         onError: (err: unknown) => {
           const message = err instanceof Error ? err.message : 'Failed to queue receipt ingestion.';
@@ -237,6 +267,10 @@ export default function EmployeeExpensesPage() {
       addToast({ title: 'Validation Error', description: 'Transaction date is required.', variant: 'error' });
       return;
     }
+    if (!requestJustification.trim()) {
+      addToast({ title: 'Validation Error', description: 'Business purpose is required.', variant: 'error' });
+      return;
+    }
 
     const amount = Number.parseFloat(requestTotalAmount);
     if (!Number.isFinite(amount) || amount <= 0) {
@@ -255,7 +289,7 @@ export default function EmployeeExpensesPage() {
         totalAmount: amount,
         taxAmount: Number.isFinite(tax) ? tax : 0,
         currency: requestCurrency,
-        businessJustification: requestJustification || undefined,
+        businessJustification: requestJustification.trim(),
       },
       {
         onSuccess: () => {
@@ -446,10 +480,11 @@ export default function EmployeeExpensesPage() {
                   </div>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="request-justification">Notes (optional)</Label>
+                  <Label htmlFor="request-justification">Business purpose</Label>
                   <Textarea
                     id="request-justification"
                     maxLength={2000}
+                    required
                     value={requestJustification}
                     onChange={(e) => setRequestJustification(e.target.value)}
                     placeholder="What is this spend for?"
@@ -524,43 +559,32 @@ export default function EmployeeExpensesPage() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label>Category</Label>
-                      <Select value={uploadCategory} onValueChange={(value) => setUploadCategory(value as FinanceCategoryCode)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {FINANCE_CATEGORIES.map((category) => (
-                            <SelectItem key={category.code} value={category.code}>{category.name} — {category.example}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Paid with</Label>
-                      <Select value={uploadPaymentSource} onValueChange={setUploadPaymentSource}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="unknown">To confirm</SelectItem>
-                          <SelectItem value="personal_card">Personal card</SelectItem>
-                          <SelectItem value="company_card">Company card</SelectItem>
-                          <SelectItem value="bank_transfer">Bank transfer</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="justification">Business Justification / Submitter Notes</Label>
-                    <Textarea
-                      id="justification"
-                      maxLength={2000}
-                      placeholder="e.g. Monthly cloud subscription renewal, or client meeting dinner details."
-                      value={justification}
-                      onChange={(e) => setBusinessJustification(e.target.value)}
-                      className="min-h-[80px]"
-                    />
-                  </div>
+                  {selectedFiles.map((file) => {
+                    const key = `${file.name}:${file.size}:${file.lastModified}`;
+                    const metadata = uploadMetadata[key] ?? { businessJustification: '', categoryCode: 'software' as FinanceCategoryCode, paymentSource: 'unknown' };
+                    const update = (next: Partial<typeof metadata>) =>
+                      setUploadMetadata((current) => ({ ...current, [key]: { ...metadata, ...next } }));
+                    return (
+                      <section key={key} className="grid gap-3 rounded-lg border p-3">
+                        <p className="truncate text-sm font-semibold">{file.name}</p>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <label className="grid gap-1 text-sm">Category
+                            <select className="rounded border bg-card p-2" value={metadata.categoryCode} onChange={(event) => update({ categoryCode: event.target.value as FinanceCategoryCode })}>
+                              {FINANCE_CATEGORIES.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}
+                            </select>
+                          </label>
+                          <label className="grid gap-1 text-sm">Paid with
+                            <select className="rounded border bg-card p-2" value={metadata.paymentSource} onChange={(event) => update({ paymentSource: event.target.value })}>
+                              <option value="unknown">To confirm</option><option value="personal_card">Personal card</option><option value="company_card">Company card</option><option value="bank_transfer">Bank transfer</option>
+                            </select>
+                          </label>
+                        </div>
+                        <label className="grid gap-1 text-sm">Business purpose
+                          <Textarea required maxLength={2000} value={metadata.businessJustification} onChange={(event) => update({ businessJustification: event.target.value })} placeholder="What is this receipt for?" className="min-h-[64px]" />
+                        </label>
+                      </section>
+                    );
+                  })}
                 </div>
               </div>
 

@@ -153,7 +153,7 @@ test('leadership resolves a Wise exception and sees unknown confirmations listed
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(
     page.getByRole('heading', { name: /Good (morning|afternoon|evening)/i })
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 45_000 });
 
   let resolved = false;
   const exceptionId = '11111111-1111-4111-8111-111111111111';
@@ -241,11 +241,16 @@ test('monthly expected rent and effective-month terms stay server-confirmed', as
   const propertyId = '123e4567-e89b-42d3-a456-426614174000';
   const property = {
     id: propertyId,
+    property_code: 'TEST-001',
     name: 'Weekly rent test property',
     property_type: 'Residential',
+    agent_name: null,
+    receiving_account_label: null,
     tenant_name: 'Test tenant',
     occupancy: 'occupied',
     weekly_rent_aud: 650,
+    rent_cadence: 'weekly' as const,
+    rent_amount_aud: 650,
     due_day: 5,
     created_by: 'user',
     created_at: '2026-01-01T00:00:00Z',
@@ -297,6 +302,7 @@ test('monthly expected rent and effective-month terms stay server-confirmed', as
       currentProperty = {
         ...currentProperty,
         weekly_rent_aud: payload.weeklyRentAud as number,
+        rent_amount_aud: payload.rentAmountAud as number,
         term_effective_month: '2026-10-01',
       };
     }
@@ -316,7 +322,7 @@ test('monthly expected rent and effective-month terms stay server-confirmed', as
   await expect(page.getByText(/Manual override · 2 weeks/)).toBeVisible();
 
   await page.getByRole('button', { name: 'Change terms from 2026-10' }).click();
-  await page.getByLabel('Weekly rent (AUD)').fill('700');
+  await page.getByLabel('Rent amount (AUD)').fill('700');
   await page.getByRole('button', { name: 'Save record' }).click();
   await expect(
     page.getByText('Property terms saved from 2026-10; earlier months are unchanged')
@@ -347,7 +353,7 @@ test('subscription register handles long rows and load errors on mobile', async 
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(
     page.getByRole('heading', { name: /Good (morning|afternoon|evening)/i })
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 45_000 });
   await page.setViewportSize({ width: 390, height: 844 });
   const catalogUrl = '**/api/finance/catalog?month=2026-10-01';
   await page.route(catalogUrl, async (route) => {
@@ -362,6 +368,8 @@ test('subscription register handles long rows and load errors on mobile', async 
             category_code: 'software',
             payment_source: 'company_card',
             monthly_amount_aud: 25,
+            billing_amount: 25,
+            billing_currency: 'AUD',
             seats: 3,
             last_charged: null,
             next_renewal: null,

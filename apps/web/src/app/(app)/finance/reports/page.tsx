@@ -3,7 +3,6 @@ import { FinanceDetailDisclosure } from '@/components/finance/FinanceDetailDiscl
 import { FinanceReportControls } from '@/components/finance/FinanceReportControls';
 import { canReviewFinance, getFinanceContext } from '@/lib/finance/auth';
 import { type FinanceOverviewData, summarizeFinanceOverview } from '@/lib/finance/overview';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
@@ -117,17 +116,6 @@ export default async function FinanceReportsPage({
           </button>
         </form>
       </header>
-      <nav aria-label="Finance pages" className="flex flex-wrap gap-2 text-sm">
-        <Link href="/finance" className="rounded-md border bg-card px-3 py-2">
-          Overview
-        </Link>
-        <Link href="/finance/expenses" className="rounded-md border bg-card px-3 py-2">
-          Expenses
-        </Link>
-        <Link href="/finance/staff-payments" className="rounded-md border bg-card px-3 py-2">
-          Staff Payments
-        </Link>
-      </nav>
       {view !== 'month' ? (
         <section className="rounded-xl border bg-card p-5" aria-label="Finance spend trend">
           <h2 className="font-semibold">

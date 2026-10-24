@@ -20,7 +20,7 @@ function sanitizeFileName(fileName: string): string {
 
 function parseExpenseUploadFormData(formData: FormData): {
   file: File;
-  businessJustification: string | null;
+  businessJustification: string;
   categoryCode: FinanceCategoryCode;
   paymentSource: 'unknown' | 'personal_card' | 'company_card' | 'bank_transfer';
 } {
@@ -44,7 +44,11 @@ function parseExpenseUploadFormData(formData: FormData): {
   const businessJustification =
     typeof businessJustificationRaw === 'string' && businessJustificationRaw.trim().length > 0
       ? businessJustificationRaw.trim()
-      : null;
+      : '';
+
+  if (!businessJustification) {
+    throw new Error('Business purpose is required');
+  }
 
   const categoryCode = FINANCE_CATEGORIES.some((category) => category.code === categoryRaw) ? categoryRaw as FinanceCategoryCode : 'other';
   const paymentSource = ['unknown','personal_card','company_card','bank_transfer'].includes(String(sourceRaw)) ? sourceRaw as 'unknown' | 'personal_card' | 'company_card' | 'bank_transfer' : 'unknown';

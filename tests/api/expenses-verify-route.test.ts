@@ -12,7 +12,7 @@ const requestId = '11111111-1111-1111-1111-111111111111';
 const paymentId = '22222222-2222-2222-2222-222222222222';
 const request = () => new Request(`http://localhost/api/expenses/${requestId}/verify`, {
   method: 'POST', headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ counterpartEntryId: paymentId, matchStatus: 'matched', matchedNotes: 'Invoice differs from receipt' }),
+  body: JSON.stringify({ counterpartEntryId: paymentId, matchedNotes: 'Invoice differs from receipt' }),
 }) as never;
 
 describe('expense matching API', () => {

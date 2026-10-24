@@ -1,10 +1,15 @@
 export type FinanceProperty = {
   id: string;
   name: string;
+  property_code: string;
   property_type: string;
+  agent_name: string | null;
+  receiving_account_label: string | null;
   tenant_name: string | null;
   occupancy: 'occupied' | 'vacant';
   weekly_rent_aud: number;
+  rent_cadence: 'weekly' | 'biweekly';
+  rent_amount_aud: number;
   due_day: number;
   created_by: string;
   created_at: string;
@@ -21,6 +26,8 @@ export type PropertyTerm = {
   tenant_name: string | null;
   occupancy: 'occupied' | 'vacant';
   weekly_rent_aud: number;
+  rent_cadence: 'weekly' | 'biweekly';
+  rent_amount_aud: number;
   due_day: number;
   changed_by: string;
   changed_at: string;
@@ -111,11 +118,18 @@ export function monthlyRent(weekly: number): number {
   return Math.round(((Number(weekly) * 52) / 12 + Number.EPSILON) * 100) / 100;
 }
 
+export function monthlyRentForCadence(amount: number, cadence: 'weekly' | 'biweekly'): number {
+  const periods = cadence === 'biweekly' ? 26 : 52;
+  return Math.round(((Number(amount) * periods) / 12 + Number.EPSILON) * 100) / 100;
+}
+
 export function propertySummary(register: PropertyRegister, month: string, today: string) {
   const rows = register.properties.map((property) => {
     const due =
       property.expected_rent_aud ??
-      (property.occupancy === 'occupied' ? monthlyRent(property.weekly_rent_aud) : 0);
+      (property.occupancy === 'occupied'
+        ? monthlyRentForCadence(property.rent_amount_aud, property.rent_cadence)
+        : 0);
     const received = register.payments
       .filter((payment) => payment.property_id === property.id && !payment.voided_at)
       .reduce((sum, payment) => sum + Number(payment.amount_aud), 0);

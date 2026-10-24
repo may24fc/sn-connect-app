@@ -1,6 +1,6 @@
 import { logActivity } from '@/lib/audit';
 import { canReviewFinance, getFinanceContext } from '@/lib/finance/auth';
-import { type PropertyClient, type PropertyRegister, monthlyRent } from '@/lib/finance/properties';
+import { type PropertyClient, type PropertyRegister, monthlyRentForCadence } from '@/lib/finance/properties';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -8,11 +8,16 @@ const monthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
 const entrySchema = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('property'),
+    propertyCode: z.string().trim().min(1).max(40).regex(/^[A-Za-z0-9_-]+$/),
     name: z.string().trim().min(1).max(180),
     propertyType: z.string().trim().min(1).max(100),
+    agentName: z.string().trim().max(180).nullable(),
+    receivingAccountLabel: z.string().trim().max(180).nullable(),
     tenantName: z.string().trim().max(180).nullable(),
     occupancy: z.enum(['occupied', 'vacant']),
     weeklyRentAud: z.number().nonnegative().max(1e9).multipleOf(0.01),
+    rentCadence: z.enum(['weekly', 'biweekly']),
+    rentAmountAud: z.number().nonnegative().max(1e9).multipleOf(0.01),
     dueDay: z.number().int().min(1).max(28),
   }),
   z.object({
@@ -40,6 +45,8 @@ const entrySchema = z.discriminatedUnion('kind', [
     tenantName: z.string().trim().max(180).nullable(),
     occupancy: z.enum(['occupied', 'vacant']),
     weeklyRentAud: z.number().nonnegative().max(1e9).multipleOf(0.01),
+    rentCadence: z.enum(['weekly', 'biweekly']),
+    rentAmountAud: z.number().nonnegative().max(1e9).multipleOf(0.01),
     dueDay: z.number().int().min(1).max(28),
   }),
   z.object({
@@ -171,7 +178,12 @@ export async function GET(request: NextRequest) {
     if (!term && !existedBySelectedMonth) return [];
     const effective = term ?? property;
     const defaultExpected =
-      effective.occupancy === 'occupied' ? monthlyRent(Number(effective.weekly_rent_aud)) : 0;
+      effective.occupancy === 'occupied'
+        ? monthlyRentForCadence(
+            Number(effective.rent_amount_aud ?? effective.weekly_rent_aud),
+            effective.rent_cadence ?? 'weekly'
+          )
+        : 0;
     const expected = expectedByProperty.get(property.id);
     return [
       {
@@ -179,6 +191,8 @@ export async function GET(request: NextRequest) {
         tenant_name: effective.tenant_name,
         occupancy: effective.occupancy,
         weekly_rent_aud: Number(effective.weekly_rent_aud),
+        rent_cadence: effective.rent_cadence ?? 'weekly',
+        rent_amount_aud: Number(effective.rent_amount_aud ?? effective.weekly_rent_aud),
         due_day: effective.due_day,
         term_effective_month: term?.effective_month ?? `${property.created_at.slice(0, 7)}-01`,
         default_expected_rent_aud: defaultExpected,
@@ -225,11 +239,16 @@ export async function POST(request: NextRequest) {
     const { data, error } = await db
       .from('finance_properties')
       .insert({
+        property_code: entry.propertyCode.toUpperCase(),
         name: entry.name,
         property_type: entry.propertyType,
+        agent_name: entry.agentName,
+        receiving_account_label: entry.receivingAccountLabel,
         tenant_name: entry.tenantName,
         occupancy: entry.occupancy,
         weekly_rent_aud: entry.weeklyRentAud,
+        rent_cadence: entry.rentCadence,
+        rent_amount_aud: entry.rentAmountAud,
         due_day: entry.dueDay,
         created_by: context.user.id,
       })
@@ -278,6 +297,8 @@ export async function POST(request: NextRequest) {
           tenant_name: entry.tenantName,
           occupancy: entry.occupancy,
           weekly_rent_aud: entry.weeklyRentAud,
+          rent_cadence: entry.rentCadence,
+          rent_amount_aud: entry.rentAmountAud,
           due_day: entry.dueDay,
           changed_by: context.user.id,
           changed_at: new Date().toISOString(),

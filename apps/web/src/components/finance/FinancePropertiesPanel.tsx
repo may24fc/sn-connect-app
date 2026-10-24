@@ -5,6 +5,7 @@ import {
   type PropertyRegister,
   propertySummary,
 } from '@/lib/finance/properties';
+import { formatFinanceDate } from '@/lib/format';
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 
 const money = (value: number) =>
@@ -17,6 +18,14 @@ type Correction =
 const empty: PropertyRegister = { properties: [], payments: [], maintenance: [], statusEvents: [] };
 const inputClass = 'w-full rounded-md border bg-card px-3 py-2 text-sm';
 const labelClass = 'grid gap-1 text-sm font-medium';
+const propertyStatusClass = (status: string) =>
+  status === 'Paid'
+    ? 'bg-emerald-100 text-emerald-800'
+    : status === 'Overdue'
+      ? 'bg-red-100 text-red-800'
+      : status === 'Due' || status === 'Partially paid'
+        ? 'bg-amber-100 text-amber-900'
+        : 'bg-slate-100 text-slate-700';
 
 export function FinancePropertiesPanel({ month }: { month: string }) {
   const [register, setRegister] = useState<PropertyRegister>(empty);
@@ -74,11 +83,19 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
       formKind === 'property'
         ? {
             kind: 'property',
+            propertyCode: text('propertyCode'),
             name: text('name'),
             propertyType: text('propertyType'),
+            agentName: optional('agentName'),
+            receivingAccountLabel: optional('receivingAccountLabel'),
             tenantName: optional('tenantName'),
             occupancy: text('occupancy'),
-            weeklyRentAud: Number(text('weeklyRentAud')),
+            rentCadence: text('rentCadence'),
+            rentAmountAud: Number(text('rentAmountAud')),
+            weeklyRentAud:
+              text('rentCadence') === 'biweekly'
+                ? Number(text('rentAmountAud')) / 2
+                : Number(text('rentAmountAud')),
             dueDay: Number(text('dueDay')),
           }
         : formKind === 'rent'
@@ -108,7 +125,12 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                   effectiveMonth: month,
                   tenantName: optional('tenantName'),
                   occupancy: text('occupancy'),
-                  weeklyRentAud: Number(text('weeklyRentAud')),
+                  rentCadence: text('rentCadence'),
+                  rentAmountAud: Number(text('rentAmountAud')),
+                  weeklyRentAud:
+                    text('rentCadence') === 'biweekly'
+                      ? Number(text('rentAmountAud')) / 2
+                      : Number(text('rentAmountAud')),
                   dueDay: Number(text('dueDay')),
                 }
               : {
@@ -256,7 +278,13 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
       {formKind && (
         <section
           aria-label={`${formKind} entry`}
-          className="rounded-xl border bg-card p-5 shadow-sm"
+          role={formKind === 'terms' || formKind === 'expected_rent' ? 'dialog' : undefined}
+          aria-modal={formKind === 'terms' || formKind === 'expected_rent' ? true : undefined}
+          className={
+            formKind === 'terms' || formKind === 'expected_rent'
+              ? 'fixed inset-x-4 top-1/2 z-50 max-h-[calc(100vh-2rem)] -translate-y-1/2 overflow-y-auto rounded-xl border bg-card p-5 shadow-xl sm:left-1/2 sm:max-w-3xl sm:-translate-x-1/2'
+              : 'rounded-xl border bg-card p-5 shadow-sm'
+          }
         >
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">
@@ -286,6 +314,10 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
             {formKind === 'property' ? (
               <>
                 <label className={labelClass}>
+                  Property ID
+                  <input className={inputClass} name="propertyCode" required maxLength={40} placeholder="e.g. SYD-001" />
+                </label>
+                <label className={labelClass}>
                   Property name
                   <input className={inputClass} name="name" required maxLength={180} />
                 </label>
@@ -307,14 +339,29 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                   </select>
                 </label>
                 <label className={labelClass}>
+                  Agent (optional)
+                  <input className={inputClass} name="agentName" maxLength={180} />
+                </label>
+                <label className={labelClass}>
+                  Receiving account label (optional)
+                  <input className={inputClass} name="receivingAccountLabel" maxLength={180} placeholder="Account nickname only" />
+                </label>
+                <label className={labelClass}>
                   Tenant (optional)
                   <input className={inputClass} name="tenantName" maxLength={180} />
                 </label>
                 <label className={labelClass}>
-                  Weekly rent (AUD)
+                  Rent cadence
+                  <select className={inputClass} name="rentCadence" defaultValue="weekly">
+                    <option value="weekly">Weekly</option>
+                    <option value="biweekly">Every two weeks</option>
+                  </select>
+                </label>
+                <label className={labelClass}>
+                  Rent amount (AUD)
                   <input
                     className={inputClass}
-                    name="weeklyRentAud"
+                    name="rentAmountAud"
                     type="number"
                     min="0"
                     max="1000000000"
@@ -360,15 +407,22 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                   />
                 </label>
                 <label className={labelClass}>
-                  Weekly rent (AUD)
+                  Rent cadence
+                  <select className={inputClass} name="rentCadence" defaultValue={selectedProperty.rent_cadence}>
+                    <option value="weekly">Weekly</option>
+                    <option value="biweekly">Every two weeks</option>
+                  </select>
+                </label>
+                <label className={labelClass}>
+                  Rent amount (AUD)
                   <input
                     className={inputClass}
-                    name="weeklyRentAud"
+                    name="rentAmountAud"
                     type="number"
                     min="0"
                     max="1000000000"
                     step="0.01"
-                    defaultValue={selectedProperty.weekly_rent_aud}
+                    defaultValue={selectedProperty.rent_amount_aud}
                     required
                   />
                 </label>
@@ -625,19 +679,21 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                       <div>
                         <h2 className="font-semibold">{property.name}</h2>
                         <p className="text-sm text-muted-foreground">
-                          {property.property_type} ·{' '}
+                          {property.property_code} · {property.property_type} ·{' '}
                           {property.tenant_name ||
                             (property.occupancy === 'vacant' ? 'Vacant' : 'Tenant not recorded')}
                         </p>
                       </div>
-                      <span className="rounded-full bg-[#e9f1f2] px-3 py-1 text-xs font-semibold text-[#1f6a7c]">
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${propertyStatusClass(status)}`}>
                         {status}
                       </span>
                     </div>
                     <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
                       <div>
-                        <dt className="text-muted-foreground">Weekly rent</dt>
-                        <dd className="font-semibold">{money(Number(property.weekly_rent_aud))}</dd>
+                        <dt className="text-muted-foreground">
+                          {property.rent_cadence === 'biweekly' ? 'Every two weeks' : 'Weekly'} rent
+                        </dt>
+                        <dd className="font-semibold">{money(Number(property.rent_amount_aud))}</dd>
                       </div>
                       <div>
                         <dt className="text-muted-foreground">Expected rent</dt>
@@ -663,7 +719,7 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                       <div>
                         <dt className="text-muted-foreground">Rent due date</dt>
                         <dd className="font-semibold">
-                          {property.occupancy === 'vacant' ? '—' : dueDate}
+                          {property.occupancy === 'vacant' ? '—' : formatFinanceDate(dueDate)}
                         </dd>
                       </div>
                     </dl>
@@ -741,7 +797,7 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                             <td className="px-5 py-3 font-medium">{property.name}</td>
                             <td className="px-5 py-3">{property.tenant_name || '—'}</td>
                             <td className="px-5 py-3">
-                              {property.occupancy === 'vacant' ? '—' : dueDate}
+                              {property.occupancy === 'vacant' ? '—' : formatFinanceDate(dueDate)}
                             </td>
                             <td className="px-5 py-3">{money(due)}</td>
                             <td className="px-5 py-3">{money(received)}</td>
