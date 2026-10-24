@@ -211,7 +211,7 @@ Rules currently enforced:
 ## Local Development with Supabase
 
 1. Start the local stack: `pnpm supabase:start` (check with `pnpm supabase:status`)
-2. Apply migrations: `pnpm db:migrate`
+2. Apply migrations: `pnpm db:migrate:local` (never `pnpm db:migrate`, which pushes to the linked remote project)
 3. Regenerate types after schema changes: `pnpm db:generate`
 4. Set `NEXT_PUBLIC_ENABLE_MOCK_AUTH=false` and fill in the local Supabase URL and keys
 5. Create test users in the Supabase Auth dashboard

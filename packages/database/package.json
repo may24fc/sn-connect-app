@@ -20,6 +20,7 @@
     "clean": "rimraf dist .turbo",
     "generate": "supabase gen types typescript --local --workdir ../.. > src/database.types.ts",
     "migrate": "supabase db push --workdir ../..",
+    "migrate:local": "supabase migration up --local --workdir ../..",
     "seed": "tsx src/seed.ts"
   },
   "dependencies": {

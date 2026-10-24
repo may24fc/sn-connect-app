@@ -57,6 +57,7 @@
     "employees:backfill-department-names": "node scripts/backfill/backfill-employee-department-names.mjs",
     "employees:backfill-department-names:apply": "node scripts/backfill/backfill-employee-department-names.mjs --apply",
     "db:migrate": "pnpm --filter @hr-portal/database migrate",
+    "db:migrate:local": "pnpm --filter @hr-portal/database migrate:local",
     "db:seed": "pnpm --filter @hr-portal/database seed",
     "review:reset": "node scripts/review/reset-review-environment.mjs",
     "accounts:classification-report": "node scripts/accounts/report-account-classification.mjs",

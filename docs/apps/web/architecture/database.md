@@ -270,8 +270,9 @@ Examples:
 ### Running Migrations
 
 ```bash
-pnpm db:migrate    # Apply all pending migrations
-pnpm db:generate   # Regenerate TypeScript types
+pnpm db:migrate:local  # Apply pending migrations to the local Supabase stack
+pnpm db:generate       # Regenerate TypeScript types from the local stack
+pnpm db:migrate        # Push pending migrations to the LINKED remote project (production); explicit approval only
 ```
 
 ---

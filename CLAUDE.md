@@ -18,7 +18,8 @@ SN Connect is a pnpm + Turborepo monorepo for the Control Hub internal portal (`
 
 ## Environment Safety
 
-- Use local Supabase for development and migration validation.
+- Use local Supabase for development and migration validation: `pnpm db:migrate:local`.
+- `pnpm db:migrate` runs `supabase db push` against the linked remote project, which is production. Never use it for local work; run it only when the user explicitly approves a production migration. Check `supabase migration list --local` and `--linked` before any migration command.
 - Target production only when explicitly requested. Do not use staging unless explicitly asked to resume staging work.
 - Backfill scripts are dry-run by default. Never run an `:apply` command against production without explicit approval.
 - Before changing client mutation or cache behavior, read `docs/apps/web/architecture/optimistic-ui.md` and classify the mutation as optimistic or server-confirmed.
@@ -75,8 +76,9 @@ pnpm test
 pnpm test:e2e:local
 pnpm supabase:start
 pnpm supabase:status
-pnpm db:migrate
-pnpm db:generate
+pnpm db:migrate:local  # local stack only
+pnpm db:generate       # types from the local stack
+pnpm db:migrate        # PRODUCTION push via linked project; explicit approval only
 ```
 
 ## Known Risks
