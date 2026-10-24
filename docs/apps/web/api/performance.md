@@ -379,7 +379,7 @@ Body `{ "title": "1-120 characters" }`. Returns `{ data: conversation }`.
 
 ### DELETE /api/performance/insights/conversations/[id]
 
-Soft-deletes the conversation (its messages become invisible) and returns `204`.
+Soft-deletes the conversation (its messages become invisible) and returns `204`. A daily `pg_cron` job (`purge-deleted-performance-insights`, 03:15 UTC) permanently deletes conversations soft-deleted more than 30 days ago; their messages cascade.
 
 ---
 

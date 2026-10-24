@@ -201,6 +201,54 @@ END$$;
 
 RESET ROLE;
 
+-- 7. Purge (20261025000004): conversations deleted more than 30 days ago are
+--    removed with their messages; recent deletions and active rows remain.
+INSERT INTO public.performance_insight_conversations (id, user_id, evaluation_kind, period_key, deleted_at)
+VALUES
+  ('aaaaaaaa-0000-4000-8000-000000000031', :'admin_id', 'five_percent', '2026-09', now() - interval '31 days'),
+  ('aaaaaaaa-0000-4000-8000-000000000029', :'admin_id', 'five_percent', '2026-09', now() - interval '29 days'),
+  ('aaaaaaaa-0000-4000-8000-000000000000', :'admin_id', 'five_percent', '2026-09', NULL);
+INSERT INTO public.performance_insight_messages (conversation_id, user_id, role, content)
+VALUES ('aaaaaaaa-0000-4000-8000-000000000031', :'admin_id', 'user', 'old question');
+
+DO $$
+DECLARE
+  purged integer;
+BEGIN
+  purged := public.purge_deleted_performance_insight_conversations();
+  -- The earlier soft-deleted conversation (deleted just now) is also kept.
+  IF purged <> 1 THEN
+    RAISE EXCEPTION 'Expected 1 purged conversation, got %', purged;
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.performance_insight_conversations WHERE id = 'aaaaaaaa-0000-4000-8000-000000000031')
+     OR EXISTS (SELECT 1 FROM public.performance_insight_messages WHERE conversation_id = 'aaaaaaaa-0000-4000-8000-000000000031') THEN
+    RAISE EXCEPTION 'Expired conversation or its messages were not purged';
+  END IF;
+  IF (SELECT count(*) FROM public.performance_insight_conversations
+      WHERE id IN ('aaaaaaaa-0000-4000-8000-000000000029', 'aaaaaaaa-0000-4000-8000-000000000000')) <> 2 THEN
+    RAISE EXCEPTION 'Recent or active conversations were purged';
+  END IF;
+
+  BEGIN
+    PERFORM public.purge_deleted_performance_insight_conversations(interval '1 hour');
+    RAISE EXCEPTION 'A retention shorter than one day was accepted';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM <> 'Retention must be at least one day' THEN RAISE; END IF;
+  END;
+
+  IF has_function_privilege('authenticated', 'public.purge_deleted_performance_insight_conversations(interval)', 'EXECUTE')
+     OR has_function_privilege('anon', 'public.purge_deleted_performance_insight_conversations(interval)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'Signed-in or anonymous users can run the purge';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM cron.job
+    WHERE jobname = 'purge-deleted-performance-insights' AND schedule = '15 3 * * *'
+  ) THEN
+    RAISE EXCEPTION 'Daily purge job is not scheduled';
+  END IF;
+END$$;
+
 SELECT 'performance insights RLS checks passed' AS result;
 
 ROLLBACK;

@@ -351,11 +351,16 @@ test('renames optimistically and rolls back a failed delete', async ({ page }) =
   await expect(list.getByRole('button', { name: 'Family rank drops', exact: true })).toBeVisible();
   expect(state.conversations[0]?.title).toBe('Family rank drops');
 
-  page.once('dialog', (dialog) => void dialog.accept());
+  let confirmMessage = '';
+  page.once('dialog', (dialog) => {
+    confirmMessage = dialog.message();
+    void dialog.accept();
+  });
   await list.getByRole('button', { name: 'Actions for Family rank drops' }).click();
   await page.getByRole('menuitem', { name: 'Delete' }).click();
 
   await expect(page.getByText('Unable to delete')).toBeVisible();
+  expect(confirmMessage).toContain('permanently erased after 30 days');
   await expect(list.getByRole('button', { name: 'Family rank drops', exact: true })).toBeVisible();
 
   state.deleteStatus = 204;

@@ -122,7 +122,13 @@ export function ReflectionInsightsPanel({
   };
 
   const deleteConversation = (conversation: InsightConversation) => {
-    if (!window.confirm(`Delete "${conversation.title}"? This removes its saved answers.`)) return;
+    if (
+      !window.confirm(
+        `Delete "${conversation.title}"? It disappears now and its saved answers are permanently erased after 30 days.`
+      )
+    ) {
+      return;
+    }
     if (conversation.id === activeId) setActiveId(null);
     deleteMutation.mutate(
       { id: conversation.id },
