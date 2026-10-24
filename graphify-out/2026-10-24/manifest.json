@@ -72,9 +72,9 @@
     "semantic_hash": ""
   },
   "apps/web/next-env.d.ts": {
-    "mtime": 1792830370.9168622,
-    "seen": 1792830730.5883992,
-    "ast_hash": "7186a97a893460078d6a59ad66024291",
+    "mtime": 1792830955.1292036,
+    "seen": 1792834213.7116952,
+    "ast_hash": "90426577ad8f38459f3e566411c85589",
     "semantic_hash": ""
   },
   "apps/web/next.config.ts": {
@@ -84,10 +84,10 @@
     "semantic_hash": ""
   },
   "apps/web/package.json": {
-    "mtime": 1789557219.4119258,
-    "seen": 1789664611.828401,
-    "ast_hash": "bda4e957e9ba27654251219d06cad601",
-    "semantic_hash": "bda4e957e9ba27654251219d06cad601"
+    "mtime": 1792832284.3760102,
+    "seen": 1792834213.7117033,
+    "ast_hash": "398b16375769069c3dfd27382bb842aa",
+    "semantic_hash": ""
   },
   "apps/web/postcss.config.js": {
     "mtime": 1788257422.127921,
@@ -3174,8 +3174,8 @@
     "semantic_hash": "7a0dc3198c754c2a24e5a4a5466f950f"
   },
   "apps/web/src/lib/generated/application-update-summary.generated.ts": {
-    "mtime": 1792829907.3250544,
-    "seen": 1792830730.5901234,
+    "mtime": 1792833985.8231668,
+    "seen": 1792834213.7146983,
     "ast_hash": "7322821048c7b2c5f9f9ddca7c61261a",
     "semantic_hash": "7322821048c7b2c5f9f9ddca7c61261a"
   },
@@ -8364,9 +8364,9 @@
     "semantic_hash": "d0f375e8698c8f0d49b93ba48b89b473"
   },
   "docs/apps/web/api/performance.md": {
-    "mtime": 1792830609.6551907,
-    "seen": 1792830730.5923474,
-    "ast_hash": "860492f2c0d3a54a9d9aca31791836cd",
+    "mtime": 1792834023.28618,
+    "seen": 1792834213.7185738,
+    "ast_hash": "9c7909b5baff781e1844aac278372c35",
     "semantic_hash": ""
   },
   "docs/apps/web/api/probation.md": {
@@ -12846,9 +12846,9 @@
     "semantic_hash": ""
   },
   "docs/features/work-tracker/task-tracker.md": {
-    "mtime": 1792474077.2774048,
-    "seen": 1792580651.7779822,
-    "ast_hash": "2e78f142d3f0e2cf3effa654dd57334e",
+    "mtime": 1792833934.841964,
+    "seen": 1792834213.7191262,
+    "ast_hash": "a3e94a65c2620da9c679909c2eb4e57a",
     "semantic_hash": ""
   },
   "apps/web/src/lib/auth/password-reset-audit.ts": {
@@ -13734,9 +13734,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/lib/performance/insights/answer-stream.ts": {
-    "mtime": 1792829641.568341,
-    "seen": 1792830730.5901973,
-    "ast_hash": "b7caa4be29f519ac2b7da66bd643aa1e",
+    "mtime": 1792832483.3273365,
+    "seen": 1792834213.7148302,
+    "ast_hash": "143c3f9710e5decbac16f2cb219da944",
     "semantic_hash": ""
   },
   "apps/web/src/lib/performance/insights/config.ts": {
@@ -13758,9 +13758,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/lib/performance/insights/prompt.ts": {
-    "mtime": 1792829554.0218067,
-    "seen": 1792830730.590205,
-    "ast_hash": "c0c7c7fb19175b0fef734f77b4d624c3",
+    "mtime": 1792832483.3259468,
+    "seen": 1792834213.714855,
+    "ast_hash": "a5d2223006807ba892c0799c43e699fe",
     "semantic_hash": ""
   },
   "apps/web/src/lib/performance/insights/render.ts": {
@@ -13830,21 +13830,21 @@
     "semantic_hash": ""
   },
   "docs/features/performance-reflection-insights/optimization.md": {
-    "mtime": 1792830596.1790664,
-    "seen": 1792830730.5926645,
-    "ast_hash": "612f8edf4f109ec5600c63c3952fcb53",
+    "mtime": 1792834023.2821743,
+    "seen": 1792834213.7190835,
+    "ast_hash": "c77eaab03ccbf1d886a97cbf19fdfe52",
     "semantic_hash": ""
   },
   "docs/features/performance-reflection-insights/task-tracker.md": {
-    "mtime": 1792830564.7059212,
-    "seen": 1792830730.5926664,
-    "ast_hash": "a851b058d0da76b24200db22446f3910",
+    "mtime": 1792833999.617102,
+    "seen": 1792834213.719087,
+    "ast_hash": "ad9ac5ce97c937dfae3452571f64f5a4",
     "semantic_hash": ""
   },
   "apps/web/src/lib/performance/insights/pseudonymize.ts": {
-    "mtime": 1792829868.6103601,
-    "seen": 1792830730.590208,
-    "ast_hash": "7a0d4811616001e65cd7467c432d7b4d",
+    "mtime": 1792832426.2789986,
+    "seen": 1792834213.7148588,
+    "ast_hash": "2f74a33a32e17cae5dd1dcdd58e93cc5",
     "semantic_hash": ""
   },
   "supabase/migrations/20261025000002_fix_performance_evaluation_policy_roles.sql": {
@@ -13854,9 +13854,39 @@
     "semantic_hash": ""
   },
   "tests/lib/performance-insights-pseudonymize.test.ts": {
-    "mtime": 1792829868.595088,
-    "seen": 1792830730.5920634,
-    "ast_hash": "88afce5d4d8728d87646b29d63b2abb1",
+    "mtime": 1792833162.0897844,
+    "seen": 1792834213.7181668,
+    "ast_hash": "401bf6ad904d857f80dfe6630d6136a4",
+    "semantic_hash": ""
+  },
+  "apps/web/src/lib/performance/insights/mentions.ts": {
+    "mtime": 1792833190.1298778,
+    "seen": 1792834213.714847,
+    "ast_hash": "af953986f398096d3c9478516c45878c",
+    "semantic_hash": ""
+  },
+  "apps/web/src/lib/performance/insights/personal-details.ts": {
+    "mtime": 1792833190.112889,
+    "seen": 1792834213.7148514,
+    "ast_hash": "ab481f76d4693c69f176d2b38e3f4c8d",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261025000003_break_project_policy_recursion.sql": {
+    "mtime": 1792832026.8040884,
+    "seen": 1792834213.717684,
+    "ast_hash": "cd7b1b02ac37b0c245590c6513d3bc3c",
+    "semantic_hash": ""
+  },
+  "tests/lib/performance-insights-mentions.test.ts": {
+    "mtime": 1792833190.136873,
+    "seen": 1792834213.7181625,
+    "ast_hash": "c484407a59c0e09486978627b8ff52d5",
+    "semantic_hash": ""
+  },
+  "tests/sql/project-rls-recursion-local.sql": {
+    "mtime": 1792832077.6641986,
+    "seen": 1792834213.7182975,
+    "ast_hash": "8e762340a627c1dd9fc653bb9f33a11d",
     "semantic_hash": ""
   }
 }

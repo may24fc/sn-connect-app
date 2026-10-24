@@ -72,8 +72,8 @@
     "semantic_hash": ""
   },
   "apps/web/next-env.d.ts": {
-    "mtime": 1792830955.1292036,
-    "seen": 1792834213.7116952,
+    "mtime": 1792836745.6870792,
+    "seen": 1792841181.9846218,
     "ast_hash": "90426577ad8f38459f3e566411c85589",
     "semantic_hash": ""
   },
@@ -3174,8 +3174,8 @@
     "semantic_hash": "7a0dc3198c754c2a24e5a4a5466f950f"
   },
   "apps/web/src/lib/generated/application-update-summary.generated.ts": {
-    "mtime": 1792833985.8231668,
-    "seen": 1792834213.7146983,
+    "mtime": 1792840287.1275852,
+    "seen": 1792841181.9861941,
     "ast_hash": "7322821048c7b2c5f9f9ddca7c61261a",
     "semantic_hash": "7322821048c7b2c5f9f9ddca7c61261a"
   },
@@ -3612,8 +3612,8 @@
     "semantic_hash": ""
   },
   "apps/web/tsconfig.json": {
-    "mtime": 1792830488.4150608,
-    "seen": 1792830730.5903301,
+    "mtime": 1792836745.6887248,
+    "seen": 1792841181.986436,
     "ast_hash": "50bb13a4c04df0991b183898a12b32b4",
     "semantic_hash": ""
   },
@@ -8364,9 +8364,9 @@
     "semantic_hash": "d0f375e8698c8f0d49b93ba48b89b473"
   },
   "docs/apps/web/api/performance.md": {
-    "mtime": 1792834023.28618,
-    "seen": 1792834213.7185738,
-    "ast_hash": "9c7909b5baff781e1844aac278372c35",
+    "mtime": 1792839740.350853,
+    "seen": 1792841181.9898288,
+    "ast_hash": "7bbfe1cd474bfd03e2044a77f1d293ca",
     "semantic_hash": ""
   },
   "docs/apps/web/api/probation.md": {
@@ -13710,9 +13710,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/performance/insights/ReflectionInsightsPanel.tsx": {
-    "mtime": 1792827103.1492,
-    "seen": 1792828701.4772406,
-    "ast_hash": "011ad077efe755ede3a1e423a374e2fc",
+    "mtime": 1792835870.6672125,
+    "seen": 1792841181.9858391,
+    "ast_hash": "d5eb5306f7776bd59aaaba5059d0e8a2",
     "semantic_hash": ""
   },
   "apps/web/src/components/performance/insights/starterQuestions.ts": {
@@ -13788,9 +13788,9 @@
     "semantic_hash": ""
   },
   "e2e/performance-reflection-insights.spec.ts": {
-    "mtime": 1792828823.9864378,
-    "seen": 1792830730.5906298,
-    "ast_hash": "0aaa4979cf6ea0c6029b4989656ed299",
+    "mtime": 1792836567.58699,
+    "seen": 1792841181.986754,
+    "ast_hash": "a72fa19e1c4a9581008c25dcb2f03eea",
     "semantic_hash": ""
   },
   "supabase/migrations/20261025000001_create_performance_insight_conversations.sql": {
@@ -13824,9 +13824,9 @@
     "semantic_hash": ""
   },
   "tests/sql/performance-insights-rls-local.sql": {
-    "mtime": 1792829439.1045673,
-    "seen": 1792830730.5921547,
-    "ast_hash": "c5ff16ef96f74d9f3d3e83648bb1bd45",
+    "mtime": 1792835851.0759947,
+    "seen": 1792841181.989421,
+    "ast_hash": "814ef672e9f653e302c0d5043f25c055",
     "semantic_hash": ""
   },
   "docs/features/performance-reflection-insights/optimization.md": {
@@ -13836,9 +13836,9 @@
     "semantic_hash": ""
   },
   "docs/features/performance-reflection-insights/task-tracker.md": {
-    "mtime": 1792833999.617102,
-    "seen": 1792834213.719087,
-    "ast_hash": "ad9ac5ce97c937dfae3452571f64f5a4",
+    "mtime": 1792839874.3341799,
+    "seen": 1792841181.9902725,
+    "ast_hash": "cf645af90cb533da86e0134a69774ee7",
     "semantic_hash": ""
   },
   "apps/web/src/lib/performance/insights/pseudonymize.ts": {
@@ -13887,6 +13887,24 @@
     "mtime": 1792832077.6641986,
     "seen": 1792834213.7182975,
     "ast_hash": "8e762340a627c1dd9fc653bb9f33a11d",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261025000004_purge_deleted_performance_insights.sql": {
+    "mtime": 1792835822.5688899,
+    "seen": 1792841181.988187,
+    "ast_hash": "6a9b4e106ba5d9e2bb52906a50c0a510",
+    "semantic_hash": ""
+  },
+  "Notes - SN Control Hub (Testing).pdf": {
+    "mtime": 1792840570.5889754,
+    "seen": 1792841181.99045,
+    "ast_hash": "333aa00e7e74b88d104c10461dc26c89",
+    "semantic_hash": ""
+  },
+  "SN Control Hub - Finance Feedback.pdf": {
+    "mtime": 1792840564.426193,
+    "seen": 1792841181.990453,
+    "ast_hash": "217afdd305cd2743902586e1688b190e",
     "semantic_hash": ""
   }
 }
