@@ -446,6 +446,58 @@ test('legacy detail panels fetch only after expansion', async ({ page }) => {
   expect((await departmentResponse).status()).toBe(200);
 });
 
+test('invoice register shows readable, collapsed pay periods', async ({ page }, testInfo) => {
+  await page.goto('/login');
+  await page.getByLabel('Email').fill('admin@example.com');
+  await page.locator('#password').fill('password');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(
+    page.getByRole('heading', { name: /Good (morning|afternoon|evening)/i })
+  ).toBeVisible({ timeout: 45_000 });
+  const periods = [
+    ['2026-10-16', '2026-10-16'],
+    ['2026-10-01', '2026-10-15'],
+    ['2026-10-16', '2026-11-03'],
+    ['2026-12-28', '2027-01-03'],
+  ];
+  await page.route('**/api/invoices?page=1&pageSize=25', async (route) => {
+    await route.fulfill({
+      json: {
+        data: periods.map(([start, end], index) => ({
+          id: `invoice-${index}`,
+          employee_id: 'employee-1',
+          invoice_number: `INV-E2E-${index + 1}`,
+          period_start: start,
+          period_end: end,
+          net_amount: 1000,
+          source_currency: 'PHP',
+          status: 'submitted',
+          employees: { first_name: 'Test', last_name: 'Staff' },
+        })),
+        pagination: { total: periods.length, totalPages: 1 },
+      },
+    });
+  });
+  await page.goto('/finance/staff-payments');
+  const periodCells = page.locator('table tbody tr td:nth-child(3)');
+  await expect(periodCells).toHaveText([
+    '16 Oct 2026',
+    '1–15 Oct 2026',
+    /^16 Oct\s–\s3 Nov 2026$/,
+    /^28 Dec 2026\s–\s3 Jan 2027$/,
+  ]);
+  for (const viewport of [
+    { name: 'desktop', width: 1440, height: 900 },
+    { name: 'mobile', width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await periodCells.first().scrollIntoViewIfNeeded();
+    await page.screenshot({
+      path: testInfo.outputPath(`invoice-periods-${viewport.name}.png`),
+    });
+  }
+});
+
 test('Finance and Properties remain readable in dark mode', async ({ page }, testInfo) => {
   await page.goto('/login');
   await page.getByLabel('Email').fill('admin@example.com');

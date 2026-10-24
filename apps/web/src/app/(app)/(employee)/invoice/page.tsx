@@ -11,7 +11,7 @@ import {
   parsePayoutScheduleTag,
 } from '@/lib/payroll/payoutSchedule';
 import { useTableSort } from '@/hooks/useTableSort';
-import { formatDate, formatDateRange } from '@/lib/format';
+import { formatFinanceDate, formatFinanceDateRange } from '@/lib/format';
 import { queryKeys } from '@/lib/query-keys';
 import { cn } from '@/lib/utils';
 import {
@@ -193,7 +193,7 @@ function InvoiceDetailDialog({
             </span>
           </div>
           <p className="mt-3 text-xs text-zinc-500">
-            Period: {formatDateRange(invoice.period_start, invoice.period_end)}
+            Period: {formatFinanceDateRange(invoice.period_start, invoice.period_end)}
           </p>
         </div>
 
@@ -292,7 +292,7 @@ function InvoiceDetailDialog({
                       {step.label}
                     </p>
                     <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
-                      {step.date ? formatDate(step.date) : '\u2014'}
+                      {step.date ? formatFinanceDate(step.date) : '\u2014'}
                     </p>
                   </div>
                 </div>
@@ -395,7 +395,7 @@ function SubmitConfirmDialog({
           <Separator className="my-2" />
           <DetailRow
             label="Period"
-            value={formatDateRange(invoice.period_start, invoice.period_end)}
+            value={formatFinanceDateRange(invoice.period_start, invoice.period_end)}
           />
           <DetailRow
             label="Amount"

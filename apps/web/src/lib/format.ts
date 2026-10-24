@@ -107,6 +107,28 @@ export function formatFinanceDate(value: string | null | undefined): string {
 }
 
 /**
+ * Formats a Finance `YYYY-MM-DD` period, collapsing the parts both ends share:
+ * `16 Oct 2026`, `1–15 Oct 2026`, `16 Oct – 3 Nov 2026`, `28 Dec 2026 – 3 Jan 2027`.
+ */
+export function formatFinanceDateRange(
+  start: string | null | undefined,
+  end: string | null | undefined
+): string {
+  const isDateOnly = (value: string | null | undefined): value is string =>
+    !!value && /^\d{4}-\d{2}-\d{2}$/.test(value);
+  if (!start || !end) return '—';
+  if (!(isDateOnly(start) && isDateOnly(end)) || end < start) {
+    return `${formatFinanceDate(start)} – ${formatFinanceDate(end)}`;
+  }
+  return new Intl.DateTimeFormat('en-AU', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).formatRange(new Date(`${start}T00:00:00Z`), new Date(`${end}T00:00:00Z`));
+}
+
+/**
  * Formats an ISO datetime string to a localized, human-readable date and time.
  * e.g. "2026-02-28T14:30:00Z" → "Feb 28, 2026, 2:30 PM"
  */

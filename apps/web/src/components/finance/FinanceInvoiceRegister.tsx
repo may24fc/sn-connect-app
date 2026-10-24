@@ -1,6 +1,7 @@
 'use client';
 
 import { type InvoiceRecord, useApproveInvoice, useInvoices } from '@/hooks/useInvoices';
+import { formatFinanceDateRange } from '@/lib/format';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -135,7 +136,7 @@ export function FinanceInvoiceRegister({
                     : 'Staff member'}
                 </td>
                 <td className="whitespace-nowrap p-3 tabular-nums">
-                  {invoice.period_start} – {invoice.period_end}
+                  {formatFinanceDateRange(invoice.period_start, invoice.period_end)}
                 </td>
                 <td className="whitespace-nowrap p-3 tabular-nums">
                   {hideAmounts

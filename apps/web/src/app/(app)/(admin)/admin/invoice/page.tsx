@@ -11,7 +11,7 @@ import {
   parsePayoutScheduleTag,
 } from '@/lib/payroll/payoutSchedule';
 import { useTableSort } from '@/hooks/useTableSort';
-import { formatDate, formatDateRange } from '@/lib/format';
+import { formatFinanceDate, formatFinanceDateRange } from '@/lib/format';
 import { getSupportedCountryLabel } from '@/lib/validation/phone';
 import { cn } from '@/lib/utils';
 import {
@@ -217,12 +217,12 @@ function AdminInvoiceDetailDialog({
             )}
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-4">
               <span className="text-sm text-muted-foreground">Period</span>
-              <span className="text-sm font-medium">{formatDateRange(invoice.period_start, invoice.period_end)}</span>
+              <span className="text-sm font-medium">{formatFinanceDateRange(invoice.period_start, invoice.period_end)}</span>
             </div>
             {invoice.submitted_at && (
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-4">
                 <span className="text-sm text-muted-foreground">Submitted</span>
-                <span className="text-sm font-medium">{formatDate(invoice.submitted_at)}</span>
+                <span className="text-sm font-medium">{formatFinanceDate(invoice.submitted_at)}</span>
               </div>
             )}
             {invoice.converted_amount && sourceCurrency !== (invoice.target_currency || sourceCurrency) && (
