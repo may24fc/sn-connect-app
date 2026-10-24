@@ -131,6 +131,8 @@ export async function POST(request: NextRequest) {
       interest_state: input.interestState,
       replied: input.replied,
       replied_at: input.replied ? new Date().toISOString() : null,
+      called: input.called,
+      called_at: input.called ? new Date().toISOString() : null,
       lead_owner: input.leadOwner ?? null,
       source_name: input.sourceName ?? null,
       source_url: input.sourceUrl ?? null,

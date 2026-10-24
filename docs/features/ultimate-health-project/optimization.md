@@ -15,6 +15,7 @@
 - [Period-filtered outreach data](../../../apps/web/src/app/api/uhp/_lib.ts)
 - [Outreach summary calculation](../../../apps/web/src/lib/uhp.ts)
 - [Reply timestamp migration](../../../supabase/migrations/20261007000002_add_replied_at_to_uhp_clients.sql)
+- [Call timestamp migration](../../../supabase/migrations/20261023000001_add_called_to_uhp_clients.sql), [Call toggle browser regression](../../../e2e/uhp-call-toggle.spec.ts), and [client PATCH timestamp tests](../../../tests/api/uhp-client-replied-route.test.ts) - period-aware manual call tracking and rollback.
 - [Legacy reply timestamp backfill](../../../supabase/migrations/20261008000001_backfill_uhp_replied_at.sql)
 - [Period query regression test](../../../tests/api/uhp-outreach-period.test.ts)
 - [Optimistic reply-card unit tests](../../../tests/lib/uhp-outreach-summary.test.ts)
@@ -25,6 +26,21 @@
 - [WE form status activity query](../../../apps/web/src/app/api/uhp/_lib.ts), [deduplicated evaluation summary](../../../apps/web/src/lib/uhp.ts), [summary tests](../../../tests/lib/uhp-outreach-summary.test.ts), [period query test](../../../tests/api/uhp-outreach-period.test.ts), and [browser regression](../../../e2e/uhp-wellness-evaluation.spec.ts) - status milestone and appointment attribution.
 
 ## Records
+
+### Implemented - 2026-10-23: Period-aware manual Call tracking
+
+- Problem/evidence: Outreach could count calls only when a user logged a communication activity with appointment type `call`. The client also receives calls that need a simple row-level Yes/No field, and a permanent boolean alone would incorrectly leak across Week/Month/Quarter/custom ranges.
+- Delivered solution: Add `called` plus `called_at` to each UHP client. The row toggle updates immediately and rolls back on PATCH failure; the Calls card then reconciles from the server because selected-period membership depends on the timestamp. Metrics and the Friday digest receive timestamp-filtered synthetic call rows and deduplicate by client when the same person also has a call activity.
+- Code paths: Outreach Tracker, client create/update APIs and schema, period-filtered outreach loader, summary helper, database types/migration, focused tests, and browser regression in Relevant Code Map.
+- Validation: `20261023000001_add_called_to_uhp_clients.sql` applied to local Supabase. Twenty-one focused API/summary tests and `pnpm --filter @hr-portal/web typecheck` passed. Playwright passed against the normal local server and local Supabase as super admin at 1440x900 and 390x844; it exercised No-to-Yes, server metric reconciliation to one call, page overflow, and console/network health. Desktop/mobile screenshots were inspected. On 2026-10-24, the production dry run listed only this migration; it was applied to project `tccdupkjmwwxcvpqnpeb`, and linked migration history verified it. The full monorepo production build and the 21 focused tests passed again in the delivery workflow. No performance or latency claim is made; this work improves data completeness and reporting consistency.
+
+```mermaid
+flowchart LR
+  T[Toggle Call Yes] --> P[PATCH client and set called_at]
+  P --> R[Period-filter called_at]
+  R --> D[Deduplicate with logged call activity]
+  D --> C[Calls card and Friday digest]
+```
 
 ### Implemented - 2026-10-19: Complete monthly WHO ORDERED digest table
 
@@ -290,6 +306,8 @@ flowchart LR
 
 ## Change Log
 
+- 2026-10-24: Applied and verified the Call-column migration in production through the build-fix-commit-push migration gate.
+- 2026-10-23: Added period-aware manual Call tracking to Outreach, with optimistic row rollback, server-reconciled Calls metrics, digest integration, local migration validation, focused tests, and desktop/mobile Playwright coverage.
 - 2026-10-19: Corrected Volume Points `WHO ORDERED` to list all reporting-month members and aggregated VP under `NAME | VP`, even when no entries changed since the previous digest; 18 workflow tests and web TypeScript passed.
 - 2026-10-16: Added quarterly Volume Points KPI ranges, reorganized responsive controls, adopted shared table primitives, and normalized action-column placement/alignment; the full build plus focused unit, type, lint, and browser checks passed.
 - 2026-10-15: Extracted the calendar and draft/Apply/Clear range behavior into shared components, removed duplicate Marketing Reports DayPickers, and passed the final two-route desktop/mobile browser audit. No speed or bundle-size claim is made.

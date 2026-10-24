@@ -130,6 +130,8 @@ export type UhpOutreachActivityRow = {
   appointment_type: string | null;
   /** Marks the synthetic row produced from uhp_clients.replied_at. */
   manual_reply?: boolean;
+  /** Marks the synthetic row produced from uhp_clients.called_at. */
+  manual_call?: boolean;
   /** The client's current state, embedded by fetchUhpOutreachRows. */
   client?: { interest_state: string; replied: boolean } | null;
 };
@@ -254,7 +256,7 @@ export function summarizeUhpOutreach(
     wellnessEvaluationsScheduled: clientsWhere(
       (row) => row.appointment_type === 'wellness_evaluation' || isWellnessEvaluationForm(row)
     ).size,
-    callsScheduled: rows.filter((row) => row.appointment_type === 'call').length,
+    callsScheduled: clientsWhere((row) => row.appointment_type === 'call').size,
     newClients,
   };
 }

@@ -9184,6 +9184,8 @@ export type Database = {
         Row: {
           alternate_phone: string | null
           attachment_urls: Json
+          called: boolean
+          called_at: string | null
           chatgpt_url: string | null
           client_type: string | null
           created_at: string
@@ -9216,6 +9218,8 @@ export type Database = {
         Insert: {
           alternate_phone?: string | null
           attachment_urls?: Json
+          called?: boolean
+          called_at?: string | null
           chatgpt_url?: string | null
           client_type?: string | null
           created_at?: string
@@ -9248,6 +9252,8 @@ export type Database = {
         Update: {
           alternate_phone?: string | null
           attachment_urls?: Json
+          called?: boolean
+          called_at?: string | null
           chatgpt_url?: string | null
           client_type?: string | null
           created_at?: string

@@ -70,6 +70,7 @@ type Client = {
   status: string;
   interest_state: string;
   replied: boolean;
+  called: boolean;
   lead_owner: string | null;
   source_name: string | null;
   source_url: string | null;
@@ -121,7 +122,7 @@ const PERIOD_OPTIONS = [
 ] as const;
 
 const CLIENTS_PER_PAGE = 10;
-const TABLE_COLUMNS = 10;
+const TABLE_COLUMNS = 11;
 
 function defaultCustomMetricsRange(now = new Date()): CustomMetricsRange {
   return {
@@ -379,6 +380,7 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
       status: 'Prospect',
       interest_state: 'unknown',
       replied: false,
+      called: false,
       lead_owner: payload.leadOwner ?? null,
       source_name: payload.sourceName ?? null,
       source_url: payload.sourceUrl ?? null,
@@ -437,7 +439,7 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
   // only the metric cards are refreshed.
   async function updateClientRow(
     client: Client,
-    changes: Partial<Pick<Client, 'replied' | 'interest_state'>>,
+    changes: Partial<Pick<Client, 'replied' | 'called' | 'interest_state'>>,
     body: Record<string, unknown>,
     label: string
   ) {
@@ -463,7 +465,11 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
       }
       void refreshMetrics();
     } catch (error) {
-      setRow({ replied: client.replied, interest_state: client.interest_state });
+      setRow({
+        replied: client.replied,
+        called: client.called,
+        interest_state: client.interest_state,
+      });
       if (replyChanged) {
         setMetrics((current) => updateUhpReplyMetrics(current, client.id, client.replied));
       }
@@ -749,10 +755,10 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
             </Button>
           </div>
           {/* Columns keep their natural width and the table scrolls sideways instead of squeezing.
-              The min width fits the first 8 columns on screen; Source and Link (9th, 10th) are
+              The min width fits the first 9 columns on screen; Source and Link (10th, 11th) are
               reached by scrolling. */}
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[96rem] whitespace-nowrap text-left text-sm">
+            <table className="w-full min-w-[104rem] whitespace-nowrap text-left text-sm">
               <thead className="border-b bg-muted/40 text-xs uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">Client</th>
@@ -760,6 +766,7 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Owner</th>
                   <th className="px-4 py-3">Contact</th>
+                  <th className="px-4 py-3">Call</th>
                   <th className="px-4 py-3">Replied</th>
                   <th className="px-4 py-3">Interest</th>
                   <th className="px-4 py-3">Updated</th>
@@ -819,6 +826,28 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
                       <td className="px-4 py-3">{client.lead_owner ?? '—'}</td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {client.email ?? client.phone ?? '—'}
+                      </td>
+                      <td
+                        className="px-4 py-3"
+                        onClick={(event) => event.stopPropagation()}
+                        onKeyDown={(event) => event.stopPropagation()}
+                      >
+                        <div className="inline-flex items-center gap-2">
+                          <Checkbox
+                            aria-label={`Call: ${client.name}`}
+                            checked={client.called}
+                            disabled={client.id.startsWith('optimistic-client-')}
+                            onCheckedChange={(checked) =>
+                              void updateClientRow(
+                                client,
+                                { called: checked === true },
+                                { called: checked === true },
+                                'Call'
+                              )
+                            }
+                          />
+                          <span>{client.called ? 'Yes' : 'No'}</span>
+                        </div>
                       </td>
                       <td
                         className="px-4 py-3"

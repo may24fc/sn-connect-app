@@ -94,7 +94,7 @@ function isOutreachClientState(
 }
 
 /**
- * Activities for the outreach metrics and digest, plus timestamped manual reply toggles.
+ * Activities for the outreach metrics and digest, plus timestamped manual reply/call toggles.
  * Rows belonging to deleted or review-flagged clients are left out. Both queries are paged
  * because PostgREST caps a single response at 1000 rows.
  */
@@ -156,6 +156,37 @@ export async function fetchUhpOutreachRows(
         prospect_outcome: null,
         appointment_type: null,
         manual_reply: true,
+        client: { interest_state: client.interest_state, replied: client.replied },
+      });
+    }
+    if (page.length < OUTREACH_PAGE_SIZE) break;
+  }
+
+  for (let offset = 0; ; offset += OUTREACH_PAGE_SIZE) {
+    const { data, error } = await admin
+      .from('uhp_clients')
+      .select('id, interest_state, replied, called, called_at')
+      .eq('called', true)
+      .is('deleted_at', null)
+      .eq('migration_review_required', false)
+      .gte('called_at', from)
+      .lte('called_at', to)
+      .order('id')
+      .range(offset, offset + OUTREACH_PAGE_SIZE - 1);
+    if (error) {
+      console.error('Failed to load timestamped UHP calls:', error);
+      return { ok: false };
+    }
+    const page = data ?? [];
+    for (const client of page) {
+      rows.push({
+        client_id: client.id,
+        occurred_at: client.called_at,
+        direction: null,
+        reply_received: false,
+        prospect_outcome: null,
+        appointment_type: 'call',
+        manual_call: true,
         client: { interest_state: client.interest_state, replied: client.replied },
       });
     }

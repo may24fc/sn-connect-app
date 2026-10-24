@@ -60,6 +60,19 @@ describe('summarizeUhpOutreach', () => {
     });
   });
 
+  it('counts a client call once across activity and manual Call rows', () => {
+    const summary = summarizeUhpOutreach(
+      [
+        row({ client_id: 'a', appointment_type: 'call' }),
+        row({ client_id: 'a', appointment_type: 'call', manual_call: true }),
+        row({ client_id: 'b', appointment_type: 'call', manual_call: true }),
+      ],
+      0
+    );
+
+    expect(summary.callsScheduled).toBe(2);
+  });
+
   it('counts a filled WE form status milestone once with an evaluation appointment', () => {
     const summary = summarizeUhpOutreach(
       [

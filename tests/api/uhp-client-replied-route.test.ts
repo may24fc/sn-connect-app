@@ -11,7 +11,7 @@ import { PATCH } from '../../apps/web/src/app/api/uhp/clients/[id]/route';
 
 const CLIENT_ID = '11111111-1111-4111-8111-111111111111';
 
-function setup(existingReplied: boolean) {
+function setup(existingReplied: boolean, existingCalled = false) {
   const update = vi.fn();
   let singleRow = false;
   const query = {
@@ -24,7 +24,12 @@ function setup(existingReplied: boolean) {
       return query;
     }),
     maybeSingle: vi.fn(async () => ({
-      data: { status: 'Prospect', interest_state: 'unknown', replied: existingReplied },
+      data: {
+        status: 'Prospect',
+        interest_state: 'unknown',
+        replied: existingReplied,
+        called: existingCalled,
+      },
       error: null,
     })),
     single: vi.fn(async () => ({
@@ -41,12 +46,12 @@ function setup(existingReplied: boolean) {
   return { update };
 }
 
-function call(replied: boolean) {
+function call(body: Record<string, unknown>) {
   return PATCH(
     new NextRequest(`http://localhost/api/uhp/clients/${CLIENT_ID}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ replied }),
+      body: JSON.stringify(body),
     }),
     { params: Promise.resolve({ id: CLIENT_ID }) }
   );
@@ -58,7 +63,7 @@ describe('PATCH /api/uhp/clients/[id] manual reply timestamp', () => {
   it('timestamps a newly checked reply', async () => {
     const { update } = setup(false);
 
-    expect((await call(true)).status).toBe(200);
+    expect((await call({ replied: true })).status).toBe(200);
     expect(update).toHaveBeenCalledWith(
       expect.objectContaining({ replied: true, replied_at: expect.any(String) })
     );
@@ -67,7 +72,7 @@ describe('PATCH /api/uhp/clients/[id] manual reply timestamp', () => {
   it('clears the timestamp when the reply is unchecked', async () => {
     const { update } = setup(true);
 
-    expect((await call(false)).status).toBe(200);
+    expect((await call({ replied: false })).status).toBe(200);
     expect(update).toHaveBeenCalledWith(
       expect.objectContaining({ replied: false, replied_at: null })
     );
@@ -76,9 +81,36 @@ describe('PATCH /api/uhp/clients/[id] manual reply timestamp', () => {
   it('preserves the original timestamp when the boolean does not change', async () => {
     const { update } = setup(true);
 
-    expect((await call(true)).status).toBe(200);
+    expect((await call({ replied: true })).status).toBe(200);
     expect(update).toHaveBeenCalledWith(
       expect.not.objectContaining({ replied_at: expect.anything() })
+    );
+  });
+
+  it('timestamps a newly checked call', async () => {
+    const { update } = setup(false, false);
+
+    expect((await call({ called: true })).status).toBe(200);
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({ called: true, called_at: expect.any(String) })
+    );
+  });
+
+  it('clears the timestamp when Call is unchecked', async () => {
+    const { update } = setup(false, true);
+
+    expect((await call({ called: false })).status).toBe(200);
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({ called: false, called_at: null })
+    );
+  });
+
+  it('preserves the original call timestamp when the boolean does not change', async () => {
+    const { update } = setup(false, true);
+
+    expect((await call({ called: true })).status).toBe(200);
+    expect(update).toHaveBeenCalledWith(
+      expect.not.objectContaining({ called_at: expect.anything() })
     );
   });
 });

@@ -33,6 +33,7 @@ export const uhpClientSchema = z.object({
   clientType: z.enum(UHP_CLIENT_TYPE_VALUES).nullable().optional(),
   interestState: z.enum(['unknown', 'interested', 'declined']).default('unknown'),
   replied: z.boolean().default(false),
+  called: z.boolean().default(false),
   leadOwner: optionalText,
   sourceName: optionalText,
   sourceUrl: optionalWebUrl,

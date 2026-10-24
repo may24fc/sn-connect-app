@@ -29,24 +29,39 @@ function queryReturning(data: Array<Record<string, unknown>>) {
 }
 
 describe('fetchUhpOutreachRows period filtering', () => {
-  it('applies the same explicit bounds to activities and manual reply timestamps', async () => {
+  it('applies the same explicit bounds to activities and manual timestamps', async () => {
     const from = '2026-10-04T16:00:00.000Z';
     const to = '2026-10-07T02:00:00.000Z';
     const activities = queryReturning([]);
     const manualReplies = queryReturning([
       { id: 'client-1', interest_state: 'unknown', replied: true },
     ]);
+    const manualCalls = queryReturning([
+      {
+        id: 'client-2',
+        interest_state: 'unknown',
+        replied: false,
+        called: true,
+        called_at: to,
+      },
+    ]);
+    let clientQueryCount = 0;
     const admin = {
-      from: vi.fn((table: string) =>
-        table === 'uhp_client_activities' ? activities.query : manualReplies.query
-      ),
+      from: vi.fn((table: string) => {
+        if (table === 'uhp_client_activities') return activities.query;
+        clientQueryCount += 1;
+        return clientQueryCount === 1 ? manualReplies.query : manualCalls.query;
+      }),
     };
 
     const result = await fetchUhpOutreachRows(admin as never, from, to);
 
     expect(result).toMatchObject({
       ok: true,
-      rows: [{ client_id: 'client-1', reply_received: true }],
+      rows: [
+        { client_id: 'client-1', reply_received: true },
+        { client_id: 'client-2', appointment_type: 'call', manual_call: true },
+      ],
     });
     expect(activities.calls).toEqual(
       expect.arrayContaining([
@@ -59,6 +74,12 @@ describe('fetchUhpOutreachRows period filtering', () => {
       expect.arrayContaining([
         ['gte', 'replied_at', from],
         ['lte', 'replied_at', to],
+      ])
+    );
+    expect(manualCalls.calls).toEqual(
+      expect.arrayContaining([
+        ['gte', 'called_at', from],
+        ['lte', 'called_at', to],
       ])
     );
   });
