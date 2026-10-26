@@ -91,6 +91,34 @@ describe('UHP n8n workflows', () => {
     expect(code).toContain('No changes since the previous digest.');
   });
 
+  it('accepts authenticated manual Volume Points sends with unique delivery keys', () => {
+    const definition = workflow('uhp-volume-points-daily-digest.json');
+    const webhook = definition.nodes.find((node) => node.name === 'Manual Send Webhook');
+    const configure = definition.nodes.find(
+      (node) => node.name === 'Configure Telegram Destinations'
+    );
+    const callbacks = definition.nodes.filter((node) => node.name.startsWith('Record Digest'));
+
+    expect(webhook).toMatchObject({
+      type: 'n8n-nodes-base.webhook',
+      parameters: {
+        httpMethod: 'POST',
+        path: 'uhp-volume-points-manual-send',
+        authentication: 'headerAuth',
+      },
+      credentials: { httpHeaderAuth: { name: 'Control Hub Callback' } },
+    });
+    expect(definition.connections['Manual Send Webhook']?.main[0]).toContainEqual({
+      node: 'Configure Telegram Destinations',
+      type: 'main',
+      index: 0,
+    });
+    expect(JSON.stringify(configure?.parameters)).toContain("'manual'");
+    for (const callback of callbacks) {
+      expect(callback.parameters.jsonBody).toContain('vp-digest:manual:${$execution.id}');
+    }
+  });
+
   it('formats the volume digest as a scannable Telegram message, including no-change days', () => {
     const definition = workflow('uhp-volume-points-daily-digest.json');
     const code = definition.nodes.find((node) => node.name === 'Build Daily Digest')?.parameters

@@ -12,6 +12,7 @@ test('switches Volume Points to a responsive quarterly KPI view', async ({ page 
   test.setTimeout(240_000);
   const requests: Array<URL> = [];
   const browserErrors: Array<string> = [];
+  let manualSendRequests = 0;
 
   await page.route('**/api/uhp/volume-points/summary?**', async (route) => {
     const url = new URL(route.request().url());
@@ -61,6 +62,10 @@ test('switches Volume Points to a responsive quarterly KPI view', async ({ page 
       },
     });
   });
+  await page.route('**/api/uhp/volume-points/send-telegram', async (route) => {
+    manualSendRequests += 1;
+    await route.fulfill({ json: { data: { accepted: true } } });
+  });
 
   await signIn(page);
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -70,6 +75,10 @@ test('switches Volume Points to a responsive quarterly KPI view', async ({ page 
   page.on('console', (message) => {
     if (message.type() === 'error') browserErrors.push(message.text());
   });
+
+  await page.getByRole('button', { name: 'Send Telegram update' }).click();
+  await expect(page.getByText('Telegram update requested')).toBeVisible();
+  expect(manualSendRequests).toBe(1);
 
   await page.getByLabel('View by').click();
   await page.getByRole('option', { name: 'Quarter' }).click();
@@ -98,6 +107,7 @@ test('switches Volume Points to a responsive quarterly KPI view', async ({ page 
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByRole('button', { name: 'Add entry' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send Telegram update' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
     true
   );

@@ -12,6 +12,27 @@
       "parameters": { "rule": { "interval": [{ "field": "cronExpression", "expression": "0 12 * * *" }] } }
     },
     {
+      "id": "manual-trigger",
+      "name": "Manual Send Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [240, 460],
+      "webhookId": "uhp-volume-points-manual-send",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "uhp-volume-points-manual-send",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_CONTROL_HUB_CALLBACK_CREDENTIAL_ID",
+          "name": "Control Hub Callback"
+        }
+      }
+    },
+    {
       "id": "configure-destinations",
       "name": "Configure Telegram Destinations",
       "type": "n8n-nodes-base.set",
@@ -20,7 +41,8 @@
       "parameters": {
         "assignments": { "assignments": [
           { "id": "destinations", "name": "destinationsJson", "type": "string", "value": "[]" },
-          { "id": "control-hub-url", "name": "controlHubUrl", "type": "string", "value": "https://app.sngroup.com.au" }
+          { "id": "control-hub-url", "name": "controlHubUrl", "type": "string", "value": "https://app.sngroup.com.au" },
+          { "id": "delivery-mode", "name": "deliveryMode", "type": "string", "value": "={{ $json.headers ? 'manual' : 'scheduled' }}" }
         ] },
         "options": {}
       }
@@ -80,7 +102,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { intervalStartedAt: $('Build Daily Digest').item.json.intervalStartedAt, intervalEndedAt: $('Build Daily Digest').item.json.intervalEndedAt, reportingMonth: $('Build Daily Digest').item.json.reportingMonth, destinationKey: $('Build Daily Digest').item.json.destinationKey, idempotencyKey: $('Build Daily Digest').item.json.idempotencyKey, status: 'sent', summary: { changeCount: $('Build Daily Digest').item.json.changeCount, categories: $('Build Daily Digest').item.json.categories, totalActualVp: $('Build Daily Digest').item.json.totalActualVp }, n8nExecutionId: $execution.id, telegramMessageId: $json.message_id || $json.result?.message_id ? String($json.message_id ?? $json.result.message_id) : undefined, sentAt: $now.toUTC().toISO() } }}",
+        "jsonBody": "={{ { intervalStartedAt: $('Build Daily Digest').item.json.intervalStartedAt, intervalEndedAt: $('Build Daily Digest').item.json.intervalEndedAt, reportingMonth: $('Build Daily Digest').item.json.reportingMonth, destinationKey: $('Build Daily Digest').item.json.destinationKey, idempotencyKey: $('Configure Telegram Destinations').first().json.deliveryMode === 'manual' ? `vp-digest:manual:${$execution.id}:${$('Build Daily Digest').item.json.destinationKey}` : $('Build Daily Digest').item.json.idempotencyKey, status: 'sent', summary: { changeCount: $('Build Daily Digest').item.json.changeCount, categories: $('Build Daily Digest').item.json.categories, totalActualVp: $('Build Daily Digest').item.json.totalActualVp }, n8nExecutionId: $execution.id, telegramMessageId: $json.message_id || $json.result?.message_id ? String($json.message_id ?? $json.result.message_id) : undefined, sentAt: $now.toUTC().toISO() } }}",
         "options": {}
       },
       "credentials": {
@@ -106,7 +128,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { intervalStartedAt: $('Build Daily Digest').item.json.intervalStartedAt, intervalEndedAt: $('Build Daily Digest').item.json.intervalEndedAt, reportingMonth: $('Build Daily Digest').item.json.reportingMonth, destinationKey: $('Build Daily Digest').item.json.destinationKey, idempotencyKey: $('Build Daily Digest').item.json.idempotencyKey, status: 'failed', summary: { changeCount: $('Build Daily Digest').item.json.changeCount, categories: $('Build Daily Digest').item.json.categories, totalActualVp: $('Build Daily Digest').item.json.totalActualVp }, n8nExecutionId: $execution.id, errorMessage: String($json.error?.message ?? $json.message ?? 'Telegram delivery failed'), sentAt: null } }}",
+        "jsonBody": "={{ { intervalStartedAt: $('Build Daily Digest').item.json.intervalStartedAt, intervalEndedAt: $('Build Daily Digest').item.json.intervalEndedAt, reportingMonth: $('Build Daily Digest').item.json.reportingMonth, destinationKey: $('Build Daily Digest').item.json.destinationKey, idempotencyKey: $('Configure Telegram Destinations').first().json.deliveryMode === 'manual' ? `vp-digest:manual:${$execution.id}:${$('Build Daily Digest').item.json.destinationKey}` : $('Build Daily Digest').item.json.idempotencyKey, status: 'failed', summary: { changeCount: $('Build Daily Digest').item.json.changeCount, categories: $('Build Daily Digest').item.json.categories, totalActualVp: $('Build Daily Digest').item.json.totalActualVp }, n8nExecutionId: $execution.id, errorMessage: String($json.error?.message ?? $json.message ?? 'Telegram delivery failed'), sentAt: null } }}",
         "options": {}
       },
       "credentials": {
@@ -119,6 +141,7 @@
   ],
   "connections": {
     "Daily 12:00 PHT": { "main": [[{ "node": "Configure Telegram Destinations", "type": "main", "index": 0 }]] },
+    "Manual Send Webhook": { "main": [[{ "node": "Configure Telegram Destinations", "type": "main", "index": 0 }]] },
     "Configure Telegram Destinations": { "main": [[{ "node": "Fetch Control Hub Digest", "type": "main", "index": 0 }]] },
     "Fetch Control Hub Digest": { "main": [[{ "node": "Build Daily Digest", "type": "main", "index": 0 }]] },
     "Build Daily Digest": { "main": [[{ "node": "Send Telegram Digest", "type": "main", "index": 0 }]] },

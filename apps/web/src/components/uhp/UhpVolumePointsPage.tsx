@@ -27,7 +27,7 @@ import {
   TableRow,
   useToast,
 } from '@hr-portal/ui';
-import { Loader2, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { Loader2, Pencil, Plus, RefreshCw, Send, Trash2 } from 'lucide-react';
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { UhpAccessManagerButton } from './UhpAccessManagerDialog';
 import { UhpWorkspaceHeader } from './UhpWorkspaceHeader';
@@ -104,6 +104,7 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
   const [loadError, setLoadError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [sendingTelegram, setSendingTelegram] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [showTargets, setShowTargets] = useState(false);
@@ -252,6 +253,28 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
     }
   }
 
+  async function sendTelegramUpdate() {
+    setSendingTelegram(true);
+    try {
+      const response = await fetch('/api/uhp/volume-points/send-telegram', { method: 'POST' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? 'Failed to start Telegram delivery');
+      addToast({
+        variant: 'success',
+        title: 'Telegram update requested',
+        description: 'The latest Volume Points digest is being sent to the configured recipients.',
+      });
+    } catch (error) {
+      addToast({
+        variant: 'error',
+        title: 'Could not send Telegram update',
+        description: error instanceof Error ? error.message : 'Please try again.',
+      });
+    } finally {
+      setSendingTelegram(false);
+    }
+  }
+
   function openTargets() {
     setTargetDrafts(
       Object.fromEntries(
@@ -311,6 +334,21 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
         actions={
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             {isAdmin && <UhpAccessManagerButton module="volume_points" label="Volume Points" />}
+            {isAdmin && (
+              <Button
+                variant="outline"
+                className="sm:min-w-48"
+                disabled={sendingTelegram}
+                onClick={() => void sendTelegramUpdate()}
+              >
+                {sendingTelegram ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="mr-2 h-4 w-4" />
+                )}
+                {sendingTelegram ? 'Sending update...' : 'Send Telegram update'}
+              </Button>
+            )}
             <Button
               className="sm:min-w-32"
               onClick={() => {

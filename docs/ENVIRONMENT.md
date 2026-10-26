@@ -142,6 +142,7 @@ The portal also calls out to n8n webhooks:
 |----------|-------------|----------|
 | `N8N_MARKETING_REPORT_WEBHOOK_URL` | Notifies n8n on marketing report submission. Skipped with a warning when unset. | No |
 | `N8N_FIVE_PERCENT_REFLECTION_WEBHOOK_URL` | Notifies n8n on five-percent reflection submission. Skipped with a warning when unset. | No |
+| `N8N_UHP_VOLUME_POINTS_WEBHOOK_URL` | Production webhook for an authenticated on-demand UHP Volume Points Telegram digest. Requires `N8N_CALLBACK_SECRET` to match the webhook's Header Auth credential. | For manual UHP VP sends |
 
 ---
 

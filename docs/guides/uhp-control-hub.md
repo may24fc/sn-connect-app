@@ -19,7 +19,7 @@ flowchart LR
   W --> R[Reminder history]
   W --> V[Volume points]
   N[n8n] -->|Header Auth callback| R
-  V -->|daily digest payload| N
+  V -->|scheduled pull or manual send request| N
   N --> T[Telegram]
 ```
 
@@ -28,12 +28,13 @@ flowchart LR
 1. Apply `20260923000002_create_uhp_workspace.sql`.
 2. Set a strong `N8N_CALLBACK_SECRET` in the Control Hub production environment.
 3. In n8n, create or reuse the Header Auth credential named **Control Hub Callback**. Its header name must be `x-control-hub-n8n-secret` and its value must exactly match Control Hub's `N8N_CALLBACK_SECRET`.
-4. Import the two `n8n/workflows/uhp-*.json` files. The production Control Hub URL (`https://app.sngroup.com.au`) is already stored in each workflow, so n8n environment-variable access is not required.
-5. Select **Control Hub Callback** on every Control Hub HTTP Request node. The checked-in workflow uses `REPLACE_WITH_CONTROL_HUB_CALLBACK_CREDENTIAL_ID` because credential IDs are instance-specific.
-6. In each workflow, edit **Configure Telegram Destinations**. Replace `[]` with JSON such as `[{"key":"steven","chatId":"123456789"}]`.
-7. Attach the existing Telegram credential to the send node, execute manually, verify both a successful and failed run in Control Hub, then activate.
+4. Set `N8N_UHP_VOLUME_POINTS_WEBHOOK_URL` to the production URL shown by the Volume Points workflow's **Manual Send Webhook** node (normally `https://<n8n-host>/webhook/uhp-volume-points-manual-send`).
+5. Import the three `n8n/workflows/uhp-*.json` files. The production Control Hub URL (`https://app.sngroup.com.au`) is already stored in each workflow, so n8n environment-variable access is not required.
+6. Select **Control Hub Callback** on every Control Hub HTTP Request node and on the Volume Points **Manual Send Webhook**. The checked-in workflow uses `REPLACE_WITH_CONTROL_HUB_CALLBACK_CREDENTIAL_ID` because credential IDs are instance-specific.
+7. In each workflow, edit **Configure Telegram Destinations**. Replace `[]` with JSON such as `[{"key":"steven","chatId":"123456789"}]`.
+8. Attach the existing Telegram credential to the send node, execute manually, verify both a successful and failed run in Control Hub, then activate.
 
-Both workflow files are inactive by design. The portal workflow checks daily at 08:00 PHT and emits only applicable reminders. The VP workflow sends every day at 12:00 PHT, including an explicit no-change message. Telegram send failures are recorded through the same callback APIs with a `failed` status and error detail.
+The checked-in workflow files are inactive by design. The portal workflow checks daily at 05:30 PHT and emits only applicable reminders. The VP workflow sends every day at 12:00 PHT, including an explicit no-change message, and can also run from the authenticated page button. Telegram send failures are recorded through the same callback APIs with a `failed` status and error detail.
 
 For source data, prepare one JSON export with optional `clients`, `activities`, `notes`, `volumePoints`, and `targets` arrays. Every client, activity, and note requires a stable `notion_page_id`; activities and notes also require `client_notion_page_id`. Every volume-point row requires `source_sheet` and `source_row`. Preview it with `node scripts/backfill/import-uhp-workspace.mjs export.json`; add `--apply` only after reviewing the counts. The importer writes clients first, resolves their database IDs for related activities and notes, and uses stable source keys for repeatable upserts.
 
