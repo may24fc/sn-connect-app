@@ -1,11 +1,11 @@
 'use client';
 
-import { ClipboardList, Edit, Eye, Loader2, MoreVertical, Trash2 } from 'lucide-react';
+import { ClipboardList, Edit, Eye, Loader2, Trash2 } from 'lucide-react';
 import type * as React from 'react';
 import { Badge } from '../../primitives/badge';
-import { Button } from '../../primitives/button';
 import { Card, CardContent } from '../../primitives/card';
 import { Checkbox } from '../../primitives/checkbox';
+import { RowActionsTrigger } from '../RowActionsTrigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -245,14 +245,7 @@ export function TaskList({
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            aria-label="Open task actions menu"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
+                          <RowActionsTrigger label="Open task actions menu" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           {onViewDetails && (

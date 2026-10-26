@@ -3,7 +3,7 @@
 import { useCreateResource, useUploadResource } from '@/hooks/useResources';
 import { useBackNavigation } from '@/hooks/useBackNavigation';
 import type { CreateResourceInput } from '@/lib/schemas/resource.schema';
-import { Button, Input, ResourceTargetingSelector, ResourceUploader, Textarea, useToast } from '@hr-portal/ui';
+import { Button, Input, ResourceTargetingSelector, ResourceUploader, Textarea, useToast, PageTitle } from '@hr-portal/ui';
 import { ArrowLeft, FileText, Link2, Send, Upload, Target, ChevronDown, ChevronUp } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRef, useState } from 'react';
@@ -97,7 +97,9 @@ export default function EmployeeNewResourcePage() {
             <ArrowLeft className="mr-1 h-4 w-4" />
             {folderId ? 'Back to folder' : 'Back to Information Hub'}
           </Button>
-          <h1 className="font-heading text-lg font-semibold text-foreground tracking-tight">Submit Resource</h1>
+          <div>
+            <PageTitle>Submit Resource</PageTitle>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={() => submit()} disabled={!canSubmit || createResource.isPending}>

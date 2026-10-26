@@ -437,23 +437,59 @@ function getWorkspaceForPath(path: string): WorkspaceId {
   return 'internal';
 }
 
+function getSectionConfig(
+  variant: UserRole,
+  workspace: WorkspaceId
+): ReadonlyArray<{ title: string; hrefs: ReadonlyArray<string> }> {
+  return workspace === 'sfo'
+    ? sfoSectionConfig
+    : workspace === 'pa'
+      ? paSectionConfig
+      : workspace === 'uhp'
+        ? uhpSectionConfig
+        : workspace === 'property'
+          ? propertySectionConfig
+          : variant === 'admin' || variant === 'super_admin'
+            ? adminInternalSectionConfig
+            : selfServiceInternalSectionConfig;
+}
+
+const allNavItems: Array<NavItem> = [
+  ...employeeNavItems,
+  ...internNavItems,
+  ...adminNavItems,
+  ...superAdminNavItems,
+  ...employeeAtsNavItems,
+];
+
+/**
+ * Label for the page eyebrow: the sidebar section that owns `path` (e.g. "Finance"),
+ * or the workspace name for routes outside a section (dashboard, profile, settings).
+ */
+export function getNavContextLabel(path: string, variant: UserRole): string {
+  const workspace = getWorkspaceForPath(path);
+  let best = { length: -1, title: '' };
+  for (const section of getSectionConfig(variant, workspace)) {
+    for (const href of section.hrefs) {
+      const activeFor = allNavItems
+        .filter((item) => item.href === href)
+        .flatMap((item) => item.activeFor ?? []);
+      for (const candidate of [href, ...activeFor]) {
+        const length = getNavMatchLength(path, candidate);
+        if (length > best.length) best = { length, title: section.title };
+      }
+    }
+  }
+  if (best.length >= 0) return best.title;
+  return workspaceOptions.find((option) => option.id === workspace)?.label ?? workspaceOptions[0].label;
+}
+
 function createWorkspaceSections(
   variant: UserRole,
   navItems: Array<NavItem>,
   workspace: WorkspaceId
 ): Array<NavSection> {
-  const sectionConfig =
-    workspace === 'sfo'
-      ? sfoSectionConfig
-      : workspace === 'pa'
-        ? paSectionConfig
-        : workspace === 'uhp'
-          ? uhpSectionConfig
-          : workspace === 'property'
-            ? propertySectionConfig
-            : variant === 'admin' || variant === 'super_admin'
-              ? adminInternalSectionConfig
-              : selfServiceInternalSectionConfig;
+  const sectionConfig = getSectionConfig(variant, workspace);
 
   const itemByHref = new Map(navItems.map((item) => [item.href, item]));
   const sections: Array<NavSection> = [];

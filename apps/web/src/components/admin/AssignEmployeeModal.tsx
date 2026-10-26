@@ -320,7 +320,7 @@ function OrganizationSelectField({
             <div className="flex items-center justify-end gap-2">
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 disabled={isCreating}
                 onClick={onCancelCreate}

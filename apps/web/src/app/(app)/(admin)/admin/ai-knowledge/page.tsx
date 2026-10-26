@@ -7,7 +7,7 @@ import {
   useUpdateSource,
   useUploadSource,
 } from '@/hooks/useAISources';
-import { AIKnowledgeManager, type ChatInterfaceMessage } from '@hr-portal/ui';
+import { AIKnowledgeManager, type ChatInterfaceMessage, PageTitle } from '@hr-portal/ui';
 import type { AccessLevel, FileStatus } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import * as React from 'react';
@@ -98,8 +98,8 @@ export default function AdminAIKnowledgePage(): React.ReactNode {
   return (
     <div className="h-full flex flex-col p-3">
       <div className="mb-4 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-foreground">AI Knowledge Base</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <PageTitle>AI Knowledge Base</PageTitle>
+        <p className="mt-1 text-sm text-muted-foreground">
           Manage policy documents and test the HR AI assistant
         </p>
       </div>

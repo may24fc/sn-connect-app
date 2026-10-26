@@ -41,6 +41,7 @@ import {
   TabsTrigger,
   Textarea,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, CheckCircle2, ClipboardList, LifeBuoy, Loader2, Plus } from 'lucide-react';
@@ -244,8 +245,8 @@ export default function TicketsPage(): ReactNode {
     <div className="space-y-6 p-3">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Tickets</h1>
-          <p className="text-sm text-muted-foreground">Submit HR or IT issues and track progress in one place.</p>
+          <PageTitle>Tickets</PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">Submit HR or IT issues and track progress in one place.</p>
         </div>
         <Button onClick={() => setCreateOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />

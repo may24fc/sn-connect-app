@@ -1,7 +1,7 @@
 'use client';
 
 import { useRecentActivity } from '@/hooks/useRecentActivity';
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState } from '@hr-portal/ui';
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState, PageTitle } from '@hr-portal/ui';
 import {
   Activity,
   ArrowLeft,
@@ -100,10 +100,10 @@ export default function SuperAdminActivityPage(): ReactNode {
           </Link>
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
+          <PageTitle>
             Super Admin Activity
-          </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
+          </PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Recent super-admin and automated system actions
           </p>
         </div>

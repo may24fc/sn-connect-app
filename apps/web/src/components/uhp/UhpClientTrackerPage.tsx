@@ -39,6 +39,8 @@ import {
   SelectTrigger,
   SelectValue,
   useToast,
+  tableHeaderClassName,
+  tableHeadTextClassName,
 } from '@hr-portal/ui';
 import { format } from 'date-fns';
 import {
@@ -48,7 +50,6 @@ import {
   Loader2,
   Plus,
   RefreshCw,
-  Search,
 } from 'lucide-react';
 import {
   type ClipboardEvent,
@@ -62,6 +63,7 @@ import { UhpAccessManagerButton } from './UhpAccessManagerDialog';
 import { UhpClientDetailDialog } from './UhpClientDetailDialog';
 import { UhpSourceSelect } from './UhpSourceSelect';
 import { UhpWorkspaceHeader } from './UhpWorkspaceHeader';
+import { FilterSearchInput } from '@/components/data-display/FilterControls';
 
 type Client = {
   id: string;
@@ -733,21 +735,18 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
       <Card>
         <CardContent className="p-0">
           <div className="flex items-center gap-3 border-b p-4">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <Input
-              aria-label="Search clients"
+            <FilterSearchInput
               placeholder="Search name, email, or phone"
               value={search}
-              maxLength={200}
-              onChange={(event) => {
-                setSearch(event.target.value);
+              onChange={(value) => {
+                setSearch(value);
                 setCurrentPage(1);
               }}
-              className="max-w-md"
+              className="sm:w-80"
             />
             <Button
-              variant="ghost"
-              size="sm"
+              variant="outline"
+              size="icon"
               onClick={() => void Promise.all([loadClients(), refreshMetrics(true)])}
               aria-label="Refresh"
             >
@@ -759,7 +758,7 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
               reached by scrolling. */}
           <div className="overflow-x-auto">
             <table className="w-full min-w-[104rem] whitespace-nowrap text-left text-sm">
-              <thead className="border-b bg-muted/40 text-xs uppercase text-muted-foreground">
+              <thead className={`${tableHeaderClassName} ${tableHeadTextClassName}`}>
                 <tr>
                   <th className="px-4 py-3">Client</th>
                   <th className="px-4 py-3">Type</th>

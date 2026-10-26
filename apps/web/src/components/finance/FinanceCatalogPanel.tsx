@@ -3,6 +3,7 @@
 import { subscriptionChecks } from '@/lib/finance/subscription-checks';
 import { formatFinanceDate } from '@/lib/format';
 import { useCallback, useEffect, useState } from 'react';
+import { Button, tableHeaderClassName, tableHeadTextClassName, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
 
 type Category = { code: string; name: string; example: string };
 type Budget = { category_code: string; amount_aud: number };
@@ -171,7 +172,7 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
         </p>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[980px] text-left text-sm">
-            <thead className="bg-[#fafbf9] text-xs uppercase tracking-wide text-muted-foreground">
+            <thead className={`${tableHeaderClassName} ${tableHeadTextClassName}`}>
               <tr>
                 {[
                   'Service',
@@ -258,30 +259,32 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
           </label>
           <label>
             Category
-            <select
-              value={category}
-              onChange={(event) => setCategory(event.target.value)}
-              className="ml-2 rounded border p-2"
-            >
-              {catalog?.categories.map((item) => (
-                <option value={item.code} key={item.code}>
+            <Select value={category} onValueChange={(value) => setCategory(value)}>
+              <SelectTrigger className="ml-2 w-auto min-w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {catalog?.categories.map((item) => (
+                <SelectItem value={item.code} key={item.code}>
                   {item.name}
-                </option>
-              ))}
-            </select>
+                </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
           <label>
             Paid with
-            <select
-              value={source}
-              onChange={(event) => setSource(event.target.value)}
-              className="ml-2 rounded border p-2"
-            >
-              <option value="unknown">Unknown</option>
-              <option value="personal_card">Personal card</option>
-              <option value="company_card">Company card</option>
-              <option value="bank_transfer">Bank transfer</option>
-            </select>
+            <Select value={source} onValueChange={(value) => setSource(value)}>
+              <SelectTrigger className="ml-2 w-auto min-w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unknown">Unknown</SelectItem>
+                <SelectItem value="personal_card">Personal card</SelectItem>
+                <SelectItem value="company_card">Company card</SelectItem>
+                <SelectItem value="bank_transfer">Bank transfer</SelectItem>
+              </SelectContent>
+            </Select>
           </label>
           <label>
             Monthly amount
@@ -296,15 +299,16 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
           </label>
           <label>
             Currency
-            <select
-              value={currency}
-              onChange={(event) => setCurrency(event.target.value)}
-              className="ml-2 rounded border p-2"
-            >
-              {['AUD', 'USD', 'PHP', 'EUR', 'GBP', 'SGD', 'JPY'].map((code) => (
-                <option value={code} key={code}>{code}</option>
-              ))}
-            </select>
+            <Select value={currency} onValueChange={(value) => setCurrency(value)}>
+              <SelectTrigger className="ml-2 w-auto min-w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {['AUD', 'USD', 'PHP', 'EUR', 'GBP', 'SGD', 'JPY'].map((code) => (
+                <SelectItem value={code} key={code}>{code}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
           <label>
             Seats
@@ -326,13 +330,12 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
               className="ml-2 rounded border p-2"
             />
           </label>
-          <button
+          <Button
             type="submit"
             disabled={saving}
-            className="rounded bg-[#16505f] px-3 py-2 text-white"
           >
             Add subscription
-          </button>
+          </Button>
         </form>
       </section>
       <section className="rounded-xl border bg-card p-5">
@@ -344,13 +347,12 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
               without limits.
             </p>
           </div>
-          <button
+          <Button variant="outline"
             type="button"
             onClick={() => setShowBudgetControls((shown) => !shown)}
-            className="rounded-md border px-3 py-2 text-sm font-medium"
           >
             {showBudgetControls ? 'Hide limit controls' : 'Add optional limits'}
-          </button>
+          </Button>
         </div>
         {showBudgetControls ? (
           <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -404,23 +406,21 @@ function BudgetEditor({
           onChange={(event) => setValue(event.target.value)}
           className="w-28 rounded border p-1"
         />
-        <button
+        <Button variant="outline" size="sm"
           type="button"
           disabled={saving || value === ''}
           onClick={() => void onSave(category.code, value)}
-          className="rounded border px-2 py-1"
         >
           Save
-        </button>
+        </Button>
         {amount !== null ? (
-          <button
+          <Button variant="outline" size="sm"
             type="button"
             disabled={saving}
             onClick={() => void onClear(category.code)}
-            className="rounded border px-2 py-1"
           >
             Clear limit
-          </button>
+          </Button>
         ) : null}
       </div>
     </div>

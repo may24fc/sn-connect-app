@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Card, CardContent } from '@hr-portal/ui';
+import { Button, Card, CardContent, tableHeaderClassName, tableHeadTextClassName } from '@hr-portal/ui';
 import { BellRing, CalendarClock, Loader2, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { UhpAccessManagerButton } from './UhpAccessManagerDialog';
@@ -98,7 +98,7 @@ export function UhpRemindersPage({ isAdmin = false }: { isAdmin?: boolean }) {
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="border-b bg-muted/40 text-xs uppercase text-muted-foreground">
+                  <thead className={`${tableHeaderClassName} ${tableHeadTextClassName}`}>
                     <tr>
                       <th className="px-4 py-3">Reminder</th>
                       <th className="px-4 py-3">Scheduled</th>

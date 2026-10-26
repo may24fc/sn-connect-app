@@ -10,7 +10,7 @@ export default function AdminCreateInvoicePage() {
 
 	return (
 		<div className="space-y-4">
-			<Button variant="ghost" size="sm" onClick={handleBack}>
+			<Button variant="ghost" onClick={handleBack}>
 				<ArrowLeft className="mr-1 h-4 w-4" />
 				Back to Invoice Submissions
 			</Button>

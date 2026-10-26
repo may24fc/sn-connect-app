@@ -33,6 +33,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  PageTitle,
 } from '@hr-portal/ui';
 import { format } from 'date-fns';
 import dynamic from 'next/dynamic';
@@ -200,8 +201,8 @@ export default function AdminReportsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Marketing Reports</h1>
-          <p className="text-muted-foreground">
+          <PageTitle>Marketing Reports</PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Review campaign submissions, model concurrent sales forecast scenarios, and compare
             reporting windows from one admin workspace.
           </p>

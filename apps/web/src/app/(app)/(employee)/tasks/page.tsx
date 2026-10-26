@@ -42,6 +42,8 @@ import {
   Textarea,
   UserAvatar,
   useToast,
+  ToggleGroup,
+  PageTitle,
 } from '@hr-portal/ui';
 import type { TaskPriority, TaskStatus } from '@hr-portal/ui';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
@@ -54,12 +56,12 @@ import {
   List,
   Loader2,
   Plus,
-  Search,
   X,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React, { type FormEvent, useCallback, useMemo, useState } from 'react';
+import { FilterSearchInput } from '@/components/data-display/FilterControls';
 
 const TASK_CATEGORY_OPTIONS = [
   { value: 'launch', label: 'Launch' },
@@ -337,10 +339,10 @@ export default function MyTasksPage() {
       <WorkTrackerSectionNav current="tasks" />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">My Tasks</h1>
-          <p className="text-sm text-muted-foreground">Track and update your assigned tasks</p>
+          <PageTitle>My Tasks</PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">Track and update your assigned tasks</p>
         </div>
-        <Button onClick={() => setAddTaskOpen(true)} size="sm">
+        <Button onClick={() => setAddTaskOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Add Task
         </Button>
@@ -376,16 +378,13 @@ export default function MyTasksPage() {
       <div>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           {/* Search */}
-          <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="w-full pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
-              placeholder="Search tasks..."
-              value={search}
+          <FilterSearchInput
+            placeholder="Search tasks..."
+            value={search}
+            onChange={setSearch}
             maxLength={200}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </div>
+            className="sm:w-auto sm:flex-1"
+          />
 
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-3">
@@ -429,32 +428,15 @@ export default function MyTasksPage() {
             </Select>
 
             {/* View Toggle */}
-            <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
-              <button
-                type="button"
-                onClick={() => setActiveView('list')}
-                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  activeView === 'list'
-                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-                }`}
-              >
-                <List className="h-3.5 w-3.5" strokeWidth={1.5} />
-                List
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveView('board')}
-                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  activeView === 'board'
-                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-                }`}
-              >
-                <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
-                Board
-              </button>
-            </div>
+            <ToggleGroup
+              aria-label="View"
+              value={activeView}
+              onChange={setActiveView}
+              options={[
+                { value: 'list', label: 'List', icon: <List strokeWidth={1.5} /> },
+                { value: 'board', label: 'Board', icon: <LayoutGrid strokeWidth={1.5} /> },
+              ]}
+            />
           </div>
         </div>
 

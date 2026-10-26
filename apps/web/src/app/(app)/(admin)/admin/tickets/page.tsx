@@ -4,7 +4,7 @@ import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { TicketListTable } from '@/components/tickets/TicketListTable';
 import { TicketWorkDialog } from '@/components/tickets/TicketWorkDialog';
 import { useTickets, useUpdateTicket, type TicketRecord } from '@/hooks/useTickets';
-import { Card, CardContent, EmptyState } from '@hr-portal/ui';
+import { Card, CardContent, EmptyState, PageTitle } from '@hr-portal/ui';
 import { AlertCircle, CheckCircle2, ClipboardList, Loader2, UserCog } from 'lucide-react';
 import { type ReactNode, useMemo, useState } from 'react';
 
@@ -32,8 +32,8 @@ export default function AdminTicketsPage(): ReactNode {
   return (
     <div className="space-y-6 p-3">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Tickets</h1>
-        <p className="text-sm text-muted-foreground">
+        <PageTitle>Tickets</PageTitle>
+        <p className="mt-1 text-sm text-muted-foreground">
           Work the HR tickets assigned to you without exposing the super-admin intake queue.
         </p>
       </div>

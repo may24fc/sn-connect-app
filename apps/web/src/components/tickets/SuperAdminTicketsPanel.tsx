@@ -4,13 +4,14 @@ import { ServerPagination } from '@/components/data-display/ServerPagination';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { useTicketAssignees } from '@/hooks/useTicketAssignees';
 import { useTickets, useUpdateTicket, type TicketRecord } from '@/hooks/useTickets';
-import { Button, Card, CardContent, EmptyState, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
-import { AlertCircle, CheckCircle2, ClipboardList, Clock, Loader2, Search } from 'lucide-react';
+import { Button, Card, CardContent, EmptyState, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, PageEyebrow } from '@hr-portal/ui';
+import { AlertCircle, CheckCircle2, ClipboardList, Clock, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { type ReactNode, useMemo, useState } from 'react';
 import { TicketAssignmentDialog } from './TicketAssignmentDialog';
 import { TicketListTable } from './TicketListTable';
 import { TICKET_STATUS_OPTIONS, TICKET_TEAM_OPTIONS } from './ticket-badges';
+import { FilterSearchInput } from '@/components/data-display/FilterControls';
 
 type TicketStatusFilter = 'all' | 'new' | 'triaged' | 'assigned' | 'in_progress' | 'waiting_on_user' | 'resolved' | 'closed';
 
@@ -62,8 +63,9 @@ export function SuperAdminTicketsPanel({
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <Heading className="text-xl font-semibold text-foreground">Ticket Intake</Heading>
-          <p className="text-sm text-muted-foreground">
+          {headingLevel === 'h1' ? <PageEyebrow /> : null}
+          <Heading className="text-2xl font-bold tracking-tight text-foreground">Ticket Intake</Heading>
+          <p className="mt-1 text-sm text-muted-foreground">
             Triage employee HR and IT tickets, then dispatch them to the correct handler.
           </p>
         </div>
@@ -80,19 +82,16 @@ export function SuperAdminTicketsPanel({
       </StatCardGrid>
 
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-        <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-              maxLength={200}
-            onChange={(event) => {
+        <FilterSearchInput
+          placeholder="Search tickets..."
+          value={search}
+          onChange={(value) => {
               resetToFirstPage();
-              setSearch(event.target.value);
+              setSearch(value);
             }}
-            placeholder="Search tickets..."
-            className="pl-10"
-          />
-        </div>
+          maxLength={200}
+          className="sm:w-auto sm:flex-1"
+        />
         <div className="flex flex-wrap gap-3">
           <Select
             value={team}

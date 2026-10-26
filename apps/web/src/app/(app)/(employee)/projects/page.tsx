@@ -40,6 +40,7 @@ import {
   SelectValue,
   Skeleton,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import { FolderKanban, Inbox, Plus, Trophy } from 'lucide-react';
 import Link from 'next/link';
@@ -98,10 +99,10 @@ export default function ProjectsListPage() {
       </div>
       <header className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          <PageTitle>
             Projects
-          </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          </PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Track your monthly milestones and earn points
           </p>
         </div>
@@ -157,7 +158,7 @@ export default function ProjectsListPage() {
         {isAdmin ? (
           <Button
             variant={mineOnly ? 'default' : 'outline'}
-            size="sm"
+            aria-pressed={mineOnly}
             onClick={() => setMineOnly((v) => !v)}
           >
             Mine only

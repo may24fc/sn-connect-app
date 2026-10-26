@@ -7,6 +7,7 @@ import {
 } from '@/lib/finance/properties';
 import { formatFinanceDate } from '@/lib/format';
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { Button, tableHeaderClassName, tableHeadTextClassName, tabsListClassName, tabsTriggerClassName, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
 
 const money = (value: number) =>
   new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(value);
@@ -228,38 +229,35 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
           months unchanged.
         </p>
         <div className="flex flex-wrap gap-2">
-          <button
+          <Button
             type="button"
             onClick={() => {
               setError(null);
               setFormKind('property');
             }}
-            className="rounded-md bg-[#1f6a7c] px-4 py-2 text-sm font-semibold text-white"
           >
             + Add property
-          </button>
-          <button
+          </Button>
+          <Button variant="outline"
             type="button"
             onClick={() => {
               setError(null);
               setFormKind('rent');
             }}
             disabled={!register.properties.length}
-            className="rounded-md border bg-card px-4 py-2 text-sm font-semibold disabled:opacity-50"
           >
             Record rent
-          </button>
-          <button
+          </Button>
+          <Button variant="outline"
             type="button"
             onClick={() => {
               setError(null);
               setFormKind('maintenance');
             }}
             disabled={!register.properties.length}
-            className="rounded-md border bg-card px-4 py-2 text-sm font-semibold disabled:opacity-50"
           >
             Log maintenance
-          </button>
+          </Button>
         </div>
       </div>
       {notice && (
@@ -298,17 +296,16 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                       ? `Change terms from ${month}`
                       : `Expected rent for ${month}`}
             </h2>
-            <button
+            <Button variant="outline"
               type="button"
               onClick={() => {
                 setFormKind(null);
                 setSelectedPropertyId(null);
               }}
               disabled={saving}
-              className="text-sm underline"
             >
               Cancel
-            </button>
+            </Button>
           </div>
           <form onSubmit={create} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {formKind === 'property' ? (
@@ -333,10 +330,15 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                 </label>
                 <label className={labelClass}>
                   Occupancy
-                  <select className={inputClass} name="occupancy">
-                    <option value="occupied">Occupied</option>
-                    <option value="vacant">Vacant</option>
-                  </select>
+                  <Select name="occupancy" defaultValue="occupied">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="occupied">Occupied</SelectItem>
+                      <SelectItem value="vacant">Vacant</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </label>
                 <label className={labelClass}>
                   Agent (optional)
@@ -352,10 +354,15 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                 </label>
                 <label className={labelClass}>
                   Rent cadence
-                  <select className={inputClass} name="rentCadence" defaultValue="weekly">
-                    <option value="weekly">Weekly</option>
-                    <option value="biweekly">Every two weeks</option>
-                  </select>
+                  <Select defaultValue="weekly" name="rentCadence">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="biweekly">Every two weeks</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </label>
                 <label className={labelClass}>
                   Rent amount (AUD)
@@ -388,14 +395,15 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                 <p className="self-center text-sm font-semibold">{selectedProperty.name}</p>
                 <label className={labelClass}>
                   Occupancy from {month}
-                  <select
-                    className={inputClass}
-                    name="occupancy"
-                    defaultValue={selectedProperty.occupancy}
-                  >
-                    <option value="occupied">Occupied</option>
-                    <option value="vacant">Vacant</option>
-                  </select>
+                  <Select defaultValue={selectedProperty.occupancy} name="occupancy">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="occupied">Occupied</SelectItem>
+                      <SelectItem value="vacant">Vacant</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </label>
                 <label className={labelClass}>
                   Tenant (optional)
@@ -408,10 +416,15 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                 </label>
                 <label className={labelClass}>
                   Rent cadence
-                  <select className={inputClass} name="rentCadence" defaultValue={selectedProperty.rent_cadence}>
-                    <option value="weekly">Weekly</option>
-                    <option value="biweekly">Every two weeks</option>
-                  </select>
+                  <Select defaultValue={selectedProperty.rent_cadence} name="rentCadence">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="biweekly">Every two weeks</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </label>
                 <label className={labelClass}>
                   Rent amount (AUD)
@@ -482,13 +495,18 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
               <>
                 <label className={labelClass}>
                   Property
-                  <select className={inputClass} name="propertyId" required>
-                    {register.properties.map((property) => (
-                      <option value={property.id} key={property.id}>
+                  <Select name="propertyId" required defaultValue={register.properties[0]?.id ?? ''}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {register.properties.map((property) => (
+                      <SelectItem value={property.id} key={property.id}>
                         {property.name}
-                      </option>
-                    ))}
-                  </select>
+                      </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </label>
                 {formKind === 'rent' ? (
                   <>
@@ -558,24 +576,28 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                     </label>
                     <label className={labelClass}>
                       Status
-                      <select className={inputClass} name="status">
-                        <option value="scheduled">Scheduled</option>
-                        <option value="awaiting_invoice">Awaiting invoice</option>
-                        <option value="paid">Paid</option>
-                      </select>
+                      <Select name="status" defaultValue="scheduled">
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="scheduled">Scheduled</SelectItem>
+                          <SelectItem value="awaiting_invoice">Awaiting invoice</SelectItem>
+                          <SelectItem value="paid">Paid</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </label>
                   </>
                 )}
               </>
             )}
             <div className="flex items-end">
-              <button
+              <Button
                 type="submit"
                 disabled={saving}
-                className="rounded-md bg-[#1f6a7c] px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
               >
                 {saving ? 'Saving…' : 'Save record'}
-              </button>
+              </Button>
             </div>
           </form>
         </section>
@@ -590,14 +612,13 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
             <h2 className="text-lg font-semibold">
               {correction.kind === 'rent_void' ? 'Void recorded rent' : 'Update maintenance status'}
             </h2>
-            <button
+            <Button variant="outline"
               type="button"
               disabled={saving}
               onClick={() => setCorrection(null)}
-              className="text-sm underline"
             >
               Cancel
-            </button>
+            </Button>
           </div>
           <form onSubmit={saveCorrection} className="flex flex-wrap items-end gap-3">
             {correction.kind === 'rent_void' ? (
@@ -614,27 +635,28 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
             ) : (
               <label className={labelClass}>
                 New recorded status
-                <select className={inputClass} name="status" required defaultValue="">
-                  <option value="" disabled>
-                    Choose status
-                  </option>
-                  {(['scheduled', 'awaiting_invoice', 'paid'] as const)
+                <Select name="status" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(['scheduled', 'awaiting_invoice', 'paid'] as const)
                     .filter((status) => status !== correction.expectedStatus)
                     .map((status) => (
-                      <option key={status} value={status}>
+                      <SelectItem key={status} value={status}>
                         {status.replace('_', ' ')}
-                      </option>
+                      </SelectItem>
                     ))}
-                </select>
+                  </SelectContent>
+                </Select>
               </label>
             )}
-            <button
+            <Button
               type="submit"
               disabled={saving}
-              className="rounded-md bg-[#1f6a7c] px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
             >
               {saving ? 'Saving…' : 'Confirm correction'}
-            </button>
+            </Button>
           </form>
         </section>
       )}
@@ -724,20 +746,18 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                       </div>
                     </dl>
                     <div className="mt-4 flex flex-wrap gap-2 border-t pt-4 text-sm">
-                      <button
+                      <Button variant="outline"
                         type="button"
                         onClick={() => openPropertyForm('expected_rent', property.id)}
-                        className="rounded-md border px-3 py-2 font-medium"
                       >
                         Edit expected rent
-                      </button>
-                      <button
+                      </Button>
+                      <Button variant="outline"
                         type="button"
                         onClick={() => openPropertyForm('terms', property.id)}
-                        className="rounded-md border px-3 py-2 font-medium"
                       >
                         Change terms from {month}
-                      </button>
+                      </Button>
                     </div>
                   </article>
                 )
@@ -747,13 +767,14 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
           <section className="overflow-hidden rounded-xl border bg-card shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
               <h2 className="text-lg font-semibold">Property register · {month}</h2>
-              <div role="tablist" aria-label="Property records" className="flex gap-2 text-sm">
+              <div role="tablist" aria-label="Property records" className={tabsListClassName}>
                 <button
                   type="button"
                   role="tab"
                   aria-selected={tab === 'rent'}
+                  data-state={tab === 'rent' ? 'active' : 'inactive'}
                   onClick={() => setTab('rent')}
-                  className={`rounded-md px-3 py-2 ${tab === 'rent' ? 'bg-[#1f6a7c] text-white' : 'border'}`}
+                  className={tabsTriggerClassName}
                 >
                   Rent collection
                 </button>
@@ -761,8 +782,9 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                   type="button"
                   role="tab"
                   aria-selected={tab === 'maintenance'}
+                  data-state={tab === 'maintenance' ? 'active' : 'inactive'}
                   onClick={() => setTab('maintenance')}
-                  className={`rounded-md px-3 py-2 ${tab === 'maintenance' ? 'bg-[#1f6a7c] text-white' : 'border'}`}
+                  className={tabsTriggerClassName}
                 >
                   Maintenance
                 </button>
@@ -772,7 +794,7 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
               {tab === 'rent' ? (
                 summary.rows.length ? (
                   <table className="w-full min-w-[680px] text-left text-sm">
-                    <thead className="bg-muted/50 text-muted-foreground">
+                    <thead className={`${tableHeaderClassName} ${tableHeadTextClassName}`}>
                       <tr>
                         {[
                           'Property',
@@ -784,7 +806,7 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                           'Outstanding',
                           'Status',
                         ].map((label) => (
-                          <th key={label} className="px-5 py-3 font-medium">
+                          <th key={label} className="px-5 py-3">
                             {label}
                           </th>
                         ))}
@@ -825,7 +847,7 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                 )
               ) : register.maintenance.length ? (
                 <table className="w-full min-w-[760px] text-left text-sm">
-                  <thead className="bg-muted/50 text-muted-foreground">
+                  <thead className={`${tableHeaderClassName} ${tableHeadTextClassName}`}>
                     <tr>
                       {[
                         'Date',
@@ -836,7 +858,7 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                         'Invoice reference',
                         'Status',
                       ].map((label) => (
-                        <th key={label} className="px-5 py-3 font-medium">
+                        <th key={label} className="px-5 py-3">
                           {label}
                         </th>
                       ))}
@@ -855,7 +877,7 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                         <td className="px-5 py-3">{job.invoice_reference || 'Not recorded'}</td>
                         <td className="px-5 py-3">
                           <span className="capitalize">{job.status.replace('_', ' ')}</span>
-                          <button
+                          <Button variant="link" className="ml-2"
                             type="button"
                             onClick={() =>
                               setCorrection({
@@ -864,10 +886,9 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                                 expectedStatus: job.status,
                               })
                             }
-                            className="ml-2 text-[#1f6a7c] underline"
                           >
                             Update
-                          </button>
+                          </Button>
                           {register.statusEvents.some(
                             (event) => event.maintenance_id === job.id
                           ) && (
@@ -903,11 +924,11 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                 {register.payments.length ? (
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[650px] text-left text-sm">
-                      <thead className="bg-muted/50 text-muted-foreground">
+                      <thead className={`${tableHeaderClassName} ${tableHeadTextClassName}`}>
                         <tr>
                           {['Property', 'Received on', 'Amount', 'Reference', 'Correction'].map(
                             (label) => (
-                              <th key={label} className="px-5 py-3 font-medium">
+                              <th key={label} className="px-5 py-3">
                                 {label}
                               </th>
                             )
@@ -927,15 +948,14 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                               {payment.voided_at ? (
                                 `Voided ${payment.voided_at.slice(0, 10)}: ${payment.void_reason}`
                               ) : (
-                                <button
+                                <Button variant="link"
                                   type="button"
                                   onClick={() =>
                                     setCorrection({ kind: 'rent_void', id: payment.id })
                                   }
-                                  className="text-[#1f6a7c] underline"
                                 >
                                   Void mistaken entry
-                                </button>
+                                </Button>
                               )}
                             </td>
                           </tr>

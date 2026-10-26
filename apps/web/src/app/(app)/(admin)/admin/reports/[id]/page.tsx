@@ -41,6 +41,7 @@ import {
   TableHeader,
   TableRow,
   Textarea,
+  PageTitle,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import { AlertCircle, ArrowLeft, CheckCircle2, ListChecks } from 'lucide-react';
@@ -229,12 +230,12 @@ export default function AdminReportDetailPage({
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">
+            <PageTitle>
               {marketingContext
                 ? getMarketingReportDisplayName(marketingContext)
                 : `${getReportTypeLabel(report.report_type)} Report`}
-            </h1>
-            <p className="text-muted-foreground">
+            </PageTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
               {getReportTypeDescription(report.report_type) && (
                 <span className="block text-xs mb-0.5">{getReportTypeDescription(report.report_type)}</span>
               )}

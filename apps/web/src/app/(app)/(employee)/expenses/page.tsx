@@ -42,6 +42,7 @@ import {
   TableRow,
   Textarea,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import { Badge } from '@hr-portal/ui';
 import { ClipboardList, FileText, Loader2, Plus, Receipt, Sparkles, Trash2 } from 'lucide-react';
@@ -390,11 +391,11 @@ export default function EmployeeExpensesPage() {
     <div className="flex-1 space-y-6 p-8 overflow-y-auto max-h-[calc(100vh-4rem)]">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+          <PageTitle className="flex items-center gap-2">
             <Receipt className="h-6 w-6 text-indigo-500" />
             My Expenses & Payments
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          </PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Log spend requests to stay accountable, or record direct payments with receipt uploads for the matching queue.
           </p>
         </div>
@@ -402,7 +403,7 @@ export default function EmployeeExpensesPage() {
         <div className="flex items-center gap-2">
           <Dialog open={logRequestOpen} onOpenChange={setLogRequestOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2 h-9 px-4">
+              <Button variant="outline" className="gap-2">
                 <ClipboardList className="h-4 w-4" />
                 Log Request
               </Button>
@@ -517,7 +518,7 @@ export default function EmployeeExpensesPage() {
           {capabilities.canLogPayment ? (
             <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 h-9 px-4">
+                <Button className="gap-2">
                   <Plus className="h-4 w-4" />
                   Upload Receipt
                 </Button>
@@ -569,14 +570,24 @@ export default function EmployeeExpensesPage() {
                         <p className="truncate text-sm font-semibold">{file.name}</p>
                         <div className="grid gap-3 sm:grid-cols-2">
                           <label className="grid gap-1 text-sm">Category
-                            <select className="rounded border bg-card p-2" value={metadata.categoryCode} onChange={(event) => update({ categoryCode: event.target.value as FinanceCategoryCode })}>
-                              {FINANCE_CATEGORIES.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}
-                            </select>
+                            <Select value={metadata.categoryCode} onValueChange={(value) => update({ categoryCode: value as FinanceCategoryCode })}>
+                              <SelectTrigger className="w-auto min-w-40">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {FINANCE_CATEGORIES.map((item) => <SelectItem key={item.code} value={item.code}>{item.name}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
                           </label>
                           <label className="grid gap-1 text-sm">Paid with
-                            <select className="rounded border bg-card p-2" value={metadata.paymentSource} onChange={(event) => update({ paymentSource: event.target.value })}>
-                              <option value="unknown">To confirm</option><option value="personal_card">Personal card</option><option value="company_card">Company card</option><option value="bank_transfer">Bank transfer</option>
-                            </select>
+                            <Select value={metadata.paymentSource} onValueChange={(value) => update({ paymentSource: value })}>
+                              <SelectTrigger className="w-auto min-w-40">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="unknown">To confirm</SelectItem><SelectItem value="personal_card">Personal card</SelectItem><SelectItem value="company_card">Company card</SelectItem><SelectItem value="bank_transfer">Bank transfer</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </label>
                         </div>
                         <label className="grid gap-1 text-sm">Business purpose

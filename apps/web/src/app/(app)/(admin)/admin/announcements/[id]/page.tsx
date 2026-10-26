@@ -32,6 +32,7 @@ import {
   TabsList,
   TabsTrigger,
   TargetingSelector,
+  PageTitle,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -316,9 +317,9 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
           <div className="p-6 space-y-4">
             {/* Title & meta row */}
             <div className="space-y-3">
-              <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+              <PageTitle>
                 {announcement.title}
-              </h1>
+              </PageTitle>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant={priorityVariant[announcement.priority] ?? 'secondary'}>
                   {announcement.priority.charAt(0).toUpperCase() + announcement.priority.slice(1)}

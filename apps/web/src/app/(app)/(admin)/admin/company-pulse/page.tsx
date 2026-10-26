@@ -9,6 +9,7 @@ import {
   CardContent,
   EmptyState,
   Separator,
+  PageTitle,
 } from '@hr-portal/ui';
 import { Calendar, CheckCircle2, ExternalLink, RefreshCcw, Settings2, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
@@ -37,8 +38,8 @@ export default function AdminCompanyPulsePage() {
       <div className="p-3">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Company Calendar</h1>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            <PageTitle>Company Calendar</PageTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
               Google Calendar is the single source of truth. The HR portal reads one shared company calendar and reflects those events on every dashboard.
             </p>
           </div>

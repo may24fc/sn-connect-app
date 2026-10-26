@@ -286,7 +286,7 @@ export function RevenueForecastAccessManagerButton() {
 
   return (
     <>
-      <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)}>
+      <Button type="button" variant="outline" onClick={() => setOpen(true)}>
         <UserPlus className="mr-1.5 h-4 w-4" />
         Grant Access
       </Button>

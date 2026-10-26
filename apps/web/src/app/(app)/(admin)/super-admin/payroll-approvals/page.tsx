@@ -28,6 +28,7 @@ import {
   TableHeader,
   TableRow,
   Textarea,
+  PageTitle,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import { AlertCircle, CheckCircle2, Clock, DollarSign, Loader2, XCircle } from 'lucide-react';
@@ -218,12 +219,11 @@ export default function PayrollApprovalsPage() {
     <div className="space-y-6 p-3">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Payroll Approvals</h1>
-          <p className="text-muted-foreground">Review and approve submitted invoices</p>
+          <PageTitle>Payroll Approvals</PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">Review and approve submitted invoices</p>
         </div>
         <Button
           variant="outline"
-          size="sm"
           onClick={() => {
             addToast({
               title: 'Backfill starting...',

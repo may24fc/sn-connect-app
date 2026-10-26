@@ -49,11 +49,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  PageTitle,
+  PageEyebrow,
 } from '@hr-portal/ui';
 import type { InvoiceStatus } from '@hr-portal/ui';
-import { AlertCircle, Building2, ChevronLeft, ChevronRight, CreditCard, ExternalLink, Eye, FileText, Flag, Loader2, Mail, MapPin, Phone, Plus, User } from 'lucide-react';
+import { AlertCircle, Building2, CreditCard, ExternalLink, Eye, FileText, Flag, Loader2, Mail, MapPin, Phone, Plus, User } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { PaginationBar } from '@/components/data-display/PaginationBar';
 
 const MANUAL_PHP_TO_AUD_RATE_STORAGE_KEY = 'admin-invoice-manual-php-to-aud-rate';
 
@@ -740,8 +743,9 @@ export default function AdminInvoicePage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-3">
         <div>
+          <PageEyebrow />
           <div className="flex items-center gap-1.5">
-            <h1 className="text-2xl font-bold text-foreground">Invoice</h1>
+            <PageTitle eyebrow={false}>Invoice</PageTitle>
             <SectionTooltip content="Track employee invoice submissions per payout schedule and create your own invoice draft." />
           </div>
           <p className="text-muted-foreground">
@@ -830,36 +834,13 @@ export default function AdminInvoicePage() {
               </CardTitle>
 
               {employeesData?.pagination && employeesData.pagination.totalPages > 1 && (
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                    {(page - 1) * pageSize + 1}-
-                    {Math.min(page * pageSize, employeesData.pagination.total)} of {employeesData.pagination.total}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      aria-label="Previous page"
-                      onClick={() => setPage(Math.max(1, page - 1))}
-                      disabled={page <= 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      aria-label="Next page"
-                      onClick={() =>
-                        setPage(Math.min(employeesData.pagination.totalPages, page + 1))
-                      }
-                      disabled={page >= employeesData.pagination.totalPages}
-                    >
-                      <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
-                    </Button>
-                  </div>
-                </div>
+                <PaginationBar
+                  page={page}
+                  totalPages={employeesData.pagination.totalPages}
+                  onPageChange={setPage}
+                  total={employeesData.pagination.total}
+                  pageSize={pageSize}
+                />
               )}
             </div>
 

@@ -16,6 +16,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  PageTitle,
 } from '@hr-portal/ui';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -81,10 +82,10 @@ export function SelfEvaluationWorkspace({
       <div className="mx-auto max-w-3xl space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            <PageTitle>
               Self-Evaluation
-            </h1>
-            <p className="text-sm text-muted-foreground">
+            </PageTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
               Use the monthly reflection for regular check-ins, monthly call feedback for session-level input, the 5% reflection for work-family-personal reflection, and the quarterly temperature check for broader feedback on workload, support, and overall experience.
             </p>
           </div>

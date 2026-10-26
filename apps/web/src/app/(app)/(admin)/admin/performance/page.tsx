@@ -25,7 +25,6 @@ import {
   CardHeader,
   CardTitle,
   EmptyState,
-  Input,
   MultiSelectFilter,
   type OKR,
   type PerformanceRating,
@@ -38,21 +37,22 @@ import {
   SelectValue,
   getPersonMetaParts,
   useToast,
+  ToggleGroup,
+  PageTitle,
 } from '@hr-portal/ui';
 import {
   Calendar,
-  ChevronLeft,
-  ChevronRight,
   ClipboardCheck,
   LayoutGrid,
   List,
-  Search,
   Settings,
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { FilterSearchInput } from '@/components/data-display/FilterControls';
+import { PaginationBar } from '@/components/data-display/PaginationBar';
 
 function getInitials(name: string): string {
   return name
@@ -618,12 +618,12 @@ export default function AdminPerformancePage(): ReactNode {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">OKRs & KPIs</h1>
-          <p className="text-muted-foreground">
+          <PageTitle>OKRs & KPIs</PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             View, compare, and evaluate individual OKRs and KPIs
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline">
             <Link href="/admin/performance/monthly-self-evaluations">
               <ClipboardCheck className="mr-2 h-4 w-4" />
@@ -696,22 +696,16 @@ export default function AdminPerformancePage(): ReactNode {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
-            strokeWidth={1.5}
-          />
-          <Input
-            placeholder="Search by name, email, or position..."
-            value={search}
-              maxLength={200}
-            onChange={(e) => {
-              setSearch(e.target.value);
+        <FilterSearchInput
+          placeholder="Search by name, email, or position..."
+          value={search}
+          onChange={(value) => {
+              setSearch(value);
               setPage(1);
             }}
-            className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
-          />
-        </div>
+          maxLength={200}
+          className="sm:w-auto sm:flex-1 min-w-[200px]"
+        />
         <MultiSelectFilter
           label="Roles"
           options={roleOptions}
@@ -754,57 +748,24 @@ export default function AdminPerformancePage(): ReactNode {
             ))}
           </SelectContent>
         </Select>
-        <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
-          <button
-            type="button"
-            onClick={() => setViewMode('cards')}
-            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-              viewMode === 'cards'
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-            }`}
-          >
-            <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
-            Cards
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('list')}
-            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-              viewMode === 'list'
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-            }`}
-          >
-            <List className="h-3.5 w-3.5" strokeWidth={1.5} />
-            List
-          </button>
-        </div>
-        <div className="inline-flex items-center rounded-lg border border-primary/20 bg-primary/5 p-0.5">
-          <button
-            type="button"
-            onClick={() => setSummaryMode('progress')}
-            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-              summaryMode === 'progress'
-                ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50'
-                : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
-            }`}
-          >
-            Progress Mode
-          </button>
-          <button
-            type="button"
-            onClick={() => setSummaryMode('evaluation')}
-            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-              summaryMode === 'evaluation'
-                ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50'
-                : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
-            }`}
-          >
-            <ClipboardCheck className="h-3.5 w-3.5" strokeWidth={1.5} />
-            Evaluation Mode
-          </button>
-        </div>
+        <ToggleGroup
+          aria-label="View"
+          value={viewMode}
+          onChange={setViewMode}
+          options={[
+            { value: 'cards', label: 'Cards', icon: <LayoutGrid strokeWidth={1.5} /> },
+            { value: 'list', label: 'List', icon: <List strokeWidth={1.5} /> },
+          ]}
+        />
+        <ToggleGroup
+          aria-label="Summary mode"
+          value={summaryMode}
+          onChange={setSummaryMode}
+          options={[
+            { value: 'progress', label: 'Progress Mode' },
+            { value: 'evaluation', label: 'Evaluation Mode' },
+          ]}
+        />
         {viewMode === 'cards' && (
           <Select
             value={cardSortMode}
@@ -840,34 +801,13 @@ export default function AdminPerformancePage(): ReactNode {
               )}
             </CardTitle>
             {pagination && totalPages > 1 && (
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                  {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, pagination.total)} of{' '}
-                  {pagination.total}
-                </span>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    aria-label="Previous page"
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  >
-                    <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    aria-label="Next page"
-                    disabled={page >= totalPages}
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  >
-                    <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
-                  </Button>
-                </div>
-              </div>
+              <PaginationBar
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                total={pagination.total}
+                pageSize={pageSize}
+              />
             )}
           </div>
         </CardHeader>

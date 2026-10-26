@@ -24,6 +24,7 @@ import {
   ResourceGrid,
   Skeleton,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import {
   Archive,
@@ -121,8 +122,8 @@ export default function AdminResourcesPage() {
       <div className="p-3">
         <div className="flex items-center justify-between gap-3 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Resources</h1>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            <PageTitle>Resources</PageTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
               Manage drafts, published resources, and engagement
             </p>
           </div>
@@ -134,7 +135,7 @@ export default function AdminResourcesPage() {
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button variant="outline">
                   <MoreHorizontal className="h-4 w-4 mr-1.5" />
                   Actions
                 </Button>

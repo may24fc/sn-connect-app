@@ -12,6 +12,7 @@ import {
   ResourceCard,
   ResourceGrid,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import { Bookmark } from 'lucide-react';
 import Link from 'next/link';
@@ -41,9 +42,9 @@ export default function ResourceBookmarksPage() {
           </Link>{' '}
           / Resource Bookmarks
         </p>
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+        <PageTitle>
           My Bookmarked Resources
-        </h1>
+        </PageTitle>
       </div>
 
       {isLoading ? (

@@ -26,6 +26,8 @@ import {
   HelpLink,
   EmptyState,
   useToast,
+  PageTitle,
+  PageEyebrow,
 } from '@hr-portal/ui';
 import {
   CheckCircle2,
@@ -553,10 +555,11 @@ function PageHeader(): ReactNode {
         />
       </div>
       <div>
+        <PageEyebrow />
         <div className="flex items-center gap-1.5">
-          <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+          <PageTitle eyebrow={false}>
             My Reports
-          </h1>
+          </PageTitle>
           <SectionTooltip content="Submit end-of-day reports to track your internship progress. Save as draft to finish later." />
         </div>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">

@@ -39,8 +39,8 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  RowActionsTrigger,
   EmptyState,
-  Input,
   Select,
   SelectContent,
   SelectItem,
@@ -55,11 +55,12 @@ import {
   ToggleGroup,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
-import { AlertCircle, ArchiveRestore, CheckCircle2, ChevronLeft, ChevronRight, Eye, Loader2, MoreHorizontal, Search, Trash2, XCircle } from 'lucide-react';
+import { AlertCircle, ArchiveRestore, CheckCircle2, ChevronLeft, ChevronRight, Eye, Loader2, Search, Trash2, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
+import { FilterSearchInput } from '@/components/data-display/FilterControls';
 
 type ReportReviewFilter = 'all' | 'submitted' | 'approved' | 'rejected' | 'archived';
 type SubmissionView = 'table' | 'latest';
@@ -307,19 +308,13 @@ export function ReportsSubmissionsTab({
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
-            strokeWidth={1.5}
-          />
-          <Input
-            placeholder="Search employee, campaign, channel, audience, or notes"
-            value={search}
-                maxLength={200}
-            onChange={(event) => setSearch(event.target.value)}
-            className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
-          />
-        </div>
+        <FilterSearchInput
+          placeholder="Search employee, campaign, channel, audience, or notes"
+          value={search}
+          onChange={setSearch}
+          maxLength={200}
+          className="sm:w-auto sm:flex-1 min-w-[200px]"
+        />
         <Select value={status} onValueChange={(value) => setStatus(value as ReportReviewFilter)}>
           <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="Review Status" />
@@ -624,10 +619,7 @@ export function ReportsSubmissionsTab({
                         <div className="flex items-center justify-end" onClick={(event) => event.stopPropagation()}>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <MoreHorizontal className="mr-1.5 h-4 w-4" strokeWidth={1.5} />
-                                Manage
-                              </Button>
+                              <RowActionsTrigger label="Manage report" />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               {!archivedView && (

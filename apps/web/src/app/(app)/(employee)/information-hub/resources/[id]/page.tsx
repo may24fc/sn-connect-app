@@ -20,6 +20,7 @@ import {
   ResourceGrid,
   VideoPlayer,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import { ArrowLeft, Bookmark, CheckCircle2, Download, ExternalLink, FileText, Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -272,8 +273,8 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
         )}
 
         <div className="bg-card border-b border-border p-6">
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{resource.title}</h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2">
+          <PageTitle>{resource.title}</PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             {resource.description || resource.excerpt}
           </p>
 

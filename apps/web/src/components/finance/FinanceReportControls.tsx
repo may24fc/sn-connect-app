@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { Button } from '@hr-portal/ui';
 type Snapshot = { id: string; status: string; exception_count: number; created_at: string };
 type SnapshotView = Snapshot & { report_month: string; report_data: Record<string, unknown> };
 type ReportData = {
@@ -148,22 +149,20 @@ export function FinanceReportControls({ month }: { month: string }) {
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
-        <button
+        <Button
           type="button"
           disabled={busy || !data}
           onClick={() => void save('draft')}
-          className="rounded-md bg-[#16505f] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
         >
           Save draft
-        </button>
-        <button
+        </Button>
+        <Button variant="outline"
           type="button"
           disabled
           onClick={() => void save('final')}
-          className="rounded-md border px-3 py-2 text-sm font-semibold disabled:opacity-50"
         >
           Mark final
-        </button>
+        </Button>
         <a
           href={`/api/expenses/reports/monthly?month=${month}&format=pdf`}
           className="rounded-md border px-3 py-2 text-sm"
@@ -181,14 +180,13 @@ export function FinanceReportControls({ month }: { month: string }) {
               <li key={item.id} className="rounded-lg border p-2">
                 {item.status === 'final' ? 'Final' : 'Draft'} ·{' '}
                 {new Date(item.created_at).toLocaleString()} · {item.exception_count} exceptions ·{' '}
-                <button
+                <Button variant="link"
                   type="button"
                   disabled={busy}
-                  className="font-medium text-[#16505f] underline"
                   onClick={() => void viewSnapshot(item.id)}
                 >
                   View saved snapshot
-                </button>
+                </Button>
                 {' · '}
                 <a
                   className="font-medium text-[#16505f] underline"
@@ -213,9 +211,9 @@ export function FinanceReportControls({ month }: { month: string }) {
                 {selectedSnapshot.exception_count} exceptions
               </p>
             </div>
-            <button type="button" className="rounded border px-2 py-1" onClick={() => setSelectedSnapshot(null)}>
+            <Button variant="outline" size="sm" type="button" onClick={() => setSelectedSnapshot(null)}>
               Close
-            </button>
+            </Button>
           </div>
           <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {Object.entries(selectedSnapshot.report_data)

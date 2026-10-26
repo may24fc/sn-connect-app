@@ -39,8 +39,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  RowActionsTrigger,
   EmptyState,
-  Input,
   Progress,
   Select,
   SelectContent,
@@ -60,6 +60,7 @@ import {
   Textarea,
   getPersonMetaParts,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -72,8 +73,6 @@ import {
   FileText,
   Loader2,
   MessageSquare,
-  MoreVertical,
-  Search,
   Star,
   Target,
   TrendingUp,
@@ -84,6 +83,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useMemo, useState } from 'react';
+import { FilterSearchInput } from '@/components/data-display/FilterControls';
 function formatDateTime(dateString: string): string {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat('en-US', {
@@ -450,8 +450,8 @@ export default function ProbationPage(): ReactNode {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Employee Probation</h1>
-          <p className="text-muted-foreground">
+          <PageTitle>Employee Probation</PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Monitor employee probation periods and onboarding status
           </p>
         </div>
@@ -529,16 +529,13 @@ export default function ProbationPage(): ReactNode {
 
               {/* Filters */}
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="relative w-full sm:w-80">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search employees..."
-                    value={searchQuery}
-              maxLength={200}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
-                  />
-                </div>
+                <FilterSearchInput
+                  placeholder="Search employees..."
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                  maxLength={200}
+                  className="sm:w-80"
+                />
                 <div className="flex gap-3">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger className="w-[160px]">
@@ -654,9 +651,7 @@ export default function ProbationPage(): ReactNode {
                               <TableCell className="text-right">
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" aria-label="More options">
-                                      <MoreVertical className="h-4 w-4" />
-                                    </Button>
+                                    <RowActionsTrigger label="More options" />
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={() => handleViewAppraisal(employee)}>

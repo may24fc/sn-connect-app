@@ -1,7 +1,7 @@
 'use client';
 
 import { useCreateCollection } from '@/hooks/useResourceCollections';
-import { Button, Card, CardContent, CardHeader, CardTitle, Input, Textarea } from '@hr-portal/ui';
+import { Button, Card, CardContent, CardHeader, CardTitle, Input, Textarea, PageTitle } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -44,8 +44,8 @@ export default function NewCollectionPage() {
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">New Collection</h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          <PageTitle>New Collection</PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Create a collection for grouped resource delivery
           </p>
         </div>

@@ -23,6 +23,7 @@ import {
   DashboardAttentionCarousel,
   EmptyState,
   Progress,
+  PageTitle,
 } from '@hr-portal/ui';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -119,10 +120,10 @@ export default function SuperAdminDashboardPage(): ReactNode {
       {/* Page Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
+          <PageTitle>
             {greeting}, {firstName}
-          </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 mt-1">
+          </PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Complete system overview and control.
           </p>
         </div>

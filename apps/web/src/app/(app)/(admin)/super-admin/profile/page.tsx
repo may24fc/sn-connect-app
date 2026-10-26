@@ -24,6 +24,7 @@ import {
   CardContent,
   RoleMetadataFormContainer,
   Skeleton,
+  PageTitle,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import {
@@ -489,8 +490,8 @@ export default function SuperAdminProfilePage() {
             </div>
 
             <div className="flex-1 text-center sm:text-left">
-              <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
-              <p className="text-sm text-muted-foreground">{position}</p>
+              <PageTitle>{displayName}</PageTitle>
+              <p className="mt-1 text-sm text-muted-foreground">{position}</p>
               <div className="mt-2 flex flex-wrap justify-center gap-2 sm:justify-start">
                 <Badge variant="secondary">{department}</Badge>
                 <Badge variant="outline">{employeeNumber}</Badge>

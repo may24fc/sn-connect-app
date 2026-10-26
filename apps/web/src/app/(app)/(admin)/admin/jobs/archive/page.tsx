@@ -14,7 +14,6 @@ import {
   Card,
   CardContent,
   EmptyState,
-  Input,
   Table,
   TableBody,
   TableCell,
@@ -22,10 +21,12 @@ import {
   TableHeader,
   TableRow,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
-import { AlertCircle, Archive, Loader2, RotateCcw, Search } from 'lucide-react';
+import { AlertCircle, Archive, Loader2, RotateCcw } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
+import { FilterSearchInput } from '@/components/data-display/FilterControls';
 
 function useArchivedJobs(search?: string) {
   return useQuery({
@@ -96,10 +97,10 @@ export default function AdminArchivedJobsPage(): ReactNode {
         <div className="flex items-center justify-between gap-3 mb-6">
           <div className="flex items-center gap-3">
             <div>
-              <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+              <PageTitle>
                 Archived Job Postings
-              </h1>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              </PageTitle>
+              <p className="mt-1 text-sm text-muted-foreground">
                 View and restore previously archived job postings
               </p>
             </div>
@@ -118,16 +119,13 @@ export default function AdminArchivedJobsPage(): ReactNode {
 
         {/* Search */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
-            <Input
-              placeholder="Search archived postings..."
-              value={search}
-              maxLength={200}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
-            />
-          </div>
+          <FilterSearchInput
+            placeholder="Search archived postings..."
+            value={search}
+            onChange={setSearch}
+            maxLength={200}
+            className="sm:w-auto sm:flex-1"
+          />
         </div>
       </div>
 

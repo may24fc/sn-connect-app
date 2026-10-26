@@ -25,6 +25,8 @@ import {
   FileDropZone,
   FullScreenPreview,
   useToast,
+  ToggleGroup,
+  PageTitle,
 } from '@hr-portal/ui';
 import {
   Download,
@@ -304,40 +306,23 @@ export default function FilesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">My Documents</h1>
-        <p className="text-sm text-muted-foreground">Manage and upload your employment documents</p>
+        <PageTitle>My Documents</PageTitle>
+        <p className="mt-1 text-sm text-muted-foreground">Manage and upload your employment documents</p>
       </div>
 
       {/* Toolbar */}
       <div className="flex items-center justify-end gap-3">
         <div className="flex items-center gap-3">
           {/* View Toggle */}
-          <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
-            <button
-              type="button"
-              onClick={() => setViewMode('cards')}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                viewMode === 'cards'
-                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-              }`}
-            >
-              <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
-              Cards
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('list')}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                viewMode === 'list'
-                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-              }`}
-            >
-              <List className="h-3.5 w-3.5" strokeWidth={1.5} />
-              List
-            </button>
-          </div>
+          <ToggleGroup
+            aria-label="View"
+            value={viewMode}
+            onChange={setViewMode}
+            options={[
+              { value: 'cards', label: 'Cards', icon: <LayoutGrid strokeWidth={1.5} /> },
+              { value: 'list', label: 'List', icon: <List strokeWidth={1.5} /> },
+            ]}
+          />
         </div>
         <Button onClick={() => setUploadOpen(true)} size="sm">
           <Upload className="mr-2 h-4 w-4" />

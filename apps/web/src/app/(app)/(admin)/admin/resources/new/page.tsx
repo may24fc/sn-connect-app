@@ -2,7 +2,7 @@
 
 import { useCreateResource, useUploadResource } from '@/hooks/useResources';
 import type { CreateResourceInput } from '@/lib/schemas/resource.schema';
-import { Button, Input, ResourceTargetingSelector, ResourceUploader, Textarea, useToast } from '@hr-portal/ui';
+import { Button, Input, ResourceTargetingSelector, ResourceUploader, Textarea, useToast, PageTitle } from '@hr-portal/ui';
 import { ArrowLeft, FileText, Globe, Link2, Send, Target, ChevronDown, ChevronUp, Upload, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -168,9 +168,9 @@ export default function NewResourcePage() {
               Back
             </Button>
             <div className="hidden sm:block">
-              <h1 className="font-heading text-lg font-semibold text-foreground tracking-tight">
+              <PageTitle>
                 New Resource
-              </h1>
+              </PageTitle>
             </div>
           </div>
           <div className="flex items-center gap-2">

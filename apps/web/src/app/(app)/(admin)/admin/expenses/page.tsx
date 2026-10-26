@@ -39,6 +39,7 @@ import {
   TabsTrigger,
   Textarea,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import { Badge } from '@hr-portal/ui';
 import {
@@ -251,11 +252,11 @@ export default function AdminExpensesDashboard() {
     <div className="flex-1 space-y-6 p-8 overflow-y-auto max-h-[calc(100vh-4rem)] bg-zinc-50 dark:bg-zinc-950">
       <div className="flex md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+          <PageTitle className="flex items-center gap-2">
             <ShieldAlert className="h-6 w-6 text-indigo-500" />
             Expense Desk
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          </PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Review requests vs payments flagged with a matching variance, and monitor the reconciled ledger.
           </p>
         </div>

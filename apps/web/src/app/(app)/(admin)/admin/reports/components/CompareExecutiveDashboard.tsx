@@ -1,6 +1,6 @@
 'use client';
 
-import { type MetricComparison, type WeekComparison, cn } from '@hr-portal/ui';
+import { type MetricComparison, type WeekComparison, cn, tableHeaderClassName, tableHeadTextClassName } from '@hr-portal/ui';
 import { ChevronDown, ChevronUp, Megaphone } from 'lucide-react';
 import * as React from 'react';
 
@@ -1088,7 +1088,7 @@ export function CompareExecutiveDashboard({
         <div className="overflow-x-auto">
           <table className="w-full table-fixed border-separate border-spacing-0 font-sans text-sm">
             <thead>
-              <tr className="bg-muted/55 text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+              <tr className={`${tableHeaderClassName} ${tableHeadTextClassName}`}>
                 <th className="w-[34%] px-6 py-4 text-left font-semibold">Metric</th>
                 <th className="w-[14%] px-6 py-4 text-right font-semibold">Previous</th>
                 <th className="w-[14%] px-6 py-4 text-right font-semibold">Current</th>

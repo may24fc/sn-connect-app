@@ -43,6 +43,8 @@ import {
   useToast,
   SectionTooltip,
   HelpLink,
+  PageTitle,
+  PageEyebrow,
 } from '@hr-portal/ui';
 import type { InvoiceStatus } from '@hr-portal/ui';
 import { useQueryClient } from '@tanstack/react-query';
@@ -692,8 +694,9 @@ export default function InvoicePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
+          <PageEyebrow />
           <div className="flex items-center gap-1.5">
-            <h1 className="text-2xl font-bold text-foreground">Invoice</h1>
+            <PageTitle eyebrow={false}>Invoice</PageTitle>
             <SectionTooltip content="Create and track payment invoices. Approved invoices proceed to payroll." />
           </div>
           <p className="text-muted-foreground">Submit and monitor your invoices</p>
@@ -702,7 +705,6 @@ export default function InvoicePage() {
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
-            size="sm"
             onClick={() => setShowAmounts((prev) => !prev)}
             title={showAmounts ? 'Hide amounts' : 'Show amounts'}
           >

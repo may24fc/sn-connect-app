@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
 
 type Candidate = {
   id: string;
@@ -64,48 +65,47 @@ export function FinanceApproverSettings() {
         <div className="flex flex-wrap items-end gap-3">
           <label>
             CEO reviewer
-            <select
-              className="ml-2 rounded border p-2"
-              value={ceo}
-              onChange={(event) => setCeo(event.target.value)}
-            >
-              <option value="">Select</option>
-              {data.candidates.map((item) => (
-                <option key={item.id} value={item.id}>
+            <Select value={ceo} onValueChange={(value) => setCeo(value)}>
+              <SelectTrigger className="ml-2 w-auto min-w-40">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                {data.candidates.map((item) => (
+                <SelectItem key={item.id} value={item.id}>
                   {[item.employee?.first_name, item.employee?.last_name]
                     .filter(Boolean)
                     .join(' ') || item.id}{' '}
                   · {item.role}
-                </option>
-              ))}
-            </select>
+                </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
           <label>
             Independent reviewer
-            <select
-              className="ml-2 rounded border p-2"
-              value={coo}
-              onChange={(event) => setCoo(event.target.value)}
-            >
-              <option value="">Select</option>
-              {data.candidates.map((item) => (
-                <option key={item.id} value={item.id}>
+            <Select value={coo} onValueChange={(value) => setCoo(value)}>
+              <SelectTrigger className="ml-2 w-auto min-w-40">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                {data.candidates.map((item) => (
+                <SelectItem key={item.id} value={item.id}>
                   {[item.employee?.first_name, item.employee?.last_name]
                     .filter(Boolean)
                     .join(' ') || item.id}{' '}
                   · {item.role}
-                </option>
-              ))}
-            </select>
+                </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
-          <button
+          <Button
             type="button"
             disabled={saving || !ceo || !coo || ceo === coo}
             onClick={() => void save()}
-            className="rounded bg-teal-700 px-3 py-2 text-white disabled:opacity-50"
           >
             Save interim owners
-          </button>
+          </Button>
         </div>
       )}
     </section>

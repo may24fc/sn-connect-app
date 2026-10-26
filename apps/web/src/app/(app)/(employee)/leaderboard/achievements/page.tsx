@@ -28,6 +28,7 @@ import {
   getRarityContainerClasses,
   getRarityTagClasses,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import { ArrowLeft, Trophy } from 'lucide-react';
 import { useMemo } from 'react';
@@ -65,11 +66,11 @@ export default function AchievementsPage() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to projects
           </Button>
-          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+          <PageTitle className="flex items-center gap-2">
             <Trophy className="h-6 w-6 text-yellow-500" />
             Achievements
-          </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          </PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Your complete record of domain mastery and earned achievement badges.
           </p>
         </div>

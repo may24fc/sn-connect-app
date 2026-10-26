@@ -42,6 +42,7 @@ import {
   TabsTrigger,
   Textarea,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import { BarChart3, ChevronDown, ChevronUp, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { type ReactNode, useMemo, useState } from 'react';
@@ -287,13 +288,10 @@ export function RevenueForecastPageContent({
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-emerald-500">
-            SFO · Seafood Outlet · Revenue Forecast
-          </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          <PageTitle>
             {targetYear} Projection
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          </PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             {earnedPeriodEndMonth > 0
               ? `Jan-${REVENUE_MONTHS[Math.max(earnedPeriodEndMonth - 1, 0)]} actuals locked in.`
               : 'No months elapsed yet in this forecast year.'}{' '}

@@ -16,6 +16,7 @@ import {
   cn,
   type PodiumEntry,
   type Tier,
+  PageTitle,
 } from '@hr-portal/ui';
 import { Trophy } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -76,11 +77,11 @@ export default function LeaderboardPage() {
     <div className="space-y-6 p-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+          <PageTitle className="flex items-center gap-2">
             <Trophy className="h-6 w-6 text-yellow-500" />
             Leaderboard
-          </h1>
-          <p className="flex flex-wrap items-center gap-1 text-sm text-zinc-500 dark:text-zinc-400">
+          </PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground flex flex-wrap items-center gap-1">
             Earn XP from
             <XpTierPill label="Routine (50)" className={COMPLEXITY_TIER_BADGE_CLASSES.routine} />
             to
@@ -100,14 +101,13 @@ export default function LeaderboardPage() {
           <ToggleGroup
             value={period}
             onChange={setPeriod as (v: string) => void}
-            buttonClassName="h-7"
             options={[
               { value: 'all', label: 'All time' },
               { value: 'month', label: 'This month' },
             ]}
           />
           <Select value={league} onValueChange={(value) => setLeague(value as LeagueFilter)}>
-            <SelectTrigger className="h-7 w-[170px]">
+            <SelectTrigger className="w-[170px]">
               <SelectValue placeholder="All Leagues" />
             </SelectTrigger>
             <SelectContent>

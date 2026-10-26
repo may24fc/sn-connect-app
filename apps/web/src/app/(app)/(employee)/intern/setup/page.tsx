@@ -9,6 +9,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  PageTitle,
 } from '@hr-portal/ui';
 import {
   AlertCircle,
@@ -39,10 +40,10 @@ export default function InternSetupPage(): ReactNode {
             />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+            <PageTitle>
               Internship Assignment Pending
-            </h1>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            </PageTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
               {user?.name ? `Hi ${user.name},` : 'Hi,'} your internship details are assigned by an administrator.
             </p>
           </div>

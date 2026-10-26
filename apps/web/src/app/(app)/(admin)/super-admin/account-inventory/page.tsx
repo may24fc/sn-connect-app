@@ -2,6 +2,7 @@
 
 import { AlertTriangle, Clock3, Send, ShieldCheck } from 'lucide-react';
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
+import { tableHeaderClassName, tableHeadTextClassName, PageTitle, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
 
 type Account = {
   id: string;
@@ -106,9 +107,8 @@ export default function AccountInventoryPage() {
   return (
     <div className="space-y-6 p-6">
       <header>
-        <p className="text-sm font-semibold text-teal-700">Identity governance</p>
-        <h1 className="text-3xl font-semibold tracking-tight">Account Inventory</h1>
-        <p className="mt-2 text-slate-600">
+        <PageTitle>Account Inventory</PageTitle>
+        <p className="mt-1 text-sm text-muted-foreground">
           Privileged, reviewer, test, and service identities are managed here and never appear as
           employees.
         </p>
@@ -134,37 +134,38 @@ export default function AccountInventoryPage() {
         <form onSubmit={saveClassification} className="mt-5 grid gap-4 md:grid-cols-2">
           <label className="text-sm font-medium">
             Leadership account
-            <select
-              required
-              aria-label="Leadership account"
-              value={classification.userId}
-              onChange={(event) => selectLeadershipAccount(event.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
-            >
-              <option value="">Select an account</option>
-              {leadershipAccounts.map((account) => (
-                <option key={account.id} value={account.id}>
+            <Select value={classification.userId} required onValueChange={(value) => selectLeadershipAccount(value)}>
+              <SelectTrigger aria-label="Leadership account" className="mt-1 w-full">
+                <SelectValue placeholder="Select an account" />
+              </SelectTrigger>
+              <SelectContent>
+                {leadershipAccounts.map((account) => (
+                <SelectItem key={account.id} value={account.id}>
                   {account.email ?? account.id} · {account.role.replace('_', ' ')}
-                </option>
-              ))}
-            </select>
+                </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
           <label className="text-sm font-medium">
             Population
-            <select
-              aria-label="Population"
+            <Select
               value={classification.accountKind}
-              onChange={(event) =>
+              onValueChange={(next) =>
                 setClassification((value) => ({
                   ...value,
-                  accountKind: event.target.value as 'workforce' | 'privileged',
+                  accountKind: next === 'privileged' ? 'privileged' : 'workforce',
                 }))
               }
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
             >
-              <option value="workforce">Workforce leader</option>
-              <option value="privileged">Privileged non-workforce account</option>
-            </select>
+              <SelectTrigger aria-label="Population" className="mt-1 w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="workforce">Workforce leader</SelectItem>
+                <SelectItem value="privileged">Privileged non-workforce account</SelectItem>
+              </SelectContent>
+            </Select>
           </label>
           {classification.accountKind === 'privileged' ? (
             <label className="text-sm font-medium md:col-span-2">
@@ -280,7 +281,7 @@ export default function AccountInventoryPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-left text-sm">
-              <thead className="bg-slate-50 text-slate-600">
+              <thead className={`${tableHeaderClassName} ${tableHeadTextClassName}`}>
                 <tr>
                   <th className="px-5 py-3">Account</th>
                   <th className="px-5 py-3">Kind</th>

@@ -95,7 +95,7 @@ export function FilterDateInput({
   return (
     <label
       className={cn(
-        'flex h-9 cursor-text items-center gap-1.5 rounded-md border border-input bg-card px-2.5 text-sm shadow-sm transition-colors hover:border-primary/35 focus-within:border-primary/60',
+        'flex h-10 cursor-text items-center gap-1.5 rounded-md border border-input bg-card px-2.5 text-sm shadow-sm transition-colors hover:border-primary/35 focus-within:border-primary/60',
         value && !isScope && 'border-primary/50 bg-primary-muted/30'
       )}
     >

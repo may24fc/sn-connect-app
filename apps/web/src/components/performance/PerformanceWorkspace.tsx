@@ -37,6 +37,8 @@ import {
   Textarea,
   type PerformanceRating,
   useToast,
+  PageTitle,
+  PageEyebrow,
 } from '@hr-portal/ui';
 import { Calendar, ChevronRight, Plus, Target } from 'lucide-react';
 import Link from 'next/link';
@@ -229,8 +231,9 @@ export function PerformanceWorkspace({ detailHrefBase }: PerformanceWorkspacePro
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
+          <PageEyebrow />
           <div className="flex items-center gap-1.5">
-            <h1 className="text-2xl font-bold text-foreground">OKRs &amp; KPIs</h1>
+            <PageTitle eyebrow={false}>OKRs &amp; KPIs</PageTitle>
             <SectionTooltip content="Track your objectives, targets, KPIs, and review-cycle progress in one workspace." />
           </div>
           <p className="text-muted-foreground">Track your objectives, targets, and KPI progress</p>

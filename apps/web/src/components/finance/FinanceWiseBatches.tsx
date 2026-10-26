@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { Button, tableHeaderClassName, tableHeadTextClassName } from '@hr-portal/ui';
 
 type ReadyInvoice = {
   id: string;
@@ -177,10 +178,10 @@ export function FinanceWiseBatches({ hideAmounts = false }: { hideAmounts?: bool
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[650px] text-left text-sm">
-          <thead>
+          <thead className={`${tableHeaderClassName} ${tableHeadTextClassName}`}>
             <tr>
               {['Select', 'Invoice', 'Staff', 'Amount', 'Currency', 'Eligibility'].map((label) => (
-                <th key={label} className="border-b p-2">
+                <th key={label} className="p-2">
                   {label}
                 </th>
               ))}
@@ -221,14 +222,13 @@ export function FinanceWiseBatches({ hideAmounts = false }: { hideAmounts?: bool
           <p className="p-3 text-sm text-muted-foreground">No approved invoices are waiting.</p>
         ) : null}
       </div>
-      <button
+      <Button
         type="button"
         disabled={busy || selected.length === 0}
         onClick={() => void createBatch()}
-        className="rounded bg-teal-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
       >
         Create batch for {selected.length} invoices
-      </button>
+      </Button>
       <div className="space-y-3">
         <h3 className="font-semibold">Created batches</h3>
         {queue?.batches.map((batch) => (
@@ -292,16 +292,15 @@ export function FinanceWiseBatches({ hideAmounts = false }: { hideAmounts?: bool
                     value={resolution?.id === row.id ? resolution.note : ''}
                     onChange={(event) => setResolution({ id: row.id, note: event.target.value })}
                   />
-                  <button
+                  <Button variant="outline" size="sm"
                     type="button"
-                    className="rounded border px-2 py-1"
                     disabled={
                       busy || resolution?.id !== row.id || resolution.note.trim().length < 10
                     }
                     onClick={() => void resolveException(row.id)}
                   >
                     Resolve exception
-                  </button>
+                  </Button>
                 </div>
               ) : null}
             </div>

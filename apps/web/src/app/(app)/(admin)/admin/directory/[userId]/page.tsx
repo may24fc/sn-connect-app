@@ -30,6 +30,8 @@ import {
   TabsTrigger,
   Textarea,
   CountBadge,
+  PageTitle,
+  PageEyebrow,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import {
@@ -424,10 +426,11 @@ export default function DirectoryDetailPage({
             </AvatarFallback>
           </Avatar>
           <div>
+            <PageEyebrow />
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
+              <PageTitle eyebrow={false}>
                 {entry.full_name || 'Unknown'}
-              </h1>
+              </PageTitle>
               <Badge variant={getStatusBadgeVariant(entry.status)} className="text-xs capitalize">
                 {formatDisplayLabel(entry.status)}
               </Badge>

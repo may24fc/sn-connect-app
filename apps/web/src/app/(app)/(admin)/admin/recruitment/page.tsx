@@ -5,7 +5,7 @@ import { AtsAccessManagerButton } from '@/components/admin/AtsAccessManagerDialo
 import { RecruitmentSectionNav } from '@/components/recruitment/RecruitmentSectionNav';
 import { useApplications } from '@/hooks/useApplications';
 import { useJobPostings } from '@/hooks/useJobPostings';
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState } from '@hr-portal/ui';
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState, PageTitle } from '@hr-portal/ui';
 import {
   Archive,
   ArrowRight,
@@ -149,10 +149,10 @@ export default function AdminRecruitmentPage(): ReactNode {
       <RecruitmentSectionNav current="overview" />
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+          <PageTitle>
             Recruitment
-          </h1>
-          <p className="mt-1 max-w-2xl text-sm text-zinc-500 dark:text-zinc-400">
+          </PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground max-w-2xl">
             ATS command center for approved headcount, active candidates, and final hires.
           </p>
         </div>

@@ -15,6 +15,7 @@ import {
   Input,
   Label,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -77,7 +78,6 @@ export default function NewProjectPage() {
         <Button
           type="button"
           variant="ghost"
-          size="sm"
           onClick={handleBack}
           className="shrink-0"
         >
@@ -85,10 +85,10 @@ export default function NewProjectPage() {
           Back to projects
         </Button>
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          <PageTitle>
             New Project
-          </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          </PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Create a project, then break it into monthly milestones.
           </p>
         </div>

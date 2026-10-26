@@ -12,15 +12,17 @@ import {
   AnnouncementDetailDialog,
   Button,
   CountBadge,
-  Input,
   MultiSelectFilter,
   Skeleton,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import type { FilterOption } from '@hr-portal/ui';
-import { ChevronLeft, ChevronRight, Search, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { FilterSearchInput } from '@/components/data-display/FilterControls';
+import { PaginationBar } from '@/components/data-display/PaginationBar';
 
 const announcementCategoryLabels: Record<string, string> = {
   hr_updates: 'HR Updates',
@@ -108,8 +110,8 @@ export default function AnnouncementsPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Announcements</h1>
-          <p className="text-muted-foreground">
+          <PageTitle>Announcements</PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Stay informed with the latest company announcements
           </p>
         </div>
@@ -127,19 +129,16 @@ export default function AnnouncementsPage() {
       <div className="space-y-4">
         {/* Filters & Pagination */}
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
-              placeholder="Search announcements"
-              value={search}
-            maxLength={200}
-              onChange={(event) => {
-                setSearch(event.target.value);
+          <FilterSearchInput
+            placeholder="Search announcements"
+            value={search}
+            onChange={(value) => {
+                setSearch(value);
                 setAnnouncementPage(1);
               }}
-            />
-          </div>
+            maxLength={200}
+            className="sm:w-auto sm:flex-1"
+          />
           <div className="flex flex-wrap items-center gap-3">
             <MultiSelectFilter
               label="Category"
@@ -173,35 +172,13 @@ export default function AnnouncementsPage() {
             />
           </div>
           {(announcementData?.pagination.totalPages ?? 1) > 1 && (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                {(announcementPage - 1) * 10 + 1}-
-                {Math.min(announcementPage * 10, announcementData?.pagination.total ?? 0)} of{' '}
-                {announcementData?.pagination.total ?? 0}
-              </span>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  aria-label="Previous page"
-                  disabled={announcementPage <= 1}
-                  onClick={() => setAnnouncementPage((value) => Math.max(1, value - 1))}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  aria-label="Next page"
-                  disabled={(announcementData?.pagination.totalPages || 1) <= announcementPage}
-                  onClick={() => setAnnouncementPage((value) => value + 1)}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            <PaginationBar
+              page={announcementPage}
+              totalPages={announcementData?.pagination.totalPages ?? 1}
+              onPageChange={setAnnouncementPage}
+              total={announcementData?.pagination.total ?? 0}
+              pageSize={10}
+            />
           )}
         </div>
 

@@ -35,6 +35,7 @@ import {
   SlidePanelTitle,
   Textarea,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import { ArrowLeft, Calendar, Filter, ListChecks, Plus, Target, X } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
@@ -311,8 +312,8 @@ export function OKRSelfServiceWorkspace({ fallbackPath }: OKRSelfServiceWorkspac
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">My OKRs &amp; KPIs</h1>
-            <p className="text-muted-foreground">
+            <PageTitle>My OKRs &amp; KPIs</PageTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
               Manage your objectives, key results, and KPI progress
             </p>
           </div>

@@ -28,10 +28,12 @@ import {
   SelectTrigger,
   SelectValue,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
-import { Bell, CheckCircle, ChevronLeft, ChevronRight, ExternalLink, Info, Loader2, Trash2 } from 'lucide-react';
+import { Bell, CheckCircle, ExternalLink, Info, Loader2, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
+import { PaginationBar } from '@/components/data-display/PaginationBar';
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -129,10 +131,10 @@ export default function NotificationsPage(): ReactNode {
       {/* Page Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
+          <PageTitle>
             Notifications
-          </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          </PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             {unreadCount > 0
               ? `You have ${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}`
               : 'You\u2019re all caught up!'}
@@ -247,34 +249,13 @@ export default function NotificationsPage(): ReactNode {
             </div>
             {/* Pagination - Gmail style at top */}
             {pagination.totalPages > 1 && (
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                  {(pagination.page - 1) * (filters.pageSize ?? 20) + 1}-
-                  {Math.min(pagination.page * (filters.pageSize ?? 20), pagination.total)} of {pagination.total}
-                </span>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    aria-label="Previous page"
-                    disabled={pagination.page <= 1}
-                    onClick={() => setFilters((prev) => ({ ...prev, page: (prev.page ?? 1) - 1 }))}
-                  >
-                    <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    aria-label="Next page"
-                    disabled={pagination.page >= pagination.totalPages}
-                    onClick={() => setFilters((prev) => ({ ...prev, page: (prev.page ?? 1) + 1 }))}
-                  >
-                    <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
-                  </Button>
-                </div>
-              </div>
+              <PaginationBar
+                page={pagination.page}
+                totalPages={pagination.totalPages}
+                onPageChange={(page) => setFilters((prev) => ({ ...prev, page }))}
+                total={pagination.total}
+                pageSize={filters.pageSize ?? 20}
+              />
             )}
           </div>
         </CardHeader>

@@ -33,8 +33,8 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  RowActionsTrigger,
   EmptyState,
-  Input,
   Select,
   SelectContent,
   SelectItem,
@@ -49,11 +49,15 @@ import {
   SectionTooltip,
   HelpLink,
   useToast,
+  ToggleGroup,
+  PageTitle,
+  PageEyebrow,
 } from '@hr-portal/ui';
-import { AlertCircle, ArchiveRestore, ChevronDown, ChevronRight, CheckCircle2, Eye, FileText, Layers, List, Loader2, MoreHorizontal, Pencil, Plus, Search, Send, Trash2 } from 'lucide-react';
+import { AlertCircle, ArchiveRestore, ChevronDown, ChevronRight, CheckCircle2, Eye, FileText, Layers, List, Loader2, Pencil, Plus, Send, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
+import { FilterSearchInput } from '@/components/data-display/FilterControls';
 
 type ReportStatusFilter = 'all' | 'draft' | 'submitted' | 'approved' | 'rejected' | 'archived';
 
@@ -251,8 +255,9 @@ export default function ReportsPage() {
       <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
+          <PageEyebrow />
           <div className="flex items-center gap-1.5">
-            <h1 className="text-2xl font-bold text-foreground">Marketing Reports</h1>
+            <PageTitle eyebrow={false}>Marketing Reports</PageTitle>
             <SectionTooltip content="View, create, and track your submitted marketing reports and their approval status." />
           </div>
           <p className="text-muted-foreground">Create, submit, and track weekly marketing performance reports</p>
@@ -293,16 +298,13 @@ export default function ReportsPage() {
       </StatCardGrid>
 
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-        <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
-            placeholder="Search campaigns or report notes"
-            value={search}
-            maxLength={200}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </div>
+        <FilterSearchInput
+          placeholder="Search campaigns or report notes"
+          value={search}
+          onChange={setSearch}
+          maxLength={200}
+          className="sm:w-auto sm:flex-1"
+        />
         <div className="flex flex-wrap items-center gap-3">
           <Select value={status} onValueChange={(value) => setStatus(value as ReportStatusFilter)}>
             <SelectTrigger className="w-[180px]">
@@ -317,32 +319,15 @@ export default function ReportsPage() {
               <SelectItem value="archived">Archived</SelectItem>
             </SelectContent>
           </Select>
-          <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
-            <button
-              type="button"
-              onClick={() => setViewMode('flat')}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                viewMode === 'flat'
-                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-              }`}
-            >
-              <List className="h-3.5 w-3.5" strokeWidth={1.5} />
-              Flat
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('grouped')}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                viewMode === 'grouped'
-                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-              }`}
-            >
-              <Layers className="h-3.5 w-3.5" strokeWidth={1.5} />
-              Grouped
-            </button>
-          </div>
+          <ToggleGroup
+            aria-label="View"
+            value={viewMode}
+            onChange={setViewMode}
+            options={[
+              { value: 'flat', label: 'Flat', icon: <List strokeWidth={1.5} /> },
+              { value: 'grouped', label: 'Grouped', icon: <Layers strokeWidth={1.5} /> },
+            ]}
+          />
         </div>
       </div>
 
@@ -718,10 +703,7 @@ function ReportActionsMenu({
     <div className="flex items-center justify-end" onClick={(event) => event.stopPropagation()}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
-            <MoreHorizontal className="mr-1.5 h-4 w-4" strokeWidth={1.5} />
-            Manage
-          </Button>
+          <RowActionsTrigger label="Manage report" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           {!archivedView && (

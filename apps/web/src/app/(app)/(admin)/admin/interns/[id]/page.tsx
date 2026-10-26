@@ -53,6 +53,7 @@ import {
   UserAvatar,
   calculateHoursProgress,
   getDaysRemaining,
+  PageTitle,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import { HealthPill, ProgressRing } from '@hr-portal/ui';
@@ -279,8 +280,8 @@ export default function InternDetailPage({
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Associate Profile</h1>
-            <p className="text-muted-foreground">View and manage associate details</p>
+            <PageTitle>Associate Profile</PageTitle>
+            <p className="mt-1 text-sm text-muted-foreground">View and manage associate details</p>
           </div>
         </div>
         <div className="flex gap-2">

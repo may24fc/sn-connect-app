@@ -211,7 +211,6 @@ export default function DashboardPage(): ReactNode {
   return (
     <div className="h-full space-y-6">
       <PageHeader
-        eyebrow="My workspace"
         title={`${greeting}, ${firstName}`}
         description="Here is what is happening with your HR journey today."
       />

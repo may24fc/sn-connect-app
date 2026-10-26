@@ -4,7 +4,7 @@ import { FivePercentReflectionAdminReview } from '@/components/performance/FiveP
 import { MonthlyCallFeedbackAdminReview } from '@/components/performance/MonthlyCallFeedbackAdminReview';
 import { MonthlySelfEvaluationAdminReview } from '@/components/performance/MonthlySelfEvaluationAdminReview';
 import { QuarterlyTemperatureCheckAdminReview } from '@/components/performance/QuarterlyTemperatureCheckAdminReview';
-import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, PageTitle } from '@hr-portal/ui';
 import { ArrowLeft, ClipboardCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
@@ -38,10 +38,10 @@ export function SelfEvaluationReviewWorkspace({
         </Button>
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            <PageTitle>
               Self-Evaluation Reviews
-            </h1>
-            <p className="text-sm text-muted-foreground">
+            </PageTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
               Review monthly self-evaluations, monthly call feedback, 5% reflections, and quarterly temperature checks from one leadership workspace.
             </p>
           </div>

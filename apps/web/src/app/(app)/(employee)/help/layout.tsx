@@ -3,7 +3,7 @@
 import { type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { ArrowLeft, BookOpen, FileText, DollarSign, BarChart3, ChevronRight } from 'lucide-react';
-import { Card, CardContent } from '@hr-portal/ui';
+import { Card, CardContent, PageTitle } from '@hr-portal/ui';
 import Link from 'next/link';
 
 const helpNav = [
@@ -56,8 +56,8 @@ export default function HelpLayout({ children }: { children: ReactNode }): React
           <BookOpen className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Help Center</h1>
-          <p className="text-sm text-muted-foreground">
+          <PageTitle>Help Center</PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Guides and FAQs to help you use Control Hub
           </p>
         </div>

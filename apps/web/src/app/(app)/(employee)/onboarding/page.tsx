@@ -23,6 +23,7 @@ import {
   TabsList,
   TabsTrigger,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import {
   CheckCircle2,
@@ -298,8 +299,8 @@ export default function OnboardingPage(): ReactNode {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Checklist Hub</h1>
-        <p className="text-muted-foreground">
+        <PageTitle>Checklist Hub</PageTitle>
+        <p className="mt-1 text-sm text-muted-foreground">
           Track exactly what you still need to complete for onboarding and, when applicable,
           offboarding.
         </p>

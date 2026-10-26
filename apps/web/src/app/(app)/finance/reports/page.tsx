@@ -4,6 +4,7 @@ import { FinanceReportControls } from '@/components/finance/FinanceReportControl
 import { canReviewFinance, getFinanceContext } from '@/lib/finance/auth';
 import { type FinanceOverviewData, summarizeFinanceOverview } from '@/lib/finance/overview';
 import { notFound } from 'next/navigation';
+import { Button, tableHeaderClassName, tableHeadTextClassName, PageTitle, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
 
 export const dynamic = 'force-dynamic';
 const money = (value: number) =>
@@ -79,13 +80,10 @@ export default async function FinanceReportsPage({
     <main className="h-full space-y-6">
       <header className="flex flex-col gap-4 border-b border-border/80 pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-primary">
-            Finance
-          </p>
-          <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground lg:text-3xl">
+          <PageTitle>
             Reports
-          </h1>
-          <p className="mt-1 max-w-3xl text-sm text-muted-foreground lg:text-base">
+          </PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground max-w-3xl">
             Compare converted spending and prepare an auditable month-end report.
           </p>
         </div>
@@ -100,20 +98,20 @@ export default async function FinanceReportsPage({
             className="rounded-md border bg-card px-3 py-2"
           />
           <label htmlFor="report-view">Trend</label>
-          <select
-            id="report-view"
-            name="view"
-            defaultValue={view}
-            className="rounded-md border bg-card px-3 py-2"
-          >
-            <option value="month">Month</option>
-            <option value="week">Weeks in month</option>
-            <option value="quarter">Quarters in year</option>
-            <option value="year">Last four years</option>
-          </select>
-          <button type="submit" className="rounded-md border bg-card px-3 py-2 font-medium">
+          <Select defaultValue={view} name="view">
+            <SelectTrigger id="report-view" className="w-auto min-w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="month">Month</SelectItem>
+              <SelectItem value="week">Weeks in month</SelectItem>
+              <SelectItem value="quarter">Quarters in year</SelectItem>
+              <SelectItem value="year">Last four years</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" type="submit">
             View
-          </button>
+          </Button>
         </form>
       </header>
       {view !== 'month' ? (
@@ -251,7 +249,7 @@ export default async function FinanceReportsPage({
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[620px] text-left text-sm">
-                  <thead className="border-b bg-[#fafbf9] text-xs uppercase tracking-wide text-muted-foreground">
+                  <thead className={`${tableHeaderClassName} ${tableHeadTextClassName}`}>
                     <tr>
                       <th className="p-3 font-medium">Category</th>
                       <th className="p-3 text-right font-medium">{monthLabel(previous)}</th>

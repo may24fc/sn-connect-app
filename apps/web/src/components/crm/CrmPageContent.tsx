@@ -52,8 +52,10 @@ import {
   DialogTitle,
   DialogDescription,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import { Loader2, AlertCircle, Store, Building2, Pencil, Trash2 } from 'lucide-react';
+import { FilterSearchInput } from '@/components/data-display/FilterControls';
 
 const CRM_PAGE_SIZE = 10;
 
@@ -635,8 +637,8 @@ export function CrmPageContent({
   return (
     <div className="space-y-6 p-3">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Dual-Pipeline CRM Tracker</h1>
-        <p className="text-sm text-muted-foreground">
+        <PageTitle>Dual-Pipeline CRM Tracker</PageTitle>
+        <p className="mt-1 text-sm text-muted-foreground">
           One workspace for SFO retail transactions and SN Tech B2B requirements management.
         </p>
       </div>
@@ -690,15 +692,14 @@ export function CrmPageContent({
         <TabsContent value="META" className="mt-6 space-y-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
-            <Input
+            <FilterSearchInput
+              placeholder="Search customer, invoice, source, remarks"
               value={sfoSearch}
-                    maxLength={200}
-              onChange={(event) => {
-                setSfoSearch(event.target.value);
+              onChange={(value) => {
+                setSfoSearch(value);
                 setSfoPage(1);
               }}
-              placeholder="Search customer, invoice, source, remarks"
-              className="md:max-w-md"
+              className="sm:w-96"
             />
             <Select value={sfoStatusFilter} onValueChange={(value) => {
               setSfoStatusFilter(value as 'all' | SfoStatus);
@@ -727,15 +728,14 @@ export function CrmPageContent({
         <TabsContent value="GOOGLE_ADS" className="mt-6 space-y-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
-            <Input
+            <FilterSearchInput
+              placeholder="Search customer, invoice, source, remarks"
               value={sfoSearch}
-                        maxLength={200}
-              onChange={(event) => {
-                setSfoSearch(event.target.value);
+              onChange={(value) => {
+                setSfoSearch(value);
                 setSfoPage(1);
               }}
-              placeholder="Search customer, invoice, source, remarks"
-              className="md:max-w-md"
+              className="sm:w-96"
             />
             <Select value={sfoStatusFilter} onValueChange={(value) => {
               setSfoStatusFilter(value as 'all' | SfoStatus);
@@ -764,15 +764,14 @@ export function CrmPageContent({
         <TabsContent value="TECH" className="mt-6 space-y-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
-            <Input
+            <FilterSearchInput
+              placeholder="Search company, contact, summary"
               value={techSearch}
-                        maxLength={200}
-              onChange={(event) => {
-                setTechSearch(event.target.value);
+              onChange={(value) => {
+                setTechSearch(value);
                 setTechPage(1);
               }}
-              placeholder="Search company, contact, summary"
-              className="md:max-w-md"
+              className="sm:w-96"
             />
             <Select value={techStageFilter} onValueChange={(value) => {
               setTechStageFilter(value as 'all' | TechPipelineStage);

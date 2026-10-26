@@ -5,6 +5,11 @@ import { ManageDepartmentLeadsDialog } from '@/components/admin/ManageDepartment
 import { TerminationReasonField } from '@/components/admin/TerminationReasonField';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
+import {
+  FILTER_ALL_VALUE,
+  FilterSearchInput,
+  FilterSelect,
+} from '@/components/data-display/FilterControls';
 import { PersonSearchSelect } from '@/components/people/PersonSearchSelect';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreateDepartment, useDepartments } from '@/hooks/useDepartments';
@@ -34,6 +39,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  RowActionsTrigger,
   EmptyState,
   Input,
   Label,
@@ -52,6 +58,7 @@ import {
   Tabs,
   TabsList,
   TabsTrigger,
+  PageTitle,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -59,17 +66,13 @@ import {
   AlertCircle,
   BookOpen,
   CalendarClock,
-  ChevronLeft,
-  ChevronRight,
   Clock,
   Download,
   Eye,
-  MoreHorizontal,
   Pencil,
   Plus,
   RotateCcw,
   Save,
-  Search,
   Target,
   Trash2,
   UserCheck,
@@ -80,6 +83,22 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
+import { PaginationBar } from '@/components/data-display/PaginationBar';
+
+const DIRECTORY_STATUS_OPTIONS = [
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+  { value: 'probation', label: 'Probation' },
+  { value: 'on_leave', label: 'On Leave' },
+  { value: 'terminated', label: 'Terminated' },
+];
+
+const DIRECTORY_EMPLOYMENT_TYPE_OPTIONS = [
+  { value: 'regular', label: 'Regular' },
+  { value: 'probationary', label: 'Probationary' },
+  { value: 'associate', label: 'Associate' },
+  { value: 'project_based', label: 'Project Based' },
+];
 
 function getInitials(name: string): string {
   return name
@@ -757,33 +776,33 @@ export default function AdminDirectoryPage(): ReactNode {
   return (
     <div className="flex flex-col gap-6 p-3">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
+          <PageTitle>
             Company Directory
-          </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          </PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Master directory of all employees and associates
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {isSuperAdmin && (
             <>
-              <Button variant="outline" size="sm" onClick={() => setManageDepartmentLeadsOpen(true)}>
+              <Button variant="outline" onClick={() => setManageDepartmentLeadsOpen(true)}>
                 <Users className="mr-2 h-4 w-4" strokeWidth={1.5} />
                 Manage departments
               </Button>
-              <Button size="sm" onClick={() => setInviteLeadershipOpen(true)}>
+              <Button onClick={() => setInviteLeadershipOpen(true)}>
                 <UserPlus className="h-4 w-4 mr-2" strokeWidth={1.5} />
                 Invite Leadership
               </Button>
             </>
           )}
-          <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
+          <Button variant="outline" onClick={handleExport} disabled={exporting}>
             <Download className="h-4 w-4 mr-2" strokeWidth={1.5} />
             {exporting ? 'Exporting...' : 'Export CSV'}
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExportExcel} disabled={exporting}>
+          <Button variant="outline" onClick={handleExportExcel} disabled={exporting}>
             <Download className="h-4 w-4 mr-2" strokeWidth={1.5} />
             {exporting ? 'Exporting...' : 'Export Excel'}
           </Button>
@@ -842,22 +861,15 @@ export default function AdminDirectoryPage(): ReactNode {
       {/* Filters — only shown on active tab */}
       {activeTab === 'active' && (
         <div className="flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
-              strokeWidth={1.5}
-            />
-            <Input
-              placeholder="Search by name, email, or position..."
-              value={search}
-              maxLength={200}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
-            />
-          </div>
+          <FilterSearchInput
+            placeholder="Search by name, email, or position…"
+            value={search}
+            onChange={(value) => {
+              setSearch(value);
+              setPage(1);
+            }}
+            className="sm:w-auto sm:flex-1 min-w-[200px]"
+          />
           <MultiSelectFilter
             label="Roles"
             options={roleOptions}
@@ -885,43 +897,24 @@ export default function AdminDirectoryPage(): ReactNode {
               setPage(1);
             }}
           />
-          <Select
-            value={statusFilter}
+          <FilterSelect
+            label="Status"
+            value={statusFilter || FILTER_ALL_VALUE}
             onValueChange={(v) => {
-              setStatusFilter(v === 'all' ? '' : v);
+              setStatusFilter(v === FILTER_ALL_VALUE ? '' : v);
               setPage(1);
             }}
-          >
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-              <SelectItem value="probation">Probation</SelectItem>
-              <SelectItem value="on_leave">On Leave</SelectItem>
-              <SelectItem value="terminated">Terminated</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={employmentTypeFilter}
+            options={DIRECTORY_STATUS_OPTIONS}
+          />
+          <FilterSelect
+            label="Employment Type"
+            value={employmentTypeFilter || FILTER_ALL_VALUE}
             onValueChange={(v) => {
-              setEmploymentTypeFilter(v === 'all' ? '' : v);
+              setEmploymentTypeFilter(v === FILTER_ALL_VALUE ? '' : v);
               setPage(1);
             }}
-          >
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Employment Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Employment Type</SelectItem>
-              <SelectItem value="regular">Regular</SelectItem>
-              <SelectItem value="probationary">Probationary</SelectItem>
-              <SelectItem value="associate">Associate</SelectItem>
-              <SelectItem value="project_based">Project Based</SelectItem>
-            </SelectContent>
-          </Select>
+            options={DIRECTORY_EMPLOYMENT_TYPE_OPTIONS}
+          />
         </div>
       )}
 
@@ -939,34 +932,13 @@ export default function AdminDirectoryPage(): ReactNode {
             </CardTitle>
             {/* Pagination - Gmail style at top */}
             {pagination && pagination.totalPages > 1 && (
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                  {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, pagination.total)} of{' '}
-                  {pagination.total}
-                </span>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    aria-label="Previous page"
-                    onClick={() => setPage(Math.max(1, page - 1))}
-                    disabled={page <= 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    aria-label="Next page"
-                    onClick={() => setPage(Math.min(pagination.totalPages, page + 1))}
-                    disabled={page >= pagination.totalPages}
-                  >
-                    <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
-                  </Button>
-                </div>
-              </div>
+              <PaginationBar
+                page={page}
+                totalPages={pagination.totalPages}
+                onPageChange={setPage}
+                total={pagination.total}
+                pageSize={pageSize}
+              />
             )}
           </div>
         </CardHeader>
@@ -1162,9 +1134,7 @@ export default function AdminDirectoryPage(): ReactNode {
                         >
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon-sm" title="Actions">
-                                <MoreHorizontal className="h-4 w-4" strokeWidth={1.5} />
-                              </Button>
+                              <RowActionsTrigger label="Actions" />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
@@ -1648,7 +1618,7 @@ export default function AdminDirectoryPage(): ReactNode {
                     <div className="flex items-center justify-end gap-2">
                       <Button
                         type="button"
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         disabled={createDepartmentMutation.isPending}
                         onClick={() => {
@@ -1734,7 +1704,7 @@ export default function AdminDirectoryPage(): ReactNode {
                     <div className="flex items-center justify-end gap-2">
                       <Button
                         type="button"
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         disabled={createDivisionMutation.isPending}
                         onClick={() => {

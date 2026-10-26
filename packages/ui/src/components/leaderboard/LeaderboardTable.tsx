@@ -4,6 +4,7 @@ import { cn } from '../../utils/cn';
 import { StreakChip } from './StreakChip';
 import { TierBadge, type Tier } from './TierBadge';
 import { Badge } from '../../primitives/badge';
+import { tableHeadTextClassName, tableHeaderClassName } from '../../primitives/table-classes';
 
 export interface LeaderboardTableRow {
   rank: number;
@@ -52,7 +53,7 @@ export function LeaderboardTable({
   return (
     <div className={cn('overflow-hidden rounded-lg border border-border bg-card', className)}>
       <table className="w-full text-sm">
-        <thead className="border-b border-border bg-muted/55 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+        <thead className={`${tableHeaderClassName} ${tableHeadTextClassName}`}>
           <tr>
             <th className="w-12 px-4 py-3">#</th>
             <th className="px-4 py-3">Member</th>

@@ -44,6 +44,9 @@ import {
   Textarea,
   UserAvatar,
   formatPersonRole,
+  tableHeaderClassName,
+  tableHeadTextClassName,
+  PageTitle,
 } from '@hr-portal/ui';
 import {
   AlertTriangle,
@@ -53,12 +56,12 @@ import {
   FolderKanban,
   ListTodo,
   Plus,
-  Search,
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { FilterSearchInput } from '@/components/data-display/FilterControls';
 
 const TRACKER_PAGE_SIZE = 10;
 
@@ -171,8 +174,8 @@ export default function WorkTrackerPage() {
     <div className="space-y-6 p-4 md:p-6">
       <header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Work Tracker</h1>
-          <p className="text-sm text-muted-foreground">
+          <PageTitle>Work Tracker</PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Projects, assigned tasks, progress, and risks in one place.
           </p>
         </div>
@@ -517,7 +520,7 @@ function TeamTable({
       </CardHeader>
       <CardContent className="overflow-x-auto p-0">
         <table className="w-full min-w-[900px] text-sm">
-          <thead className="border-y bg-muted/50 text-left text-xs uppercase text-muted-foreground">
+          <thead className={`${tableHeaderClassName} ${tableHeadTextClassName}`}>
             <tr>
               <th className="px-4 py-3">Staff member</th>
               <th className="px-4 py-3">Projects</th>
@@ -874,7 +877,7 @@ function RoadmapView({
       {sortedProjects.length ? (
         <div className="overflow-x-auto rounded-lg border bg-card">
           <table className="w-full min-w-[980px] text-sm">
-            <thead className="border-b bg-muted/50 text-left text-xs uppercase text-muted-foreground">
+            <thead className={`${tableHeaderClassName} ${tableHeadTextClassName}`}>
               <tr>
                 <th className="px-4 py-3">Project</th>
                 <th className="px-4 py-3">Owner</th>
@@ -1107,20 +1110,16 @@ function ExecutionView({
         )}
       </div>
       <div className="grid gap-3 rounded-lg border bg-card p-3 md:grid-cols-[1fr_220px_220px]">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            maxLength={200}
-            onChange={(event) => {
-              setSearch(event.target.value);
+        <FilterSearchInput
+          placeholder="Search tasks..."
+          value={search}
+          onChange={(value) => {
+              setSearch(value);
               setCurrentPage(1);
-              replaceExecutionUrl(projectId, assigneeId, event.target.value);
+              replaceExecutionUrl(projectId, assigneeId, value);
             }}
-            placeholder="Search tasks..."
-            className="pl-9"
-          />
-        </div>
+          maxLength={200}
+        />
         <Select
           value={projectId}
           onValueChange={(value) => {

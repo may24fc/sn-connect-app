@@ -41,6 +41,7 @@ import {
   getDaysRemaining,
   getPersonMetaParts,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import {
   Building2,
@@ -302,10 +303,10 @@ export default function InternDashboardPage(): ReactNode {
       {/* Page Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
+          <PageTitle>
             Associate Dashboard
-          </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 mt-1">
+          </PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Track your internship progress and submit daily reports.
           </p>
         </div>

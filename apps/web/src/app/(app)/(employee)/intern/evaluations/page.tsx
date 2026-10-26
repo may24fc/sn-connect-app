@@ -16,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
   EmptyState,
+  PageTitle,
 } from '@hr-portal/ui';
 import {
   Calendar,
@@ -205,10 +206,10 @@ export default function InternEvaluationsPage(): ReactNode {
     <div className="h-full space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
+          <PageTitle>
             30-60-90 Evaluation History
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          </PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Review the submitted assessments from your admin or super-admin across each internship stage.
           </p>
         </div>

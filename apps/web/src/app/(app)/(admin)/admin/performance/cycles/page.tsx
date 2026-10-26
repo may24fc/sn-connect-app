@@ -23,6 +23,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  RowActionsTrigger,
   Input,
   Label,
   type PerformanceCycle,
@@ -38,6 +39,7 @@ import {
   TableHeader,
   TableRow,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import {
   ArrowLeft,
@@ -45,7 +47,6 @@ import {
   CheckCircle2,
   Clock,
   Edit2,
-  MoreVertical,
   Pause,
   Play,
   Trash2,
@@ -298,8 +299,8 @@ export default function CyclesPage(): ReactNode {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Review Cycles</h1>
-            <p className="text-muted-foreground">Manage calendar-quarter review cycles and deadlines</p>
+            <PageTitle>Review Cycles</PageTitle>
+            <p className="mt-1 text-sm text-muted-foreground">Manage calendar-quarter review cycles and deadlines</p>
           </div>
         </div>
       </div>
@@ -393,9 +394,7 @@ export default function CyclesPage(): ReactNode {
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
+                            <RowActionsTrigger label="Cycle actions" />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleOpenEdit(cycle)}>

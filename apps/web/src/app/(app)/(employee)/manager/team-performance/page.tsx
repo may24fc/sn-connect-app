@@ -16,6 +16,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  PageTitle,
 } from '@hr-portal/ui';
 import { AlertCircle, ArrowRight, BarChart3, Loader2, Target, Users } from 'lucide-react';
 import Link from 'next/link';
@@ -38,8 +39,8 @@ export default function ManagerTeamPerformancePage(): ReactNode {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Manager Team Performance</h1>
-          <p className="text-muted-foreground">
+          <PageTitle>Manager Team Performance</PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Performance summary for your direct reports only.
           </p>
         </div>

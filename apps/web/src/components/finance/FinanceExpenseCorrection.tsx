@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
 
 export function FinanceExpenseCorrection({
   id,
@@ -48,27 +49,37 @@ export function FinanceExpenseCorrection({
   }
 
   if (!open)
-    return <button type="button" className="mt-1 text-xs font-medium text-primary underline" onClick={() => setOpen(true)}>Edit details</button>;
+    return <Button variant="link" size="sm" className="mt-1" type="button" onClick={() => setOpen(true)}>Edit details</Button>;
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/30 p-4" role="presentation">
       <section role="dialog" aria-modal="true" aria-label="Edit expense details" className="w-full max-w-md space-y-4 rounded-xl border bg-card p-5 shadow-xl">
         <h2 className="text-lg font-semibold">Edit payment details</h2>
         <label className="grid gap-1 text-sm">Paid with
-          <select className="rounded border bg-card p-2" value={source} onChange={(event) => setSource(event.target.value)}>
-            <option value="unknown">Unknown</option><option value="personal_card">Personal card</option><option value="company_card">Company card</option><option value="bank_transfer">Bank transfer</option>
-          </select>
+          <Select value={source} onValueChange={(value) => setSource(value)}>
+            <SelectTrigger className="w-auto min-w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="unknown">Unknown</SelectItem><SelectItem value="personal_card">Personal card</SelectItem><SelectItem value="company_card">Company card</SelectItem><SelectItem value="bank_transfer">Bank transfer</SelectItem>
+            </SelectContent>
+          </Select>
         </label>
         <label className="grid gap-1 text-sm">Payment
-          <select className="rounded border bg-card p-2" value={status} onChange={(event) => setStatus(event.target.value)}>
-            <option value="unknown">Unknown</option><option value="unpaid">Unpaid</option><option value="confirmed">Confirmed</option>
-          </select>
+          <Select value={status} onValueChange={(value) => setStatus(value)}>
+            <SelectTrigger className="w-auto min-w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="unknown">Unknown</SelectItem><SelectItem value="unpaid">Unpaid</SelectItem><SelectItem value="confirmed">Confirmed</SelectItem>
+            </SelectContent>
+          </Select>
         </label>
         <label className="grid gap-1 text-sm">Attach or replace receipt
           <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" onChange={(event) => setReceipt(event.target.files?.[0] ?? null)} />
         </label>
         {error ? <p role="alert" className="text-sm text-red-700">{error}</p> : null}
-        <div className="flex flex-wrap justify-end gap-2"><button type="button" className="rounded border px-3 py-2" disabled={busy} onClick={() => setOpen(false)}>Cancel</button>{receipt ? <button type="button" className="rounded border px-3 py-2" disabled={busy} onClick={() => void attachReceipt()}>Attach receipt</button> : null}<button type="button" className="rounded bg-primary px-3 py-2 text-primary-foreground" disabled={busy} onClick={() => void save()}>{busy ? 'Saving…' : 'Save details'}</button></div>
+        <div className="flex flex-wrap justify-end gap-2"><Button variant="outline" type="button" disabled={busy} onClick={() => setOpen(false)}>Cancel</Button>{receipt ? <Button variant="outline" type="button" disabled={busy} onClick={() => void attachReceipt()}>Attach receipt</Button> : null}<Button type="button" disabled={busy} onClick={() => void save()}>{busy ? 'Saving…' : 'Save details'}</Button></div>
       </section>
     </div>
   );

@@ -26,6 +26,8 @@ import {
   TabsTrigger,
   UserAvatar,
   useToast,
+  PageTitle,
+  PageEyebrow,
 } from '@hr-portal/ui';
 import {
   ArrowLeft,
@@ -145,10 +147,11 @@ export default function OnboardingDetailPage(): ReactNode {
             fallbackClassName="text-lg bg-slate-100 dark:bg-zinc-900/30 text-slate-700 dark:text-zinc-400"
           />
           <div className="flex-1 min-w-0">
+            <PageEyebrow />
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
+              <PageTitle eyebrow={false}>
                 {fullName}
-              </h1>
+              </PageTitle>
               <Badge variant={getOnboardingReviewStateBadgeVariant(reviewState)}>
                 {statusLabel}
               </Badge>

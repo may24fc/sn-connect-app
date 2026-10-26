@@ -1,12 +1,23 @@
+import { UrlPaginationBar } from '@/components/data-display/UrlPaginationBar';
 import { FinanceApproverSettings } from '@/components/finance/FinanceApproverSettings';
 import { FinanceCatalogPanel } from '@/components/finance/FinanceCatalogPanel';
 import { FinanceExpenseExport } from '@/components/finance/FinanceExpenseExport';
 import { FinanceExpenseCorrection } from '@/components/finance/FinanceExpenseCorrection';
+import { FinanceExpenseFilters } from '@/components/finance/FinanceExpenseFilters';
 import { FinanceUnifiedReviewQueue } from '@/components/finance/FinanceUnifiedReviewQueue';
 import { canReviewFinance, getFinanceContext } from '@/lib/finance/auth';
 import { formatFinanceDate } from '@/lib/format';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import {
+  Button,
+  tableHeaderClassName,
+  tableHeadTextClassName,
+  tabsListClassName,
+  tabsTriggerClassName,
+  PageTitle,
+} from '@hr-portal/ui';
+import { Plus } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -160,13 +171,10 @@ export default async function FinanceExpenses({
     <main className="h-full space-y-6">
       <header className="flex flex-col gap-4 border-b border-border/80 pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-primary">
-            Finance
-          </p>
-          <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground lg:text-3xl">
+          <PageTitle>
             Expenses
-          </h1>
-          <p className="mt-1 max-w-3xl text-sm text-muted-foreground lg:text-base">
+          </PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground max-w-3xl">
             Requests, payments, subscriptions and reconciliation in one workspace.
           </p>
         </div>
@@ -175,35 +183,36 @@ export default async function FinanceExpenses({
             <FinanceExpenseExport filters={params.toString()} />
           ) : null}
           {tab === 'subscriptions' ? (
-            <Link
-              href={`/finance/expenses?tab=subscriptions&month=${month || new Date().toISOString().slice(0, 7)}`}
-              className="rounded-lg border bg-card px-3 py-2 text-sm font-semibold"
-            >
-              Categories &amp; budgets
-            </Link>
+            <Button asChild variant="outline">
+              <Link
+                href={`/finance/expenses?tab=subscriptions&month=${month || new Date().toISOString().slice(0, 7)}`}
+              >
+                Categories &amp; budgets
+              </Link>
+            </Button>
           ) : null}
-          <Link
-            href="/expenses"
-            className="rounded-lg bg-[#16505f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1f6a7c]"
-          >
-            New expense
-          </Link>
+          <Button asChild>
+            <Link href="/expenses">
+              <Plus strokeWidth={1.5} aria-hidden />
+              New expense
+            </Link>
+          </Button>
         </div>
       </header>
-      <section className="rounded-xl border bg-card px-4 pb-3 pt-1">
-        <nav aria-label="Expense views" className="flex flex-wrap gap-1 border-b">
+      <section className="space-y-2">
+        <nav aria-label="Expense views" className={tabsListClassName}>
           {tabs.map(([key, name]) => (
             <Link
               key={key}
               href={href(key, category)}
               aria-current={tab === key ? 'page' : undefined}
-              className={`border-b-2 px-3 py-3 text-sm font-medium ${tab === key ? 'border-[#16505f] text-[#0f3f4b]' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+              className={tabsTriggerClassName}
             >
               {name}
             </Link>
           ))}
         </nav>
-        <p className="pt-3 text-xs text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           {tab === 'review'
             ? 'Match requests, resolve differences, then decide ordinary approvals.'
             : tab === 'subscriptions'
@@ -223,56 +232,12 @@ export default async function FinanceExpenses({
         />
       ) : (
         <>
-          <section aria-label="Expense filters" className="rounded-xl border bg-card p-4">
-            <form action="/finance/expenses" className="flex flex-wrap items-end gap-3 text-sm">
-              <input type="hidden" name="tab" value={tab} />
-              <label className="space-y-1">
-                Month{' '}
-                <input
-                  name="month"
-                  type="month"
-                  defaultValue={month}
-                  className="block rounded-md border bg-background px-3 py-2"
-                />
-              </label>
-              {category ? <input type="hidden" name="category" value={category} /> : null}
-              <label className="space-y-1">
-                Vendor{' '}
-                <input
-                  name="q"
-                  type="search"
-                  maxLength={100}
-                  defaultValue={search}
-                  placeholder="Search vendor…"
-                  className="block rounded-md border bg-background px-3 py-2"
-                />
-              </label>
-              <button
-                type="submit"
-                className="rounded-md bg-[#16505f] px-4 py-2 font-semibold text-white"
-              >
-                Apply filters
-              </button>
-              <Link href={`/finance/expenses?tab=${tab}`} className="rounded-md border px-4 py-2">
-                Clear filters
-              </Link>
-            </form>
-            <nav
-              aria-label="Expense categories"
-              className="mt-4 flex flex-wrap gap-2 border-t pt-4"
-            >
-              {[{ code: '', name: 'All' }, ...categories].map((item) => (
-                <Link
-                  key={item.code}
-                  href={href(tab, item.code)}
-                  aria-current={category === item.code ? 'page' : undefined}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${category === item.code ? 'border-[#16505f] bg-[#16505f] text-white' : 'bg-white text-[#4a5558] hover:bg-[#e6f0f1]'}`}
-                >
-                  {item.name}
-                </Link>
-              ))}
-            </nav>
-          </section>
+          <FinanceExpenseFilters
+            month={month}
+            search={search}
+            category={category}
+            categories={categories}
+          />
           <section
             aria-label="Expense ledger"
             className="overflow-x-auto rounded-xl border bg-card"
@@ -289,7 +254,7 @@ export default async function FinanceExpenses({
               </div>
             ) : null}
             <table className="w-full min-w-[940px] text-left text-sm">
-              <thead className="border-b bg-[#fafbf9] text-xs uppercase tracking-wide text-[#838c8e]">
+              <thead className={`${tableHeaderClassName} ${tableHeadTextClassName}`}>
                 <tr>
                   {[
                     'Date',
@@ -303,7 +268,7 @@ export default async function FinanceExpenses({
                     'Receipt',
                     'Actions',
                   ].map((title) => (
-                    <th key={title} scope="col" className="p-3 font-semibold">
+                    <th key={title} scope="col" className={title === 'Actions' ? 'p-3 text-right' : 'p-3'}>
                       {title}
                     </th>
                   ))}
@@ -350,7 +315,7 @@ export default async function FinanceExpenses({
                       <span className={statusBadge(row.match_status)}>{row.match_status === 'variance_flagged' ? 'Amount differs' : label(row.match_status)}</span>
                     </td>
                     <td className="p-3">{row.receipt_document_id ? 'Attached' : 'Awaiting'}</td>
-                    <td className="p-3">
+                    <td className="p-3 text-right">
                       <FinanceExpenseCorrection id={row.id} paymentSource={row.payment_source} paymentStatus={row.payment_status} />
                     </td>
                   </tr>
@@ -361,29 +326,13 @@ export default async function FinanceExpenses({
               <p className="p-6 text-sm text-muted-foreground">No expenses match these filters.</p>
             ) : null}
           </section>
-          <div className="flex items-center justify-between gap-3 text-sm">
-            <span>
-              {count} matching expenses · page {page}
-            </span>
-            <div className="flex gap-2">
-              {page > 1 ? (
-                <Link
-                  className="rounded border px-3 py-1"
-                  href={`/finance/expenses?${params}&page=${page - 1}`}
-                >
-                  Previous
-                </Link>
-              ) : null}
-              {page * 50 < count ? (
-                <Link
-                  className="rounded border px-3 py-1"
-                  href={`/finance/expenses?${params}&page=${page + 1}`}
-                >
-                  Next
-                </Link>
-              ) : null}
-            </div>
-          </div>
+          <UrlPaginationBar
+            page={page}
+            totalPages={Math.ceil(count / 50)}
+            total={count}
+            pageSize={50}
+            itemLabel="expenses"
+          />
         </>
       )}
     </main>

@@ -27,6 +27,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  PageTitle,
 } from '@hr-portal/ui';
 import { useQueries } from '@tanstack/react-query';
 import {
@@ -383,8 +384,8 @@ export function ChecklistsDashboardPage(): ReactNode {
     <div className="space-y-6 p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Checklists</h1>
-          <p className="text-muted-foreground">
+          <PageTitle>Checklists</PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Review onboarding compliance in one place and prepare the offboarding workspace for the
             next implementation slice.
           </p>

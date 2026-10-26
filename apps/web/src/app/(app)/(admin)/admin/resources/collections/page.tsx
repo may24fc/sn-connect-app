@@ -2,11 +2,12 @@
 
 import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { useDeleteCollection, useResourceCollections } from '@/hooks/useResourceCollections';
-import { Button, Card, CardContent, EmptyState, Input } from '@hr-portal/ui';
+import { Button, Card, CardContent, EmptyState, PageTitle } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import Link from 'next/link';
 import { AlertCircle, FolderOpen, Loader2, Plus } from 'lucide-react';
 import { useState } from 'react';
+import { FilterSearchInput } from '@/components/data-display/FilterControls';
 
 export default function AdminCollectionsPage() {
   const [search, setSearch] = useState('');
@@ -25,10 +26,10 @@ export default function AdminCollectionsPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+          <PageTitle>
             Resource Collections
-          </h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          </PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Group resources into curated learning paths
           </p>
         </div>
@@ -42,13 +43,7 @@ export default function AdminCollectionsPage() {
         </div>
       </div>
 
-      <Input
-        placeholder="Search collections"
-        value={search}
-        maxLength={200}
-        onChange={(event) => setSearch(event.target.value)}
-        className="max-w-md"
-      />
+      <FilterSearchInput placeholder="Search collections" value={search} onChange={setSearch} />
 
       {isLoading ? (
         <Card>

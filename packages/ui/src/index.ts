@@ -69,6 +69,14 @@ export {
   TableCell,
   TableCaption,
 } from './primitives/table';
+export { tableHeaderClassName, tableHeadTextClassName } from './primitives/table-classes';
+export { tabsListClassName, tabsTriggerClassName } from './primitives/tabs-classes';
+export {
+  PageContextLabelProvider,
+  PageEyebrow,
+  PageTitle,
+  type PageTitleProps,
+} from './layout/PageTitle';
 export { Checkbox } from './primitives/checkbox';
 export { Switch } from './primitives/switch';
 export {
@@ -134,7 +142,7 @@ export {
 } from './primitives/hover-card';
 
 // Layout components
-export { Sidebar } from './layout/Sidebar';
+export { Sidebar, getNavContextLabel } from './layout/Sidebar';
 export { Header } from './layout/Header';
 export { PageHeader, type PageHeaderProps } from './layout/PageHeader';
 // Shared Components
@@ -145,6 +153,7 @@ export {
   type HoverActionButtonsProps,
   type HoverActionItem,
 } from './components/HoverActionButtons';
+export { RowActionsTrigger, type RowActionsTriggerProps } from './components/RowActionsTrigger';
 export { EmptyState, type EmptyStateProps } from './components/empty-state';
 export {
   MultiSelectFilter,

@@ -66,6 +66,7 @@ import {
   UserAvatar,
   Textarea,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import { AttachmentDeleteButton } from '@/components/attachments/AttachmentDeleteButton';
 import { TrackerPagination } from '@/components/data-display/TrackerPagination';
@@ -789,8 +790,8 @@ export default function PaTasksPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{isArchiveView ? 'PA Task Archive' : 'PA Task Tracker'}</h1>
-          <p className="text-sm text-muted-foreground">
+          <PageTitle>{isArchiveView ? 'PA Task Archive' : 'PA Task Tracker'}</PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             {isArchiveView
               ? 'Completed and cancelled PA/EA tasks.'
               : 'Centralized PA/EA task tracking with attachments and blockers.'}

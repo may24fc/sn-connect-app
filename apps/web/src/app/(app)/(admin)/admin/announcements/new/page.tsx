@@ -15,6 +15,7 @@ import {
   TargetingSelector,
   Textarea,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import {
   AlertCircle,
@@ -235,9 +236,9 @@ export default function NewAnnouncementPage() {
               Back
             </Button>
             <div className="hidden sm:block">
-              <h1 className="font-heading text-lg font-semibold text-foreground tracking-tight">
+              <PageTitle>
                 New Announcement
-              </h1>
+              </PageTitle>
             </div>
           </div>
           <div className="flex items-center gap-2">

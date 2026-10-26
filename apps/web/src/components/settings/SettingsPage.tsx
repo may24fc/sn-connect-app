@@ -26,6 +26,7 @@ import {
   DialogTitle,
   Switch,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import { BellRing, Copy, ExternalLink, Link2, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -232,17 +233,16 @@ export default function SettingsPage(): ReactNode {
     <div className="h-full space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+          <PageTitle>
             Settings
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          </PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Manage how Control Hub sends account notifications to you.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button
             variant="default"
-            size="sm"
             disabled={!user?.id || isInitialLoading || updatePreferences.isPending || !hasChanges}
             onClick={() => void handleSave()}
           >

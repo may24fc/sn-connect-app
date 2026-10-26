@@ -26,6 +26,9 @@ import {
   SelectTrigger,
   SelectValue,
   useToast,
+  tableHeaderClassName,
+  tableHeadTextClassName,
+  PageTitle,
 } from '@hr-portal/ui';
 import {
   AlertTriangle,
@@ -360,12 +363,13 @@ function CategoryTreeRow({
         </td>
         <td className="whitespace-nowrap px-4 py-3 text-right">
           <div className="flex justify-end gap-1">
-            <Button variant="ghost" size="sm" onClick={() => onEdit(node)}>
+            <Button variant="ghost" size="icon-sm" aria-label={`Edit ${node.name}`} onClick={() => onEdit(node)}>
               <Pencil className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon-sm"
+              aria-label={`Delete ${node.name}`}
               onClick={() => onDelete(node)}
               disabled={isDeletingId === node.id}
               className="text-red-600 hover:text-red-700 dark:text-red-400"
@@ -505,8 +509,8 @@ export default function ResourceCategoriesPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Resource Categories</h1>
-            <p className="text-muted-foreground">
+            <PageTitle>Resource Categories</PageTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
               Manage categories and subcategories for resources
             </p>
           </div>
@@ -576,7 +580,7 @@ export default function ResourceCategoriesPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border bg-muted/55 text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                  <tr className={`${tableHeaderClassName} ${tableHeadTextClassName}`}>
                     <th className="px-4 py-3 text-left">
                       Name
                     </th>

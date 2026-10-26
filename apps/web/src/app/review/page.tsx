@@ -13,6 +13,7 @@ import {
   Target,
 } from 'lucide-react';
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
 
 type ReviewSession = { engagementId: string; expiresAt: string; purpose: string };
 type DemoItem = {
@@ -286,19 +287,16 @@ export default function ReviewHubPage() {
                 <label className="mt-4 block text-sm font-medium" htmlFor={`status-${item.id}`}>
                   Try changing its status
                 </label>
-                <select
-                  id={`status-${item.id}`}
-                  value={item.status}
-                  disabled={pendingId === item.id}
-                  onChange={(event) =>
-                    void updateItem(item, event.target.value as DemoItem['status'])
-                  }
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm disabled:opacity-60"
-                >
-                  <option value="not_started">Not started</option>
-                  <option value="in_progress">In progress</option>
-                  <option value="complete">Complete</option>
-                </select>
+                <Select value={item.status} disabled={pendingId === item.id} onValueChange={(value) => void updateItem(item, value as DemoItem['status'])}>
+                  <SelectTrigger id={`status-${item.id}`} className="mt-1 w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="not_started">Not started</SelectItem>
+                    <SelectItem value="in_progress">In progress</SelectItem>
+                    <SelectItem value="complete">Complete</SelectItem>
+                  </SelectContent>
+                </Select>
               </article>
             ))}
           </div>
@@ -318,14 +316,15 @@ export default function ReviewHubPage() {
             </label>
             <label className="text-sm font-medium">
               Type
-              <select
-                value={newKind}
-                onChange={(event) => setNewKind(event.target.value as 'objective' | 'task')}
-                className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
-              >
-                <option value="task">Task</option>
-                <option value="objective">Objective</option>
-              </select>
+              <Select value={newKind} onValueChange={(value) => setNewKind(value as 'objective' | 'task')}>
+                <SelectTrigger className="mt-1 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="task">Task</SelectItem>
+                  <SelectItem value="objective">Objective</SelectItem>
+                </SelectContent>
+              </Select>
             </label>
             <button
               type="submit"
@@ -356,35 +355,33 @@ export default function ReviewHubPage() {
           <form onSubmit={submitFeedback} className="mt-5 grid gap-4 sm:grid-cols-2">
             <label className="text-sm font-medium">
               Category
-              <select
-                value={feedback.category}
-                onChange={(event) =>
-                  setFeedback((current) => ({ ...current, category: event.target.value }))
-                }
-                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
-              >
-                <option value="idea">Idea</option>
-                <option value="usability">Usability</option>
-                <option value="workflow">Workflow</option>
-                <option value="accessibility">Accessibility</option>
-                <option value="content">Content</option>
-                <option value="bug">Bug</option>
-              </select>
+              <Select value={feedback.category} onValueChange={(value) => setFeedback((current) => ({ ...current, category: value }))}>
+                <SelectTrigger className="mt-1 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="idea">Idea</SelectItem>
+                  <SelectItem value="usability">Usability</SelectItem>
+                  <SelectItem value="workflow">Workflow</SelectItem>
+                  <SelectItem value="accessibility">Accessibility</SelectItem>
+                  <SelectItem value="content">Content</SelectItem>
+                  <SelectItem value="bug">Bug</SelectItem>
+                </SelectContent>
+              </Select>
             </label>
             <label className="text-sm font-medium">
               Impact
-              <select
-                value={feedback.severity}
-                onChange={(event) =>
-                  setFeedback((current) => ({ ...current, severity: event.target.value }))
-                }
-                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Blocking</option>
-              </select>
+              <Select value={feedback.severity} onValueChange={(value) => setFeedback((current) => ({ ...current, severity: value }))}>
+                <SelectTrigger className="mt-1 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="critical">Blocking</SelectItem>
+                </SelectContent>
+              </Select>
             </label>
             <label className="text-sm font-medium sm:col-span-2">
               Suggestion

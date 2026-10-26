@@ -16,6 +16,7 @@ import {
   CardContent,
   EmptyState,
   Skeleton,
+  PageTitle,
 } from '@hr-portal/ui';
 import {
   Calendar,
@@ -207,8 +208,8 @@ export function CompanyCalendarView({
     <div className="h-full space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">{title}</h1>
-          <p className="mt-1 max-w-3xl text-sm text-zinc-600 dark:text-zinc-400">{description}</p>
+          <PageTitle>{title}</PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground max-w-3xl">{description}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {managementHref ? (
@@ -251,7 +252,6 @@ export function CompanyCalendarView({
                 <Button
                   type="button"
                   variant="outline"
-                  size="sm"
                   onClick={() => setViewDate(startOfMonth(new Date()))}
                 >
                   Today

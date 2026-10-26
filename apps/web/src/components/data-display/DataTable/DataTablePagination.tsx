@@ -1,6 +1,5 @@
 'use client';
 
-import { cn } from '@/lib/utils';
 import {
   Select,
   SelectContent,
@@ -9,8 +8,8 @@ import {
   SelectValue,
 } from '@hr-portal/ui';
 import type { Table } from '@tanstack/react-table';
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { PaginationBar } from '../PaginationBar';
 
 interface DataTablePaginationProps<TData> {
   table: Table<TData>;
@@ -18,8 +17,7 @@ interface DataTablePaginationProps<TData> {
 }
 
 /**
- * Pagination controls for DataTable.
- * Includes page navigation, page size selector, and row count display.
+ * Pagination controls for DataTable: rows-per-page selector plus the shared PaginationBar.
  */
 export function DataTablePagination<TData>({
   table,
@@ -27,99 +25,32 @@ export function DataTablePagination<TData>({
 }: DataTablePaginationProps<TData>): ReactNode {
   const pageIndex = table.getState().pagination.pageIndex;
   const pageSize = table.getState().pagination.pageSize;
-  const pageCount = table.getPageCount();
-  const totalRows = table.getFilteredRowModel().rows.length;
 
   return (
-    <div className="flex items-center justify-between border-b border-border bg-muted/35 px-4 py-2">
-      {/* Page size selector */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">Rows per page:</span>
-        <Select value={String(pageSize)} onValueChange={(val) => table.setPageSize(Number(val))}>
-          <SelectTrigger className="h-7 w-auto min-w-[60px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {pageSizeOptions.map((size) => (
-              <SelectItem key={size} value={String(size)}>
-                {size}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex items-center gap-3">
-        {/* Row count info - Gmail style */}
-        <span className="text-sm text-muted-foreground">
-          {pageIndex * pageSize + 1}-{Math.min((pageIndex + 1) * pageSize, totalRows)} of {totalRows}
-        </span>
-
-        {/* Navigation buttons */}
-        <div className="flex items-center gap-1">
-          <PaginationButton
-            onClick={() => table.setPageIndex(0)}
-            disabled={!table.getCanPreviousPage()}
-            aria-label="Go to first page"
-          >
-            <ChevronsLeft className="h-4 w-4" />
-          </PaginationButton>
-          <PaginationButton
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-            aria-label="Go to previous page"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </PaginationButton>
-          <PaginationButton
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-            aria-label="Go to next page"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </PaginationButton>
-          <PaginationButton
-            onClick={() => table.setPageIndex(pageCount - 1)}
-            disabled={!table.getCanNextPage()}
-            aria-label="Go to last page"
-          >
-            <ChevronsRight className="h-4 w-4" />
-          </PaginationButton>
+    <PaginationBar
+      page={pageIndex + 1}
+      totalPages={table.getPageCount()}
+      onPageChange={(page) => table.setPageIndex(page - 1)}
+      total={table.getFilteredRowModel().rows.length}
+      pageSize={pageSize}
+      className="border-b border-border bg-muted/35 px-4 py-2"
+      leading={
+        <div className="flex items-center gap-2">
+          <span>Rows per page</span>
+          <Select value={String(pageSize)} onValueChange={(val) => table.setPageSize(Number(val))}>
+            <SelectTrigger className="h-8 w-auto min-w-[60px]" aria-label="Rows per page">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {pageSizeOptions.map((size) => (
+                <SelectItem key={size} value={String(size)}>
+                  {size}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-      </div>
-    </div>
-  );
-}
-
-interface PaginationButtonProps {
-  onClick: () => void;
-  disabled: boolean;
-  children: ReactNode;
-  'aria-label': string;
-}
-
-function PaginationButton({
-  onClick,
-  disabled,
-  children,
-  'aria-label': ariaLabel,
-}: PaginationButtonProps): ReactNode {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={ariaLabel}
-      className={cn(
-        'h-8 w-8 flex items-center justify-center rounded-md',
-        'border border-border',
-        'bg-card',
-        'text-muted-foreground hover:border-primary/30 hover:bg-primary-muted/50 hover:text-primary',
-        'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-card',
-        'transition-colors'
-      )}
-    >
-      {children}
-    </button>
+      }
+    />
   );
 }

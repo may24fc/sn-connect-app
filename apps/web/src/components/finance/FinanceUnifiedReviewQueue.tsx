@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { Button } from '@hr-portal/ui';
 
 type ReviewEntry = {
   id: string;
@@ -67,7 +68,7 @@ export function FinanceUnifiedReviewQueue() {
               {item.kind === 'approval' && item.can_decide === false ? <p className="text-xs font-medium text-amber-700">Submitted by you · another approver must decide</p> : null}
             </div>
             {item.kind === 'approval' ? (
-              <div className="flex gap-2"><button type="button" disabled={busy !== null || item.can_decide === false} className="rounded border px-3 py-1 disabled:opacity-50" onClick={() => void decide(item.id, 'rejected')}>Reject</button><button type="button" disabled={busy !== null || item.can_decide === false} className="rounded bg-primary px-3 py-1 text-primary-foreground disabled:opacity-50" onClick={() => void decide(item.id, 'approved')}>Approve</button></div>
+              <div className="flex gap-2"><Button variant="outline" size="sm" type="button" disabled={busy !== null || item.can_decide === false} onClick={() => void decide(item.id, 'rejected')}>Reject</Button><Button size="sm" type="button" disabled={busy !== null || item.can_decide === false} onClick={() => void decide(item.id, 'approved')}>Approve</Button></div>
             ) : (
               <Link className="rounded border px-3 py-1 font-medium text-primary" href={item.kind === 'difference' ? '/admin/expenses' : '/expenses/verify'}>{item.kind === 'difference' ? 'Review difference' : 'Match request'}</Link>
             )}

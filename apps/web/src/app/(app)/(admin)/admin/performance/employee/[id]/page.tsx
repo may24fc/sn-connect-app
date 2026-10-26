@@ -54,6 +54,7 @@ import {
   formatPersonRole,
   getPersonMetaParts,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -1135,8 +1136,8 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
           <div className="flex items-center gap-4">
             <UserAvatar name={employee.fullName} avatarUrl={employee.avatarUrl} size="xl" />
             <div className="flex-1">
-              <h1 className="text-xl font-semibold text-foreground">{employee.fullName}</h1>
-              <p className="text-sm text-muted-foreground">
+              <PageTitle>{employee.fullName}</PageTitle>
+              <p className="mt-1 text-sm text-muted-foreground">
                 {getPersonMetaParts([employee.position, employee.department]).join(' · ') ||
                   'No position or department set'}
               </p>

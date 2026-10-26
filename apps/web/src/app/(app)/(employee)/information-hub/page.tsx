@@ -32,21 +32,23 @@ import {
   DialogDescription,
   DialogClose,
   Label,
+  PageTitle,
 } from '@hr-portal/ui';
 import {
   Bookmark,
-  ChevronLeft,
-  ChevronRight,
   Loader2,
   Search,
   Star,
   Plus,
+  FolderPlus,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { useResourceFolders, useCreateResourceFolder, useDeleteResource, useDeleteResourceFolder } from '@/hooks/useResources';
 import { useAuth } from '@/contexts/AuthContext';
+import { FilterSearchInput } from '@/components/data-display/FilterControls';
+import { PaginationBar } from '@/components/data-display/PaginationBar';
 
 const categoryLabels: Record<string, string> = {
   onboarding: 'Onboarding',
@@ -172,15 +174,15 @@ export default function ResourcesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Resources</h1>
-          <p className="text-muted-foreground">
+          <PageTitle>Resources</PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Browse and discover company resources
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button asChild variant="outline" size="sm" className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild variant="outline" className="flex items-center gap-2 shrink-0">
             <Link href="/information-hub/resources/bookmarks">
               <Bookmark className="h-4 w-4" />
               My Bookmarks
@@ -190,7 +192,7 @@ export default function ResourcesPage() {
             </Link>
           </Button>
 
-          <Button asChild size="sm" className="flex items-center gap-2">
+          <Button asChild className="flex items-center gap-2">
             <Link href="/information-hub/resources/new">
               <Plus className="h-4 w-4" />
               Upload Resource
@@ -199,7 +201,10 @@ export default function ResourcesPage() {
 
           <Dialog open={isFolderDialogOpen} onOpenChange={setIsFolderDialogOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" variant="ghost">New Folder</Button>
+              <Button variant="outline">
+                <FolderPlus className="h-4 w-4" />
+                New Folder
+              </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -214,7 +219,7 @@ export default function ResourcesPage() {
               </div>
               <DialogFooter>
                 <DialogClose asChild>
-                  <Button variant="ghost">Cancel</Button>
+                  <Button variant="outline">Cancel</Button>
                 </DialogClose>
                 <Button
                   onClick={async () => {
@@ -304,52 +309,26 @@ export default function ResourcesPage() {
         </div>
       )}
 
-      <div className="relative w-full max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
-          placeholder="Search resources"
-          value={search}
-          maxLength={200}
-          onChange={(event) => {
-            setSearch(event.target.value);
+      <FilterSearchInput
+        placeholder="Search resources"
+        value={search}
+        onChange={(value) => {
+            setSearch(value);
             setResourcePage(1);
           }}
-        />
-      </div>
+        maxLength={200}
+      />
 
       <div className="space-y-6">
         {/* Pagination - Gmail style at top */}
         {(resourceData?.pagination.totalPages ?? 1) > 1 && (
-          <div className="flex items-center justify-end gap-3">
-            <span className="text-sm text-zinc-500 dark:text-zinc-400">
-              {(resourcePage - 1) * 12 + 1}-
-              {Math.min(resourcePage * 12, resourceData?.pagination.total ?? 0)} of{' '}
-              {resourceData?.pagination.total ?? 0}
-            </span>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                aria-label="Previous page"
-                disabled={resourcePage <= 1}
-                onClick={() => setResourcePage((value) => Math.max(1, value - 1))}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                aria-label="Next page"
-                disabled={(resourceData?.pagination.totalPages || 1) <= resourcePage}
-                onClick={() => setResourcePage((value) => value + 1)}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          <PaginationBar
+            page={resourcePage}
+            totalPages={resourceData?.pagination.totalPages ?? 1}
+            onPageChange={setResourcePage}
+            total={resourceData?.pagination.total ?? 0}
+            pageSize={12}
+          />
         )}
 
         {featuredResources.length > 0 ? (

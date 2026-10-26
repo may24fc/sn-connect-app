@@ -52,9 +52,11 @@ import {
   TabsList,
   TabsTrigger,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import { CalendarRange } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { PaginationBar } from '@/components/data-display/PaginationBar';
 
 const CURRENCY_OPTIONS: AiExpenseCurrency[] = [...AI_EXPENSE_CURRENCIES];
 const SPEND_TYPE_OPTIONS: { value: AiSpendType; label: string }[] = [
@@ -587,13 +589,10 @@ export default function AiSpendingPage() {
     <div className="flex h-full flex-col gap-6 p-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
-            Personal Finance
-          </p>
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          <PageTitle>
             AI Spending Tracker
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          </PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Manual tracking for AI subscriptions and API spend.
           </p>
         </div>
@@ -616,7 +615,6 @@ export default function AiSpendingPage() {
           <Button
             type="button"
             variant="outline"
-            size="sm"
             onClick={() => setIsProviderDialogOpen(true)}
           >
             Manage providers
@@ -935,17 +933,16 @@ export default function AiSpendingPage() {
                 </div>
 
                 {filteredEntries.length > 0 ? (
-                  <div className="flex items-center justify-between border-t border-zinc-200 px-4 py-3 text-sm dark:border-zinc-800">
-                    <span className="text-zinc-500">
-                      Showing {(entryPage - 1) * entryPageSize + 1}-
-                      {Math.min(entryPage * entryPageSize, filteredEntries.length)} of{' '}
-                      {filteredEntries.length}
-                    </span>
-                    <div className="flex items-center gap-3">
+                  <PaginationBar
+                    page={entryPage}
+                    totalPages={totalPages}
+                    onPageChange={setEntryPage}
+                    total={filteredEntries.length}
+                    pageSize={entryPageSize}
+                    className="border-t border-border px-4 py-3"
+                    leading={
                       <div className="flex items-center gap-2">
-                        <label className="text-zinc-500" htmlFor="entriesPerPage">
-                          Rows
-                        </label>
+                        <label htmlFor="entriesPerPage">Rows per page</label>
                         <Select
                           value={String(entryPageSize)}
                           onValueChange={(value) =>
@@ -966,33 +963,8 @@ export default function AiSpendingPage() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <span className="text-zinc-500">
-                        Page {entryPage} of {totalPages}
-                      </span>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setEntryPage((current) => Math.max(1, current - 1))}
-                          disabled={entryPage === 1}
-                        >
-                          Previous
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            setEntryPage((current) => Math.min(totalPages, current + 1))
-                          }
-                          disabled={entryPage === totalPages}
-                        >
-                          Next
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+                    }
+                  />
                 ) : null}
               </CardContent>
             </Card>
@@ -1257,7 +1229,7 @@ export default function AiSpendingPage() {
                           </Button>
                           <Button
                             type="button"
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             className="h-7 px-2"
                             onClick={() => {

@@ -47,6 +47,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  RowActionsTrigger,
   EmptyState,
   Input,
   Label,
@@ -69,6 +70,9 @@ import {
   Textarea,
   getPersonMetaParts,
   useToast,
+  ToggleGroup,
+  PageTitle,
+  PageEyebrow,
 } from '@hr-portal/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -81,19 +85,18 @@ import {
   LayoutGrid,
   LifeBuoy,
   List,
-  Search,
   ShieldCheck,
   Star,
   Target,
   TrendingUp,
   UserCog,
   UserPlus,
-  MoreHorizontal,
   XCircle,
   X,
 } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { FilterSearchInput } from '@/components/data-display/FilterControls';
 
 type EmployeeManagementTab = 'probation' | 'onboarding' | 'it-handlers';
 
@@ -906,11 +909,12 @@ export default function EmployeeManagementPage(): ReactNode {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
+          <PageEyebrow />
           <div className="flex items-center gap-2 mb-1">
             <UserCog className="h-5 w-5 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
-            <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
+            <PageTitle eyebrow={false}>
               Employee Management
-            </h1>
+            </PageTitle>
           </div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             Manage employee probation, onboarding, and IT ticket routing
@@ -968,16 +972,13 @@ export default function EmployeeManagementPage(): ReactNode {
           </StatCardGrid>
 
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center my-4">
-            <div className="relative flex-1 min-w-0">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={1.5} />
-              <Input
-                placeholder="Search employees..."
-                value={searchTerm}
-                maxLength={200}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
-              />
-            </div>
+            <FilterSearchInput
+              placeholder="Search employees..."
+              value={searchTerm}
+              onChange={setSearchTerm}
+              maxLength={200}
+              className="sm:w-auto sm:flex-1"
+            />
             <div className="flex flex-wrap items-center gap-3">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[160px]">
@@ -1004,32 +1005,15 @@ export default function EmployeeManagementPage(): ReactNode {
                   ))}
                 </SelectContent>
               </Select>
-              <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
-                <button
-                  type="button"
-                  onClick={() => setProbationView('cards')}
-                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                    probationView === 'cards'
-                      ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-                  }`}
-                >
-                  <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  Cards
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setProbationView('list')}
-                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                    probationView === 'list'
-                      ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-                  }`}
-                >
-                  <List className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  List
-                </button>
-              </div>
+              <ToggleGroup
+                aria-label="View"
+                value={probationView}
+                onChange={setProbationView}
+                options={[
+                  { value: 'cards', label: 'Cards', icon: <LayoutGrid strokeWidth={1.5} /> },
+                  { value: 'list', label: 'List', icon: <List strokeWidth={1.5} /> },
+                ]}
+              />
             </div>
           </div>
 
@@ -1120,9 +1104,7 @@ export default function EmployeeManagementPage(): ReactNode {
                               </Button>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
-                                    <MoreHorizontal className="h-4 w-4" strokeWidth={1.5} />
-                                  </Button>
+                                  <RowActionsTrigger label="Employee actions" />
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem
@@ -1236,9 +1218,7 @@ export default function EmployeeManagementPage(): ReactNode {
                           </span>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="xs" className="h-8 w-8 p-0">
-                                <MoreHorizontal className="h-4 w-4" strokeWidth={1.5} />
-                              </Button>
+                              <RowActionsTrigger label="Employee actions" />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
@@ -1623,10 +1603,7 @@ export default function EmployeeManagementPage(): ReactNode {
                             ) : (profile.review_state ?? 'in_progress') === 'approved' ? (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="outline" size="sm">
-                                    <MoreHorizontal className="mr-1 h-4 w-4" />
-                                    Manage
-                                  </Button>
+                                  <RowActionsTrigger label="Manage onboarding" />
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem

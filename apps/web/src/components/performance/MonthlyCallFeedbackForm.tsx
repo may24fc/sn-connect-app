@@ -410,6 +410,7 @@ export function MonthlyCallFeedbackForm() {
                 render={({ field }) => (
                   <div className="space-y-3">
                     <ToggleGroup
+                      variant="choice"
                       value={String(field.value)}
                       onChange={(value) => field.onChange(Number(value))}
                       options={engagementOptions}
@@ -501,6 +502,7 @@ export function MonthlyCallFeedbackForm() {
                 name="callLength"
                 render={({ field }) => (
                   <ToggleGroup
+                    variant="choice"
                     value={field.value}
                     onChange={field.onChange}
                     options={callLengthOptions}
@@ -542,6 +544,7 @@ export function MonthlyCallFeedbackForm() {
                     name={item.name}
                     render={({ field }) => (
                       <ToggleGroup
+                        variant="choice"
                         value={field.value}
                         onChange={field.onChange}
                         options={clarityOptions}

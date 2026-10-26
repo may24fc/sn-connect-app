@@ -16,6 +16,9 @@ import {
   ToggleGroup,
   TierBadge,
   UserAvatar,
+  tableHeaderClassName,
+  tableHeadTextClassName,
+  PageTitle,
 } from '@hr-portal/ui';
 import { Activity, AlertTriangle, FolderKanban, Inbox, Target, Trophy } from 'lucide-react';
 import Link from 'next/link';
@@ -55,9 +58,9 @@ export default function AdminProjectsPage() {
       <WorkTrackerSectionNav current="projects" />
       <header className="flex items-start justify-between gap-4">
         <div className="space-y-3">
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Projects
-          </h1>
+          <div>
+            <PageTitle>Projects</PageTitle>
+          </div>
           <ToggleGroup
             value={view}
             onChange={(next) => setView(next as 'mine' | 'all')}
@@ -205,7 +208,7 @@ export default function AdminProjectsPage() {
                   </h2>
                   <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
                     <table className="w-full text-sm">
-                      <thead className="border-b border-border bg-muted/55 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                      <thead className={`${tableHeaderClassName} ${tableHeadTextClassName}`}>
                         <tr>
                           <th className="px-4 py-2">Department</th>
                           <th className="px-4 py-2 text-center">Associates</th>
@@ -342,7 +345,7 @@ export default function AdminProjectsPage() {
                 ) : (
                   <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
                     <table className="w-full text-sm">
-                      <thead className="border-b border-border bg-muted/55 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                      <thead className={`${tableHeaderClassName} ${tableHeadTextClassName}`}>
                         <tr>
                           <th className="px-4 py-2">Project</th>
                           <th className="px-4 py-2">Health</th>

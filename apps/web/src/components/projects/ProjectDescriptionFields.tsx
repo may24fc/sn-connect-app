@@ -88,7 +88,7 @@ export function ProjectDescriptionFields({
                 <Button
                   type="button"
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={() => removeItem(sectionConfig.key, index)}
                   aria-label={`Remove ${sectionConfig.title} item ${index + 1}`}
                 >

@@ -41,7 +41,6 @@ import {
   DialogHeader,
   DialogTitle,
   EmptyState,
-  Input,
   type InternDashboardStats,
   type InternId,
   InternList,
@@ -68,6 +67,8 @@ import {
   Textarea,
   PersonMeta,
   UserAvatar,
+  ToggleGroup,
+  PageTitle,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -83,7 +84,6 @@ import {
   GraduationCap,
   LayoutGrid,
   List,
-  Search,
   RotateCcw,
   Star,
   Trash2,
@@ -94,6 +94,7 @@ import {
 } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
+import { FilterSearchInput } from '@/components/data-display/FilterControls';
 function formatDateTime(dateString: string): string {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat('en-US', {
@@ -830,8 +831,8 @@ export default function AdminInternsPage(): ReactNode {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Associate Management</h1>
-          <p className="text-muted-foreground">
+          <PageTitle>Associate Management</PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Monitor associates and view their onboarding submissions
           </p>
         </div>
@@ -898,16 +899,13 @@ export default function AdminInternsPage(): ReactNode {
 
           {/* Filters + View Toggle */}
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div className="relative flex-1 min-w-0">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search by name, email, or program..."
-                value={searchQuery}
-                maxLength={200}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
-              />
-            </div>
+            <FilterSearchInput
+              placeholder="Search by name, email, or program..."
+              value={searchQuery}
+              onChange={setSearchQuery}
+              maxLength={200}
+              className="sm:w-auto sm:flex-1"
+            />
             <div className="flex flex-wrap items-center gap-3">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[160px]">
@@ -947,32 +945,15 @@ export default function AdminInternsPage(): ReactNode {
                   ))}
                 </SelectContent>
               </Select>
-              <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
-                <button
-                  type="button"
-                  onClick={() => setViewMode('grid')}
-                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                    viewMode === 'grid'
-                      ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-                  }`}
-                >
-                  <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  Cards
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode('list')}
-                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                    viewMode === 'list'
-                      ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-                  }`}
-                >
-                  <List className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  List
-                </button>
-              </div>
+              <ToggleGroup
+                aria-label="View"
+                value={viewMode}
+                onChange={setViewMode}
+                options={[
+                  { value: 'grid', label: 'Cards', icon: <LayoutGrid strokeWidth={1.5} /> },
+                  { value: 'list', label: 'List', icon: <List strokeWidth={1.5} /> },
+                ]}
+              />
             </div>
           </div>
           {(statusFilter !== 'all' ||
@@ -1002,30 +983,15 @@ export default function AdminInternsPage(): ReactNode {
           {/* Interns Header */}
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Associates ({filteredInterns.length})</h2>
-            <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
-              <button
-                type="button"
-                onClick={() => setHoursMode('weekly')}
-                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  hoursMode === 'weekly'
-                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-                }`}
-              >
-                Weekly Hours
-              </button>
-              <button
-                type="button"
-                onClick={() => setHoursMode('entire')}
-                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  hoursMode === 'entire'
-                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-                }`}
-              >
-                Entire Hours
-              </button>
-            </div>
+            <ToggleGroup
+              aria-label="Hours"
+              value={hoursMode}
+              onChange={setHoursMode}
+              options={[
+                { value: 'weekly', label: 'Weekly Hours' },
+                { value: 'entire', label: 'Entire Hours' },
+              ]}
+            />
           </div>
 
           {/* Interns Display */}
@@ -1116,16 +1082,13 @@ export default function AdminInternsPage(): ReactNode {
           </StatCardGrid>
 
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div className="relative flex-1 min-w-0">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={1.5} />
-              <Input
-                placeholder="Search associates..."
-                value={associateEvaluationSearch}
-                maxLength={200}
-                onChange={(event) => setAssociateEvaluationSearch(event.target.value)}
-                className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
-              />
-            </div>
+            <FilterSearchInput
+              placeholder="Search associates..."
+              value={associateEvaluationSearch}
+              onChange={setAssociateEvaluationSearch}
+              maxLength={200}
+              className="sm:w-auto sm:flex-1"
+            />
             <div className="flex flex-wrap items-center gap-3">
               <Select value={associateEvaluationStatusFilter} onValueChange={setAssociateEvaluationStatusFilter}>
                 <SelectTrigger className="w-[160px]">
@@ -1152,32 +1115,15 @@ export default function AdminInternsPage(): ReactNode {
                   ))}
                 </SelectContent>
               </Select>
-              <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
-                <button
-                  type="button"
-                  onClick={() => setAssociateEvaluationView('cards')}
-                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                    associateEvaluationView === 'cards'
-                      ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-                  }`}
-                >
-                  <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  Cards
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAssociateEvaluationView('list')}
-                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                    associateEvaluationView === 'list'
-                      ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-                  }`}
-                >
-                  <List className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  List
-                </button>
-              </div>
+              <ToggleGroup
+                aria-label="View"
+                value={associateEvaluationView}
+                onChange={setAssociateEvaluationView}
+                options={[
+                  { value: 'cards', label: 'Cards', icon: <LayoutGrid strokeWidth={1.5} /> },
+                  { value: 'list', label: 'List', icon: <List strokeWidth={1.5} /> },
+                ]}
+              />
             </div>
           </div>
 

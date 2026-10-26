@@ -12,6 +12,7 @@ import {
   EmptyState,
   Skeleton,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import {
   useClaimProject,
@@ -57,15 +58,15 @@ export default function ProjectPoolPage() {
     <div className="flex h-full flex-col overflow-hidden">
       <header className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => router.push('/projects')}>
+          <Button variant="ghost" onClick={() => router.push('/projects')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>
           <div>
-            <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+            <PageTitle>
               Project Pool
-            </h1>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            </PageTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
               Unclaimed projects from leadership. Pick to make it yours.
             </p>
           </div>

@@ -2,6 +2,7 @@ import { canReviewFinance, getFinanceContext } from '@/lib/finance/auth';
 import { type FinanceOverviewData, summarizeFinanceOverview } from '@/lib/finance/overview';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { Button, tableHeadTextClassName, PageTitle } from '@hr-portal/ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -94,13 +95,10 @@ export default async function FinanceOverview({
     <main className="h-full space-y-6">
       <header className="flex flex-col gap-4 border-b border-border/80 pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-primary">
-            Finance
-          </p>
-          <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground lg:text-3xl">
+          <PageTitle>
             Overview
-          </h1>
-          <p className="mt-1 max-w-3xl text-sm text-muted-foreground lg:text-base">
+          </PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground max-w-3xl">
             What needs your attention, and where the money went this month.
           </p>
         </div>
@@ -114,12 +112,11 @@ export default async function FinanceOverview({
             defaultValue={selectedMonth}
             className="rounded-md border bg-card px-3 py-2"
           />
-          <button
+          <Button variant="outline"
             type="submit"
-            className="rounded-md border bg-card px-3 py-2 font-medium hover:bg-muted"
           >
             View
-          </button>
+          </Button>
         </form>
       </header>
       <p className="text-xs text-muted-foreground">Open items across all months</p>
@@ -328,11 +325,11 @@ export default async function FinanceOverview({
           <div className="overflow-x-auto">
             <table className="w-full min-w-[500px] text-left text-sm">
               <thead>
-                <tr className="border-b text-muted-foreground">
-                  <th className="pb-2 font-medium">Category</th>
-                  <th className="pb-2 text-right font-medium">{monthLabel(previous)}</th>
-                  <th className="pb-2 text-right font-medium">{monthLabel(selectedMonth)}</th>
-                  <th className="pb-2 text-right font-medium">Change</th>
+                <tr className={`border-b border-border ${tableHeadTextClassName}`}>
+                  <th className="pb-2">Category</th>
+                  <th className="pb-2 text-right">{monthLabel(previous)}</th>
+                  <th className="pb-2 text-right">{monthLabel(selectedMonth)}</th>
+                  <th className="pb-2 text-right">Change</th>
                 </tr>
               </thead>
               <tbody>

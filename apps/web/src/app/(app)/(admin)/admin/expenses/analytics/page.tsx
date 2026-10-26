@@ -13,7 +13,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  cn,
+  ToggleGroup,
+  PageTitle,
 } from '@hr-portal/ui';
 import { ArrowLeft, BarChart3, LineChart as LineChartIcon, Loader2, PieChart as PieChartIcon } from 'lucide-react';
 import {
@@ -175,39 +176,30 @@ export default function ExpenseAnalyticsDashboardPage() {
     <div className="flex-1 space-y-6 p-8 overflow-y-auto max-h-[calc(100vh-4rem)] bg-zinc-50 dark:bg-zinc-950">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <Button variant="outline" size="sm" className="mb-3 gap-2" onClick={() => router.push(expensesDeskBasePath)}>
+          <Button variant="outline" className="mb-3 gap-2" onClick={() => router.push(expensesDeskBasePath)}>
             <ArrowLeft className="h-4 w-4" />
             Back to Executive Expense Desk
           </Button>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+          <PageTitle className="flex items-center gap-2">
             <BarChart3 className="h-6 w-6 text-indigo-500" />
             Executive Expense Analytics
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          </PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">
             Trend, status, and category spend analysis with week/month scope and operational filtering.
           </p>
         </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-3 shadow-sm">
-        <div role="group" aria-label="Period" className="inline-flex h-9 rounded-md border border-input bg-card p-0.5 shadow-sm">
-          {(['week', 'month'] as const).map((value) => (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={period === value}
-              onClick={() => setPeriod(value)}
-              className={cn(
-                'rounded px-3 text-sm capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
-                period === value
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              By {value}
-            </button>
-          ))}
-        </div>
+        <ToggleGroup
+          aria-label="Period"
+          value={period}
+          onChange={setPeriod}
+          options={[
+            { value: 'week', label: 'By week' },
+            { value: 'month', label: 'By month' },
+          ]}
+        />
         <FilterSelect
           label="Department"
           value={departmentId}

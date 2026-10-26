@@ -18,6 +18,7 @@ import {
   Dialog,
   Textarea,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import { ArrowLeft, FileText, Check, X } from 'lucide-react';
 
@@ -149,8 +150,8 @@ export default function AdminPendingResourcesPage() {
         </Button>
         <div className="flex items-center justify-between gap-3 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Pending Approvals</h1>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">Queue of resources awaiting admin review</p>
+            <PageTitle>Pending Approvals</PageTitle>
+            <p className="mt-1 text-sm text-muted-foreground">Queue of resources awaiting admin review</p>
           </div>
         </div>
       </div>
@@ -240,7 +241,7 @@ export default function AdminPendingResourcesPage() {
                 <Textarea value={notes} maxLength={5000} onChange={(e: any) => setNotes(e.target.value)} />
                 <div className="flex justify-end gap-2 mt-3">
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     onClick={() => {
                       setRejectOpen(false);
                       setActiveId(null);

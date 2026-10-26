@@ -10,7 +10,6 @@ import {
   Card,
   CardContent,
   EmptyState,
-  Input,
   Table,
   TableBody,
   TableCell,
@@ -18,10 +17,12 @@ import {
   TableHeader,
   TableRow,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
-import { AlertCircle, Archive, ArrowLeft, Loader2, RotateCcw, Search } from 'lucide-react';
+import { AlertCircle, Archive, ArrowLeft, Loader2, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import { FilterSearchInput } from '@/components/data-display/FilterControls';
 
 function getResourceTypeLabel(type: string): string {
   const labels: Record<string, string> = {
@@ -112,10 +113,10 @@ export default function ArchivedResourcesPage() {
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+              <PageTitle>
                 Archived Resources
-              </h1>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              </PageTitle>
+              <p className="mt-1 text-sm text-muted-foreground">
                 View and restore previously archived resources
               </p>
             </div>
@@ -136,16 +137,13 @@ export default function ArchivedResourcesPage() {
 
         {/* Search */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
-            <Input
-              placeholder="Search archived resources..."
-              value={search}
-              maxLength={200}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
-            />
-          </div>
+          <FilterSearchInput
+            placeholder="Search archived resources..."
+            value={search}
+            onChange={setSearch}
+            maxLength={200}
+            className="sm:w-auto sm:flex-1"
+          />
         </div>
       </div>
 

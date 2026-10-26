@@ -4,6 +4,10 @@ import { type InvoiceRecord, useApproveInvoice, useInvoices } from '@/hooks/useI
 import { formatFinanceDateRange } from '@/lib/format';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { FilterSearchInput, FilterSelect } from '@/components/data-display/FilterControls';
+import { PaginationBar } from '@/components/data-display/PaginationBar';
+import { Button, Textarea, tableHeaderClassName, tableHeadTextClassName } from '@hr-portal/ui';
+import { Eye, EyeOff } from 'lucide-react';
 
 type StatusFilter = 'all' | InvoiceRecord['status'];
 const filters: Array<{ value: StatusFilter; label: string }> = [
@@ -78,49 +82,35 @@ export function FinanceInvoiceRegister({
           {error}
         </p>
       ) : null}
-      <div className="flex flex-wrap items-center gap-3">
-        <button
+      <div className="flex flex-wrap items-center gap-2">
+        <FilterSearchInput placeholder="Search invoice or staff…" value={search} onChange={setSearch} />
+        <FilterSelect
+          label="Status"
+          value={status}
+          onValueChange={(value) => {
+            setStatus(filters.find((filter) => filter.value === value)?.value ?? 'all');
+            setPage(1);
+            setReview(null);
+          }}
+          options={filters.filter((filter) => filter.value !== 'all')}
+        />
+        <Button
           type="button"
+          variant="ghost"
+          className="ml-auto"
           aria-pressed={hideAmounts}
           onClick={onToggleAmounts ?? (() => setLocalHideAmounts((hidden) => !hidden))}
-          className="rounded-md border px-3 py-2 text-sm font-medium"
         >
+          {hideAmounts ? <EyeOff aria-hidden /> : <Eye aria-hidden />}
           {hideAmounts ? 'Show amounts' : 'Hide amounts'}
-        </button>
-        <label className="text-sm">
-          Search this page{' '}
-          <input
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Invoice or staff…"
-            className="ml-2 rounded-lg border px-3 py-2"
-          />
-        </label>
-        <nav aria-label="Invoice status" className="flex flex-wrap gap-2">
-          {filters.map((filter) => (
-            <button
-              key={filter.value}
-              type="button"
-              aria-pressed={status === filter.value}
-              onClick={() => {
-                setStatus(filter.value);
-                setPage(1);
-                setReview(null);
-              }}
-              className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${status === filter.value ? 'border-[#16505f] bg-[#16505f] text-white' : 'bg-white text-[#4a5558]'}`}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </nav>
+        </Button>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[730px] text-left text-sm">
-          <thead className="border-b bg-[#fafbf9] text-xs uppercase tracking-wide text-[#838c8e]">
+          <thead className={`${tableHeaderClassName} ${tableHeadTextClassName}`}>
             <tr>
-              {['Invoice #', 'Staff', 'Period', 'Amount', 'Status', 'Payment', ''].map((title) => (
-                <th key={title} scope="col" className="p-3 font-semibold">
+              {['Invoice #', 'Staff', 'Period', 'Amount', 'Status', 'Payment', 'Actions'].map((title) => (
+                <th key={title} scope="col" className={title === 'Actions' ? 'p-3 text-right' : 'p-3'}>
                   {title}
                 </th>
               ))}
@@ -156,20 +146,21 @@ export function FinanceInvoiceRegister({
                 <td className="p-3 text-muted-foreground">
                   {invoice.status === 'paid' ? 'Paid' : '—'}
                 </td>
-                <td className="p-3">
+                <td className="p-3 text-right">
                   {invoice.status === 'submitted' ? (
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="sm"
                       disabled={decide.isPending}
                       onClick={() => {
                         setReview(invoice);
                         setNotes('');
                         setError('');
                       }}
-                      className="rounded-md border px-3 py-1.5 font-medium text-[#16505f] disabled:opacity-50"
                     >
                       Review
-                    </button>
+                    </Button>
                   ) : null}
                 </td>
               </tr>
@@ -193,67 +184,47 @@ export function FinanceInvoiceRegister({
           </p>
           <label className="mt-3 block text-sm">
             Decision notes
-            <textarea
+            <Textarea
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
               maxLength={5000}
               rows={2}
-              className="mt-1 block w-full rounded-lg border bg-white p-2"
+              className="mt-1"
               placeholder="Required for rejection"
             />
           </label>
           <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              disabled={decide.isPending}
-              onClick={() => void submit('approved')}
-              className="rounded-md bg-[#16505f] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
-            >
+            <Button type="button" disabled={decide.isPending} onClick={() => void submit('approved')}>
               Approve invoice
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="destructive"
               disabled={decide.isPending}
               onClick={() => void submit('rejected')}
-              className="rounded-md border border-red-300 px-3 py-2 text-sm font-semibold text-red-700 disabled:opacity-50"
             >
               Reject invoice
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="outline"
               disabled={decide.isPending}
               onClick={() => setReview(null)}
-              className="rounded-md border px-3 py-2 text-sm"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}
       {data ? (
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>
-            {data.pagination.total} invoices · page {page} of {data.pagination.totalPages || 1}
-          </span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={page <= 1}
-              onClick={() => setPage((value) => value - 1)}
-              className="rounded border px-3 py-1.5 disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              disabled={page >= data.pagination.totalPages}
-              onClick={() => setPage((value) => value + 1)}
-              className="rounded border px-3 py-1.5 disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+        <PaginationBar
+          page={page}
+          totalPages={data.pagination.totalPages}
+          onPageChange={setPage}
+          total={data.pagination.total}
+          pageSize={25}
+          itemLabel="invoices"
+        />
       ) : null}
     </section>
   );

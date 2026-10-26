@@ -42,6 +42,7 @@ import {
   Textarea,
   useToast,
   type HoverActionItem,
+  PageTitle,
 } from '@hr-portal/ui';
 import { ArchiveRestore, ArrowLeft, Inbox, Pencil, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -355,15 +356,15 @@ export default function AdminProjectPoolPage() {
     <div className="space-y-6 p-6">
       <header className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
-          <Button variant="ghost" size="sm" onClick={() => router.push('/admin/war-room')}>
+          <Button variant="ghost" onClick={() => router.push('/admin/war-room')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+            <PageTitle>
               Project Pool
-            </h1>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            </PageTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
               Admins can review the backlog here. Super-admins can curate active items and restore archived ones before associates claim them.
             </p>
           </div>

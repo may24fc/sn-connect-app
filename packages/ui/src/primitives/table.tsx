@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { cn } from '../utils/cn';
+import { tableHeadTextClassName } from './table-classes';
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
@@ -65,7 +66,8 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      'h-10 px-4 text-left align-middle text-[0.6875rem] font-semibold uppercase leading-4 tracking-[0.06em] text-muted-foreground lg:text-xs [&:has([role=checkbox])]:pr-0',
+      'h-10 px-4 align-middle [&:has([role=checkbox])]:pr-0',
+      tableHeadTextClassName,
       className
     )}
     {...props}

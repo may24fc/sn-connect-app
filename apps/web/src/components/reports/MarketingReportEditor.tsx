@@ -69,6 +69,7 @@ import {
   TabsTrigger,
   Textarea,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import {
   AlertCircle,
@@ -1364,9 +1365,9 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
+          <PageTitle>
             {isEditMode ? 'Edit Marketing Report Draft' : 'Create Marketing Report'}
-          </h1>
+          </PageTitle>
         </div>
       </div>
 

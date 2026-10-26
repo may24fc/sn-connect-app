@@ -147,8 +147,8 @@ export function PersonSearchSelect({
           <div className="max-h-56 space-y-1 overflow-y-auto">
             {resultsQuery.isLoading ? (
               <>
-                <Skeleton className="h-9 w-full" />
-                <Skeleton className="h-9 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
               </>
             ) : resultsQuery.error ? (
               <p className="px-2 py-1 text-sm text-destructive">Could not load people.</p>

@@ -31,6 +31,7 @@ import {
   RATING_CONFIG,
   Textarea,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import {
   ArrowLeft,
@@ -427,8 +428,8 @@ export default function EvaluationsPage(): ReactNode {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Performance Evaluations</h1>
-            <p className="text-muted-foreground">
+            <PageTitle>Performance Evaluations</PageTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
               Review and evaluate objectives and their targets
             </p>
           </div>

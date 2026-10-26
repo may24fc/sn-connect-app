@@ -806,7 +806,6 @@ export function MarketingAdSpendDashboard({
   return (
     <div className={`flex min-h-full flex-col gap-6 ${sfoView ? '' : 'p-6'}`}>
       <PageHeader
-        eyebrow={sfoView ? 'SFO · Seafood Factory Outlet' : 'Marketing'}
         title={sfoView ? 'Performance' : 'Ad Spend'}
         description={
           sfoView

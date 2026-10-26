@@ -110,7 +110,6 @@ export default function AdminDashboardPage(): ReactNode {
   return (
     <div className="h-full space-y-6">
       <PageHeader
-        eyebrow="People operations"
         title={`${greeting}, ${firstName}`}
         description="Here is your HR overview for today."
       />

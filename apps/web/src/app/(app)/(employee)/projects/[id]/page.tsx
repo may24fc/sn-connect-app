@@ -69,6 +69,8 @@ import {
   cn,
   useToast,
   FileDropZone,
+  PageTitle,
+  PageEyebrow,
 } from '@hr-portal/ui';
 import {
   ArrowLeft,
@@ -597,10 +599,11 @@ export default function ProjectDetailPage() {
           </button>
           <ProgressRing value={project.progress_pct} size={64} strokeWidth={6} />
           <div className="min-w-0 flex-1">
+            <PageEyebrow />
             <div className="flex items-center gap-2">
-              <h1 className="truncate text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+              <PageTitle className="truncate" eyebrow={false}>
                 {project.name}
-              </h1>
+              </PageTitle>
               {showHealthPill ? <HealthPill health={project.health} /> : null}
               <Badge variant="outline" className="capitalize">
                 {project.status.replace('_', ' ')}

@@ -57,6 +57,7 @@ import {
   Textarea,
   type PerformanceRating,
   useToast,
+  PageTitle,
 } from '@hr-portal/ui';
 import {
   ArrowLeft,
@@ -649,7 +650,7 @@ export function OKRDetailWorkspace({
                   <Target className="h-5 w-5 text-primary" />
                 </div>
                 <div className="min-w-0">
-                  <h1 className="truncate text-xl font-bold text-foreground">{okr.objective}</h1>
+                  <PageTitle className="truncate">{okr.objective}</PageTitle>
                   {okr.description && (
                     <p className="mt-0.5 text-sm text-muted-foreground">{okr.description}</p>
                   )}

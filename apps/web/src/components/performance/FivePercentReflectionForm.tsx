@@ -425,6 +425,7 @@ export function FivePercentReflectionForm() {
           name={name}
           render={({ field }) => (
             <ToggleGroup
+              variant="choice"
               value={String(field.value)}
               onChange={(value) => field.onChange(Number(value))}
               options={rankOptions}

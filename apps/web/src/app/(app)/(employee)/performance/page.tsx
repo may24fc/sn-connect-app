@@ -48,6 +48,8 @@ import {
   SlidePanelTitle,
   Textarea,
   useToast,
+  PageTitle,
+  PageEyebrow,
 } from '@hr-portal/ui';
 import { Calendar, ChevronRight, Plus, Target } from 'lucide-react';
 import Link from 'next/link';
@@ -227,8 +229,9 @@ export default function PerformancePage(): ReactNode {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
+          <PageEyebrow />
           <div className="flex items-center gap-1.5">
-            <h1 className="text-2xl font-bold text-foreground">OKRs &amp; KPIs</h1>
+            <PageTitle eyebrow={false}>OKRs &amp; KPIs</PageTitle>
             <SectionTooltip content="Track your objectives, targets, KPIs, and review-cycle progress in one workspace." />
           </div>
           <p className="text-muted-foreground">Track your objectives, targets, and KPI progress</p>

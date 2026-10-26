@@ -1,5 +1,7 @@
 'use client';
 
+import { Button } from '@hr-portal/ui';
+import { Download } from 'lucide-react';
 import { useState } from 'react';
 
 export function FinanceExpenseExport({ filters }: { filters: string }) {
@@ -33,14 +35,10 @@ export function FinanceExpenseExport({ filters }: { filters: string }) {
 
   return (
     <span className="inline-flex flex-col items-start gap-1">
-      <button
-        type="button"
-        disabled={busy}
-        onClick={() => void download()}
-        className="rounded-lg border bg-card px-3 py-2 text-sm font-semibold disabled:opacity-50"
-      >
+      <Button type="button" variant="outline" disabled={busy} onClick={() => void download()}>
+        <Download strokeWidth={1.5} aria-hidden />
         {busy ? 'Exporting…' : 'Export CSV'}
-      </button>
+      </Button>
       {error ? (
         <span role="alert" className="text-xs text-red-700">
           {error}

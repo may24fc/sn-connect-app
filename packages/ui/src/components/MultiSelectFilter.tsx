@@ -50,45 +50,37 @@ export function MultiSelectFilter({
     }
   };
 
-  const handleClearAll = (e: React.MouseEvent): void => {
-    e.stopPropagation();
-    onSelectionChange([]);
-  };
-
   const hasSelection = selected.length > 0;
+  const selectedSummary =
+    selected.length === 1
+      ? (options.find((option) => option.value === selected[0])?.label ?? '1 selected')
+      : `${selected.length} selected`;
 
+  // Matches FilterSelect: reads as its name while unset, "Name: Value" with a highlight once set.
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
+          aria-label={`Filter by ${label.toLowerCase()}`}
           className={cn(
-            'flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm outline-none ring-offset-background transition-all',
-            'hover:border-zinc-300 hover:bg-zinc-50/50',
-            'focus:border-slate-700 focus:ring-2 focus:ring-slate-700/20 focus:ring-offset-0',
-            'dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/50 dark:focus:border-zinc-400 dark:focus:ring-zinc-400/20',
-            hasSelection &&
-              'border-zinc-300 dark:border-zinc-600 bg-zinc-50/50 dark:bg-zinc-950/30',
+            'flex h-10 w-auto max-w-[240px] cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground shadow-sm outline-none ring-offset-background transition-all',
+            'hover:border-primary/35 hover:bg-primary-muted/20',
+            'focus:border-primary/60 focus:ring-2 focus:ring-ring/20 focus:ring-offset-0',
+            hasSelection && 'border-primary/50 bg-primary-muted/30 font-medium',
             className
           )}
         >
-          <span className="text-zinc-500 dark:text-zinc-400">{label}</span>
-          {hasSelection ? (
-            <span className="flex items-center gap-1">
-              <Badge variant="default" className="h-5 px-1.5 text-xs font-medium rounded-sm">
-                {selected.length}
-              </Badge>
-              <button
-                type="button"
-                onClick={handleClearAll}
-                className="ml-0.5 rounded-sm hover:bg-zinc-200 dark:hover:bg-zinc-700 p-0.5"
-              >
-                <X className="h-3 w-3 text-muted-foreground" />
-              </button>
-            </span>
-          ) : (
-            <ChevronDown className="h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500" />
-          )}
+          <span className="min-w-0 truncate">
+            {hasSelection ? (
+              <>
+                <span className="font-normal text-muted-foreground">{label}:</span> {selectedSummary}
+              </>
+            ) : (
+              label
+            )}
+          </span>
+          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align} className="w-52">

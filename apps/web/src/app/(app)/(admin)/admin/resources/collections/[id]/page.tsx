@@ -21,6 +21,7 @@ import {
   ResourceCard,
   ResourceGrid,
   Textarea,
+  PageTitle,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import { useRouter } from 'next/navigation';
@@ -118,8 +119,8 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{collection.title}</h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">Collection ID: {collection.id}</p>
+          <PageTitle>{collection.title}</PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">Collection ID: {collection.id}</p>
         </div>
         <Button variant="outline" onClick={() => router.push('/admin/resources/collections')}>
           Back

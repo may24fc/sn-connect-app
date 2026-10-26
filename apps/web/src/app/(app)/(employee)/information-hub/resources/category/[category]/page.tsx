@@ -9,6 +9,7 @@ import {
   ResourceFilters,
   type ResourceFiltersValue,
   ResourceGrid,
+  PageTitle,
 } from '@hr-portal/ui';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -63,7 +64,7 @@ export default function ResourceCategoryPage({
           </Link>{' '}
           / Resources / {category}
         </p>
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{category} Resources</h1>
+        <PageTitle>{category} Resources</PageTitle>
       </div>
 
       <div className="flex items-center justify-between gap-3">

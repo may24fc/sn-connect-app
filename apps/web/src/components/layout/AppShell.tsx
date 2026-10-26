@@ -37,8 +37,10 @@ import {
   DialogTitle,
   Header,
   NotificationBell,
+  PageContextLabelProvider,
   Sidebar,
   ToastProvider,
+  getNavContextLabel,
   useToast,
 } from '@hr-portal/ui';
 import type { ChatMessage, ConversationItem } from '@hr-portal/ui';
@@ -272,7 +274,11 @@ function AppShellInner({
           onThemeChange={setTheme}
         />
 
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+          <PageContextLabelProvider label={getNavContextLabel(sidebarPath, sidebarVariant)}>
+            {children}
+          </PageContextLabelProvider>
+        </main>
       </div>
     </div>
   );

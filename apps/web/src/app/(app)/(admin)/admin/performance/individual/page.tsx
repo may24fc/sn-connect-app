@@ -10,17 +10,19 @@ import {
   Card,
   CardContent,
   EmptyState,
-  Input,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  PageTitle,
 } from '@hr-portal/ui';
-import { ArrowLeft, ChevronLeft, ChevronRight, Search, Users } from 'lucide-react';
+import { ArrowLeft, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
+import { FilterSearchInput } from '@/components/data-display/FilterControls';
+import { PaginationBar } from '@/components/data-display/PaginationBar';
 
 function getInitials(name: string): string {
   return name
@@ -91,8 +93,8 @@ export default function IndividualPerformancePage(): ReactNode {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Individual OKRs &amp; KPIs</h1>
-            <p className="text-muted-foreground">
+            <PageTitle>Individual OKRs &amp; KPIs</PageTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
               Select an employee or associate to review their OKRs, targets, and KPI details
             </p>
           </div>
@@ -103,19 +105,16 @@ export default function IndividualPerformancePage(): ReactNode {
       <Card>
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name, position, email..."
-                value={search}
-          maxLength={200}
-                onChange={(e) => {
-                  setSearch(e.target.value);
+            <FilterSearchInput
+              placeholder="Search by name, position, email..."
+              value={search}
+              onChange={(value) => {
+                  setSearch(value);
                   setPage(1);
                 }}
-                className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
-              />
-            </div>
+              maxLength={200}
+              className="sm:w-auto sm:flex-1"
+            />
             <Select
               value={roleFilter}
               onValueChange={(value) => {
@@ -164,34 +163,13 @@ export default function IndividualPerformancePage(): ReactNode {
             <p className="text-xs text-muted-foreground">
               {pagination?.total ?? 0} total
             </p>
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground">
-                {(page - 1) * pageSize + 1}-
-                {Math.min(page * pageSize, pagination?.total ?? 0)} of {pagination?.total ?? 0}
-              </span>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  aria-label="Previous page"
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  aria-label="Next page"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            <PaginationBar
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              total={pagination?.total ?? 0}
+              pageSize={pageSize}
+            />
           </div>
         )}
         <CardContent className="p-0">

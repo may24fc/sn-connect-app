@@ -3,6 +3,7 @@
 import * as TabsPrimitive from '@radix-ui/react-tabs';
 import * as React from 'react';
 import { cn } from '../utils/cn';
+import { tabsListClassName, tabsTriggerClassName } from './tabs-classes';
 
 const Tabs = TabsPrimitive.Root;
 
@@ -12,10 +13,7 @@ const TabsList = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.List
     ref={ref}
-    className={cn(
-      'inline-flex min-h-10 max-w-full items-center justify-center overflow-x-auto rounded-lg border border-border bg-muted/60 p-1 text-muted-foreground',
-      className
-    )}
+    className={cn(tabsListClassName, 'justify-center', className)}
     {...props}
   />
 ));
@@ -27,10 +25,7 @@ const TabsTrigger = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.Trigger
     ref={ref}
-    className={cn(
-      'inline-flex min-h-8 items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-[background-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-card data-[state=active]:font-semibold data-[state=active]:text-primary data-[state=active]:shadow-sm',
-      className
-    )}
+    className={cn(tabsTriggerClassName, className)}
     {...props}
   />
 ));

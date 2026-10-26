@@ -8,7 +8,6 @@ import {
   FileText,
   GraduationCap,
   Mail,
-  MoreVertical,
   Pencil,
   Trash2,
   User,
@@ -18,6 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../../primitives/avatar';
 import { Button } from '../../primitives/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../primitives/card';
 import { getPersonMetaParts } from '../people/UserAvatar';
+import { RowActionsTrigger } from '../RowActionsTrigger';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -82,9 +82,7 @@ export function InternCard({
             <InternshipStatusBadge status={associate.status} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
+                <RowActionsTrigger label="Associate actions" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {onView && (

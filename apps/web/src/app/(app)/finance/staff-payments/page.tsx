@@ -3,6 +3,7 @@ import PayrollApprovalsPage from '@/app/(app)/(admin)/super-admin/payroll-approv
 import { FinanceDetailDisclosure } from '@/components/finance/FinanceDetailDisclosure';
 import { FinancePaymentWorkspace } from '@/components/finance/FinancePaymentWorkspace';
 import { canReviewFinance, getFinanceContext } from '@/lib/finance/auth';
+import { Button, PageTitle } from '@hr-portal/ui';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -38,23 +39,17 @@ export default async function StaffPaymentsPage() {
     <main className="h-full space-y-6">
       <header className="flex flex-col gap-4 border-b border-border/80 pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-primary">
-            Finance
-          </p>
-          <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground lg:text-3xl">
+          <PageTitle>
             Staff Payments
-          </h1>
-          <p className="mt-1 max-w-3xl text-sm text-muted-foreground lg:text-base">
+          </PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground max-w-3xl">
             Approve invoices, create a Wise batch, and verify completed transfers before marking
             Paid.
           </p>
         </div>
-        <Link
-          href="/invoice"
-          className="rounded-lg bg-[#16505f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1f6a7c]"
-        >
-          My invoices
-        </Link>
+        <Button asChild>
+          <Link href="/invoice">My invoices</Link>
+        </Button>
       </header>
       {leadership ? (
         <>
