@@ -23,7 +23,7 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 | Correctness and data repair, items 1â€“7 | Deployed | Four migrations applied locally and to production; web typecheck, focused tests, production build, and admin browser route matrix passed. |
 | Workflow and UI improvements, items 8â€“17 | Deployed | Unified review list, app-shell navigation/spacing, totals, forms, subscription/property fields, dialog edits, status colors, and Finance date formatting implemented. |
 | Additional testing findings, items 18â€“20 | Deployed | Self-approval controls, readable snapshot view, and next eligible payout implemented and focused checks passed. |
-| Test-record cleanup | Done in production | The owner identified production project `tccdupkjmwwxcvpqnpeb`. A guarded dry run found exact IDs and dependencies; cleanup removed the reviewed records and a post-check found zero remaining reviewed IDs. |
+| Test-record cleanup | Done in production | The owner identified production project `tccdupkjmwwxcvpqnpeb`. The initial cleanup removed active records and property/subscription dependencies. A 27 October PDF re-audit removed the remaining archived expenses, test snapshots, and receipt artifacts; a broad post-check found zero PDF-named records and the Overview counts matched 6/1/1/29. |
 | On-hold policies | Deferred | Resume only when May/Tina supply the policy or sanitized Wise fixtures identified below. |
 
 ## 2026-10-24 Implementation Result
@@ -40,7 +40,7 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 
 ### 1. AUD receipts excluded from Overview totals
 
-- **Status:** In Progress
+- **Status:** Done
 - **Evidence:** October 2026 Overview showed recorded spend `0.00`, seven items awaiting FX, and no category spend while the report snapshot totaled AUD 4,035.10.
 - **Finding:** The Finance overview RPC sums `total_amount_aud` and counts null values as unconverted. Some older AUD rows have `total_amount_aud = null`; report calculations already fall back to `total_amount` when `currency = AUD`.
 - **Implementation:**
@@ -52,7 +52,7 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 
 ### 2. Two Expenses destinations
 
-- **Status:** In Progress
+- **Status:** Done
 - **Evidence:** Privileged sidebars show both `/expenses` and `/finance/expenses`; Finance â€œNew expenseâ€ opens `/expenses`.
 - **Implementation:**
   - Keep `/expenses` as the staff submission/history workspace and label it **My Expenses**.
@@ -63,7 +63,7 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 
 ### 3. Legacy category remapping
 
-- **Status:** In Progress
+- **Status:** Done
 - **Evidence:** Meta/Facebook ads remained Other; AWS remained Software; Sydney Data Centre and Coworking remained Utilities; chairs/desks remained Office Supplies.
 - **Implementation:** Add a deterministic local migration/backfill for the named legacy vendor patterns:
   - Ads and Meta/Facebook â†’ `advertising_marketing`
@@ -75,7 +75,7 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 
 ### 4. Legacy Paid with, Payment, and Receipt fields cannot be completed
 
-- **Status:** In Progress
+- **Status:** Done
 - **Evidence:** Older rows show Paid with Unknown, Payment Unknown, Receipt Awaiting; card tabs remain empty.
 - **Implementation:**
   - Add a Finance-authorized, server-confirmed ledger metadata correction endpoint.
@@ -87,7 +87,7 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 
 ### 5. Matching does not update Payment and exposes manual result selection
 
-- **Status:** In Progress
+- **Status:** Done
 - **Evidence:** Matched rows remained Unknown/Unpaid; users manually selected Matched, Variance flagged, or Resolved manually.
 - **Implementation:**
   - Remove `matchStatus` from client input; the server/RPC derives exact match versus amount difference from the linked entries.
@@ -98,7 +98,7 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 
 ### 6. Business purpose is optional
 
-- **Status:** In Progress
+- **Status:** Done
 - **Evidence:** Log Request and Upload Receipt saved without justification and review displayed None.
 - **Implementation:**
   - Require trimmed business purpose on both the UI and server boundary.
@@ -109,7 +109,7 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 
 ### 7. Receipt quality check rejects valid portrait/digital receipts
 
-- **Status:** In Progress
+- **Status:** Done
 - **Evidence:** A 600Ã—820 image failed resolution; a clean 1240Ã—1754 digital receipt intermittently failed blur.
 - **Implementation:**
   - Evaluate orientation independently: long side against 1024 and short side against a reduced phone-safe minimum rather than fixed width/height orientation.
@@ -120,7 +120,7 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 
 ### 8. Consolidate To review into one prioritized list
 
-- **Status:** In Progress
+- **Status:** Done
 - **Evidence:** Approval Queue, Matching Queue, Variance Review, and Settled Ledger are separate; category copy appears as `ai cloud`.
 - **Implementation:**
   - Render one active review queue ordered: amount differences, approvals, unmatched requests.
@@ -131,7 +131,7 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 
 ### 9. Duplicate Finance navigation
 
-- **Status:** In Progress
+- **Status:** Done
 - **Evidence:** Sidebar and page-level Overview/Expenses/Staff Payments/Reports buttons duplicate one another.
 - **Implementation:**
   - Use the sidebar as the single Finance navigation.
@@ -142,7 +142,7 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 
 ### 10. Overview defaults, recurring tools, and FX detail
 
-- **Status:** In Progress
+- **Status:** Done
 - **Evidence:** Overview initially opened on an empty month and the FX card showed a count without amount/currency.
 - **Later-test clarification:** Subscription run rate, annualized run rate, and AI & Cloud subtotal passed in T7. Do not rewrite correct run-rate math.
 - **Implementation:**
@@ -153,7 +153,7 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 
 ### 11. Totals for filtered card and maintenance lists
 
-- **Status:** In Progress
+- **Status:** Done
 - **Evidence:** Personal card, Company card, and Maintenance views showed correct rows without totals.
 - **Implementation:**
   - Display the total and row count for the current filtered expense list, grouped by currency when conversion is unavailable.
@@ -163,14 +163,14 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 
 ### 12. Color-coded statuses
 
-- **Status:** In Progress
+- **Status:** Done
 - **Evidence:** Pending, Unknown, Variance Flagged, Due, and Overdue visually blend together.
 - **Implementation:** Use accessible semantic badges with text labels for approved/confirmed, pending/unknown, unmatched, amount differs, due, overdue, and paid. Do not rely on color alone.
 - **Likely paths:** Finance Expenses table/status helper, Finance Properties panel, focused component/page tests.
 
 ### 13. Expense form layout and per-receipt editing
 
-- **Status:** In Progress
+- **Status:** Done
 - **Evidence:** Category was clipped, Log Request scrolled horizontally, and bulk-upload rows could not change Category/Paid with after OCR.
 - **Implementation:**
   - Make both dialogs fit the viewport with responsive single-column mobile layout and contained scrolling.
@@ -180,7 +180,7 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 
 ### 14. Subscription billing currency
 
-- **Status:** In Progress
+- **Status:** Done
 - **Evidence:** Subscription form accepts Monthly AUD only; many tools bill in USD.
 - **Implementation:**
   - Add billing amount and ISO currency to subscriptions while retaining nullable normalized AUD for reporting.
@@ -191,7 +191,7 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 
 ### 15. Property ID, agent, rent account, and cadence
 
-- **Status:** In Progress
+- **Status:** Done
 - **Evidence:** Add property only captures name, type, tenant, weekly rent, and due day.
 - **Implementation:**
   - Add unique property code, optional agent, optional receiving-account label, and rent cadence (`weekly` or `biweekly`).
@@ -202,35 +202,35 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 
 ### 16. Property edit forms open off-screen
 
-- **Status:** In Progress
+- **Status:** Done
 - **Evidence:** Edit expected rent and Change terms render at the top after the user clicks a lower property card.
 - **Implementation:** Present these forms in the app Dialog component, focused and centered, with the selected property named in the title. Close on successful save and restore focus to the trigger.
 - **Likely paths:** `FinancePropertiesPanel.tsx`, component test, desktop/mobile Playwright interaction.
 
 ### 17. One Finance date format
 
-- **Status:** In Progress
+- **Status:** Done
 - **Evidence:** Finance surfaces mix ISO, `Oct 21, 2026`, and numeric dates.
 - **Implementation:** Use the shared formatter for display text in scoped Finance, Properties, reports, and invoice surfaces, targeting `30 Oct 2026`. Keep ISO values for form controls, URLs, CSV machine fields, and API payloads.
 - **Likely paths:** `apps/web/src/lib/format.ts`, Finance/property/invoice components and page tests.
 
 ### 18. Disable self-approval before click
 
-- **Status:** In Progress
+- **Status:** Done
 - **Evidence:** Server correctly blocked self-approval, but the Approve button looked available.
 - **Implementation:** Keep the server safeguard and disable/hide the control for the submitter with explanatory text or tooltip.
 - **Likely paths:** Finance approval queue/review components and focused UI test.
 
 ### 19. Render saved snapshots as a readable view
 
-- **Status:** In Progress
+- **Status:** Done
 - **Evidence:** Save draft and CSV worked, but View saved snapshot opened raw JSON.
 - **Implementation:** Render saved snapshot sections inside the Reports UI or a dedicated authorized page; retain CSV download and never expose raw JSON as the primary user view.
 - **Likely paths:** `FinanceReportControls.tsx`, reports API/page, report-pack types and tests.
 
 ### 20. Offer the next eligible payout date
 
-- **Status:** In Progress
+- **Status:** Done
 - **Evidence:** Invoice submission showed only two past October payout dates and blocked submission with â€œPayout schedule required.â€
 - **Implementation:** When both current-month payouts are closed, include the next monthâ€™s first eligible payout option. Preserve the 3:00 PM PHT cutoff and two-payout monthly policy.
 - **Likely paths:** `apps/web/src/lib/payroll/payoutSchedule.ts`, invoice submission UI, payout schedule unit tests.
@@ -245,9 +245,11 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 - Subscriptions `TEST â€“ SUB1`, `SUB2`, `SUB3`, and `SUB4`
 - Properties `TEST â€“ PT1`, `PT2`, and `PT3`, including linked payments, maintenance, and expected-rent override
 
-### Status: Done in production on 24 Oct 2026
+### Status: Done in production; fully reverified on 27 Oct 2026
 
-The owner identified production project `tccdupkjmwwxcvpqnpeb` as the target. The read-only dry run found nine October expense rows, three existing test subscriptions (`SUB1` was already absent), and all three test properties with two rent payments, two maintenance rows, three effective-month terms, one expected-rent override, and one variance sign-off. The nine expense rows were soft deleted to retain ledger/audit history. The exact subscription and property dependency trees were deleted with audit snapshots, and the final read-only check found zero remaining reviewed IDs. No production migration was applied.
+The owner identified production project `tccdupkjmwwxcvpqnpeb` as the target. On 24 October, the guarded cleanup soft-deleted nine active October expense rows and removed three existing test subscriptions (`SUB1` was already absent) plus all three test properties and their reviewed dependencies. Audit evidence was retained.
+
+On 27 October, a fresh broad scan using the names from both PDFs found eleven archived expense rows (the nine above plus two already archived), two saved draft report snapshots that still embedded test data, and eight linked receipt document rows/storage objects. Those exact artifacts were removed. A final broad scan found zero matching expenses, subscriptions, properties, snapshots, invoices, documents, sign-offs, or AI-expense sources. The production October Overview then returned exactly six requests to match, one amount difference, one pending approval, and twenty-nine submitted invoices, matching the feedback's expected post-cleanup state. No production migration was applied during either cleanup.
 
 ## Confirmed Passing or Intentionally Unchanged
 
