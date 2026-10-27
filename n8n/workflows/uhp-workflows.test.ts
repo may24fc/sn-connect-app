@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 type WorkflowNode = {
   name: string;
+  notes?: string;
+  notesInFlow?: boolean;
   type: string;
   onError?: string;
   retryOnFail?: boolean;
@@ -101,6 +103,8 @@ describe('UHP n8n workflows', () => {
 
     expect(webhook).toMatchObject({
       type: 'n8n-nodes-base.webhook',
+      notes: expect.stringContaining('/vp'),
+      notesInFlow: true,
       parameters: {
         httpMethod: 'POST',
         path: 'uhp-volume-points-manual-send',

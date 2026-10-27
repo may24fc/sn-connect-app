@@ -18,6 +18,8 @@
       "typeVersion": 2.1,
       "position": [240, 460],
       "webhookId": "uhp-volume-points-manual-send",
+      "notes": "Authenticated entry point shared by the Control Hub Send Telegram update button and the linked-user /vp Telegram command.",
+      "notesInFlow": true,
       "parameters": {
         "httpMethod": "POST",
         "path": "uhp-volume-points-manual-send",

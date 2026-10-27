@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../apps/web/src/app/api/uhp/_lib', () => ({
-  isUhpAdmin: (role: string | null) => role === 'admin' || role === 'super_admin',
   requireUhpModule: vi.fn(),
 }));
 
@@ -33,13 +32,16 @@ describe('POST /api/uhp/volume-points/send-telegram', () => {
     expect((await POST()).status).toBe(503);
   });
 
-  it('does not let a non-admin Volume Points grantee broadcast a digest', async () => {
+  it('lets a non-admin Volume Points grantee request a digest', async () => {
     vi.mocked(requireUhpModule).mockResolvedValue({
       ok: true,
       context: { userId: 'user-2', role: 'employee' },
     } as never);
+    vi.stubEnv('N8N_UHP_VOLUME_POINTS_WEBHOOK_URL', 'https://n8n.example/webhook/uhp-vp');
+    vi.stubEnv('N8N_CALLBACK_SECRET', 'test-secret');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 200 })));
 
-    expect((await POST()).status).toBe(403);
+    expect((await POST()).status).toBe(200);
   });
 
   it('starts an authenticated n8n execution for the current user', async () => {
@@ -61,6 +63,7 @@ describe('POST /api/uhp/volume-points/send-telegram', () => {
         body: expect.stringContaining('"requestedBy":"user-1"'),
       })
     );
+    expect(fetchMock.mock.calls[0]?.[1]?.body).toContain('"source":"control_hub_button"');
   });
 
   it('reports an n8n rejection without claiming the notification was sent', async () => {

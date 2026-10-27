@@ -3,6 +3,7 @@ import { NOTIFICATION_PREFERENCES_ROLE_TYPE, normalizeStoredNotificationPreferen
 import { processProjectIntakeMessage } from '@/lib/intake/process-project-intake-message';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { inngest } from '@/lib/inngest/client';
+import { requestUhpVolumePointsTelegramUpdate } from '@/lib/uhp-volume-points-manual-send';
 import { NextResponse } from 'next/server';
 
 interface TelegramUpdate {
@@ -12,7 +13,7 @@ interface TelegramUpdate {
     caption?: string;
     voice?: { file_id?: string; mime_type?: string };
     chat?: { id?: number | string };
-    from?: { username?: string };
+    from?: { id?: number; username?: string };
   };
 }
 
@@ -29,6 +30,87 @@ interface LinkedTelegramUserRow {
 
 /** Roles allowed to dispatch project intake from Telegram. */
 const INTAKE_ALLOWED_ROLES = new Set(['admin', 'super_admin']);
+const ACTIVE_ROLES = new Set(['employee', 'associate', 'admin', 'super_admin']);
+
+function readTelegramCommand(text: string): string {
+  return (text.split(/\s+/, 1)[0] ?? '').split('@', 1)[0]?.toLowerCase() ?? '';
+}
+
+async function getVolumePointsLinkedUser(telegramUserId?: number) {
+  if (!telegramUserId) return null;
+  const admin = createSupabaseAdminClient();
+  const { data: linkRows, error: linkError } = await admin
+    .from('user_role_metadata')
+    .select('user_id, metadata, updated_at')
+    .eq('role_type', NOTIFICATION_PREFERENCES_ROLE_TYPE)
+    .contains('metadata', { telegramChatId: String(telegramUserId) })
+    .order('updated_at', { ascending: false })
+    .limit(5);
+  if (linkError || !linkRows) return null;
+  const link = (linkRows as NotificationPreferenceRow[]).find((row) => {
+    const preferences = normalizeStoredNotificationPreferences(row.metadata);
+    return preferences.telegramChatId === String(telegramUserId);
+  });
+  if (!link) return null;
+  const { data: user } = await admin
+    .from('users')
+    .select('id, role, status, deleted_at')
+    .eq('id', link.user_id)
+    .maybeSingle();
+  if (
+    !user ||
+    user.deleted_at ||
+    user.status === 'terminated' ||
+    user.status === 'inactive' ||
+    !ACTIVE_ROLES.has(user.role)
+  )
+    return null;
+  return user as { id: string; role: string };
+}
+
+async function handleVolumePointsCommand(update: TelegramUpdate): Promise<boolean> {
+  const message = update.message;
+  const text = (message?.text ?? '').trim();
+  if (readTelegramCommand(text) !== '/vp') return false;
+  const chatId = message?.chat?.id;
+  if (chatId === undefined || chatId === null) return true;
+  const respond = (responseText: string) =>
+    sendTelegramMessage({ chatId: String(chatId), text: responseText });
+  const sender = await getVolumePointsLinkedUser(message?.from?.id);
+  if (!sender) {
+    await respond('Link your Telegram account from Control Hub Settings before using /vp.');
+    return true;
+  }
+  if (!INTAKE_ALLOWED_ROLES.has(sender.role)) {
+    const admin = createSupabaseAdminClient();
+    const { data: grant, error } = await admin
+      .from('uhp_access_grants')
+      .select('id')
+      .eq('user_id', sender.id)
+      .eq('module', 'volume_points')
+      .is('deleted_at', null)
+      .maybeSingle();
+    if (error) console.error('[Telegram] Failed to resolve /vp access:', error);
+    if (!grant) {
+      await respond('Your Control Hub account does not have access to UHP Volume Points.');
+      return true;
+    }
+  }
+  const result = await requestUhpVolumePointsTelegramUpdate({
+    requestedBy: sender.id,
+    source: 'telegram_command',
+  });
+  if (!result.ok) {
+    await respond(
+      result.reason === 'not_configured'
+        ? 'The UHP Volume Points Telegram workflow is not configured yet.'
+        : 'The VP update could not be started right now. Please try again.'
+    );
+    return true;
+  }
+  await respond('VP update requested. The latest Volume Points digest is being sent.');
+  return true;
+}
 
 function isAuthorizedWebhook(secretHeader: string | null): boolean {
   const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
@@ -56,6 +138,8 @@ export async function POST(request: Request) {
     if (chatId === undefined || chatId === null) {
       return NextResponse.json({ ok: true });
     }
+
+    if (await handleVolumePointsCommand(update)) return NextResponse.json({ ok: true });
 
     // ----- /start <token> account-linking flow (existing behaviour) -----
     if (text.startsWith('/start')) {

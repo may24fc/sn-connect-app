@@ -334,21 +334,19 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
         actions={
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             {isAdmin && <UhpAccessManagerButton module="volume_points" label="Volume Points" />}
-            {isAdmin && (
-              <Button
-                variant="outline"
-                className="sm:min-w-48"
-                disabled={sendingTelegram}
-                onClick={() => void sendTelegramUpdate()}
-              >
-                {sendingTelegram ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="mr-2 h-4 w-4" />
-                )}
-                {sendingTelegram ? 'Sending update...' : 'Send Telegram update'}
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              className="sm:min-w-48"
+              disabled={sendingTelegram}
+              onClick={() => void sendTelegramUpdate()}
+            >
+              {sendingTelegram ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="mr-2 h-4 w-4" />
+              )}
+              {sendingTelegram ? 'Sending update...' : 'Send Telegram update'}
+            </Button>
             <Button
               className="sm:min-w-32"
               onClick={() => {

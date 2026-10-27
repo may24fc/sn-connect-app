@@ -36,6 +36,12 @@ flowchart LR
 
 The checked-in workflow files are inactive by design. The portal workflow checks daily at 05:30 PHT and emits only applicable reminders. The VP workflow sends every day at 12:00 PHT, including an explicit no-change message, and can also run from the authenticated page button. Telegram send failures are recorded through the same callback APIs with a `failed` status and error detail.
 
+## Manual Volume Points command
+
+Use `/vp` to request the same latest Volume Points digest as the Control Hub button. The existing Control Hub application webhook receives the command and invokes the n8n **Manual Send Webhook**; do not attach a second Telegram Trigger to the bot because a Telegram bot can have only one webhook. The sender must link Telegram in Control Hub Settings and must be an admin/super-admin or have an active `volume_points` grant.
+
+To show the command in Telegram's `/` menu, register `vp - Send the latest UHP Volume Points update` through BotFather's `/setcommands` flow. Typing `/vp` works once the Control Hub webhook code is deployed even before the menu entry is registered.
+
 For source data, prepare one JSON export with optional `clients`, `activities`, `notes`, `volumePoints`, and `targets` arrays. Every client, activity, and note requires a stable `notion_page_id`; activities and notes also require `client_notion_page_id`. Every volume-point row requires `source_sheet` and `source_row`. Preview it with `node scripts/backfill/import-uhp-workspace.mjs export.json`; add `--apply` only after reviewing the counts. The importer writes clients first, resolves their database IDs for related activities and notes, and uses stable source keys for repeatable upserts.
 
 ## Source migration rules

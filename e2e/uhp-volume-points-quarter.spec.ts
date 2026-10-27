@@ -2,13 +2,15 @@ import { expect, test } from '@playwright/test';
 
 async function signIn(page: import('@playwright/test').Page) {
   await page.goto('/login');
-  await page.getByLabel('Email').fill('super-admin@example.com');
+  await page.getByLabel('Email').fill('associate@example.com');
   await page.locator('#password').fill('password');
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page).not.toHaveURL(/\/login(?:\?|$)/, { timeout: 90_000 });
 }
 
-test('switches Volume Points to a responsive quarterly KPI view', async ({ page }, testInfo) => {
+test('lets a granted associate send a responsive Volume Points update', async ({
+  page,
+}, testInfo) => {
   test.setTimeout(240_000);
   const requests: Array<URL> = [];
   const browserErrors: Array<string> = [];
