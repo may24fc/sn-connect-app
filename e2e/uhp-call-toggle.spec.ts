@@ -10,11 +10,13 @@ async function signIn(page: Page) {
   await expect(page).not.toHaveURL(/\/login(?:\?|$)/, { timeout: 90_000 });
 }
 
-test('Call column updates the row and period metric on desktop and mobile', async ({
+test('Call, WE Form, and WE Call columns update on desktop and mobile', async ({
   page,
 }, testInfo) => {
   test.setTimeout(120_000);
   let called = false;
+  let weForm = false;
+  let weCall = false;
   const errors: Array<string> = [];
   const client = () => ({
     id: clientId,
@@ -24,6 +26,8 @@ test('Call column updates the row and period metric on desktop and mobile', asyn
     interest_state: 'unknown',
     replied: false,
     called,
+    we_form: weForm,
+    we_call: weCall,
     lead_owner: 'Ariana',
     source_name: 'Downline',
     source_url: null,
@@ -70,8 +74,16 @@ test('Call column updates the row and period metric on desktop and mobile', asyn
   await page.route(`**/api/uhp/clients/${clientId}`, async (route) => {
     expect(route.request().method()).toBe('PATCH');
     const body = route.request().postDataJSON();
-    expect(body).toEqual({ called: true });
-    called = true;
+    if ('called' in body) {
+      expect(body).toEqual({ called: true });
+      called = true;
+    } else if ('weForm' in body) {
+      expect(body).toEqual({ weForm: true });
+      weForm = true;
+    } else {
+      expect(body).toEqual({ weCall: true });
+      weCall = true;
+    }
     await route.fulfill({ json: { data: client() } });
   });
 
@@ -79,7 +91,7 @@ test('Call column updates the row and period metric on desktop and mobile', asyn
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/uhp/clients');
 
-  const toggle = page.getByRole('checkbox', { name: 'Call: Call Test Client' });
+  const toggle = page.getByRole('checkbox', { name: 'Call: Call Test Client', exact: true });
   await expect(toggle).not.toBeChecked();
   await expect(toggle.locator('..')).toContainText('No');
   await toggle.check();
@@ -88,13 +100,36 @@ test('Call column updates the row and period metric on desktop and mobile', asyn
   await expect(
     page.getByText('Calls scheduled', { exact: true }).locator('..').locator('p').last()
   ).toHaveText('1');
+  const headers = await page.locator('thead th').allTextContents();
+  const interestIndex = headers.indexOf('Interest');
+  expect(headers.slice(interestIndex, interestIndex + 3)).toEqual([
+    'Interest',
+    'WE Form',
+    'WE Call',
+  ]);
+  const weFormToggle = page.getByRole('checkbox', { name: 'WE Form: Call Test Client' });
+  const weCallToggle = page.getByRole('checkbox', { name: 'WE Call: Call Test Client' });
+  await expect(weFormToggle).not.toBeChecked();
+  await expect(weFormToggle.locator('..')).toContainText('False');
+  await weFormToggle.check();
+  await expect(weFormToggle).toBeChecked();
+  await expect(weFormToggle.locator('..')).toContainText('True');
+  await expect(weCallToggle).not.toBeChecked();
+  await expect(weCallToggle.locator('..')).toContainText('False');
+  await weCallToggle.check();
+  await expect(weCallToggle).toBeChecked();
+  await expect(weCallToggle.locator('..')).toContainText('True');
   await page.screenshot({ path: testInfo.outputPath('call-column-desktop.png'), fullPage: true });
 
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
     true
   );
+  await toggle.scrollIntoViewIfNeeded();
   await expect(toggle).toBeChecked();
-  await page.screenshot({ path: testInfo.outputPath('call-column-mobile.png'), fullPage: true });
+  await expect(weFormToggle).toBeChecked();
+  await expect(weCallToggle).toBeChecked();
+  await weCallToggle.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath('call-column-mobile.png') });
   expect(errors).toEqual([]);
 });

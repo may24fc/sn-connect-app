@@ -29,6 +29,8 @@ function setup(existingReplied: boolean, existingCalled = false) {
         interest_state: 'unknown',
         replied: existingReplied,
         called: existingCalled,
+        we_form: false,
+        we_call: false,
       },
       error: null,
     })),
@@ -112,5 +114,12 @@ describe('PATCH /api/uhp/clients/[id] manual reply timestamp', () => {
     expect(update).toHaveBeenCalledWith(
       expect.not.objectContaining({ called_at: expect.anything() })
     );
+  });
+
+  it('persists the WE Form and WE Call booleans', async () => {
+    const { update } = setup(false);
+
+    expect((await call({ weForm: true, weCall: false })).status).toBe(200);
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ we_form: true, we_call: false }));
   });
 });

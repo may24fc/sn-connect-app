@@ -2,6 +2,7 @@
 
 import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
 import { DateRangeFilter, type DateRangeValue } from '@/components/data-display/DateRangeFilter';
+import { FilterSearchInput } from '@/components/data-display/FilterControls';
 import { MetricsPeriodSelect } from '@/components/data-display/MetricsPeriodSelect';
 import { TrackerPagination } from '@/components/data-display/TrackerPagination';
 import { usePeriodRequestGuard } from '@/hooks/usePeriodRequestGuard';
@@ -38,19 +39,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  useToast,
-  tableHeaderClassName,
   tableHeadTextClassName,
+  tableHeaderClassName,
+  useToast,
 } from '@hr-portal/ui';
 import { format } from 'date-fns';
-import {
-  AlertTriangle,
-  ExternalLink,
-  ImageUp,
-  Loader2,
-  Plus,
-  RefreshCw,
-} from 'lucide-react';
+import { AlertTriangle, ExternalLink, ImageUp, Loader2, Plus, RefreshCw } from 'lucide-react';
 import {
   type ClipboardEvent,
   type FormEvent,
@@ -63,7 +57,6 @@ import { UhpAccessManagerButton } from './UhpAccessManagerDialog';
 import { UhpClientDetailDialog } from './UhpClientDetailDialog';
 import { UhpSourceSelect } from './UhpSourceSelect';
 import { UhpWorkspaceHeader } from './UhpWorkspaceHeader';
-import { FilterSearchInput } from '@/components/data-display/FilterControls';
 
 type Client = {
   id: string;
@@ -73,6 +66,8 @@ type Client = {
   interest_state: string;
   replied: boolean;
   called: boolean;
+  we_form: boolean;
+  we_call: boolean;
   lead_owner: string | null;
   source_name: string | null;
   source_url: string | null;
@@ -81,6 +76,20 @@ type Client = {
   migration_review_required: boolean;
   updated_at: string;
 };
+
+type ClientRowChanges = Partial<
+  Pick<Client, 'replied' | 'called' | 'we_form' | 'we_call' | 'interest_state'>
+>;
+
+function getClientRowRollback(client: Client, changes: ClientRowChanges): Partial<Client> {
+  const rollback: Partial<Client> = {};
+  if (changes.replied !== undefined) rollback.replied = client.replied;
+  if (changes.called !== undefined) rollback.called = client.called;
+  if (changes.we_form !== undefined) rollback.we_form = client.we_form;
+  if (changes.we_call !== undefined) rollback.we_call = client.we_call;
+  if (changes.interest_state !== undefined) rollback.interest_state = client.interest_state;
+  return rollback;
+}
 
 type Metrics = {
   outreachAttempts: number;
@@ -124,7 +133,7 @@ const PERIOD_OPTIONS = [
 ] as const;
 
 const CLIENTS_PER_PAGE = 10;
-const TABLE_COLUMNS = 11;
+const TABLE_COLUMNS = 13;
 
 function defaultCustomMetricsRange(now = new Date()): CustomMetricsRange {
   return {
@@ -383,6 +392,8 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
       interest_state: 'unknown',
       replied: false,
       called: false,
+      we_form: false,
+      we_call: false,
       lead_owner: payload.leadOwner ?? null,
       source_name: payload.sourceName ?? null,
       source_url: payload.sourceUrl ?? null,
@@ -441,7 +452,7 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
   // only the metric cards are refreshed.
   async function updateClientRow(
     client: Client,
-    changes: Partial<Pick<Client, 'replied' | 'called' | 'interest_state'>>,
+    changes: ClientRowChanges,
     body: Record<string, unknown>,
     label: string
   ) {
@@ -467,11 +478,7 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
       }
       void refreshMetrics();
     } catch (error) {
-      setRow({
-        replied: client.replied,
-        called: client.called,
-        interest_state: client.interest_state,
-      });
+      setRow(getClientRowRollback(client, changes));
       if (replyChanged) {
         setMetrics((current) => updateUhpReplyMetrics(current, client.id, client.replied));
       }
@@ -753,11 +760,9 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
-          {/* Columns keep their natural width and the table scrolls sideways instead of squeezing.
-              The min width fits the first 9 columns on screen; Source and Link (10th, 11th) are
-              reached by scrolling. */}
+          {/* Columns keep their natural width and the table scrolls sideways instead of squeezing. */}
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[104rem] whitespace-nowrap text-left text-sm">
+            <table className="w-full min-w-[116rem] whitespace-nowrap text-left text-sm">
               <thead className={`${tableHeaderClassName} ${tableHeadTextClassName}`}>
                 <tr>
                   <th className="px-4 py-3">Client</th>
@@ -768,6 +773,8 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
                   <th className="px-4 py-3">Call</th>
                   <th className="px-4 py-3">Replied</th>
                   <th className="px-4 py-3">Interest</th>
+                  <th className="px-4 py-3">WE Form</th>
+                  <th className="px-4 py-3">WE Call</th>
                   <th className="px-4 py-3">Updated</th>
                   <th className="px-4 py-3">Source</th>
                   <th className="px-4 py-3">Link</th>
@@ -896,6 +903,50 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
                             <SelectItem value="declined">Declined</SelectItem>
                           </SelectContent>
                         </Select>
+                      </td>
+                      <td
+                        className="px-4 py-3"
+                        onClick={(event) => event.stopPropagation()}
+                        onKeyDown={(event) => event.stopPropagation()}
+                      >
+                        <div className="inline-flex items-center gap-2">
+                          <Checkbox
+                            aria-label={`WE Form: ${client.name}`}
+                            checked={client.we_form}
+                            disabled={client.id.startsWith('optimistic-client-')}
+                            onCheckedChange={(checked) =>
+                              void updateClientRow(
+                                client,
+                                { we_form: checked === true },
+                                { weForm: checked === true },
+                                'WE Form'
+                              )
+                            }
+                          />
+                          <span>{client.we_form ? 'True' : 'False'}</span>
+                        </div>
+                      </td>
+                      <td
+                        className="px-4 py-3"
+                        onClick={(event) => event.stopPropagation()}
+                        onKeyDown={(event) => event.stopPropagation()}
+                      >
+                        <div className="inline-flex items-center gap-2">
+                          <Checkbox
+                            aria-label={`WE Call: ${client.name}`}
+                            checked={client.we_call}
+                            disabled={client.id.startsWith('optimistic-client-')}
+                            onCheckedChange={(checked) =>
+                              void updateClientRow(
+                                client,
+                                { we_call: checked === true },
+                                { weCall: checked === true },
+                                'WE Call'
+                              )
+                            }
+                          />
+                          <span>{client.we_call ? 'True' : 'False'}</span>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {new Date(client.updated_at).toLocaleDateString()}

@@ -10148,6 +10148,8 @@ export type Database = {
           status: string
           updated_at: string
           updated_by: string | null
+          we_call: boolean
+          we_form: boolean
           website: string | null
         }
         Insert: {
@@ -10182,6 +10184,8 @@ export type Database = {
           status?: string
           updated_at?: string
           updated_by?: string | null
+          we_call?: boolean
+          we_form?: boolean
           website?: string | null
         }
         Update: {
@@ -10216,6 +10220,8 @@ export type Database = {
           status?: string
           updated_at?: string
           updated_by?: string | null
+          we_call?: boolean
+          we_form?: boolean
           website?: string | null
         }
         Relationships: [
@@ -13018,4 +13024,3 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
     ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
-

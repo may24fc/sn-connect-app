@@ -85,6 +85,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const mapping: Record<string, string> = {
     clientType: 'client_type',
     interestState: 'interest_state',
+    weForm: 'we_form',
+    weCall: 'we_call',
     leadOwner: 'lead_owner',
     sourceName: 'source_name',
     sourceUrl: 'source_url',

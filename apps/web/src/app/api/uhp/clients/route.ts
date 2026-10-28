@@ -133,6 +133,8 @@ export async function POST(request: NextRequest) {
       replied_at: input.replied ? new Date().toISOString() : null,
       called: input.called,
       called_at: input.called ? new Date().toISOString() : null,
+      we_form: input.weForm,
+      we_call: input.weCall,
       lead_owner: input.leadOwner ?? null,
       source_name: input.sourceName ?? null,
       source_url: input.sourceUrl ?? null,
