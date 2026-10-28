@@ -93,10 +93,8 @@ test('Call, WE Form, and WE Call columns update on desktop and mobile', async ({
 
   const toggle = page.getByRole('checkbox', { name: 'Call: Call Test Client', exact: true });
   await expect(toggle).not.toBeChecked();
-  await expect(toggle.locator('..')).toContainText('No');
   await toggle.check();
   await expect(toggle).toBeChecked();
-  await expect(toggle.locator('..')).toContainText('Yes');
   await expect(
     page.getByText('Calls scheduled', { exact: true }).locator('..').locator('p').last()
   ).toHaveText('1');
@@ -110,15 +108,11 @@ test('Call, WE Form, and WE Call columns update on desktop and mobile', async ({
   const weFormToggle = page.getByRole('checkbox', { name: 'WE Form: Call Test Client' });
   const weCallToggle = page.getByRole('checkbox', { name: 'WE Call: Call Test Client' });
   await expect(weFormToggle).not.toBeChecked();
-  await expect(weFormToggle.locator('..')).toContainText('False');
   await weFormToggle.check();
   await expect(weFormToggle).toBeChecked();
-  await expect(weFormToggle.locator('..')).toContainText('True');
   await expect(weCallToggle).not.toBeChecked();
-  await expect(weCallToggle.locator('..')).toContainText('False');
   await weCallToggle.check();
   await expect(weCallToggle).toBeChecked();
-  await expect(weCallToggle.locator('..')).toContainText('True');
   await page.screenshot({ path: testInfo.outputPath('call-column-desktop.png'), fullPage: true });
 
   await page.setViewportSize({ width: 390, height: 844 });

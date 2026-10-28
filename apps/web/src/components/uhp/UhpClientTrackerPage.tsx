@@ -838,22 +838,19 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
                         onClick={(event) => event.stopPropagation()}
                         onKeyDown={(event) => event.stopPropagation()}
                       >
-                        <div className="inline-flex items-center gap-2">
-                          <Checkbox
-                            aria-label={`Call: ${client.name}`}
-                            checked={client.called}
-                            disabled={client.id.startsWith('optimistic-client-')}
-                            onCheckedChange={(checked) =>
-                              void updateClientRow(
-                                client,
-                                { called: checked === true },
-                                { called: checked === true },
-                                'Call'
-                              )
-                            }
-                          />
-                          <span>{client.called ? 'Yes' : 'No'}</span>
-                        </div>
+                        <Checkbox
+                          aria-label={`Call: ${client.name}`}
+                          checked={client.called}
+                          disabled={client.id.startsWith('optimistic-client-')}
+                          onCheckedChange={(checked) =>
+                            void updateClientRow(
+                              client,
+                              { called: checked === true },
+                              { called: checked === true },
+                              'Call'
+                            )
+                          }
+                        />
                       </td>
                       <td
                         className="px-4 py-3"
@@ -909,44 +906,38 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
                         onClick={(event) => event.stopPropagation()}
                         onKeyDown={(event) => event.stopPropagation()}
                       >
-                        <div className="inline-flex items-center gap-2">
-                          <Checkbox
-                            aria-label={`WE Form: ${client.name}`}
-                            checked={client.we_form}
-                            disabled={client.id.startsWith('optimistic-client-')}
-                            onCheckedChange={(checked) =>
-                              void updateClientRow(
-                                client,
-                                { we_form: checked === true },
-                                { weForm: checked === true },
-                                'WE Form'
-                              )
-                            }
-                          />
-                          <span>{client.we_form ? 'True' : 'False'}</span>
-                        </div>
+                        <Checkbox
+                          aria-label={`WE Form: ${client.name}`}
+                          checked={client.we_form}
+                          disabled={client.id.startsWith('optimistic-client-')}
+                          onCheckedChange={(checked) =>
+                            void updateClientRow(
+                              client,
+                              { we_form: checked === true },
+                              { weForm: checked === true },
+                              'WE Form'
+                            )
+                          }
+                        />
                       </td>
                       <td
                         className="px-4 py-3"
                         onClick={(event) => event.stopPropagation()}
                         onKeyDown={(event) => event.stopPropagation()}
                       >
-                        <div className="inline-flex items-center gap-2">
-                          <Checkbox
-                            aria-label={`WE Call: ${client.name}`}
-                            checked={client.we_call}
-                            disabled={client.id.startsWith('optimistic-client-')}
-                            onCheckedChange={(checked) =>
-                              void updateClientRow(
-                                client,
-                                { we_call: checked === true },
-                                { weCall: checked === true },
-                                'WE Call'
-                              )
-                            }
-                          />
-                          <span>{client.we_call ? 'True' : 'False'}</span>
-                        </div>
+                        <Checkbox
+                          aria-label={`WE Call: ${client.name}`}
+                          checked={client.we_call}
+                          disabled={client.id.startsWith('optimistic-client-')}
+                          onCheckedChange={(checked) =>
+                            void updateClientRow(
+                              client,
+                              { we_call: checked === true },
+                              { weCall: checked === true },
+                              'WE Call'
+                            )
+                          }
+                        />
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {new Date(client.updated_at).toLocaleDateString()}
