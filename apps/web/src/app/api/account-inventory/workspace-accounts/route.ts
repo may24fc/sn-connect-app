@@ -148,17 +148,23 @@ export async function POST(request: NextRequest) {
   }
 
   const userId = created.user.id;
-  const { error: userError } = await admin.from('users').insert({
-    id: userId,
-    role: 'workspace_user',
-    status: 'active',
-    account_kind: 'workspace',
-    account_purpose: parsed.data.purpose,
-    sponsor_user_id: authorization.userId,
-    created_by: authorization.userId,
-    department_id: null,
-    division_id: null,
-  });
+  const { error: userError } = await admin
+    .from('users')
+    .upsert(
+      {
+        id: userId,
+        role: 'workspace_user',
+        status: 'active',
+        account_kind: 'workspace',
+        account_purpose: parsed.data.purpose,
+        sponsor_user_id: authorization.userId,
+        created_by: authorization.userId,
+        department_id: null,
+        division_id: null,
+        deleted_at: null,
+      },
+      { onConflict: 'id' }
+    );
   if (userError) {
     await admin.auth.admin.deleteUser(userId);
     return NextResponse.json({ error: 'Failed to create workspace identity' }, { status: 500 });

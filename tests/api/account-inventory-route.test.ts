@@ -4,6 +4,9 @@ vi.mock('@/lib/auth/active-role', () => ({
   getActiveUserRole: vi.fn(async () => 'super_admin'),
 }));
 vi.mock('@/lib/audit', () => ({ logActivity: vi.fn() }));
+vi.mock('@/lib/email', () => ({
+  sendUserInviteEmail: vi.fn(async () => ({ sent: true })),
+}));
 vi.mock('@/lib/supabase/server', () => ({
   createSupabaseServerClient: vi.fn(),
   createSupabaseAdminClient: vi.fn(),
@@ -213,5 +216,60 @@ describe('/api/account-inventory/workspace-accounts POST', () => {
 
     expect(response.status).toBe(400);
     expect(createSupabaseAdminClient).not.toHaveBeenCalled();
+  });
+
+  it('upserts the profile created by the auth signup trigger', async () => {
+    const workspaceUserId = '20000000-0000-4000-8000-000000000020';
+    const upsert = vi.fn(async () => ({ error: null }));
+    const insertGrants = vi.fn(async () => ({ error: null }));
+    const admin = {
+      auth: {
+        admin: {
+          listUsers: vi.fn(async () => ({ data: { users: [] }, error: null })),
+          createUser: vi.fn(async () => ({
+            data: { user: { id: workspaceUserId } },
+            error: null,
+          })),
+          deleteUser: vi.fn(async () => ({ error: null })),
+        },
+      },
+      from: vi.fn((table: string) => {
+        if (table === 'users') return { upsert };
+        if (table === 'workspace_access_grants') return { insert: insertGrants };
+        throw new Error(`Unexpected table: ${table}`);
+      }),
+    };
+    vi.mocked(createSupabaseAdminClient).mockReturnValue(admin as never);
+
+    const response = await POST_WORKSPACE_ACCOUNT(
+      new Request('http://localhost/api/account-inventory/workspace-accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'external@example.com',
+          displayName: 'External User',
+          purpose: 'External production workspace access',
+          grants: [{ workspace: 'sfo', accessLevel: 'read' }],
+        }),
+      }) as never
+    );
+
+    expect(response.status).toBe(201);
+    expect(upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: workspaceUserId,
+        role: 'workspace_user',
+        account_kind: 'workspace',
+        deleted_at: null,
+      }),
+      { onConflict: 'id' }
+    );
+    expect(insertGrants).toHaveBeenCalledWith([
+      expect.objectContaining({
+        user_id: workspaceUserId,
+        workspace: 'sfo',
+        access_level: 'read',
+      }),
+    ]);
   });
 });
