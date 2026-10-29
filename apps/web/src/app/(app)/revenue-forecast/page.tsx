@@ -12,6 +12,9 @@ export default async function RevenueForecastPage() {
   }
 
   return (
-    <RevenueForecastPageContent canManage={auth.context.role === 'super_admin'} />
+    <RevenueForecastPageContent
+      canManage={auth.context.role === 'super_admin'}
+      canWrite={auth.context.workspaceAccessLevel !== 'read'}
+    />
   );
 }

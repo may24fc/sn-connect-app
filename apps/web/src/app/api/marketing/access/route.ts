@@ -21,6 +21,7 @@ export async function GET() {
         canAccess: hasMarketingAccess(auth.role, auth.hasAccessGrant),
         hasGrant: auth.hasAccessGrant,
         role: auth.role,
+        canWrite: auth.workspaceAccessLevel !== 'read',
       },
     });
   } catch (error) {

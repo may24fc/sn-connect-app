@@ -14,6 +14,7 @@ export interface CrmAuthedContext {
   user: { id: string; app_metadata?: Record<string, unknown> };
   role: string | null;
   grantedTrackers: CrmTrackerKey[];
+  workspaceAccessLevel: 'read' | 'write' | null;
 }
 
 async function resolveUserRole(
@@ -64,6 +65,21 @@ async function resolveCrmGrants(
     .filter((tracker: CrmAccessGrantTrackerRow['tracker']): tracker is CrmTrackerKey =>
       CRM_TRACKER_VALUES.includes(tracker as CrmTrackerKey)
     );
+}
+
+async function resolveSfoWorkspaceAccess(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  userId: string
+): Promise<'read' | 'write' | null> {
+  const { data, error } = await supabase
+    .from('workspace_access_grants')
+    .select('access_level')
+    .eq('user_id', userId)
+    .eq('workspace', 'sfo')
+    .is('deleted_at', null)
+    .maybeSingle();
+  if (error) return null;
+  return data?.access_level === 'write' ? 'write' : data?.access_level === 'read' ? 'read' : null;
 }
 
 export function canAccessCrmTracker(
@@ -201,7 +217,13 @@ export async function getCrmAuthedContext(): Promise<
     if (!role) {
       return { ok: false, status: 401, error: 'Unauthorized' };
     }
-    const grantedTrackers = canAccessCrm(role) ? [] : await resolveCrmGrants(supabase, user.id);
+    const workspaceAccessLevel =
+      role === 'workspace_user' ? await resolveSfoWorkspaceAccess(supabase, user.id) : null;
+    const grantedTrackers = canAccessCrm(role)
+      ? []
+      : workspaceAccessLevel
+        ? [...CRM_TRACKER_VALUES]
+        : await resolveCrmGrants(supabase, user.id);
 
     if (!canAccessCrm(role) && grantedTrackers.length === 0) {
       return { ok: false, status: 403, error: 'Forbidden' };
@@ -215,6 +237,7 @@ export async function getCrmAuthedContext(): Promise<
         user,
         role,
         grantedTrackers,
+        workspaceAccessLevel,
       },
     };
   } catch (error) {

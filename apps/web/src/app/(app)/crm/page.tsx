@@ -13,7 +13,10 @@ export default async function CrmPage() {
   }
 
   return (
-    <CrmPageContent allowedTrackers={auth.context.grantedTrackers} />
+    <CrmPageContent
+      allowedTrackers={auth.context.grantedTrackers}
+      readOnly={auth.context.workspaceAccessLevel === 'read'}
+    />
   );
 }
 

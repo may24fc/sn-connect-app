@@ -292,7 +292,7 @@ export async function sendUserInviteEmail({
 }: {
   to: string;
   firstName: string;
-  role: 'employee' | 'associate' | 'admin' | 'super_admin';
+  role: 'employee' | 'associate' | 'admin' | 'super_admin' | 'workspace_user';
   temporaryPassword: string;
   loginUrl: string;
   requiresOnboarding: boolean;

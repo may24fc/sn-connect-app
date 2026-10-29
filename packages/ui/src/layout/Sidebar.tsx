@@ -64,7 +64,13 @@ interface WorkspaceOption {
   comingSoon?: boolean;
 }
 
-export type UserRole = 'employee' | 'associate' | 'admin' | 'super_admin' | 'reviewer';
+export type UserRole =
+  | 'employee'
+  | 'associate'
+  | 'admin'
+  | 'super_admin'
+  | 'reviewer'
+  | 'workspace_user';
 
 export interface SidebarProps {
   variant: UserRole;
@@ -85,6 +91,7 @@ export interface SidebarProps {
   showUhpClientTracker?: boolean;
   showUhpPortalReminders?: boolean;
   showUhpVolumePoints?: boolean;
+  allowedWorkspaces?: Array<WorkspaceId>;
 }
 
 const employeeAtsNavItems: Array<NavItem> = [
@@ -248,6 +255,19 @@ const superAdminNavItems: Array<NavItem> = [
     activeFor: ['/super-admin/announcements'],
   },
   { label: 'Tickets', href: '/super-admin/tickets', icon: LifeBuoy },
+];
+
+const workspaceUserNavItems: Array<NavItem> = [
+  { label: 'Dashboard', href: '/dashboard', icon: Home },
+  { label: 'PA Tracker', href: '/pa-tasks', icon: ClipboardList },
+  { label: 'SFO Performance', href: '/sfo/performance', icon: TrendingUp },
+  { label: 'Ad Spend', href: '/marketing/ad-spend', icon: Megaphone },
+  { label: 'Revenue Forecast', href: '/revenue-forecast', icon: TrendingUp },
+  { label: 'CRM Tracker', href: '/crm', icon: Store },
+  { label: 'Outreach Tracker', href: '/uhp/clients', icon: ContactRound },
+  { label: 'Portal Reminders', href: '/uhp/reminders', icon: BellRing },
+  { label: 'Volume Points', href: '/uhp/volume-points', icon: Activity },
+  { label: 'Properties', href: '/property/properties', icon: Store },
 ];
 
 const exactOnlyNavHrefs = new Set([
@@ -460,6 +480,7 @@ const allNavItems: Array<NavItem> = [
   ...adminNavItems,
   ...superAdminNavItems,
   ...employeeAtsNavItems,
+  ...workspaceUserNavItems,
 ];
 
 /**
@@ -531,9 +552,12 @@ export function Sidebar({
   showUhpClientTracker = false,
   showUhpPortalReminders = false,
   showUhpVolumePoints = false,
+  allowedWorkspaces = [],
 }: SidebarProps): React.ReactNode {
   const baseNavItems =
-    variant === 'employee'
+    variant === 'workspace_user'
+      ? workspaceUserNavItems
+      : variant === 'employee'
       ? employeeNavItems
       : variant === 'associate'
         ? internNavItems
@@ -542,6 +566,9 @@ export function Sidebar({
           : adminNavItems;
 
   const filteredNavItems = baseNavItems.filter((item) => {
+    if (variant === 'workspace_user' && !allowedWorkspaces.includes(getWorkspaceForPath(item.href))) {
+      return false;
+    }
     if (variant === 'employee' && (item.href === '/projects' || item.href === '/leaderboard')) {
       return false;
     }
@@ -680,6 +707,7 @@ export function Sidebar({
   const workspaceItems = navItems.filter((item) => item !== dashboardItem);
   const requestedWorkspace = getWorkspaceForPath(currentPath);
   const availableWorkspaceOptions = workspaceOptions.filter((option) => {
+    if (variant === 'workspace_user') return allowedWorkspaces.includes(option.id);
     if (option.id === 'internal') return true;
     if (option.id === 'uhp' && !isSelfServiceRole(variant)) return true;
     return createWorkspaceSections(variant, workspaceItems, option.id).length > 0;
@@ -688,7 +716,7 @@ export function Sidebar({
     (option) => option.id === requestedWorkspace && !option.comingSoon
   )
     ? requestedWorkspace
-    : 'internal';
+    : (availableWorkspaceOptions[0]?.id ?? 'internal');
   const activeWorkspaceOption =
     availableWorkspaceOptions.find((option) => option.id === activeWorkspace) ??
     workspaceOptions[0];

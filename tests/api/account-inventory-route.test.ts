@@ -10,6 +10,7 @@ vi.mock('@/lib/supabase/server', () => ({
 }));
 
 import { PATCH } from '@/app/api/account-inventory/route';
+import { POST as POST_WORKSPACE_ACCOUNT } from '@/app/api/account-inventory/workspace-accounts/route';
 import { logActivity } from '@/lib/audit';
 import {
   createSupabaseAdminClient,
@@ -174,6 +175,38 @@ describe('/api/account-inventory PATCH', () => {
           userId: targetUserId,
           accountKind: 'privileged',
           purpose: 'short',
+        }),
+      }) as never
+    );
+
+    expect(response.status).toBe(400);
+    expect(createSupabaseAdminClient).not.toHaveBeenCalled();
+  });
+});
+
+describe('/api/account-inventory/workspace-accounts POST', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(createSupabaseServerClient).mockResolvedValue({
+      auth: {
+        getUser: vi.fn(async () => ({
+          data: { user: { id: 'super-admin-actor' } },
+          error: null,
+        })),
+      },
+    } as never);
+  });
+
+  it('requires at least one explicit workspace permission', async () => {
+    const response = await POST_WORKSPACE_ACCOUNT(
+      new Request('http://localhost/api/account-inventory/workspace-accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'external@example.com',
+          displayName: 'External User',
+          purpose: 'External production workspace access',
+          grants: [],
         }),
       }) as never
     );

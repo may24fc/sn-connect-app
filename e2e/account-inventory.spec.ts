@@ -69,12 +69,74 @@ test.beforeEach(async ({ page }) => {
       },
     })
   );
+  await page.route('**/api/account-inventory/workspace-accounts', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 201,
+        json: {
+          data: {
+            userId: 'workspace-user-2',
+            email: 'external.sfo@example.com',
+            temporaryPassword: 'Temporary#42',
+            emailSent: true,
+          },
+        },
+      });
+      return;
+    }
+    await route.fulfill({
+      json: {
+        data: [
+          {
+            id: 'workspace-user-1',
+            email: 'auditor@example.com',
+            displayName: 'External Auditor',
+            status: 'active',
+            account_purpose: 'Quarterly SFO production data review',
+            grants: [{ workspace: 'sfo', accessLevel: 'read' }],
+          },
+        ],
+      },
+    });
+  });
   await page.route('**/api/review/invitations', (route) =>
     route.fulfill({
       status: 201,
       json: { data: { engagementId: 'engagement-1', expiresAt: '2026-10-22T00:00:00Z' } },
     })
   );
+});
+
+test('super admin invites a non-workforce user with per-workspace permissions', async ({
+  page,
+}, testInfo: TestInfo) => {
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.goto('/super-admin/account-inventory');
+  await expect(page.getByText('auditor@example.com')).toBeVisible();
+  await page.getByLabel('Workspace user name').fill('External SFO Operator');
+  await page.getByLabel('Workspace user email').fill('external.sfo@example.com');
+  await page
+    .getByLabel('Workspace access purpose')
+    .fill('Operate the SFO workspace without workforce membership');
+  await page.getByRole('checkbox', { name: 'Seafood Factory Outlet', exact: true }).check();
+  await page.getByLabel('Seafood Factory Outlet permission').selectOption('write');
+
+  const requestPromise = page.waitForRequest(
+    (request) => request.url().endsWith('/api/account-inventory/workspace-accounts') && request.method() === 'POST'
+  );
+  await page.getByRole('button', { name: 'Send workspace invitation' }).click();
+  const request = await requestPromise;
+  expect(request.postDataJSON()).toMatchObject({
+    email: 'external.sfo@example.com',
+    grants: [{ workspace: 'sfo', accessLevel: 'write' }],
+  });
+  await expect(page.getByRole('heading', { name: 'Workspace account created' })).toBeVisible();
+  await expect(page.getByText('Temporary#42')).toBeVisible();
+  await expect(page.getByText(/invitation email was sent/i)).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath('workspace-account-invite-desktop.png'),
+    fullPage: true,
+  });
 });
 
 test('super admin reviews non-workforce accounts and creates a server-confirmed invitation', async ({
@@ -86,7 +148,7 @@ test('super admin reviews non-workforce accounts and creates a server-confirmed 
   await expect(page.getByText('benchmark@example.com')).toBeVisible();
   await expect(page.getByText('applicant@example.com')).toBeVisible();
 
-  await page.getByLabel('Name').fill('New Product Reviewer');
+  await page.getByLabel('Name', { exact: true }).fill('New Product Reviewer');
   await page.getByLabel('Designated email').fill('new-reviewer@example.com');
   await page.getByLabel('Review purpose').fill('Evaluate the navigation and feedback workflow.');
   await page.getByRole('button', { name: 'Send seven-day invitation' }).click();
@@ -103,8 +165,10 @@ test('super admin classifies one leadership account without changing the others'
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.goto('/super-admin/account-inventory');
 
-  await page.getByLabel('Leadership account').selectOption('cef-admin');
-  await page.getByLabel('Population').selectOption('privileged');
+  await page.getByLabel('Leadership account').click();
+  await page.getByRole('option', { name: /cef\.admin@example\.com/ }).click();
+  await page.getByLabel('Population').click();
+  await page.getByRole('option', { name: 'Privileged non-workforce account' }).click();
   await page
     .getByLabel('Account purpose')
     .fill('Production configuration and permission verification');

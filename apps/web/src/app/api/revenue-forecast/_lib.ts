@@ -8,6 +8,7 @@ export interface RevenueForecastAuthedContext {
   user: { id: string; app_metadata?: Record<string, unknown> };
   role: string | null;
   hasGrant: boolean;
+  workspaceAccessLevel: 'read' | 'write' | null;
 }
 
 export interface RevenueForecastGrantRecord {
@@ -63,6 +64,21 @@ async function resolveRevenueForecastGrant(
   return Boolean(data?.id);
 }
 
+async function resolveSfoWorkspaceGrant(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  userId: string
+): Promise<'read' | 'write' | null> {
+  const { data, error } = await supabase
+    .from('workspace_access_grants')
+    .select('access_level')
+    .eq('user_id', userId)
+    .eq('workspace', 'sfo')
+    .is('deleted_at', null)
+    .maybeSingle();
+  if (error) return null;
+  return data?.access_level === 'write' ? 'write' : data?.access_level === 'read' ? 'read' : null;
+}
+
 export function isRevenueForecastAdmin(role: string | null): boolean {
   return role === 'super_admin';
 }
@@ -90,7 +106,11 @@ export async function getRevenueForecastAuthedContext(): Promise<
     if (!role) {
       return { ok: false, status: 401, error: 'Unauthorized' };
     }
-    const hasGrant = isRevenueForecastAdmin(role)
+    const workspaceAccessLevel =
+      role === 'workspace_user' ? await resolveSfoWorkspaceGrant(supabase, user.id) : null;
+    const hasGrant = workspaceAccessLevel
+      ? true
+      : isRevenueForecastAdmin(role)
       ? false
       : await resolveRevenueForecastGrant(supabase, user.id);
 
@@ -106,6 +126,7 @@ export async function getRevenueForecastAuthedContext(): Promise<
         user,
         role,
         hasGrant,
+        workspaceAccessLevel,
       },
     };
   } catch (error) {

@@ -45,6 +45,7 @@ export async function GET() {
         'id, role, status, account_kind, account_purpose, sponsor_user_id, access_expires_at, created_at, deleted_at'
       )
       .neq('account_kind', 'workforce')
+      .neq('account_kind', 'workspace')
       .order('created_at', { ascending: false }),
     admin
       .from('users')

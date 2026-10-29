@@ -14,6 +14,8 @@ vi.mock('@supabase/ssr', () => ({ createServerClient: mocks.createServerClient }
 
 import {
   HANDLER_AUTHENTICATED_API_ROUTES,
+  getRequestWorkspace,
+  isWorkspaceRequestAllowed,
   isHandlerAuthenticatedApiRoute,
   middleware,
 } from '../apps/web/middleware';
@@ -56,6 +58,24 @@ describe('authentication middleware optimization', () => {
     ]);
     expect(isHandlerAuthenticatedApiRoute('/api/dashboard/stats')).toBe(true);
     expect(isHandlerAuthenticatedApiRoute('/api/dashboard/future-route')).toBe(false);
+  });
+
+  it('maps every workspace route and enforces read-only grants', () => {
+    expect(getRequestWorkspace('/api/pa-tasks/123')).toBe('pa');
+    expect(getRequestWorkspace('/api/crm/sfo')).toBe('sfo');
+    expect(getRequestWorkspace('/api/uhp/clients')).toBe('uhp');
+    expect(getRequestWorkspace('/api/finance/properties')).toBe('property');
+    expect(getRequestWorkspace('/api/announcements')).toBe('internal');
+
+    const grants = [{ workspace: 'sfo', access_level: 'read' }];
+    expect(isWorkspaceRequestAllowed('GET', 'sfo', grants)).toBe(true);
+    expect(isWorkspaceRequestAllowed('POST', 'sfo', grants)).toBe(false);
+    expect(isWorkspaceRequestAllowed('GET', 'uhp', grants)).toBe(false);
+    expect(
+      isWorkspaceRequestAllowed('DELETE', 'sfo', [
+        { workspace: 'sfo', access_level: 'write' },
+      ])
+    ).toBe(true);
   });
 
   it('does not repeat middleware authentication for an allowlisted dashboard API', async () => {

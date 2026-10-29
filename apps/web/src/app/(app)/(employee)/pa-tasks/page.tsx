@@ -244,7 +244,8 @@ export default function PaTasksPage() {
       (user?.role === 'employee' ||
         user?.role === 'associate' ||
         user?.role === 'admin' ||
-        user?.role === 'super_admin')
+        user?.role === 'super_admin' ||
+        user?.role === 'workspace_user')
   );
   const canAccess = Boolean(bootstrapQuery.data?.data.access.canAccess);
 

@@ -10,6 +10,7 @@ export type MarketingAuthedContext =
       user: { id: string; email?: string | null };
       role: string | null;
       hasAccessGrant: boolean;
+      workspaceAccessLevel: 'read' | 'write' | null;
       supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
       supabaseAdmin: ReturnType<typeof createSupabaseAdminClient>;
     }
@@ -47,13 +48,17 @@ export async function getMarketingAuthedContext(): Promise<MarketingAuthedContex
       return { ok: false, status: 401, error: 'Unauthorized' };
     }
 
-    const hasAccessGrant = await resolveMarketingGrant(supabase, user.id);
+    const workspaceAccessLevel =
+      role === 'workspace_user' ? await resolveSfoWorkspaceGrant(supabase, user.id) : null;
+    const hasAccessGrant =
+      Boolean(workspaceAccessLevel) || (await resolveMarketingGrant(supabase, user.id));
 
     return {
       ok: true,
       user,
       role,
       hasAccessGrant,
+      workspaceAccessLevel,
       supabase,
       supabaseAdmin: createSupabaseAdminClient(),
     };
@@ -61,6 +66,21 @@ export async function getMarketingAuthedContext(): Promise<MarketingAuthedContex
     console.error('Failed to resolve marketing auth context:', error);
     return { ok: false, status: 500, error: 'Internal server error' };
   }
+}
+
+async function resolveSfoWorkspaceGrant(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  userId: string
+): Promise<'read' | 'write' | null> {
+  const { data, error } = await supabase
+    .from('workspace_access_grants')
+    .select('access_level')
+    .eq('user_id', userId)
+    .eq('workspace', 'sfo')
+    .is('deleted_at', null)
+    .maybeSingle();
+  if (error) return null;
+  return data?.access_level === 'write' ? 'write' : data?.access_level === 'read' ? 'read' : null;
 }
 
 export function hasMarketingAccess(role: string | null, hasAccessGrant: boolean): boolean {

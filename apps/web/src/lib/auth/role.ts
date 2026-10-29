@@ -4,6 +4,7 @@ export const KNOWN_DB_ROLES = [
   'admin',
   'super_admin',
   'reviewer',
+  'workspace_user',
 ] as const;
 
 export type KnownDbRole = (typeof KNOWN_DB_ROLES)[number];

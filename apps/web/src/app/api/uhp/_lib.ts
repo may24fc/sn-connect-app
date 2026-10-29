@@ -15,6 +15,7 @@ export interface UhpAuthedContext {
   userId: string;
   role: string | null;
   grantedModules: UhpModule[];
+  workspaceAccessLevel: 'read' | 'write' | null;
 }
 
 export function isUhpAdmin(role: string | null): boolean {
@@ -45,23 +46,49 @@ export async function getUhpAuthedContext(): Promise<
     if (!role) return { ok: false, status: 401, error: 'Unauthorized' };
 
     let grantedModules: UhpModule[] = [];
+    let workspaceAccessLevel: 'read' | 'write' | null = null;
     if (!isUhpAdmin(role)) {
-      const { data, error: grantError } = await supabase
-        .from('uhp_access_grants')
-        .select('module')
-        .eq('user_id', authData.user.id)
-        .is('deleted_at', null);
-      if (grantError) return { ok: false, status: 500, error: 'Failed to resolve UHP access' };
-      grantedModules = ((data ?? []) as Array<{ module: string }>)
-        .map((row: { module: string }) => row.module)
-        .filter((module: string): module is UhpModule =>
-          UHP_MODULE_VALUES.includes(module as UhpModule)
-        );
+      if (role === 'workspace_user') {
+        const { data: workspaceGrant, error: workspaceError } = await supabase
+          .from('workspace_access_grants')
+          .select('access_level')
+          .eq('user_id', authData.user.id)
+          .eq('workspace', 'uhp')
+          .is('deleted_at', null)
+          .maybeSingle();
+        if (workspaceError) return { ok: false, status: 500, error: 'Failed to resolve UHP access' };
+        workspaceAccessLevel = workspaceGrant?.access_level === 'write'
+          ? 'write'
+          : workspaceGrant?.access_level === 'read'
+            ? 'read'
+            : null;
+        if (workspaceAccessLevel) grantedModules = [...UHP_MODULE_VALUES];
+      }
+      if (!workspaceAccessLevel) {
+        const { data, error: grantError } = await supabase
+          .from('uhp_access_grants')
+          .select('module')
+          .eq('user_id', authData.user.id)
+          .is('deleted_at', null);
+        if (grantError) return { ok: false, status: 500, error: 'Failed to resolve UHP access' };
+        grantedModules = ((data ?? []) as Array<{ module: string }>)
+          .map((row: { module: string }) => row.module)
+          .filter((module: string): module is UhpModule =>
+            UHP_MODULE_VALUES.includes(module as UhpModule)
+          );
+      }
     }
 
     return {
       ok: true,
-      context: { supabase, admin, userId: authData.user.id, role, grantedModules },
+      context: {
+        supabase,
+        admin,
+        userId: authData.user.id,
+        role,
+        grantedModules,
+        workspaceAccessLevel,
+      },
     };
   } catch (error) {
     console.error('Failed to initialize UHP request context:', error);

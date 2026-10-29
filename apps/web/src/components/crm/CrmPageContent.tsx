@@ -220,8 +220,10 @@ function trackerKeyToTab(key: CrmTrackerKey): CrmTab {
 
 export function CrmPageContent({
   allowedTrackers,
+  readOnly = false,
 }: {
   allowedTrackers?: Array<CrmTrackerKey>;
+  readOnly?: boolean;
 }): ReactNode {
   const { addToast } = useToast();
   // Determine which tabs to show. If `allowedTrackers` is provided (non-admin users),
@@ -483,7 +485,7 @@ export function CrmPageContent({
               className={`group ${lead.id === selectedSfoId ? 'border-zinc-900 dark:border-zinc-100' : ''}`}
             >
               <CardContent className="relative cursor-pointer space-y-3 p-4">
-                <div className="absolute right-4 top-4 z-10 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                {!readOnly ? <div className="absolute right-4 top-4 z-10 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
                   <Button
                     type="button"
                     size="sm"
@@ -510,7 +512,7 @@ export function CrmPageContent({
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
-                </div>
+                </div> : null}
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <button
                     type="button"
@@ -680,13 +682,13 @@ export function CrmPageContent({
         </TabsList>
 
         <div className="pt-4">
-          <CRMInteractionPanel
+          {!readOnly ? <CRMInteractionPanel
             pipelineContext={pipelineContext as PipelineContext}
             isSubmittingSfo={createSfoLead.isPending}
             isSubmittingTech={createTechInquiry.isPending}
             onCreateSfoLead={handleCreateSfoLead}
             onCreateTechInquiry={handleCreateTechInquiry}
-          />
+          /> : <p className="rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">Read-only access</p>}
         </div>
 
         <TabsContent value="META" className="mt-6 space-y-4">
@@ -838,7 +840,7 @@ export function CrmPageContent({
                       ) : (
                         records.map((record) => (
                           <div key={record.id} className={`group relative`}> 
-                            <div className="absolute right-4 top-4 z-10 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                            {!readOnly ? <div className="absolute right-4 top-4 z-10 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
                               <Button
                                 type="button"
                                 size="sm"
@@ -865,7 +867,7 @@ export function CrmPageContent({
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
-                            </div>
+                            </div> : null}
 
                             <button
                               type="button"
@@ -967,6 +969,7 @@ export function CrmPageContent({
         </TabsContent>
       </Tabs>
 
+      {!readOnly ? <>
       <EditSfoLeadDialog
         lead={editingSfoLead}
         open={!!editingSfoLead}
@@ -1022,6 +1025,7 @@ export function CrmPageContent({
           void handleDeleteTechInquiry();
         }}
       />
+      </> : null}
     </div>
   );
 }

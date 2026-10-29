@@ -607,6 +607,9 @@ export function useRequireAuth(allowedRoles?: Array<UserRoleType>): User | null 
         case 'super_admin':
           router.replace('/super-admin/dashboard');
           break;
+        case 'workspace_user':
+          router.replace('/workspace');
+          break;
       }
     }
   }, [user, isLoading, allowedRoles, router]);

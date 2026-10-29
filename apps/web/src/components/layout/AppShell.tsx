@@ -31,6 +31,7 @@ import { usePaTaskAccess } from '@/hooks/usePaTaskAccess';
 import { useRevenueForecastAccess } from '@/hooks/useRevenueForecastAccess';
 import { useUhpAccess } from '@/hooks/useUhpAccess';
 import { UHP_MODULE_VALUES } from '@/lib/uhp';
+import type { WorkspaceKey } from '@/lib/workspace-access';
 import {
   Dialog,
   DialogContent,
@@ -56,7 +57,13 @@ const AIChatbot = dynamic(
   }
 );
 
-const APP_SHELL_ROLES: Array<UserRoleType> = ['employee', 'associate', 'admin', 'super_admin'];
+const APP_SHELL_ROLES: Array<UserRoleType> = [
+  'employee',
+  'associate',
+  'admin',
+  'super_admin',
+  'workspace_user',
+];
 
 export interface AppShellProps {
   children: ReactNode;
@@ -115,6 +122,25 @@ export function AppShell({ children }: AppShellProps): ReactNode {
     router.push('/settings');
   };
 
+  if (user.role === 'workspace_user') {
+    return (
+      <ToastProvider>
+        <WorkspaceOnlyShell
+          user={user}
+          pathname={pathname}
+          collapsed={sidebarCollapsed}
+          setCollapsed={setSidebarCollapsed}
+          mobileMenuOpen={mobileMenuOpen}
+          setMobileMenuOpen={setMobileMenuOpen}
+          onNavigate={handleNavigate}
+          onLogout={logout}
+        >
+          {children}
+        </WorkspaceOnlyShell>
+      </ToastProvider>
+    );
+  }
+
   return (
     <ToastProvider>
       <TourProvider>
@@ -134,6 +160,66 @@ export function AppShell({ children }: AppShellProps): ReactNode {
         </AppShellInner>
       </TourProvider>
     </ToastProvider>
+  );
+}
+
+function WorkspaceOnlyShell({
+  user,
+  pathname,
+  collapsed,
+  setCollapsed,
+  mobileMenuOpen,
+  setMobileMenuOpen,
+  onNavigate,
+  onLogout,
+  children,
+}: {
+  user: NonNullable<ReturnType<typeof useRequireAuth>>;
+  pathname: string;
+  collapsed: boolean;
+  setCollapsed: (value: boolean) => void;
+  mobileMenuOpen: boolean;
+  setMobileMenuOpen: (value: boolean) => void;
+  onNavigate: (href: string) => void;
+  onLogout: () => void;
+  children: ReactNode;
+}): ReactNode {
+  const { theme, setTheme } = useTheme();
+  const allowedWorkspaces = (user.workspaceGrants ?? []).map(
+    (grant) => grant.workspace
+  ) as WorkspaceKey[];
+  const sidebar = (mobile = false) => (
+    <Sidebar
+      variant="workspace_user"
+      currentPath={pathname}
+      onNavigate={onNavigate}
+      collapsed={mobile ? false : collapsed}
+      {...(!mobile ? { onToggleCollapse: () => setCollapsed(!collapsed) } : {})}
+      allowedWorkspaces={allowedWorkspaces}
+    />
+  );
+
+  return (
+    <div className="flex h-dvh bg-background">
+      <div className="hidden flex-shrink-0 lg:block">{sidebar()}</div>
+      <Dialog open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <DialogContent className="left-0 top-0 h-dvh w-64 max-w-none translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none border-0 bg-transparent p-0 shadow-2xl [&>button]:bg-white/10 [&>button]:text-white lg:hidden sm:rounded-none">
+          <DialogTitle className="sr-only">Workspace navigation</DialogTitle>
+          {sidebar(true)}
+        </DialogContent>
+      </Dialog>
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <Header
+          user={user}
+          onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
+          onLogout={onLogout}
+          onProfileClick={() => onNavigate('/workspace')}
+          theme={theme}
+          onThemeChange={setTheme}
+        />
+        <main className="flex-1 overflow-y-auto bg-background p-4 md:p-6">{children}</main>
+      </div>
+    </div>
   );
 }
 

@@ -10,6 +10,10 @@ export async function getFinanceContext() {
   return { ok: true as const, user, admin, capabilities };
 }
 
-export function canReviewFinance(capabilities: { isLeadership: boolean; isAccounting: boolean }): boolean {
-  return capabilities.isLeadership || capabilities.isAccounting;
+export function canReviewFinance(capabilities: {
+  isLeadership: boolean;
+  isAccounting: boolean;
+  canViewDeskGlobal?: boolean;
+}): boolean {
+  return capabilities.isLeadership || capabilities.isAccounting || capabilities.canViewDeskGlobal === true;
 }

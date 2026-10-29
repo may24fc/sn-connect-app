@@ -21,6 +21,7 @@ export async function GET() {
         canAccess: hasRevenueForecastAccess(auth.context.role, auth.context.hasGrant),
         hasGrant: auth.context.hasGrant,
         role: auth.context.role,
+        canWrite: auth.context.workspaceAccessLevel !== 'read',
       },
     });
   } catch (error) {

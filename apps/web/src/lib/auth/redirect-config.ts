@@ -176,6 +176,8 @@ export function getPostLoginRedirect(role?: string, returnTo?: string | null): s
 
   // Role-based default landing pages.
   switch (role) {
+    case 'workspace_user':
+      return '/workspace';
     case 'reviewer':
       return '/review';
     case 'super_admin':

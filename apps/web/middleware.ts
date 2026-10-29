@@ -27,6 +27,7 @@ import { appendServerTiming, recordAuthTiming, startAuthTiming } from '@/lib/aut
 import { isReviewEnvironment } from '@/lib/environment';
 import { type CookieOptions, createServerClient } from '@supabase/ssr';
 import { type NextRequest, NextResponse } from 'next/server';
+import type { WorkspaceKey } from '@/lib/workspace-access';
 
 // Routes that do NOT require authentication.
 const PUBLIC_ROUTES = new Set([
@@ -121,6 +122,66 @@ function getIdentityBoundaryResponse(params: {
   return withAuthTiming(response, authDuration);
 }
 
+const WORKSPACE_INFRASTRUCTURE_PATHS = new Set(['/workspace', '/account-disabled']);
+
+export function getRequestWorkspace(pathname: string): WorkspaceKey | null {
+  if (WORKSPACE_INFRASTRUCTURE_PATHS.has(pathname)) return null;
+  if (pathname === '/pa-tasks' || pathname.startsWith('/pa-tasks/')) return 'pa';
+  if (pathname === '/api/pa-tasks' || pathname.startsWith('/api/pa-tasks/')) return 'pa';
+  if (pathname === '/uhp' || pathname.startsWith('/uhp/')) return 'uhp';
+  if (pathname === '/api/uhp' || pathname.startsWith('/api/uhp/')) return 'uhp';
+  if (pathname === '/property/properties' || pathname.startsWith('/property/properties/')) {
+    return 'property';
+  }
+  if (
+    pathname.startsWith('/api/property/') ||
+    pathname.startsWith('/api/finance/properties') ||
+    pathname.startsWith('/api/finance/rent') ||
+    pathname.startsWith('/api/finance/maintenance')
+  ) {
+    return 'property';
+  }
+  if (
+    pathname === '/sfo/performance' ||
+    pathname.startsWith('/sfo/') ||
+    pathname === '/crm' ||
+    pathname.startsWith('/crm/') ||
+    pathname === '/revenue-forecast' ||
+    pathname.startsWith('/revenue-forecast/') ||
+    pathname === '/reports' ||
+    pathname.startsWith('/reports/') ||
+    pathname === '/marketing/ad-spend' ||
+    pathname.startsWith('/marketing/ad-spend/') ||
+    pathname.startsWith('/api/crm') ||
+    pathname.startsWith('/api/revenue-forecast') ||
+    pathname.startsWith('/api/marketing') ||
+    pathname.startsWith('/api/reports')
+  ) {
+    return 'sfo';
+  }
+  return 'internal';
+}
+
+export function isWorkspaceRequestAllowed(
+  method: string,
+  workspace: WorkspaceKey | null,
+  grants: ReadonlyArray<{ workspace: string; access_level: string }>
+): boolean {
+  if (!workspace) return true;
+  const grant = grants.find((row) => row.workspace === workspace);
+  if (!grant) return false;
+  const normalizedMethod = method.toUpperCase();
+  const isReadRequest =
+    normalizedMethod === 'GET' || normalizedMethod === 'HEAD' || normalizedMethod === 'OPTIONS';
+  return isReadRequest || grant.access_level === 'write';
+}
+
+function workspaceDeniedResponse(request: NextRequest, message: string): NextResponse {
+  return request.nextUrl.pathname.startsWith('/api/')
+    ? NextResponse.json({ error: message }, { status: 403 })
+    : NextResponse.redirect(new URL('/workspace', request.url));
+}
+
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
@@ -207,6 +268,41 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     authDuration,
   });
   if (identityBoundaryResponse) return identityBoundaryResponse;
+
+  if (
+    user.app_metadata?.db_role === 'workspace_user' ||
+    user.app_metadata?.account_kind === 'workspace'
+  ) {
+    const [{ data: account }, { data: grantRows, error: grantsError }] = await Promise.all([
+      supabase
+        .from('users')
+        .select('status, role, account_kind')
+        .eq('id', user.id)
+        .is('deleted_at', null)
+        .maybeSingle(),
+      supabase
+        .from('workspace_access_grants')
+        .select('workspace, access_level')
+        .eq('user_id', user.id)
+        .is('deleted_at', null),
+    ]);
+    if (
+      grantsError ||
+      account?.status !== 'active' ||
+      account?.role !== 'workspace_user' ||
+      account?.account_kind !== 'workspace'
+    ) {
+      return workspaceDeniedResponse(request, 'Workspace account is inactive or invalid');
+    }
+    const workspace = getRequestWorkspace(pathname);
+    if (workspace) {
+      const grant = (grantRows ?? []).find((row) => row.workspace === workspace);
+      if (!grant) return workspaceDeniedResponse(request, 'Workspace access is not granted');
+      if (!isWorkspaceRequestAllowed(request.method, workspace, grantRows ?? [])) {
+        return workspaceDeniedResponse(request, 'This workspace is read-only');
+      }
+    }
+  }
 
   forwardedHeaders.set(VERIFIED_AUTH_SNAPSHOT_HEADER, serializeVerifiedAuthSnapshot(user));
   const response = createForwardedResponse(forwardedHeaders, pendingCookies);

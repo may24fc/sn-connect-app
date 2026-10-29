@@ -59,6 +59,7 @@ import {
 
 interface RevenueForecastPageContentProps {
   canManage: boolean;
+  canWrite?: boolean;
 }
 
 const scenarioOptions: Array<{ key: ForecastScenarioKey; label: string; subLabel: string }> = [
@@ -69,6 +70,7 @@ const scenarioOptions: Array<{ key: ForecastScenarioKey; label: string; subLabel
 
 export function RevenueForecastPageContent({
   canManage,
+  canWrite = true,
 }: RevenueForecastPageContentProps): ReactNode {
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -574,7 +576,14 @@ export function RevenueForecastPageContent({
         </TabsContent>
 
         <TabsContent value="log" className="space-y-6">
-          <Card>
+          {!canWrite ? (
+            <Card>
+              <CardContent className="p-5 text-sm text-muted-foreground">
+                Read-only access: revenue entries and goals cannot be changed.
+              </CardContent>
+            </Card>
+          ) : null}
+          <Card className={!canWrite ? 'hidden' : undefined}>
             <CardHeader>
               <CardTitle>Log monthly revenue</CardTitle>
               <CardDescription>Upsert actual revenue by year and month in AUD.</CardDescription>

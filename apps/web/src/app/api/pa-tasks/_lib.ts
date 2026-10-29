@@ -96,6 +96,17 @@ export async function getPaTaskAuthedContext(): Promise<
     return { ok: false, status: 401, error: 'Unauthorized' };
   }
 
+  const { data: workspaceGrant } =
+    role === 'workspace_user'
+      ? await supabaseAdmin
+          .from('workspace_access_grants')
+          .select('access_level')
+          .eq('user_id', user.id)
+          .eq('workspace', 'pa')
+          .is('deleted_at', null)
+          .maybeSingle()
+      : { data: null };
+
   const { data: grantRow, error: grantError } = await supabaseAdmin
     .from('pa_task_access_grants')
     .select('access_level')
@@ -108,9 +119,14 @@ export async function getPaTaskAuthedContext(): Promise<
     return { ok: false, status: 500, error: 'Failed to resolve PA task access' };
   }
 
-  const accessLevel = grantError
-    ? null
-    : resolveAccessLevel((grantRow as PaTaskGrantRow | null) ?? null);
+  const accessLevel =
+    workspaceGrant?.access_level === 'write'
+      ? 'manager'
+      : workspaceGrant?.access_level === 'read'
+        ? 'member'
+        : grantError
+          ? null
+          : resolveAccessLevel((grantRow as PaTaskGrantRow | null) ?? null);
   const hasGrant = Boolean(accessLevel);
   const canAccess = hasPaTaskAccess(role, hasGrant);
   const canManage = canManagePaTasks(role, accessLevel);

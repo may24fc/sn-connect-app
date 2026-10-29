@@ -45,6 +45,17 @@ export async function resolveExpenseCapabilities(
   const canonicalDepartmentName = department?.name?.trim().toLowerCase() ?? null;
   const canonicalDepartmentDescription = department?.description?.trim().toLowerCase() ?? null;
   const isLeadership = role === 'admin' || role === 'super_admin';
+  const { data: propertyGrant } =
+    role === 'workspace_user'
+      ? await adminClient
+          .from('workspace_access_grants')
+          .select('access_level')
+          .eq('user_id', userId)
+          .eq('workspace', 'property')
+          .is('deleted_at', null)
+          .maybeSingle()
+      : { data: null };
+  const hasPropertyAccess = Boolean(propertyGrant?.access_level);
 
   let isAccounting = false;
   let isMarketing = false;
@@ -80,7 +91,7 @@ export async function resolveExpenseCapabilities(
     canLogRequest: Boolean(role),
     canLogPayment: isLeadership || isAccounting,
     canMatch: isLeadership || isAccounting,
-    canViewDeskGlobal: isLeadership || isAccounting,
+    canViewDeskGlobal: isLeadership || isAccounting || hasPropertyAccess,
     canViewDeskDepartment: isMarketing,
     departmentId,
   };

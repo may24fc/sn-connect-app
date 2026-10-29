@@ -2,8 +2,22 @@ import { getNormalizedMetadataRole, normalizeDbRoleClaim } from '@/lib/auth/role
 import { resolveUserDisplayName } from '@/lib/user-display';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-export type UserRoleType = 'employee' | 'associate' | 'admin' | 'super_admin' | 'reviewer';
-export type AccountKindType = 'workforce' | 'privileged' | 'reviewer' | 'test' | 'service';
+import type { WorkspaceGrant } from '@/lib/workspace-access';
+
+export type UserRoleType =
+  | 'employee'
+  | 'associate'
+  | 'admin'
+  | 'super_admin'
+  | 'reviewer'
+  | 'workspace_user';
+export type AccountKindType =
+  | 'workforce'
+  | 'privileged'
+  | 'workspace'
+  | 'reviewer'
+  | 'test'
+  | 'service';
 
 export type UserStatusType =
   | 'active'
@@ -22,6 +36,7 @@ export interface AuthenticatedUser {
   status?: UserStatusType;
   avatarUrl?: string;
   isOnboardingComplete?: boolean;
+  workspaceGrants?: WorkspaceGrant[];
 }
 
 export interface AuthUserLike {
@@ -56,6 +71,8 @@ export function resolveUiRole(role: string | null | undefined): UserRoleType {
       return 'associate';
     case 'reviewer':
       return 'reviewer';
+    case 'workspace_user':
+      return 'workspace_user';
     default:
       return 'employee';
   }
@@ -210,6 +227,22 @@ export async function resolveAuthenticatedUser(
 
   const onboardingProfile = (onboardingResult?.data as OnboardingRecord | null) ?? null;
   const isOnboardingComplete = resolveOnboardingComplete(resolvedRole, onboardingResult);
+  let workspaceGrants: WorkspaceGrant[] | undefined;
+  if (resolvedRole === 'workspace_user') {
+    if (accountKind !== 'workspace') {
+      throw new Error('Workspace-only role is missing its workspace account classification.');
+    }
+    const { data: grantRows, error: grantError } = await supabase
+      .from('workspace_access_grants')
+      .select('workspace, access_level')
+      .eq('user_id', authUser.id)
+      .is('deleted_at', null);
+    if (grantError) throw new Error('Unable to resolve workspace access.');
+    workspaceGrants = (grantRows ?? []).map((grant) => ({
+      workspace: grant.workspace as WorkspaceGrant['workspace'],
+      accessLevel: grant.access_level as WorkspaceGrant['accessLevel'],
+    }));
+  }
 
   const avatarUrlFromMetadata =
     typeof authUser.user_metadata?.avatar_url === 'string'
@@ -226,6 +259,7 @@ export async function resolveAuthenticatedUser(
     accountKind,
     status: (userRecord?.status as UserStatusType | null) ?? 'active',
     isOnboardingComplete,
+    ...(workspaceGrants ? { workspaceGrants } : {}),
     ...(avatarUrlFromMetadata ? { avatarUrl: avatarUrlFromMetadata } : {}),
   };
 }

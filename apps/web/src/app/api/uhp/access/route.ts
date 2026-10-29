@@ -14,6 +14,7 @@ export async function GET() {
       canAccess: grantedModules.length > 0,
       grantedModules,
       isAdmin: isUhpAdmin(auth.context.role),
+      canWrite: auth.context.workspaceAccessLevel !== 'read',
     },
   });
 }
