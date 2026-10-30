@@ -1,12 +1,14 @@
-import { getActiveUserRole } from '@/lib/auth/active-role';
 import { parsePagination } from '@/lib/api/pagination';
 import { logActivity } from '@/lib/audit';
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import { extractAmountFromInvoiceDocument } from '@/lib/payroll/invoiceDocumentOcr';
 import { invoiceCreateSchema } from '@/lib/schemas/invoice.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
+
+const EMPTY_EMPLOYEE_SCOPE_ID = '00000000-0000-0000-0000-000000000000';
 
 function computeExchangeRate(rates: Record<string, number>, from: string, to: string): number {
   if (from === to) return 1;
@@ -115,6 +117,12 @@ export async function GET(request: NextRequest) {
       if (empData?.id) {
         query = query.eq('employee_id', empData.id);
         scopedEmployeeId = empData.id;
+      } else {
+        // This query uses the service-role client. Fail closed when a caller
+        // requiring self scope has no employee owner instead of exposing every
+        // invoice and aggregate through an accidentally unscoped query.
+        query = query.eq('employee_id', EMPTY_EMPLOYEE_SCOPE_ID);
+        scopedEmployeeId = EMPTY_EMPLOYEE_SCOPE_ID;
       }
     }
 

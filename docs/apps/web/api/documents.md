@@ -145,7 +145,7 @@ Upload a document file to Supabase Storage and create the corresponding database
 | Constraint | Value |
 |------------|-------|
 | Max file size | **10 MB** |
-| Allowed types | `application/pdf`, `image/jpeg`, `image/png`, `image/gif`, `application/msword`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document`, `application/vnd.ms-excel`, `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` |
+| Allowed types | PDF; JPEG, PNG, WEBP, and GIF images; plain text and CSV; Word, Excel, and PowerPoint files |
 
 ### Storage Path Format
 
@@ -183,7 +183,11 @@ Files are stored as: `{employeeId}/{documentType}/{timestamp}_{sanitizedFileName
 | `400` | `File size exceeds 10MB limit` | File over 10 MB |
 | `400` | `File type not allowed` | MIME type not in allowed list |
 | `400` | `Missing required fields` | Missing `employeeId` or `documentType` |
+| `400` | `Invalid document type` | `documentType` is not a supported enum value |
+| `400` | `File does not meet the storage requirements` | Storage rejected the file size or MIME type |
 | `401` | `Unauthorized` | No valid session |
+| `403` | `Cannot upload documents for another employee` | Non-admin attempted a cross-employee upload |
+| `404` | `Employee profile not found` | Target employee does not exist or is deleted |
 | `500` | `Failed to upload file` | Storage upload error |
 | `500` | `Failed to create document record` | DB insert failed (file is rolled back) |
 

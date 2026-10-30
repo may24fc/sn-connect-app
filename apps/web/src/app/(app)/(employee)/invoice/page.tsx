@@ -1161,11 +1161,11 @@ export default function InvoicePage() {
                 )
               }
               multiple={false}
-              maxSizeMB={20}
+              maxSizeMB={10}
               accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain,image/jpeg,image/png,image/webp"
               label="Upload Existing Invoice File"
               hint="Drop your invoice file here or click to browse"
-              formatHint="Accepted: PDF, Word, Excel, CSV, TXT, JPG, PNG, WEBP (max 20MB)"
+              formatHint="Accepted: PDF, Word, Excel, CSV, TXT, JPG, PNG, WEBP (max 10MB)"
               isUploading={uploadDocument.isPending}
               className="w-full"
             />
