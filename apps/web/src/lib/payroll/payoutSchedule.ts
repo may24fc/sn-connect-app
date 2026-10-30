@@ -95,11 +95,11 @@ function phDateTimeToUtcMs(
 }
 
 function getPayoutCutoffUtcMs(payoutDate: Date): number {
-  // Option remains selectable through exactly 3:00 PM PHT on payout Friday.
+  // Option remains selectable through exactly 5:00 PM PHT on payout Friday.
   const year = payoutDate.getUTCFullYear();
   const month = payoutDate.getUTCMonth() + 1;
   const day = payoutDate.getUTCDate();
-  return phDateTimeToUtcMs(year, month, day, 15, 0, 0);
+  return phDateTimeToUtcMs(year, month, day, 17, 0, 0);
 }
 
 function toPayoutOption(payoutDate: Date, nowUtcMs: number): PayoutScheduleOption {

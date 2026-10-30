@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('invoice dialog shows the continuous October biweekly schedule', async ({
+test('invoice dialog keeps the third October payout open at 4 PM PHT', async ({
   page,
 }, testInfo) => {
   const browserErrors: string[] = [];
@@ -23,7 +23,7 @@ test('invoice dialog shows the continuous October biweekly schedule', async ({
       })
     );
 
-    const fixedNow = new Date('2026-10-30T06:00:00.000Z').getTime();
+    const fixedNow = new Date('2026-10-30T08:00:00.000Z').getTime();
     const NativeDate = Date;
     class FixedDate extends NativeDate {
       constructor(...args: ConstructorParameters<typeof Date>) {

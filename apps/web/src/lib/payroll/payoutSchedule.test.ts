@@ -29,4 +29,12 @@ describe('payout schedule labels', () => {
     expect(labels.length).toBeGreaterThan(0);
     for (const label of labels) expect(label).toMatch(/Payout \(\d{1,2} [A-Z][a-z]{2} \d{4}\)$/);
   });
+
+  it('keeps the October third payout open through 5:00 PM PHT', () => {
+    const atCutoff = getPayoutScheduleOptions(new Date('2026-10-30T09:00:00.000Z'));
+    const afterCutoff = getPayoutScheduleOptions(new Date('2026-10-30T09:00:00.001Z'));
+
+    expect(atCutoff.find((option) => option.key === '2026-10:3')?.disabled).toBe(false);
+    expect(afterCutoff.find((option) => option.key === '2026-10:3')?.disabled).toBe(true);
+  });
 });
