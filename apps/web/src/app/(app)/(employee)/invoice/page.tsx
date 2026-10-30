@@ -1,17 +1,25 @@
 'use client';
 
+import { ServerPagination } from '@/components/data-display/ServerPagination';
+import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUploadDocument } from '@/hooks/useDocuments';
 import type { InvoiceRecord } from '@/hooks/useInvoices';
-import { useCreateInvoice, useInvoices, useSubmitInvoice } from '@/hooks/useInvoices';
+import {
+  useCreateInvoice,
+  useDeleteInvoice,
+  useInvoices,
+  useSubmitInvoice,
+  useUpdateInvoice,
+} from '@/hooks/useInvoices';
+import { useTableSort } from '@/hooks/useTableSort';
+import { formatFinanceDate, formatFinanceDateRange } from '@/lib/format';
 import {
   buildPayoutScheduleTag,
   formatPayoutScheduleLabel,
   getPayoutScheduleOptions,
   parsePayoutScheduleTag,
 } from '@/lib/payroll/payoutSchedule';
-import { useTableSort } from '@/hooks/useTableSort';
-import { formatFinanceDate, formatFinanceDateRange } from '@/lib/format';
 import { queryKeys } from '@/lib/query-keys';
 import { cn } from '@/lib/utils';
 import {
@@ -24,9 +32,19 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   EmptyState,
   FileDropZone,
+  HelpLink,
   InvoiceStatusBadge,
+  PageEyebrow,
+  PageTitle,
+  RowActionsTrigger,
+  SectionTooltip,
   Select,
   SelectContent,
   SelectItem,
@@ -41,18 +59,25 @@ import {
   TableRow,
   Textarea,
   useToast,
-  SectionTooltip,
-  HelpLink,
-  PageTitle,
-  PageEyebrow,
 } from '@hr-portal/ui';
 import type { InvoiceStatus } from '@hr-portal/ui';
 import { useQueryClient } from '@tanstack/react-query';
-import { AlertCircle, CheckCircle2, Download, ExternalLink, Eye, EyeOff, FileText, Loader2, Plus, X } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Download,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  FileText,
+  Loader2,
+  Pencil,
+  Plus,
+  Trash2,
+  X,
+} from 'lucide-react';
 import Link from 'next/link';
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
-import { ServerPagination } from '@/components/data-display/ServerPagination';
-import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 
 const MASKED_AMOUNT = '••••••';
 
@@ -91,6 +116,15 @@ function extractUserNotes(notes: string | null | undefined): string {
     )
     .join('\n')
     .trim();
+}
+
+function extractInvoiceFileNote(notes: string | null | undefined): string {
+  return (
+    notes
+      ?.split('\n')
+      .map((line) => line.trim())
+      .find((line) => line.startsWith('Invoice file uploaded:')) ?? ''
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -153,25 +187,23 @@ function InvoiceDetailDialog({
     showAmounts ? formatCurrency(v, currencyCode) : MASKED_AMOUNT;
 
   const timelineSteps = [
-    { label: 'Created',   date: invoice.created_at,   done: true },
+    { label: 'Created', date: invoice.created_at, done: true },
     { label: 'Submitted', date: invoice.submitted_at, done: !!invoice.submitted_at },
-    { label: 'Approved',  date: invoice.approved_at,  done: !!invoice.approved_at },
+    { label: 'Approved', date: invoice.approved_at, done: !!invoice.approved_at },
     ...(invoice.paid_at ? [{ label: 'Paid', date: invoice.paid_at, done: true }] : []),
   ];
 
-  const handleDownloadPDF = () => { window.print(); };
+  const handleDownloadPDF = () => {
+    window.print();
+  };
 
   const userNotes = extractUserNotes(invoice.notes);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="sm:max-w-lg flex flex-col max-h-[90vh] p-0 gap-0 overflow-hidden [&>button:last-child]:!text-white [&>button:last-child]:!bg-zinc-700/60"
-      >
+      <DialogContent className="sm:max-w-lg flex flex-col max-h-[90vh] p-0 gap-0 overflow-hidden [&>button:last-child]:!text-white [&>button:last-child]:!bg-zinc-700/60">
         {/* Accessibility tokens — visually hidden */}
-        <DialogTitle className="sr-only">
-          Invoice Details — {invoice.invoice_number}
-        </DialogTitle>
+        <DialogTitle className="sr-only">Invoice Details — {invoice.invoice_number}</DialogTitle>
         <DialogDescription className="sr-only">
           Details for invoice {invoice.invoice_number}
         </DialogDescription>
@@ -180,15 +212,11 @@ function InvoiceDetailDialog({
         <div className="bg-zinc-900 px-6 pt-5 pb-5 pr-14">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold text-zinc-400 tracking-wide mb-1.5">
-                Amount
-              </p>
+              <p className="text-[10px] font-semibold text-zinc-400 tracking-wide mb-1.5">Amount</p>
               <p className="text-3xl font-bold text-white tabular-nums leading-tight">
                 {amount(Number(invoice.net_amount || 0))}
               </p>
-              <p className="mt-2 text-sm text-zinc-400 tracking-tight">
-                {invoice.invoice_number}
-              </p>
+              <p className="mt-2 text-sm text-zinc-400 tracking-tight">{invoice.invoice_number}</p>
             </div>
             <span className="shrink-0 mt-0.5">
               <InvoiceStatusBadge status={invoice.status as InvoiceStatus} />
@@ -201,12 +229,9 @@ function InvoiceDetailDialog({
 
         {/* ── Body ── */}
         <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1">
-
           {/* Financial Summary Card */}
           <div className="rounded-lg bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 px-4 py-3 space-y-2">
-            <p className="text-[10px] font-bold text-zinc-400 tracking-wide mb-1">
-              Amount Summary
-            </p>
+            <p className="text-[10px] font-bold text-zinc-400 tracking-wide mb-1">Amount Summary</p>
             {invoice.hourly_rate && invoice.hours_worked && (
               <>
                 <div className="flex items-center justify-between">
@@ -252,9 +277,7 @@ function InvoiceDetailDialog({
 
           {/* Timeline */}
           <div>
-            <p className="text-[10px] font-bold text-zinc-400 tracking-wide mb-3">
-              Timeline
-            </p>
+            <p className="text-[10px] font-bold text-zinc-400 tracking-wide mb-3">Timeline</p>
             <div className="relative">
               {timelineSteps.map((step, index) => (
                 <div key={step.label} className="flex gap-3">
@@ -263,9 +286,7 @@ function InvoiceDetailDialog({
                     <div
                       className={cn(
                         'relative z-10 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full',
-                        step.done
-                          ? 'bg-emerald-500 text-white'
-                          : 'bg-zinc-200 dark:bg-zinc-700',
+                        step.done ? 'bg-emerald-500 text-white' : 'bg-zinc-200 dark:bg-zinc-700'
                       )}
                     >
                       {step.done ? (
@@ -278,17 +299,19 @@ function InvoiceDetailDialog({
                       <div
                         className={cn(
                           'w-px flex-1 mt-1 min-h-[1.5rem]',
-                          step.done ? 'bg-emerald-400' : 'bg-zinc-200 dark:bg-zinc-700',
+                          step.done ? 'bg-emerald-400' : 'bg-zinc-200 dark:bg-zinc-700'
                         )}
                       />
                     )}
                   </div>
                   {/* Step text */}
-                  <div className={cn('min-w-0', index < timelineSteps.length - 1 ? 'pb-4' : 'pb-0')}>
+                  <div
+                    className={cn('min-w-0', index < timelineSteps.length - 1 ? 'pb-4' : 'pb-0')}
+                  >
                     <p
                       className={cn(
                         'text-sm font-medium leading-tight',
-                        step.done ? 'text-foreground' : 'text-muted-foreground',
+                        step.done ? 'text-foreground' : 'text-muted-foreground'
                       )}
                     >
                       {step.label}
@@ -304,7 +327,9 @@ function InvoiceDetailDialog({
           {/* Document Preview */}
           {invoice.document_id && (
             <div>
-              <p className="text-[10px] font-bold text-zinc-400 tracking-wide mb-2">Invoice Document</p>
+              <p className="text-[10px] font-bold text-zinc-400 tracking-wide mb-2">
+                Invoice Document
+              </p>
               {previewLoading && (
                 <div className="flex items-center justify-center h-40 rounded-lg bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -312,12 +337,20 @@ function InvoiceDetailDialog({
               )}
               {!previewLoading && previewUrl && previewMimeType.startsWith('image/') && (
                 <div className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700">
-                  <img src={previewUrl} alt="Invoice document" className="w-full object-contain max-h-64" />
+                  <img
+                    src={previewUrl}
+                    alt="Invoice document"
+                    className="w-full object-contain max-h-64"
+                  />
                 </div>
               )}
               {!previewLoading && previewUrl && !previewMimeType.startsWith('image/') && (
                 <div className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 h-64">
-                  <iframe src={previewUrl} className="w-full h-full" title="Invoice document preview" />
+                  <iframe
+                    src={previewUrl}
+                    className="w-full h-full"
+                    title="Invoice document preview"
+                  />
                 </div>
               )}
               {!previewLoading && previewUrl && (
@@ -452,6 +485,14 @@ export default function InvoicePage() {
   const [confirmInvoice, setConfirmInvoice] = useState<InvoiceRecord | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
+  // Edit / delete draft dialogs
+  const [editingInvoice, setEditingInvoice] = useState<InvoiceRecord | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editPayoutSchedule, setEditPayoutSchedule] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+  const [invoicePendingDelete, setInvoicePendingDelete] = useState<InvoiceRecord | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
   const [page, setPage] = useState(1);
   const { data, isLoading, isFetching, error } = useInvoices({
     page,
@@ -461,12 +502,23 @@ export default function InvoicePage() {
   const createInvoice = useCreateInvoice();
   const uploadDocument = useUploadDocument();
   const submitInvoice = useSubmitInvoice();
+  const updateInvoice = useUpdateInvoice(editingInvoice?.id ?? '');
+  const deleteInvoice = useDeleteInvoice();
 
   const invoices = data?.data || [];
 
-  const invoiceStatusOrder: Record<string, number> = { draft: 0, submitted: 1, rejected: 2, approved: 3, paid: 4 };
+  const invoiceStatusOrder: Record<string, number> = {
+    draft: 0,
+    submitted: 1,
+    rejected: 2,
+    approved: 3,
+    paid: 4,
+  };
 
-  const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({ initialColumn: 'created_at', initialDirection: 'desc' });
+  const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({
+    initialColumn: 'created_at',
+    initialDirection: 'desc',
+  });
 
   const sortedInvoices = sortItems(invoices, {
     invoice_number: (i) => i.invoice_number,
@@ -483,10 +535,33 @@ export default function InvoicePage() {
 
   const payoutScheduleOptions = useMemo(() => getPayoutScheduleOptions(new Date()), [createOpen]);
 
+  const editPayoutScheduleOptions = useMemo(() => {
+    if (!editingInvoice) return payoutScheduleOptions;
+
+    const parsed = parsePayoutScheduleTag(editingInvoice.notes);
+    if (!parsed || payoutScheduleOptions.some((option) => option.key === parsed.key)) {
+      return payoutScheduleOptions;
+    }
+
+    return [
+      ...payoutScheduleOptions,
+      {
+        key: parsed.key,
+        monthKey: parsed.monthKey,
+        sequence: parsed.sequence,
+        label: formatPayoutScheduleLabel(parsed.monthKey, parsed.sequence),
+        disabled: false,
+      },
+    ];
+  }, [editingInvoice, payoutScheduleOptions]);
+
   const effectivePayoutSelection =
-    selectedPayoutSchedule && payoutScheduleOptions.some((option) => option.key === selectedPayoutSchedule)
+    selectedPayoutSchedule &&
+    payoutScheduleOptions.some((option) => option.key === selectedPayoutSchedule)
       ? selectedPayoutSchedule
-      : (payoutScheduleOptions.find((option) => !option.disabled)?.key ?? payoutScheduleOptions[0]?.key ?? '');
+      : (payoutScheduleOptions.find((option) => !option.disabled)?.key ??
+        payoutScheduleOptions[0]?.key ??
+        '');
 
   const resetCreateDialog = () => {
     setSelectedInvoiceFiles([]);
@@ -519,7 +594,9 @@ export default function InvoicePage() {
     event.preventDefault();
 
     const file = selectedInvoiceFiles[0];
-    const payoutSelection = payoutScheduleOptions.find((option) => option.key === effectivePayoutSelection);
+    const payoutSelection = payoutScheduleOptions.find(
+      (option) => option.key === effectivePayoutSelection
+    );
 
     if (!file) {
       addToast({
@@ -591,7 +668,8 @@ export default function InvoicePage() {
     } catch (err) {
       addToast({
         title: 'Failed to create invoice',
-        description: err instanceof Error ? err.message : 'Something went wrong while saving the invoice.',
+        description:
+          err instanceof Error ? err.message : 'Something went wrong while saving the invoice.',
         variant: 'error',
       });
     }
@@ -687,6 +765,85 @@ export default function InvoicePage() {
     }
   };
 
+  const handleEditClick = (invoice: InvoiceRecord) => {
+    const parsed = parsePayoutScheduleTag(invoice.notes);
+    setEditingInvoice(invoice);
+    setEditPayoutSchedule(parsed?.key ?? '');
+    setEditNotes(extractUserNotes(invoice.notes));
+    setEditOpen(true);
+  };
+
+  const handleSaveEdit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editingInvoice) return;
+
+    const payoutSelection = editPayoutScheduleOptions.find(
+      (option) => option.key === editPayoutSchedule
+    );
+    if (!payoutSelection) {
+      addToast({
+        title: 'Payout schedule required',
+        description: 'Please select a payout schedule before saving.',
+        variant: 'warning',
+      });
+      return;
+    }
+
+    const fileNote = extractInvoiceFileNote(editingInvoice.notes);
+
+    try {
+      await updateInvoice.mutateAsync({
+        notes: [
+          buildPayoutScheduleTag(payoutSelection.monthKey, payoutSelection.sequence),
+          `Payout Schedule: ${payoutSelection.label}`,
+          editNotes.trim(),
+          fileNote,
+        ]
+          .filter((value) => value.length > 0)
+          .join('\n'),
+      });
+      addToast({
+        title: 'Invoice updated',
+        description: 'Your invoice draft changes were saved.',
+        variant: 'success',
+      });
+      setEditOpen(false);
+      setEditingInvoice(null);
+    } catch (error) {
+      addToast({
+        title: 'Failed to update invoice',
+        description: error instanceof Error ? error.message : 'Unable to save invoice changes.',
+        variant: 'error',
+      });
+    }
+  };
+
+  const handleDeleteClick = (invoice: InvoiceRecord) => {
+    setInvoicePendingDelete(invoice);
+    setDeleteOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!invoicePendingDelete) return;
+
+    try {
+      await deleteInvoice.mutateAsync(invoicePendingDelete.id);
+      addToast({
+        title: 'Invoice deleted',
+        description: `Draft ${invoicePendingDelete.invoice_number} was removed.`,
+        variant: 'success',
+      });
+      setDeleteOpen(false);
+      setInvoicePendingDelete(null);
+    } catch (error) {
+      addToast({
+        title: 'Failed to delete invoice',
+        description: error instanceof Error ? error.message : 'Unable to delete invoice draft.',
+        variant: 'error',
+      });
+    }
+  };
+
   const maskedCurrency = (value: number, currencyCode = 'PHP') =>
     showAmounts ? formatCurrency(value, currencyCode) : MASKED_AMOUNT;
 
@@ -708,10 +865,17 @@ export default function InvoicePage() {
             onClick={() => setShowAmounts((prev) => !prev)}
             title={showAmounts ? 'Hide amounts' : 'Show amounts'}
           >
-            {showAmounts ? <Eye className="h-4 w-4 mr-1.5" /> : <EyeOff className="h-4 w-4 mr-1.5" />}
+            {showAmounts ? (
+              <Eye className="h-4 w-4 mr-1.5" />
+            ) : (
+              <EyeOff className="h-4 w-4 mr-1.5" />
+            )}
             {showAmounts ? 'Hide Amounts' : 'Show Amounts'}
           </Button>
-          <Button onClick={() => setCreateOpen(true)}><Plus className="mr-2 h-4 w-4" />Submit Invoice</Button>
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Submit Invoice
+          </Button>
         </div>
       </div>
 
@@ -743,10 +907,18 @@ export default function InvoicePage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <SortableTableHead column="invoice_number" {...sortHeadProps}>Invoice #</SortableTableHead>
-                  <SortableTableHead column="payout_schedule" {...sortHeadProps}>Payout Schedule</SortableTableHead>
-                  <SortableTableHead column="amount" {...sortHeadProps}>Amount</SortableTableHead>
-                  <SortableTableHead column="status" {...sortHeadProps}>Status</SortableTableHead>
+                  <SortableTableHead column="invoice_number" {...sortHeadProps}>
+                    Invoice #
+                  </SortableTableHead>
+                  <SortableTableHead column="payout_schedule" {...sortHeadProps}>
+                    Payout Schedule
+                  </SortableTableHead>
+                  <SortableTableHead column="amount" {...sortHeadProps}>
+                    Amount
+                  </SortableTableHead>
+                  <SortableTableHead column="status" {...sortHeadProps}>
+                    Status
+                  </SortableTableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -793,7 +965,11 @@ export default function InvoicePage() {
                               invoice.target_currency &&
                               invoice.source_currency !== invoice.target_currency && (
                                 <span className="block text-xs text-muted-foreground">
-                                  ≈ {maskedCurrency(Number(invoice.converted_amount || 0), invoice.target_currency)}
+                                  ≈{' '}
+                                  {maskedCurrency(
+                                    Number(invoice.converted_amount || 0),
+                                    invoice.target_currency
+                                  )}
                                 </span>
                               )}
                           </div>
@@ -802,35 +978,49 @@ export default function InvoicePage() {
                           <InvoiceStatusBadge status={invoice.status as InvoiceStatus} size="sm" />
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
+                          <div
+                            className="flex items-center justify-end gap-2"
+                            onClick={(event) => event.stopPropagation()}
+                            onKeyDown={(event) => event.stopPropagation()}
+                          >
                             {invoice.status === 'draft' && (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={(e) => handleViewClick(invoice, e)}
-                                >
-                                  <Eye className="h-4 w-4 mr-1" />
-                                  View
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  onClick={(e) => handleSubmitClick(invoice, e)}
-                                  disabled={submitInvoice.isPending}
-                                >
-                                  Submit
-                                </Button>
-                              </>
-                            )}
-                            {invoice.status !== 'draft' && (
                               <Button
                                 size="sm"
-                                variant="ghost"
-                                onClick={(e) => handleViewClick(invoice, e)}
+                                onClick={(e) => handleSubmitClick(invoice, e)}
+                                disabled={submitInvoice.isPending}
                               >
-                                <Eye className="h-4 w-4" />
+                                Submit
                               </Button>
                             )}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <RowActionsTrigger label={`Manage ${invoice.invoice_number}`} />
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={(event) => handleViewClick(invoice, event)}
+                                >
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  View invoice
+                                </DropdownMenuItem>
+                                {invoice.status === 'draft' && (
+                                  <>
+                                    <DropdownMenuItem onClick={() => handleEditClick(invoice)}>
+                                      <Pencil className="mr-2 h-4 w-4" />
+                                      Edit draft
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      className="text-rose-600 focus:text-rose-700"
+                                      onClick={() => handleDeleteClick(invoice)}
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Delete draft
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -849,6 +1039,98 @@ export default function InvoicePage() {
         isLoading={isFetching}
         itemLabel="invoices"
       />
+
+      <Dialog
+        open={editOpen}
+        onOpenChange={(open) => {
+          setEditOpen(open);
+          if (!open) setEditingInvoice(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit invoice draft</DialogTitle>
+            <DialogDescription>
+              Update the payout schedule or notes before submitting this invoice.
+            </DialogDescription>
+          </DialogHeader>
+          <form className="space-y-4" onSubmit={handleSaveEdit}>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Payout schedule</p>
+              <Select value={editPayoutSchedule} onValueChange={setEditPayoutSchedule}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select payout schedule" />
+                </SelectTrigger>
+                <SelectContent>
+                  {editPayoutScheduleOptions.map((option) => (
+                    <SelectItem key={option.key} value={option.key} disabled={option.disabled}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="invoice-edit-notes" className="text-sm text-muted-foreground">
+                Notes (optional)
+              </label>
+              <Textarea
+                id="invoice-edit-notes"
+                maxLength={5000}
+                value={editNotes}
+                onChange={(event) => setEditNotes(event.target.value)}
+                className="min-h-[96px] resize-y"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updateInvoice.isPending}>
+                {updateInvoice.isPending ? 'Saving...' : 'Save changes'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={deleteOpen}
+        onOpenChange={(open) => {
+          setDeleteOpen(open);
+          if (!open) setInvoicePendingDelete(null);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete invoice draft?</DialogTitle>
+            <DialogDescription>
+              {invoicePendingDelete
+                ? `This will remove ${invoicePendingDelete.invoice_number} from your invoice table.`
+                : 'This will remove the invoice draft from your table.'}{' '}
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteOpen(false)}
+              disabled={deleteInvoice.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={deleteInvoice.isPending || !invoicePendingDelete}
+            >
+              {deleteInvoice.isPending ? 'Deleting...' : 'Delete draft'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ---- Create Invoice Dialog ---- */}
       <Dialog
@@ -872,7 +1154,9 @@ export default function InvoicePage() {
               onFilesSelected={(files) => setSelectedInvoiceFiles(files.slice(0, 1))}
               selectedFiles={selectedInvoiceFiles}
               onRemoveFile={(index) =>
-                setSelectedInvoiceFiles((prev) => prev.filter((_file, fileIndex) => fileIndex !== index))
+                setSelectedInvoiceFiles((prev) =>
+                  prev.filter((_file, fileIndex) => fileIndex !== index)
+                )
               }
               multiple={false}
               maxSizeMB={20}
@@ -923,7 +1207,11 @@ export default function InvoicePage() {
               </Button>
               <Button
                 type="submit"
-                disabled={createInvoice.isPending || uploadDocument.isPending || selectedInvoiceFiles.length === 0}
+                disabled={
+                  createInvoice.isPending ||
+                  uploadDocument.isPending ||
+                  selectedInvoiceFiles.length === 0
+                }
               >
                 {createInvoice.isPending || uploadDocument.isPending ? (
                   'Saving...'

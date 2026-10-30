@@ -1,5 +1,5 @@
-import { getActiveUserRole } from '@/lib/auth/active-role';
 import { logActivity } from '@/lib/audit';
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import { extractAmountFromInvoiceDocument } from '@/lib/payroll/invoiceDocumentOcr';
 import { invoiceLineItemSchema, invoiceUpdateSchema } from '@/lib/schemas/invoice.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
@@ -115,6 +115,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const { id } = await params;
     const supabase = await createSupabaseServerClient();
+    const supabaseAdmin = createSupabaseAdminClient();
 
     const {
       data: { user },
@@ -135,6 +136,37 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       );
     }
 
+    const { data: existingInvoice, error: existingInvoiceError } = await supabaseAdmin
+      .from('invoices')
+      .select('id, status, employees!inner(user_id)')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (existingInvoiceError || !existingInvoice) {
+      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
+    }
+
+    const role = await getActiveUserRole(user.id);
+    if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const isAdmin = ['admin', 'super_admin'].includes(role);
+    const employeeRecord = existingInvoice.employees as unknown as { user_id: string } | null;
+
+    if (!isAdmin && employeeRecord?.user_id !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    if (!isAdmin && existingInvoice.status !== 'draft') {
+      return NextResponse.json({ error: 'Only draft invoices can be edited' }, { status: 409 });
+    }
+
+    if (!isAdmin && parsed.data.status !== undefined) {
+      return NextResponse.json(
+        { error: 'Employees cannot change invoice status directly' },
+        { status: 403 }
+      );
+    }
+
     const updates: Record<string, string | number | null> = {};
 
     if (parsed.data.invoiceNumber !== undefined) updates.invoice_number = parsed.data.invoiceNumber;
@@ -143,10 +175,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (parsed.data.grossAmount !== undefined) updates.gross_amount = parsed.data.grossAmount;
     if (parsed.data.deductions !== undefined) updates.deductions = parsed.data.deductions;
     if (parsed.data.netAmount !== undefined) updates.net_amount = parsed.data.netAmount;
-    if (parsed.data.sourceCurrency !== undefined) updates.source_currency = parsed.data.sourceCurrency;
-    if (parsed.data.targetCurrency !== undefined) updates.target_currency = parsed.data.targetCurrency;
+    if (parsed.data.sourceCurrency !== undefined)
+      updates.source_currency = parsed.data.sourceCurrency;
+    if (parsed.data.targetCurrency !== undefined)
+      updates.target_currency = parsed.data.targetCurrency;
     if (parsed.data.exchangeRate !== undefined) updates.exchange_rate = parsed.data.exchangeRate;
-    if (parsed.data.convertedAmount !== undefined) updates.converted_amount = parsed.data.convertedAmount;
+    if (parsed.data.convertedAmount !== undefined)
+      updates.converted_amount = parsed.data.convertedAmount;
     if (parsed.data.status !== undefined) updates.status = parsed.data.status;
     if (parsed.data.notes !== undefined) updates.notes = parsed.data.notes || null;
 
@@ -231,6 +266,73 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ data });
   } catch (error) {
     console.error('Unexpected error in PATCH /api/invoices/[id]:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+/**
+ * DELETE /api/invoices/[id]
+ * Soft-delete an employee-owned draft invoice.
+ */
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const supabase = await createSupabaseServerClient();
+    const supabaseAdmin = createSupabaseAdminClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: invoice, error: invoiceError } = await supabaseAdmin
+      .from('invoices')
+      .select('id, status, employees!inner(user_id)')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (invoiceError || !invoice) {
+      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
+    }
+
+    const employeeRecord = invoice.employees as unknown as { user_id: string } | null;
+    if (employeeRecord?.user_id !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    if (invoice.status !== 'draft') {
+      return NextResponse.json({ error: 'Only draft invoices can be deleted' }, { status: 409 });
+    }
+
+    const { error: deleteError } = await supabaseAdmin
+      .from('invoices')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id)
+      .is('deleted_at', null);
+
+    if (deleteError) {
+      console.error('Error deleting invoice:', deleteError);
+      return NextResponse.json({ error: 'Failed to delete invoice' }, { status: 500 });
+    }
+
+    logActivity(supabaseAdmin, {
+      userId: user.id,
+      action: 'delete_invoice',
+      tableName: 'invoices',
+      recordId: id,
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Unexpected error in DELETE /api/invoices/[id]:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

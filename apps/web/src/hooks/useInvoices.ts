@@ -114,9 +114,7 @@ export function useInvoices(filters: InvoiceFilters = {}, options: UseInvoicesOp
 
       return response.json();
     },
-    ...(options.refetchInterval !== undefined
-      ? { refetchInterval: options.refetchInterval }
-      : {}),
+    ...(options.refetchInterval !== undefined ? { refetchInterval: options.refetchInterval } : {}),
     ...(options.refetchOnWindowFocus !== undefined
       ? { refetchOnWindowFocus: options.refetchOnWindowFocus }
       : {}),
@@ -186,6 +184,27 @@ export function useUpdateInvoice(id: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.payroll.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.payroll.detail(id) });
+    },
+  });
+}
+
+export function useDeleteInvoice() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string): Promise<{ success: true }> => {
+      const response = await fetch(`/api/invoices/${id}`, { method: 'DELETE' });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        throw new Error(error?.error || 'Failed to delete invoice');
+      }
+
+      return response.json();
+    },
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.payroll.all });
+      queryClient.removeQueries({ queryKey: queryKeys.payroll.detail(id) });
     },
   });
 }
