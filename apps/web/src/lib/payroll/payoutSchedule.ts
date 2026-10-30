@@ -135,9 +135,9 @@ export function getPayoutScheduleOptions(referenceDate: Date = new Date()): Payo
   const nowUtcMs = referenceDate.getTime();
   const payouts = getMonthPayoutDates(currentMonth);
   const options = payouts.map((payoutDate) => toPayoutOption(payoutDate, nowUtcMs));
+  const lastPayout = payouts[payouts.length - 1];
 
-  if (options.every((option) => option.disabled)) {
-    const lastPayout = payouts[payouts.length - 1];
+  if (lastPayout && options.every((option) => option.disabled)) {
     const nextPayout = new Date(lastPayout.getTime() + PAYOUT_INTERVAL_MS);
     options.push(toPayoutOption(nextPayout, nowUtcMs));
   }
@@ -191,7 +191,9 @@ export function formatPayoutScheduleLabel(monthKey: string, sequence: PayoutSequ
   const year = Number(yearRaw);
   const monthIndex = Number(monthRaw) - 1;
 
-  if (!(Number.isFinite(year) && Number.isFinite(monthIndex) && monthIndex >= 0 && monthIndex <= 11)) {
+  if (
+    !(Number.isFinite(year) && Number.isFinite(monthIndex) && monthIndex >= 0 && monthIndex <= 11)
+  ) {
     return `${monthKey} - ${toOrdinal(sequence)} Payout`;
   }
 
