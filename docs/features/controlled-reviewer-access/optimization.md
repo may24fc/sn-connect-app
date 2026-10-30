@@ -15,6 +15,9 @@ The implementation centralizes population filtering in the database view and rej
 - [Leadership invite](../../../apps/web/src/components/admin/InviteUserModal.tsx)
 - [Invitation API](../../../apps/web/src/app/api/users/invite/route.ts)
 - [Guarded reset](../../../scripts/review/reset-review-environment.mjs)
+- [Privileged write policy parity](../../../supabase/migrations/20261030000002_align_privileged_write_policies.sql)
+- [Privileged local SQL assertions](../../../tests/sql/privileged-account-kind-local.sql)
+- [Policy-history regression test](../../../tests/migrations/privileged-policy-parity.test.ts)
 
 ## Optimization Entries
 
@@ -42,6 +45,12 @@ The implementation centralizes population filtering in the database view and rej
 - **Solution:** Add a distinct `privileged` account kind for human admin/super-admin identities. Creation and reclassification require an explicit selection and recorded purpose; authorization remains role-based, while the workforce-only view excludes the identity from people-derived surfaces. Classification writes are server-confirmed and audited.
 - **Validation:** Local migration and rollback-only SQL exclusion assertion passed; web TypeScript passed; 9 focused API/auth tests and 7 Playwright checks passed. Desktop and mobile screenshots were inspected. No production data changed.
 
+### Implemented — Privileged write-policy parity
+
+- **Problem/evidence:** Effective migration-history reconstruction found 16 mutation policies that allowed `admin` but excluded `super_admin`. Five related read policies had the same drift, causing workflows such as report submission to fail while loading the row before the write. The affected areas were departments, documents, reports and metrics, AI source versions, resource categories, standup deletion, and audit history.
+- **Solution:** Recreate the legacy policies around the current `admin`/`super_admin` contract using `user_has_any_role`, while retaining report owner and immediate-head scopes. Add a repository-wide regression test that reconstructs the last effective definition of every policy and rejects future admin-only drift. Mutations remain server-confirmed because these are administrative and audit-sensitive writes.
+- **Validation:** Static reconstruction reports zero stale policies; the migration regression test and four focused invoice/document route tests pass. Both migrations applied locally, the rollback-only privileged-account SQL assertion passed, and linked production migration history verifies `20261030000001` and `20261030000002` on both sides after an exact-set dry run.
+
 ## Visual Guide
 
 ```mermaid
@@ -57,6 +66,9 @@ flowchart LR
   J --> K[Directory / OKRs / people selectors]
   L[Test or service identity] -. excluded .-> J
   M[Privileged human admin] --> N[Role-based app permissions]
+  N --> O[Admin or super_admin API gate]
+  O --> P[Matching RLS policy]
+  P --> Q[Administrative write + audit evidence]
   M -. excluded .-> J
 ```
 
@@ -90,6 +102,8 @@ The control route also regressed and all routes showed intermittent p95 outliers
 
 ## Change Log
 
+- 2026-10-30 (delivery): Applied and verified the document upload and privileged policy migrations locally and in production after the local SQL assertion and exact production dry run passed.
+- 2026-10-30: Audited effective RLS and application mutation gates, repaired 16 admin-only writes plus five prerequisite reads, and added static and local-SQL regression coverage. Production remained unchanged; local SQL execution is pending Docker availability.
 - 2026-10-16: Reclassified Cef Admin as `privileged` in production and verified database/Auth agreement, workforce-directory exclusion, audit evidence, and unchanged May/Steven classifications. Added a project-ref-guarded operations script and made Account Inventory synchronize Auth metadata with database rollback on failure.
 - 2026-10-16: Added explicit privileged non-workforce leadership creation and audited reclassification. Kept the mutation server-confirmed.
 - 2026-10-15: Applied the migration to local and production. No post-migration production latency was captured. The `employee_directory` view gained one column and one indexed filter (`idx_users_account_kind`), so a production latency check is worthwhile before any speed claim.
