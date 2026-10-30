@@ -70,7 +70,7 @@ test('invoice dialog shows the continuous October biweekly schedule', async ({
   expect(browserErrors).toEqual([]);
 });
 
-test('employees can edit and delete their invoice drafts', async ({ page }, testInfo) => {
+test('employees can edit drafts and delete every unpaid invoice status', async ({ page }, testInfo) => {
   const browserErrors: string[] = [];
   page.on('console', (message) => {
     if (message.type() === 'error') {
@@ -135,6 +135,13 @@ test('employees can edit and delete their invoice drafts', async ({ page }, test
     created_at: '2026-10-30T00:00:00.000Z',
     updated_at: '2026-10-30T00:00:00.000Z',
   };
+  const invoices = [
+    invoice,
+    { ...invoice, id: 'invoice-2', invoice_number: 'INV-SUBMITTED-1', status: 'submitted' },
+    { ...invoice, id: 'invoice-3', invoice_number: 'INV-APPROVED-1', status: 'approved' },
+    { ...invoice, id: 'invoice-4', invoice_number: 'INV-REJECTED-1', status: 'rejected' },
+    { ...invoice, id: 'invoice-5', invoice_number: 'INV-PAID-1', status: 'paid' },
+  ];
 
   await page.route(
     /\/api\/(?:ai\/conversations|notifications|hub-usage\/heartbeat|employees|expenses\/capabilities|(?:ats|crm|pa-tasks|revenue-forecast|marketing|ai-expenses|uhp)\/access)(?:\?.*)?$/,
@@ -192,8 +199,8 @@ test('employees can edit and delete their invoice drafts', async ({ page }, test
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        data: deleted ? [] : [{ ...invoice, notes }],
-        pagination: { page: 1, pageSize: 25, total: deleted ? 0 : 1, totalPages: deleted ? 0 : 1 },
+        data: deleted ? [] : invoices.map((item) => ({ ...item, notes })),
+        pagination: { page: 1, pageSize: 25, total: deleted ? 0 : 5, totalPages: deleted ? 0 : 1 },
         stats: { submitted: 0, approved: 0, rejected: 0, paid: 0, pendingAmount: 0 },
       }),
     });
@@ -216,10 +223,26 @@ test('employees can edit and delete their invoice drafts', async ({ page }, test
   expect(notes).toContain('Updated by employee');
   expect(notes).toContain('Invoice file uploaded: invoice.pdf');
 
+  for (const invoiceNumber of ['INV-SUBMITTED-1', 'INV-APPROVED-1', 'INV-REJECTED-1']) {
+    await page.getByRole('button', { name: `Manage ${invoiceNumber}` }).click();
+    await expect(page.getByRole('menuitem', { name: 'Delete invoice' })).toBeVisible();
+    if (invoiceNumber === 'INV-SUBMITTED-1') {
+      await page.screenshot({
+        path: testInfo.outputPath('submitted-invoice-delete-action.png'),
+        fullPage: true,
+      });
+    }
+    await page.keyboard.press('Escape');
+  }
+
+  await page.getByRole('button', { name: 'Manage INV-PAID-1' }).click();
+  await expect(page.getByRole('menuitem', { name: 'Delete invoice' })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+
   await page.getByRole('button', { name: 'Manage INV-DRAFT-1' }).click();
-  await page.getByRole('menuitem', { name: 'Delete draft' }).click();
-  await expect(page.getByRole('heading', { name: 'Delete invoice draft?' })).toBeVisible();
-  await page.getByRole('button', { name: 'Delete draft' }).click();
+  await page.getByRole('menuitem', { name: 'Delete invoice' }).click();
+  await expect(page.getByRole('heading', { name: 'Delete invoice?' })).toBeVisible();
+  await page.getByRole('button', { name: 'Delete invoice' }).click();
   await expect(page.getByText('INV-DRAFT-1')).toHaveCount(0);
   await expect(page.getByText('No invoices yet')).toBeVisible();
   expect(browserErrors).toEqual([]);

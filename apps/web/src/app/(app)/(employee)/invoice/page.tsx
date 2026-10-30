@@ -830,7 +830,7 @@ export default function InvoicePage() {
       await deleteInvoice.mutateAsync(invoicePendingDelete.id);
       addToast({
         title: 'Invoice deleted',
-        description: `Draft ${invoicePendingDelete.invoice_number} was removed.`,
+        description: `${invoicePendingDelete.invoice_number} was removed.`,
         variant: 'success',
       });
       setDeleteOpen(false);
@@ -838,7 +838,7 @@ export default function InvoicePage() {
     } catch (error) {
       addToast({
         title: 'Failed to delete invoice',
-        description: error instanceof Error ? error.message : 'Unable to delete invoice draft.',
+        description: error instanceof Error ? error.message : 'Unable to delete invoice.',
         variant: 'error',
       });
     }
@@ -1004,18 +1004,20 @@ export default function InvoicePage() {
                                   View invoice
                                 </DropdownMenuItem>
                                 {invoice.status === 'draft' && (
+                                  <DropdownMenuItem onClick={() => handleEditClick(invoice)}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Edit draft
+                                  </DropdownMenuItem>
+                                )}
+                                {invoice.status !== 'paid' && (
                                   <>
-                                    <DropdownMenuItem onClick={() => handleEditClick(invoice)}>
-                                      <Pencil className="mr-2 h-4 w-4" />
-                                      Edit draft
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
+                                    {invoice.status === 'draft' && <DropdownMenuSeparator />}
                                     <DropdownMenuItem
                                       className="text-rose-600 focus:text-rose-700"
                                       onClick={() => handleDeleteClick(invoice)}
                                     >
                                       <Trash2 className="mr-2 h-4 w-4" />
-                                      Delete draft
+                                      Delete invoice
                                     </DropdownMenuItem>
                                   </>
                                 )}
@@ -1103,11 +1105,11 @@ export default function InvoicePage() {
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete invoice draft?</DialogTitle>
+            <DialogTitle>Delete invoice?</DialogTitle>
             <DialogDescription>
               {invoicePendingDelete
                 ? `This will remove ${invoicePendingDelete.invoice_number} from your invoice table.`
-                : 'This will remove the invoice draft from your table.'}{' '}
+                : 'This will remove the invoice from your table.'}{' '}
               This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
@@ -1126,7 +1128,7 @@ export default function InvoicePage() {
               onClick={handleConfirmDelete}
               disabled={deleteInvoice.isPending || !invoicePendingDelete}
             >
-              {deleteInvoice.isPending ? 'Deleting...' : 'Delete draft'}
+              {deleteInvoice.isPending ? 'Deleting...' : 'Delete invoice'}
             </Button>
           </DialogFooter>
         </DialogContent>

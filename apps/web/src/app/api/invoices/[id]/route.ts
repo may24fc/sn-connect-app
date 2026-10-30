@@ -308,8 +308,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    if (invoice.status !== 'draft') {
-      return NextResponse.json({ error: 'Only draft invoices can be deleted' }, { status: 409 });
+    if (invoice.status === 'paid') {
+      return NextResponse.json({ error: 'Paid invoices cannot be deleted' }, { status: 409 });
     }
 
     const { error: deleteError } = await supabaseAdmin

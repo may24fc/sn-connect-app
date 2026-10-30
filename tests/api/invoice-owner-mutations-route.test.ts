@@ -50,32 +50,35 @@ function setup(invoice: InvoiceRow) {
 describe('employee invoice mutations', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('soft-deletes an employee-owned draft invoice', async () => {
+  it.each(['draft', 'submitted', 'approved', 'rejected'])(
+    'soft-deletes an employee-owned %s invoice',
+    async (status) => {
+      const { update } = setup({
+        id: 'invoice-1',
+        status,
+        employees: { user_id: 'user-1' },
+      });
+
+      const response = await DELETE(undefined as never, {
+        params: Promise.resolve({ id: 'invoice-1' }),
+      });
+
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toEqual({ success: true });
+      expect(update).toHaveBeenCalledWith({ deleted_at: expect.any(String) });
+      expect(logActivity).toHaveBeenCalledWith(expect.anything(), {
+        userId: 'user-1',
+        action: 'delete_invoice',
+        tableName: 'invoices',
+        recordId: 'invoice-1',
+      });
+    }
+  );
+
+  it('rejects deletion of a paid invoice', async () => {
     const { update } = setup({
       id: 'invoice-1',
-      status: 'draft',
-      employees: { user_id: 'user-1' },
-    });
-
-    const response = await DELETE(undefined as never, {
-      params: Promise.resolve({ id: 'invoice-1' }),
-    });
-
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ success: true });
-    expect(update).toHaveBeenCalledWith({ deleted_at: expect.any(String) });
-    expect(logActivity).toHaveBeenCalledWith(expect.anything(), {
-      userId: 'user-1',
-      action: 'delete_invoice',
-      tableName: 'invoices',
-      recordId: 'invoice-1',
-    });
-  });
-
-  it('rejects deletion of a submitted invoice', async () => {
-    const { update } = setup({
-      id: 'invoice-1',
-      status: 'submitted',
+      status: 'paid',
       employees: { user_id: 'user-1' },
     });
 
@@ -85,7 +88,7 @@ describe('employee invoice mutations', () => {
 
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toEqual({
-      error: 'Only draft invoices can be deleted',
+      error: 'Paid invoices cannot be deleted',
     });
     expect(update).not.toHaveBeenCalled();
   });
