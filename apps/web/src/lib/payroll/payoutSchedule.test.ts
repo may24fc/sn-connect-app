@@ -1,9 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { formatPayoutScheduleLabel, getPayoutScheduleOptions } from './payoutSchedule';
+import {
+  formatPayoutScheduleLabel,
+  getCurrentPayoutKey,
+  getPayoutScheduleOptions,
+} from './payoutSchedule';
 
 describe('payout schedule labels', () => {
   it('shows the payout date in the Finance date style', () => {
-    expect(formatPayoutScheduleLabel('2026-11', 1)).toBe('November - 1st Payout (6 Nov 2026)');
+    expect(formatPayoutScheduleLabel('2026-11', 1)).toBe('November - 1st Payout (13 Nov 2026)');
+  });
+
+  it('continues every 14 days and includes a third payout in October', () => {
+    expect(formatPayoutScheduleLabel('2026-10', 1)).toBe('October - 1st Payout (2 Oct 2026)');
+    expect(formatPayoutScheduleLabel('2026-10', 2)).toBe('October - 2nd Payout (16 Oct 2026)');
+    expect(formatPayoutScheduleLabel('2026-10', 3)).toBe('October - 3rd Payout (30 Oct 2026)');
+    expect(formatPayoutScheduleLabel('2026-11', 1)).toBe('November - 1st Payout (13 Nov 2026)');
+  });
+
+  it('uses the upcoming biweekly cycle as the current payout key', () => {
+    expect(getCurrentPayoutKey(new Date('2026-10-24T00:00:00Z'))).toBe('2026-10:3');
+    expect(getCurrentPayoutKey(new Date('2026-10-31T00:00:00Z'))).toBe('2026-11:1');
   });
 
   it('uses the same date style for selectable options', () => {

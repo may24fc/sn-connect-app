@@ -13,6 +13,10 @@ export interface PayoutScheduleOption {
 const PAYOUT_TAG_PREFIX = 'PAYOUT_SCHEDULE:';
 const PH_TIMEZONE = 'Asia/Manila';
 const PH_UTC_OFFSET_HOURS = 8;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const PAYOUT_INTERVAL_MS = 14 * DAY_MS;
+// The continuous biweekly cadence is anchored to the confirmed October 2026 schedule.
+const PAYOUT_ANCHOR_UTC_MS = Date.UTC(2026, 9, 2);
 
 function toMonthKey(date: Date): string {
   const year = date.getUTCFullYear();
@@ -32,28 +36,32 @@ function toShortDateLabel(date: Date): string {
   return formatFinanceDate(date.toISOString().slice(0, 10));
 }
 
-function addMonths(date: Date, count: number): Date {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + count, 1));
+function getMonthPayoutDates(monthDate: Date): Date[] {
+  const monthStartUtcMs = Date.UTC(monthDate.getUTCFullYear(), monthDate.getUTCMonth(), 1);
+  const nextMonthStartUtcMs = Date.UTC(monthDate.getUTCFullYear(), monthDate.getUTCMonth() + 1, 1);
+  const firstCycle = Math.ceil((monthStartUtcMs - PAYOUT_ANCHOR_UTC_MS) / PAYOUT_INTERVAL_MS);
+  const payoutDates: Date[] = [];
+
+  for (
+    let payoutUtcMs = PAYOUT_ANCHOR_UTC_MS + firstCycle * PAYOUT_INTERVAL_MS;
+    payoutUtcMs < nextMonthStartUtcMs;
+    payoutUtcMs += PAYOUT_INTERVAL_MS
+  ) {
+    payoutDates.push(new Date(payoutUtcMs));
+  }
+
+  return payoutDates;
 }
 
-function getNthWeekdayOfMonth(year: number, monthIndex: number, weekday: number, nth: number): Date {
-  const firstOfMonth = new Date(Date.UTC(year, monthIndex, 1));
-  const firstWeekdayOffset = (weekday - firstOfMonth.getUTCDay() + 7) % 7;
-  const dayOfMonth = 1 + firstWeekdayOffset + (nth - 1) * 7;
-  return new Date(Date.UTC(year, monthIndex, dayOfMonth));
+function getPayoutSequence(payoutDate: Date): PayoutSequence {
+  const index = getMonthPayoutDates(payoutDate).findIndex(
+    (date) => date.getTime() === payoutDate.getTime()
+  );
+  return (index + 1) as PayoutSequence;
 }
 
-function getMonthPayoutDates(monthDate: Date): { firstPayout: Date; secondPayout: Date } {
-  const year = monthDate.getUTCFullYear();
-  const monthIndex = monthDate.getUTCMonth();
-
-  // SN Connect payout policy: first and third Friday of the month.
-  // When a month has a fifth Friday, that date is not scheduled in that month;
-  // the next month simply starts again on its first Friday.
-  const firstPayout = getNthWeekdayOfMonth(year, monthIndex, 5, 1);
-  const secondPayout = getNthWeekdayOfMonth(year, monthIndex, 5, 3);
-
-  return { firstPayout, secondPayout };
+function toOrdinal(sequence: PayoutSequence): string {
+  return sequence === 1 ? '1st' : sequence === 2 ? '2nd' : '3rd';
 }
 
 function getPhDateParts(referenceDate: Date): {
@@ -94,33 +102,31 @@ function getPayoutCutoffUtcMs(payoutDate: Date): number {
   return phDateTimeToUtcMs(year, month, day, 15, 0, 0);
 }
 
+function toPayoutOption(payoutDate: Date, nowUtcMs: number): PayoutScheduleOption {
+  const sequence = getPayoutSequence(payoutDate);
+  const monthKey = toMonthKey(payoutDate);
+
+  return {
+    key: `${monthKey}:${sequence}`,
+    monthKey,
+    sequence,
+    label: `${toMonthLabel(payoutDate)} - ${toOrdinal(sequence)} Payout (${toShortDateLabel(payoutDate)})`,
+    disabled: nowUtcMs > getPayoutCutoffUtcMs(payoutDate),
+  };
+}
+
 /**
- * Returns the payout schedule key that "covers" the given reference date in PH time.
- *
- * Coverage rules (evaluated in PH calendar):
- *   - Day 1 through the 1st payout Friday  → `YYYY-MM:1`  (1st payout of that month)
- *   - Day after 1st payout Friday through the 3rd Friday → `YYYY-MM:2`  (2nd payout of that month)
- *   - After the 3rd Friday, roll to the next month’s `YYYY-MM:1`
- *
- * This keeps each month to two payout options and rolls anything after the second
- * payout into the next month’s first payout.
+ * Returns the payout schedule key that covers the given reference date in PH time.
+ * The key advances on each payout calendar day, while dates remain exactly 14 days
+ * apart across month and year boundaries.
  */
 export function getCurrentPayoutKey(referenceDate: Date = new Date()): string {
   const { year: phYear, month: phMonth, day: phDay } = getPhDateParts(referenceDate);
-  const currentMonth = new Date(Date.UTC(phYear, phMonth - 1, 1));
-  const currentMonthDates = getMonthPayoutDates(currentMonth);
-  const monthKey = toMonthKey(currentMonth);
-
-  if (phDay <= currentMonthDates.firstPayout.getUTCDate()) {
-    return `${monthKey}:1`;
-  }
-
-  if (phDay <= currentMonthDates.secondPayout.getUTCDate()) {
-    return `${monthKey}:2`;
-  }
-
-  const nextMonth = addMonths(currentMonth, 1);
-  return `${toMonthKey(nextMonth)}:1`;
+  const phCalendarDateUtcMs = Date.UTC(phYear, phMonth - 1, phDay);
+  const cycle = Math.ceil((phCalendarDateUtcMs - PAYOUT_ANCHOR_UTC_MS) / PAYOUT_INTERVAL_MS);
+  const payoutDate = new Date(PAYOUT_ANCHOR_UTC_MS + cycle * PAYOUT_INTERVAL_MS);
+  const sequence = getPayoutSequence(payoutDate);
+  return `${toMonthKey(payoutDate)}:${sequence}`;
 }
 
 export function getPayoutScheduleOptions(referenceDate: Date = new Date()): PayoutScheduleOption[] {
@@ -128,40 +134,12 @@ export function getPayoutScheduleOptions(referenceDate: Date = new Date()): Payo
   const currentMonth = new Date(Date.UTC(phYear, phMonth - 1, 1));
   const nowUtcMs = referenceDate.getTime();
   const payouts = getMonthPayoutDates(currentMonth);
-  const monthKey = toMonthKey(currentMonth);
-  const monthLabel = toMonthLabel(currentMonth);
+  const options = payouts.map((payoutDate) => toPayoutOption(payoutDate, nowUtcMs));
 
-  const firstDisabled = nowUtcMs > getPayoutCutoffUtcMs(payouts.firstPayout);
-  const secondDisabled = nowUtcMs > getPayoutCutoffUtcMs(payouts.secondPayout);
-
-  const options: PayoutScheduleOption[] = [
-    {
-      key: `${monthKey}:1`,
-      monthKey,
-      sequence: 1,
-      label: `${monthLabel} - 1st Payout (${toShortDateLabel(payouts.firstPayout)})`,
-      disabled: firstDisabled,
-    },
-    {
-      key: `${monthKey}:2`,
-      monthKey,
-      sequence: 2,
-      label: `${monthLabel} - 2nd Payout (${toShortDateLabel(payouts.secondPayout)})`,
-      disabled: secondDisabled,
-    },
-  ];
-
-  if (firstDisabled && secondDisabled) {
-    const nextMonth = addMonths(currentMonth, 1);
-    const nextPayouts = getMonthPayoutDates(nextMonth);
-    const nextMonthKey = toMonthKey(nextMonth);
-    options.push({
-      key: `${nextMonthKey}:1`,
-      monthKey: nextMonthKey,
-      sequence: 1,
-      label: `${toMonthLabel(nextMonth)} - 1st Payout (${toShortDateLabel(nextPayouts.firstPayout)})`,
-      disabled: false,
-    });
+  if (options.every((option) => option.disabled)) {
+    const lastPayout = payouts[payouts.length - 1];
+    const nextPayout = new Date(lastPayout.getTime() + PAYOUT_INTERVAL_MS);
+    options.push(toPayoutOption(nextPayout, nowUtcMs));
   }
 
   return options;
@@ -214,14 +192,11 @@ export function formatPayoutScheduleLabel(monthKey: string, sequence: PayoutSequ
   const monthIndex = Number(monthRaw) - 1;
 
   if (!(Number.isFinite(year) && Number.isFinite(monthIndex) && monthIndex >= 0 && monthIndex <= 11)) {
-    const fallbackOrdinal = sequence === 1 ? '1st' : sequence === 2 ? '2nd' : '3rd';
-    return `${monthKey} - ${fallbackOrdinal} Payout`;
+    return `${monthKey} - ${toOrdinal(sequence)} Payout`;
   }
 
   const date = new Date(Date.UTC(year, monthIndex, 1));
-  const monthLabel = toMonthLabel(date);
-  const payouts = getMonthPayoutDates(date);
-  const payoutDate = sequence === 1 ? payouts.firstPayout : payouts.secondPayout;
-  const ordinal = sequence === 1 ? '1st' : sequence === 2 ? '2nd' : '3rd';
-  return `${monthLabel} - ${ordinal} Payout (${toShortDateLabel(payoutDate)})`;
+  const baseLabel = `${toMonthLabel(date)} - ${toOrdinal(sequence)} Payout`;
+  const payoutDate = getMonthPayoutDates(date)[sequence - 1];
+  return payoutDate ? `${baseLabel} (${toShortDateLabel(payoutDate)})` : baseLabel;
 }
