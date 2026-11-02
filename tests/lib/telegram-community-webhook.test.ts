@@ -106,7 +106,7 @@ describe('Telegram Community command handling', () => {
       'create_ticket_from_telegram',
       expect.objectContaining({
         p_category: 'feature_request',
-        p_topic_id: undefined,
+        p_topic_id: null,
       })
     );
   });

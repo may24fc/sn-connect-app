@@ -168,7 +168,7 @@ export async function handleTelegramCommunityUpdate(
     p_description: sourceText,
     p_category: category,
     p_chat_id: Number(chatId),
-    p_topic_id: topicId,
+    p_topic_id: topicId ?? null,
     p_source_message_id: reply.message_id,
   });
   const result = Array.isArray(data) ? data[0] : data;
