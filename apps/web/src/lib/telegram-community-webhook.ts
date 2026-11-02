@@ -101,12 +101,13 @@ export async function handleTelegramCommunityUpdate(
   if (!config.chatId || String(chatId) !== config.chatId) return;
 
   const topicId = message?.message_thread_id;
-  const category =
-    topicId === config.generalTopicId
-      ? 'feature_request'
-      : topicId === config.helpTopicId
-        ? 'bug_report'
-        : null;
+  const isGeneralTopic =
+    topicId === config.generalTopicId || (topicId === undefined && config.generalTopicId === null);
+  const category = isGeneralTopic
+    ? 'feature_request'
+    : topicId === config.helpTopicId
+      ? 'bug_report'
+      : null;
   const reply = message?.reply_to_message;
   const sourceText = (reply?.text ?? reply?.caption ?? '').trim();
   if (!category) {

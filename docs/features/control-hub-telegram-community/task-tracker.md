@@ -2,7 +2,7 @@
 
 ## Current Status
 
-The dedicated community-bot application and webhook are live. A self-service Telegram disconnect flow is implemented and validated locally so an identity can move between Control Hub accounts without weakening the one-to-one mapping; its production rollout is in progress. Super-admin linking, forum routing IDs, smoke testing, and the pilot remain.
+The dedicated community-bot application, webhook, and self-service Telegram disconnect flow are live. A Telegram identity can now be released from its current Control Hub account and linked to another without weakening the one-to-one mapping. Super-admin linking, forum routing IDs, smoke testing, and the pilot remain.
 
 See also [Optimization Record](optimization.md).
 
@@ -24,9 +24,10 @@ See also [Optimization Record](optimization.md).
 - [x] Deploy the Control Hub Telegram Community feature to production - 2026-11-02; pushed scoped commit `4b3ebdc0` to `main`; Supabase migration workflow and both native Vercel deployments succeeded; production community webhook probe returned the expected HTTP 401.
 - [x] Register the dedicated Forum bot webhook - 2026-11-02; Telegram `setWebhook` succeeded for `@SNControlHubCommunityBot`, targeting `https://app.sngroup.com.au/api/webhooks/telegram-community`; `getWebhookInfo` reported zero pending updates and no last error.
 - [x] Validate self-service Telegram disconnect locally - 2026-11-02; migration `20261102000001` applied to local Supabase; rollback-only database test confirmed link removal, preference preservation, token clearing, and audit creation; route tests passed 4/4, portal typecheck passed, and desktop/mobile Playwright passed 2/2 with screenshots inspected. Schema lint reported only the pre-existing `get_knowledge_source_versions` error.
+- [x] Deploy self-service Telegram disconnect - 2026-11-02; pushed scoped commit `024d42f8` to `main`; production Supabase migration succeeded after retrying a transient GitHub release-rate-limit failure; both native Vercel deployments succeeded; live unauthenticated DELETE probe changed from HTTP 405 before promotion to the expected HTTP 401 after promotion.
+- [x] Support the renamed default General forum topic - 2026-11-02; the community webhook now treats Telegram's absent `message_thread_id` as General & Ideas only when `TELEGRAM_GENERAL_IDEAS_TOPIC_ID` is unset; deployment and environment documentation updated; focused Telegram tests passed 5/5 and portal typecheck passed.
 
 ### In Progress
-- [ ] Deploy self-service Telegram disconnect - local validation is complete and the user explicitly approved production rollout. Next action is to push the scoped commit and verify the production migration and Vercel deployment statuses.
 - [ ] Complete live Telegram Forum routing - link the super-admin through the existing bot, capture the shared forum chat ID and four topic IDs, configure routing, and run smoke tests.
 
 ### Deferred
@@ -40,6 +41,8 @@ See also [Optimization Record](optimization.md).
 None.
 
 ## Session History
+- 2026-11-02: Confirmed `/topicid` returns `none` only for General & Ideas because it is the renamed default General topic. Updated routing to accept the absent thread ID as `feature_request` traffic while keeping numeric matching for separately created topics. The General topic environment variable must be deleted rather than assigned `none`.
+- 2026-11-02: Deployed self-service Telegram disconnect in commit `024d42f8`. The first migration workflow attempt stopped before production access because GitHub rate-limited Supabase CLI release resolution; a safe rerun succeeded. Both Vercel projects completed successfully, and the live owner-only DELETE route returned the expected unauthenticated HTTP 401. The employee account can now disconnect in Settings before the same Telegram identity is linked to the super-admin account.
 - 2026-11-02: Docker became available and migration `20261102000001` was applied locally. A rollback-only transaction verified that disconnecting disables Telegram, removes the normalized identity link, clears pending link data, preserves the Gmail preference, and creates an audit event. Production rollout was explicitly approved and is in progress.
 - 2026-11-02: Implemented an owner-only, server-confirmed Telegram disconnect action in Settings. The database function atomically deletes `telegram_account_links`, disables Telegram delivery, clears legacy chat details and pending tokens, and writes an audit event. Validation passed: focused Biome check, portal typecheck, API tests 4/4, and Playwright desktop/mobile 2/2 with screenshots inspected. `graphify update .` completed with 14,487 nodes and 35,067 edges. Local database execution remains blocked because Docker Desktop is unavailable; production was not changed.
 - 2026-11-02: Registered the dedicated production webhook for `@SNControlHubCommunityBot` using secrets stored in the ignored `apps/web/.env.local`. Telegram confirmed the production URL, `allowed_updates=message`, zero pending updates, and no last error. No existing bot or n8n credential was modified. The next live step is super-admin linking followed by `/topicid` discovery in each Forum topic.

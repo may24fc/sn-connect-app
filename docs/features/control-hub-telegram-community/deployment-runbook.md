@@ -17,7 +17,7 @@ Production rollout is not part of the local implementation. Use this runbook onl
 4. In each forum topic, send `/topicid` and record the returned chat/topic values. This diagnostic intentionally works before the community chat ID is configured, but only for linked admins and super-admins.
 5. Configure:
    - `TELEGRAM_COMMUNITY_CHAT_ID`
-   - `TELEGRAM_GENERAL_IDEAS_TOPIC_ID`
+   - `TELEGRAM_GENERAL_IDEAS_TOPIC_ID` only when General & Ideas is a separately created topic. Delete this variable when General & Ideas is the renamed default General topic and `/topicid` reports `none`.
    - `TELEGRAM_HELP_BUG_TOPIC_ID`
    - `TELEGRAM_TICKET_PROGRESS_TOPIC_ID`
    - `TELEGRAM_COMMUNITY_HIGHLIGHTS_TOPIC_ID`
