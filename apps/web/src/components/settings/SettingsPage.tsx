@@ -1,8 +1,10 @@
 'use client';
 
+import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   useCreateTelegramLink,
+  useDisconnectTelegram,
   useNotificationPreferences,
   useUpdateNotificationPreferences,
 } from '@/hooks/useNotificationPreferences';
@@ -24,11 +26,20 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  PageTitle,
   Switch,
   useToast,
-  PageTitle,
 } from '@hr-portal/ui';
-import { BellRing, Copy, ExternalLink, Link2, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
+import {
+  BellRing,
+  Copy,
+  ExternalLink,
+  Link2,
+  Loader2,
+  RefreshCw,
+  ShieldCheck,
+  Unlink,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
@@ -50,7 +61,7 @@ interface TelegramLinkDialogState {
   startCommand: string | null;
 }
 
-const notificationPreferences: NotificationPreferenceOption[] = [
+const notificationPreferences: Array<NotificationPreferenceOption> = [
   {
     channel: 'telegram',
     title: 'Telegram notifications',
@@ -80,9 +91,15 @@ function TelegramLogo(): ReactNode {
 function GmailLogo(): ReactNode {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
-      <path fill="#EA4335" d="M2 6.75 12 14.25 22 6.75V6a2 2 0 0 0-2-2h-.46L12 9.78 4.46 4H4a2 2 0 0 0-2 2v.75Z" />
+      <path
+        fill="#EA4335"
+        d="M2 6.75 12 14.25 22 6.75V6a2 2 0 0 0-2-2h-.46L12 9.78 4.46 4H4a2 2 0 0 0-2 2v.75Z"
+      />
       <path fill="#FFFFFF" d="M22 6.75 15.82 11.4 22 16.12V6.75Z" />
-      <path fill="#FFFFFF" d="M15.82 11.4 12 14.25 8.18 11.4 2 16.12V18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-1.88l-6.18-4.72Z" />
+      <path
+        fill="#FFFFFF"
+        d="M15.82 11.4 12 14.25 8.18 11.4 2 16.12V18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-1.88l-6.18-4.72Z"
+      />
       <path fill="#FFFFFF" d="M2 6.75V16.12L8.18 11.4 2 6.75Z" />
     </svg>
   );
@@ -120,14 +137,112 @@ async function copyTextToClipboard(value: string): Promise<boolean> {
   }
 }
 
+interface TelegramLinkActionsProps {
+  canMutate: boolean;
+  hasChanges: boolean;
+  isDisconnecting: boolean;
+  isLinked: boolean;
+  isLinking: boolean;
+  isPending: boolean;
+  onConnect: () => void;
+  onDisconnect: () => void;
+}
+
+function TelegramLinkActions({
+  canMutate,
+  hasChanges,
+  isDisconnecting,
+  isLinked,
+  isLinking,
+  isPending,
+  onConnect,
+  onDisconnect,
+}: TelegramLinkActionsProps): ReactNode {
+  let linkLabel: ReactNode = (
+    <>
+      <Link2 className="h-4 w-4" />
+      Connect Telegram
+    </>
+  );
+  if (isLinking) {
+    linkLabel = (
+      <>
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Preparing link...
+      </>
+    );
+  } else if (isLinked) {
+    linkLabel = (
+      <>
+        <RefreshCw className="h-4 w-4" />
+        Reconnect Telegram
+      </>
+    );
+  }
+
+  let hint =
+    'This opens a step-by-step modal with the Telegram Web link and one-time /start command.';
+  if (hasChanges) {
+    hint = 'Save your notification changes before starting the Telegram link flow.';
+  } else if (isPending) {
+    hint =
+      'Telegram Web is waiting for your one-time /start command. This page will refresh automatically after the bot confirms the link.';
+  }
+
+  const disabled = !canMutate || hasChanges;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 pt-1">
+      <Button type="button" size="sm" variant="outline" disabled={disabled} onClick={onConnect}>
+        {linkLabel}
+      </Button>
+      {isLinked || isPending ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="destructive"
+          disabled={disabled}
+          onClick={onDisconnect}
+        >
+          {isDisconnecting ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Disconnecting...
+            </>
+          ) : (
+            <>
+              <Unlink className="h-4 w-4" />
+              Disconnect Telegram
+            </>
+          )}
+        </Button>
+      ) : null}
+      <p className="text-xs text-zinc-500 dark:text-zinc-500">{hint}</p>
+    </div>
+  );
+}
+
+function getTelegramStatusLabel(
+  linkState: 'unlinked' | 'pending' | 'linked',
+  username: string | null
+): string {
+  if (linkState === 'linked') {
+    return username ? `Linked as @${username}` : 'Linked';
+  }
+
+  return linkState === 'pending' ? 'Awaiting /start confirmation' : 'Not linked';
+}
+
 export default function SettingsPage(): ReactNode {
   const { user } = useAuth();
   const { addToast } = useToast();
   const preferencesQuery = useNotificationPreferences(user?.id);
   const updatePreferences = useUpdateNotificationPreferences(user?.id);
   const createTelegramLink = useCreateTelegramLink(user?.id);
+  const disconnectTelegram = useDisconnectTelegram(user?.id);
   const [preferences, setPreferences] = useState(DEFAULT_NOTIFICATION_PREFERENCES);
   const [savedPreferences, setSavedPreferences] = useState(DEFAULT_NOTIFICATION_PREFERENCES);
+  const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
   const [telegramLinkDialog, setTelegramLinkDialog] = useState<TelegramLinkDialogState>({
     open: false,
     webUrl: null,
@@ -144,7 +259,8 @@ export default function SettingsPage(): ReactNode {
   }, [preferencesQuery.data]);
 
   const hasChanges =
-    preferences.telegram !== savedPreferences.telegram || preferences.gmail !== savedPreferences.gmail;
+    preferences.telegram !== savedPreferences.telegram ||
+    preferences.gmail !== savedPreferences.gmail;
   const isInitialLoading = preferencesQuery.isLoading && !preferencesQuery.data;
   const isTelegramLinked = preferences.telegramLinkState === 'linked';
   const isTelegramPending = preferences.telegramLinkState === 'pending';
@@ -198,6 +314,26 @@ export default function SettingsPage(): ReactNode {
     }
   };
 
+  const handleDisconnectTelegram = async (): Promise<void> => {
+    try {
+      const nextPreferences = await disconnectTelegram.mutateAsync();
+      setPreferences(nextPreferences);
+      setSavedPreferences(nextPreferences);
+      setDisconnectDialogOpen(false);
+      addToast({
+        title: 'Telegram disconnected',
+        description: 'This Telegram identity can now be linked to another Control Hub account.',
+        variant: 'success',
+      });
+    } catch (error) {
+      addToast({
+        title: 'Failed to disconnect Telegram',
+        description: error instanceof Error ? error.message : 'Please try again.',
+        variant: 'error',
+      });
+    }
+  };
+
   const handleCopyTelegramStartCommand = async (): Promise<void> => {
     if (!telegramLinkDialog.startCommand) {
       return;
@@ -221,21 +357,16 @@ export default function SettingsPage(): ReactNode {
     window.open(telegramLinkDialog.webUrl, '_blank', 'noopener,noreferrer');
   };
 
-  const telegramStatusLabel = isTelegramLinked
-    ? preferences.telegramUsername
-      ? `Linked as @${preferences.telegramUsername}`
-      : 'Linked'
-    : isTelegramPending
-      ? 'Awaiting /start confirmation'
-      : 'Not linked';
+  const telegramStatusLabel = getTelegramStatusLabel(
+    preferences.telegramLinkState,
+    preferences.telegramUsername
+  );
 
   return (
     <div className="h-full space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <PageTitle>
-            Settings
-          </PageTitle>
+          <PageTitle>Settings</PageTitle>
           <p className="mt-1 text-sm text-muted-foreground">
             Manage how Control Hub sends account notifications to you.
           </p>
@@ -263,7 +394,8 @@ export default function SettingsPage(): ReactNode {
           <CardHeader>
             <CardTitle>Notifications</CardTitle>
             <CardDescription>
-              Choose which channels can receive personal app notifications once integrations are connected.
+              Choose which channels can receive personal app notifications once integrations are
+              connected.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -302,45 +434,22 @@ export default function SettingsPage(): ReactNode {
                       </p>
                       <p className="text-xs text-zinc-500 dark:text-zinc-500">{preference.hint}</p>
                       {preference.channel === 'telegram' ? (
-                        <div className="flex flex-wrap items-center gap-2 pt-1">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            disabled={
-                              !user?.id ||
-                              isInitialLoading ||
-                              createTelegramLink.isPending ||
-                              updatePreferences.isPending ||
-                              hasChanges
-                            }
-                            onClick={() => void handleConnectTelegram()}
-                          >
-                            {createTelegramLink.isPending ? (
-                              <>
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                Preparing link...
-                              </>
-                            ) : isTelegramLinked ? (
-                              <>
-                                <RefreshCw className="h-4 w-4" />
-                                Reconnect Telegram
-                              </>
-                            ) : (
-                              <>
-                                <Link2 className="h-4 w-4" />
-                                Connect Telegram
-                              </>
-                            )}
-                          </Button>
-                          <p className="text-xs text-zinc-500 dark:text-zinc-500">
-                            {hasChanges
-                              ? 'Save your notification changes before starting the Telegram link flow.'
-                              : isTelegramPending
-                                ? 'Telegram Web is waiting for your one-time /start command. This page will refresh automatically after the bot confirms the link.'
-                                : 'This opens a step-by-step modal with the Telegram Web link and one-time /start command.'}
-                          </p>
-                        </div>
+                        <TelegramLinkActions
+                          canMutate={Boolean(
+                            user?.id &&
+                              !isInitialLoading &&
+                              !createTelegramLink.isPending &&
+                              !disconnectTelegram.isPending &&
+                              !updatePreferences.isPending
+                          )}
+                          hasChanges={hasChanges}
+                          isDisconnecting={disconnectTelegram.isPending}
+                          isLinked={isTelegramLinked}
+                          isLinking={createTelegramLink.isPending}
+                          isPending={isTelegramPending}
+                          onConnect={() => void handleConnectTelegram()}
+                          onDisconnect={() => setDisconnectDialogOpen(true)}
+                        />
                       ) : null}
                     </div>
                   </div>
@@ -350,9 +459,15 @@ export default function SettingsPage(): ReactNode {
                     </span>
                     <Switch
                       checked={checked}
-                      onCheckedChange={(nextChecked) => handleToggle(preference.channel, nextChecked)}
+                      onCheckedChange={(nextChecked) =>
+                        handleToggle(preference.channel, nextChecked)
+                      }
                       aria-label={`Toggle ${preference.title}`}
-                      disabled={isInitialLoading || updatePreferences.isPending}
+                      disabled={
+                        isInitialLoading ||
+                        updatePreferences.isPending ||
+                        disconnectTelegram.isPending
+                      }
                     />
                   </div>
                 </div>
@@ -401,17 +516,25 @@ export default function SettingsPage(): ReactNode {
             <CardHeader>
               <CardTitle className="text-base">Integration status</CardTitle>
               <CardDescription>
-                Gmail delivery is active now. Telegram delivery starts after you complete the bot linking flow.
+                Gmail delivery is active now. Telegram delivery starts after you complete the bot
+                linking flow.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-lg border border-dashed border-zinc-300 bg-zinc-50/80 p-4 dark:border-zinc-700 dark:bg-zinc-900/60">
                 <div className="flex items-start gap-3">
-                  <ShieldCheck className="mt-0.5 h-5 w-5 text-emerald-600 dark:text-emerald-400" strokeWidth={1.8} />
+                  <ShieldCheck
+                    className="mt-0.5 h-5 w-5 text-emerald-600 dark:text-emerald-400"
+                    strokeWidth={1.8}
+                  />
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Channel readiness</p>
+                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                      Channel readiness
+                    </p>
                     <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-                      Gmail notifications use your Control Hub account email immediately. Telegram direct messages require a one-time bot link per user and remain off until each user enables them.
+                      Gmail notifications use your Control Hub account email immediately. Telegram
+                      direct messages require a one-time bot link per user and remain off until each
+                      user enables them.
                     </p>
                   </div>
                 </div>
@@ -423,7 +546,7 @@ export default function SettingsPage(): ReactNode {
                     ? 'You have unsaved notification preference changes.'
                     : isTelegramPending
                       ? 'Telegram is waiting for your /start confirmation. This page refreshes automatically while the link is pending.'
-                    : 'Your notification preferences are saved to your account profile.'}
+                      : 'Your notification preferences are saved to your account profile.'}
               </p>
             </CardContent>
           </Card>
@@ -438,7 +561,8 @@ export default function SettingsPage(): ReactNode {
           <DialogHeader>
             <DialogTitle>Link Telegram notifications</DialogTitle>
             <DialogDescription>
-              Use Telegram Web to open your Control Hub bot, then send the one-time command below to finish linking this account.
+              Use Telegram Web to open your Control Hub bot, then send the one-time command below to
+              finish linking this account.
             </DialogDescription>
           </DialogHeader>
 
@@ -446,7 +570,13 @@ export default function SettingsPage(): ReactNode {
             <div className="rounded-lg border border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-800 dark:bg-zinc-900/60">
               <p className="text-sm font-medium text-zinc-950 dark:text-zinc-50">Steps</p>
               <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-zinc-600 dark:text-zinc-400">
-                <li>Copy the one-time <code className="rounded bg-zinc-200/70 px-1.5 py-0.5 text-[13px] dark:bg-zinc-800">/start</code> command below.</li>
+                <li>
+                  Copy the one-time{' '}
+                  <code className="rounded bg-zinc-200/70 px-1.5 py-0.5 text-[13px] dark:bg-zinc-800">
+                    /start
+                  </code>{' '}
+                  command below.
+                </li>
                 <li>Open Telegram Web for the Control Hub bot.</li>
                 <li>Paste the command into the chat and send it once.</li>
                 <li>Return here and wait for the badge to switch to linked.</li>
@@ -459,7 +589,8 @@ export default function SettingsPage(): ReactNode {
               </p>
               <div className="rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950">
                 <p className="break-all font-mono text-sm text-zinc-900 dark:text-zinc-100">
-                  {telegramLinkDialog.startCommand ?? 'Unable to generate the one-time /start command.'}
+                  {telegramLinkDialog.startCommand ??
+                    'Unable to generate the one-time /start command.'}
                 </p>
               </div>
               <p className="text-xs text-zinc-500 dark:text-zinc-500">
@@ -469,17 +600,36 @@ export default function SettingsPage(): ReactNode {
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleOpenTelegramWeb} disabled={!telegramLinkDialog.webUrl}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleOpenTelegramWeb}
+              disabled={!telegramLinkDialog.webUrl}
+            >
               <ExternalLink className="h-4 w-4" />
               Open Telegram Web
             </Button>
-            <Button type="button" onClick={() => void handleCopyTelegramStartCommand()} disabled={!telegramLinkDialog.startCommand}>
+            <Button
+              type="button"
+              onClick={() => void handleCopyTelegramStartCommand()}
+              disabled={!telegramLinkDialog.startCommand}
+            >
               <Copy className="h-4 w-4" />
               Copy /start command
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmActionDialog
+        open={disconnectDialogOpen}
+        onOpenChange={setDisconnectDialogOpen}
+        title="Disconnect Telegram?"
+        description="Telegram notifications will stop for this Control Hub account, any pending link command will be invalidated, and this Telegram identity will become available to connect to a different account."
+        confirmLabel="Disconnect Telegram"
+        isPending={disconnectTelegram.isPending}
+        onConfirm={() => void handleDisconnectTelegram()}
+      />
     </div>
   );
 }

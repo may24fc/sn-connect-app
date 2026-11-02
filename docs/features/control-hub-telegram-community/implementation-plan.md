@@ -18,6 +18,7 @@ Telegram supplies forum routing through `message_thread_id`, identifies senders 
 
 - Add `telegram_account_links` with unique Control Hub user ID, Telegram user ID, private chat ID, username, and link timestamps. Backfill existing private-chat links, where the private chat ID identifies the Telegram user.
 - Update the existing `/start <token>` flow to upsert this link while preserving notification preferences. Existing Settings APIs and client response shapes remain compatible.
+- Add a self-service, server-confirmed Telegram disconnect action in Settings. It atomically removes the normalized account link, disables Telegram delivery, clears legacy chat metadata and pending link tokens, and writes an audit record so the Telegram identity can be linked to a different Control Hub account.
 - Use a dedicated community bot with `TELEGRAM_COMMUNITY_BOT_TOKEN`, `TELEGRAM_COMMUNITY_BOT_USERNAME`, and a fail-closed `TELEGRAM_COMMUNITY_WEBHOOK_SECRET`; preserve the existing bot for private notification and account-linking behavior.
 - Add runtime configuration for the existing forum and its four topics:
   - `TELEGRAM_COMMUNITY_CHAT_ID`
@@ -103,12 +104,14 @@ Telegram supplies forum routing through `message_thread_id`, identifies senders 
 - Recognition APIs allow active employees to nominate another employee and allow admins or super-admins to review evidence, edit selections and public copy, approve or reject periods, publish approved periods, and retry failed publications.
 - Recognition period responses distinguish weekly and monthly periods and expose Manila period bounds, approval state, selected recipients and categories, publication state, and recent-recipient warnings.
 - A super-admin retry endpoint retries a specific failed ticket event or recognition publication.
+- The existing Telegram-link endpoint accepts an owner-only `DELETE` request and returns reconciled unlinked notification preferences; administrators cannot disconnect another user's identity.
 - Existing ticket API contracts, ticket statuses, notification-preference payloads, and Settings UI remain backward-compatible.
 
 ## Test Plan
 
 - Migration tests: constraints, RLS, existing-link backfill, duplicate source prevention, outbox trigger behavior, recognition-period idempotency, nomination access, and local rollback.
 - Webhook tests: secret validation, `/start` linking, allowed topics, author conversion, moderator conversion, role rejection, unlinked authors, missing replies, captions, duplicate updates, and preservation of private project intake.
+- Account-link tests: self-service disconnect succeeds atomically, rejects unauthenticated and cross-account requests, invalidates pending tokens, disables Telegram delivery, preserves unrelated preferences, and permits the Telegram identity to be linked elsewhere afterward.
 - Ticket tests: correct topic mappings, atomic origin creation, every allowed and suppressed milestone, HR-ticket exclusion, IT reclassification behavior, and failures that leave the ticket committed with retryable delivery state.
 - Recognition-period tests: Manila weekly and monthly boundaries, first-Monday monthly replacement, variable weekly recipient counts, exactly one monthly recipient per category, no ranking, approval requirements, skipped unapproved posts, explicit late publication, recent-recipient warnings, and duplicate prevention.
 - Nomination tests: reject self-nominations and inactive nominees, preserve evidence links and periods, and enforce employee submission plus admin or super-admin review permissions.

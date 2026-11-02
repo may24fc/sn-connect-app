@@ -12,6 +12,10 @@ The v1 design prioritizes delivery reliability, privacy, and auditable decisions
 - [Recognition workspace](../../../apps/web/src/components/recognition/RecognitionAdminPage.tsx) — HR evidence review, editing, approval, and explicit publishing.
 - [Database migration](../../../supabase/migrations/20261024000001_control_hub_telegram_community.sql) — uniqueness, outbox, audit state, and transactional conversion.
 
+- [Telegram link endpoint](../../../apps/web/src/app/api/users/[id]/notification-preferences/telegram-link/route.ts) - owner-only connect and disconnect operations.
+- [Telegram disconnect transaction](../../../supabase/migrations/20261102000001_disconnect_telegram_account.sql) - atomic link cleanup, delivery disablement, token invalidation, and audit evidence.
+- [Settings workspace](../../../apps/web/src/components/settings/SettingsPage.tsx) - confirmed self-service disconnect and connection status.
+
 ## Reliability and Workflow Entries
 
 ### Implemented — Durable ticket delivery
@@ -32,6 +36,12 @@ The v1 design prioritizes delivery reliability, privacy, and auditable decisions
 - Solution: all remain server-confirmed with disabled pending controls and explicit errors; no optimistic cache mutation is used.
 - Validation: employee mobile and HR desktop Playwright flows passed 2/2; screenshots were inspected.
 
+### Implemented - Atomic self-service Telegram disconnect
+
+- Problem/evidence: one Telegram identity can map to only one Control Hub account, but there was no safe way for an owner to release an existing link before connecting another account.
+- Solution: an owner-only, server-confirmed mutation runs a single database transaction that deletes the normalized link, disables Telegram delivery, clears legacy chat fields and pending tokens, and records a privacy-safe audit event. Admins cannot disconnect another user's identity through this endpoint.
+- Validation: migration `20261102000001` applied to local Supabase; a rollback-only database transaction confirmed link removal, delivery disablement, pending-token clearing, unrelated preference preservation, and audit creation. Route tests passed 4/4; desktop and mobile Playwright flows passed 2/2 and screenshots were inspected. Schema lint reported only the pre-existing `get_knowledge_source_versions` error.
+
 ## Visual Guide
 
 ```mermaid
@@ -47,6 +57,8 @@ flowchart LR
 ```
 
 ## Change Log
+
+- 2026-11-02: Added and locally database-validated the atomic, owner-only Telegram disconnect flow to remove account-transfer friction without weakening one-to-one identity uniqueness. No latency improvement is claimed.
 
 - 2026-10-24: Added v1 reliability, privacy, and server-confirmed interaction decisions. No performance measurement was required or claimed.
 - 2026-10-24: Added atomic delivery claims, immutable submission timestamps, local schema validation, and focused browser verification.

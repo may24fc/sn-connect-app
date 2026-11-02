@@ -1,14 +1,24 @@
 import { getActiveUserRole } from '@/lib/auth/active-role';
-import { createTelegramLinkToken, getStoredNotificationPreferencesForUser, buildTelegramStartUrl } from '@/lib/settings/notification-preferences.server';
+import {
+  NOTIFICATION_PREFERENCES_ROLE_TYPE,
+  toClientNotificationPreferences,
+} from '@/lib/settings/notification-preferences';
+import {
+  buildTelegramStartUrl,
+  createTelegramLinkToken,
+  getStoredNotificationPreferencesForUser,
+} from '@/lib/settings/notification-preferences.server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { NOTIFICATION_PREFERENCES_ROLE_TYPE, toClientNotificationPreferences } from '@/lib/settings/notification-preferences';
 import { type NextRequest, NextResponse } from 'next/server';
 
 const ADMIN_ROLES = ['admin', 'super_admin'];
 const TELEGRAM_LINK_TTL_MS = 15 * 60 * 1000;
 
 async function authorizeTargetUser(targetUserId: string): Promise<
-  | { supabase: Awaited<ReturnType<typeof createSupabaseServerClient>> }
+  | {
+      supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
+      actorUserId: string;
+    }
   | { response: NextResponse }
 > {
   const supabase = await createSupabaseServerClient();
@@ -29,7 +39,7 @@ async function authorizeTargetUser(targetUserId: string): Promise<
     }
   }
 
-  return { supabase };
+  return { supabase, actorUserId: user.id };
 }
 
 export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -83,6 +93,41 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     });
   } catch (error) {
     console.error('Error creating Telegram link token:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: targetUserId } = await params;
+    const authorized = await authorizeTargetUser(targetUserId);
+
+    if ('response' in authorized) {
+      return authorized.response;
+    }
+
+    if (authorized.actorUserId !== targetUserId) {
+      return NextResponse.json(
+        { error: 'Only the account owner can disconnect Telegram' },
+        { status: 403 }
+      );
+    }
+
+    const { data, error } = await authorized.supabase.rpc('disconnect_telegram_account', {
+      p_user_id: targetUserId,
+    });
+
+    if (error) {
+      console.error('Failed to disconnect Telegram account:', error);
+      return NextResponse.json({ error: 'Failed to disconnect Telegram account' }, { status: 500 });
+    }
+
+    return NextResponse.json({ data: toClientNotificationPreferences(data) });
+  } catch (error) {
+    console.error('Error disconnecting Telegram account:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

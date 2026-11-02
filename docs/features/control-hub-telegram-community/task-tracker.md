@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Local implementation and the production portal build are validated, including a separate webhook and token path for the new dedicated Forum bot. Production database migrations are applied, and the user confirmed the dedicated bot environment variables are configured. Application deployment is in progress; webhook registration, forum routing IDs, smoke testing, and the pilot follow deployment. The existing notification/linking bot and its n8n `Control Hub Notifications` credential remain unchanged.
+The dedicated community-bot application and webhook are live. A self-service Telegram disconnect flow is implemented and validated locally so an identity can move between Control Hub accounts without weakening the one-to-one mapping; its production rollout is in progress. Super-admin linking, forum routing IDs, smoke testing, and the pilot remain.
 
 See also [Optimization Record](optimization.md).
 
@@ -21,9 +21,13 @@ See also [Optimization Record](optimization.md).
 - [x] Refresh code knowledge graph — 2026-10-24; final `graphify update .` completed with 13,910 nodes and 33,504 edges.
 - [x] Separate Forum traffic from the existing notification/linking bot - 2026-11-02; added `/api/webhooks/telegram-community`, dedicated community token/secret configuration, community sender routing, and pre-configuration `/topicid` discovery; web typecheck and 4 focused Vitest assertions passed.
 - [x] Refresh the code knowledge graph after the dedicated-bot split - 2026-11-02; `graphify update .` completed with 14,472 nodes and 35,042 edges.
+- [x] Deploy the Control Hub Telegram Community feature to production - 2026-11-02; pushed scoped commit `4b3ebdc0` to `main`; Supabase migration workflow and both native Vercel deployments succeeded; production community webhook probe returned the expected HTTP 401.
+- [x] Register the dedicated Forum bot webhook - 2026-11-02; Telegram `setWebhook` succeeded for `@SNControlHubCommunityBot`, targeting `https://app.sngroup.com.au/api/webhooks/telegram-community`; `getWebhookInfo` reported zero pending updates and no last error.
+- [x] Validate self-service Telegram disconnect locally - 2026-11-02; migration `20261102000001` applied to local Supabase; rollback-only database test confirmed link removal, preference preservation, token clearing, and audit creation; route tests passed 4/4, portal typecheck passed, and desktop/mobile Playwright passed 2/2 with screenshots inspected. Schema lint reported only the pre-existing `get_knowledge_source_versions` error.
 
 ### In Progress
-- [ ] Complete live Telegram Forum routing - production database is migrated; next action is to deploy the dedicated community webhook, register it with Telegram, link the super-admin through the existing bot, capture the shared forum chat ID and four topic IDs, configure routing, and run smoke tests.
+- [ ] Deploy self-service Telegram disconnect - local validation is complete and the user explicitly approved production rollout. Next action is to push the scoped commit and verify the production migration and Vercel deployment statuses.
+- [ ] Complete live Telegram Forum routing - link the super-admin through the existing bot, capture the shared forum chat ID and four topic IDs, configure routing, and run smoke tests.
 
 ### Deferred
 - [ ] One-week production pilot - requires a successful dedicated-bot deployment, routing configuration, and smoke test.
@@ -32,9 +36,14 @@ See also [Optimization Record](optimization.md).
 - [ ] Equivalent XP for PA, UHP, forms, nominations, or app usage — intentionally excluded to keep Project Tracker XP product-specific.
 
 ### Blocked
-- [ ] None.
+
+None.
 
 ## Session History
+- 2026-11-02: Docker became available and migration `20261102000001` was applied locally. A rollback-only transaction verified that disconnecting disables Telegram, removes the normalized identity link, clears pending link data, preserves the Gmail preference, and creates an audit event. Production rollout was explicitly approved and is in progress.
+- 2026-11-02: Implemented an owner-only, server-confirmed Telegram disconnect action in Settings. The database function atomically deletes `telegram_account_links`, disables Telegram delivery, clears legacy chat details and pending tokens, and writes an audit event. Validation passed: focused Biome check, portal typecheck, API tests 4/4, and Playwright desktop/mobile 2/2 with screenshots inspected. `graphify update .` completed with 14,487 nodes and 35,067 edges. Local database execution remains blocked because Docker Desktop is unavailable; production was not changed.
+- 2026-11-02: Registered the dedicated production webhook for `@SNControlHubCommunityBot` using secrets stored in the ignored `apps/web/.env.local`. Telegram confirmed the production URL, `allowed_updates=message`, zero pending updates, and no last error. No existing bot or n8n credential was modified. The next live step is super-admin linking followed by `/topicid` discovery in each Forum topic.
+- 2026-11-02: Deployed scoped commit `4b3ebdc0` to production. `sn-connect-portal` and `sn-connect-www` Vercel statuses succeeded, the Supabase migration workflow succeeded, and `POST https://app.sngroup.com.au/api/webhooks/telegram-community` without a secret returned HTTP 401. The super-admin can now link through the existing bot. Telegram `setWebhook` remains pending because production secrets cannot be read back into this local session.
 - 2026-11-02: User confirmed the new community-bot production variables are configured and authorized deployment. Corrected the recognition cron ownership from the public-site Vercel config to `apps/web/vercel.json`. Pre-deployment validation passed: portal typecheck, focused Vitest suite (8/8), Vercel JSON parsing, and `pnpm build:web`. A scoped production commit excludes unrelated payroll, payout-test, skill, PDF, and graph-cache worktree changes.
 - 2026-11-02: Added a dedicated Forum-bot transport while preserving the existing linking/notification bot and n8n credential. `/topicid` now works for linked admins and super-admins before `TELEGRAM_COMMUNITY_CHAT_ID` is configured, resolving the discovery dependency. Focused validation passed: `pnpm --filter @hr-portal/web typecheck` and `pnpm vitest run tests/api/telegram-community-webhook-route.test.ts tests/lib/telegram-community-webhook.test.ts` (4/4). Production deployment and Telegram webhook registration remain blocked on securely accessible new-bot credentials and a deployment path; no forum command should be treated as live yet.
 - 2026-10-24: **How `20261024000001`–`20261024000006` reached production.** They were applied to the linked production project `tccdupkjmwwxcvpqnpeb` unintentionally by the Ask AI reflections session, which ran `pnpm db:migrate` (`supabase db push`, linked project, not local) while intending a local apply; it also applied `20261025000001_create_performance_insight_conversations.sql`. This was not an approved rollout. It included the `okrs`/`kpis` `submitted_at` backfill in `20261024000002` and the `telegram_account_links` backfill in `20261024000006`. No rollback was attempted; the user chose to keep them. Application code for this feature is not yet deployed, so production schema is ahead of production code until rollout. See `docs/features/performance-reflection-insights/task-tracker.md`.

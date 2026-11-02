@@ -2,9 +2,9 @@
 
 import {
   DEFAULT_NOTIFICATION_PREFERENCES,
+  type NotificationPreferences,
   extractNotificationPreferencesUpdate,
   normalizeNotificationPreferences,
-  type NotificationPreferences,
 } from '@/lib/settings/notification-preferences';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -27,7 +27,9 @@ export function useNotificationPreferences(userId: string | undefined) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => null);
-        throw new Error(error?.details || error?.error || 'Failed to load notification preferences');
+        throw new Error(
+          error?.details || error?.error || 'Failed to load notification preferences'
+        );
       }
 
       const json = await response.json();
@@ -36,8 +38,7 @@ export function useNotificationPreferences(userId: string | undefined) {
     enabled: Boolean(userId),
     staleTime: 60_000,
     placeholderData: DEFAULT_NOTIFICATION_PREFERENCES,
-    refetchInterval: (query) =>
-      query.state.data?.telegramLinkState === 'pending' ? 5_000 : false,
+    refetchInterval: (query) => (query.state.data?.telegramLinkState === 'pending' ? 5_000 : false),
   });
 }
 
@@ -54,7 +55,9 @@ export function useUpdateNotificationPreferences(userId: string | undefined) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => null);
-        throw new Error(error?.details || error?.error || 'Failed to update notification preferences');
+        throw new Error(
+          error?.details || error?.error || 'Failed to update notification preferences'
+        );
       }
 
       const json = await response.json();
@@ -101,7 +104,9 @@ export function useCreateTelegramLink(userId: string | undefined) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => null);
-        throw new Error(error?.details || error?.error || 'Failed to create Telegram connection link');
+        throw new Error(
+          error?.details || error?.error || 'Failed to create Telegram connection link'
+        );
       }
 
       const json = await response.json();
@@ -117,6 +122,36 @@ export function useCreateTelegramLink(userId: string | undefined) {
       }
 
       queryClient.setQueryData(notificationPreferenceKeys.user(userId), data.preferences);
+    },
+  });
+}
+
+export function useDisconnectTelegram(userId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (): Promise<NotificationPreferences> => {
+      const response = await fetch(`/api/users/${userId}/notification-preferences/telegram-link`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        throw new Error(error?.details || error?.error || 'Failed to disconnect Telegram');
+      }
+
+      const json = await response.json();
+      return normalizeNotificationPreferences(json.data);
+    },
+    onSuccess: (data) => {
+      if (userId) {
+        queryClient.setQueryData(notificationPreferenceKeys.user(userId), data);
+      }
+    },
+    onSettled: () => {
+      if (userId) {
+        queryClient.invalidateQueries({ queryKey: notificationPreferenceKeys.user(userId) });
+      }
     },
   });
 }
