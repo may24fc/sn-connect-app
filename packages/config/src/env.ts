@@ -7,9 +7,7 @@ const envSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY is required'),
 
   // OpenAI
-  OPENAI_API_KEY: z
-    .string()
-    .startsWith('sk-', "OPENAI_API_KEY must start with 'sk-'"),
+  OPENAI_API_KEY: z.string().startsWith('sk-', "OPENAI_API_KEY must start with 'sk-'"),
 
   // JWT
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters for security'),
@@ -31,6 +29,14 @@ const envSchema = z.object({
   TELEGRAM_BOT_USERNAME: z.string().optional(),
   TELEGRAM_WEBHOOK_SECRET: z.string().optional(),
   TELEGRAM_CHAT_ID: z.string().optional(),
+  TELEGRAM_COMMUNITY_BOT_TOKEN: z.string().optional(),
+  TELEGRAM_COMMUNITY_BOT_USERNAME: z.string().optional(),
+  TELEGRAM_COMMUNITY_WEBHOOK_SECRET: z.string().optional(),
+  TELEGRAM_COMMUNITY_CHAT_ID: z.string().optional(),
+  TELEGRAM_GENERAL_IDEAS_TOPIC_ID: z.string().optional(),
+  TELEGRAM_HELP_BUG_TOPIC_ID: z.string().optional(),
+  TELEGRAM_TICKET_PROGRESS_TOPIC_ID: z.string().optional(),
+  TELEGRAM_COMMUNITY_HIGHLIGHTS_TOPIC_ID: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

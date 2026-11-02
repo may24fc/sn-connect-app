@@ -2,6 +2,7 @@
 
 import {
   Activity,
+  Award,
   BarChart3,
   BellRing,
   Briefcase,
@@ -127,6 +128,7 @@ const employeeNavItems: Array<NavItem> = [
     activeFor: ['/tasks', '/projects'],
   },
   { label: 'Tickets', href: '/tickets', icon: LifeBuoy },
+  { label: 'Recognition', href: '/recognition', icon: Award },
   { label: 'Documents', href: '/files', icon: FolderOpen },
   { label: 'Announcements', href: '/announcements', icon: Megaphone },
   { label: 'Resources', href: '/information-hub', icon: Library },
@@ -156,6 +158,7 @@ const internNavItems: Array<NavItem> = [
     activeFor: ['/tasks', '/projects'],
   },
   { label: 'Tickets', href: '/tickets', icon: LifeBuoy },
+  { label: 'Recognition', href: '/recognition', icon: Award },
   { label: 'Documents', href: '/files', icon: FolderOpen },
   { label: 'Announcements', href: '/announcements', icon: Megaphone },
   { label: 'Resources', href: '/information-hub', icon: Library },
@@ -207,6 +210,7 @@ const adminNavItems: Array<NavItem> = [
   },
   { label: 'Announcements', href: '/admin/announcements', icon: Megaphone },
   { label: 'Tickets', href: '/admin/tickets', icon: LifeBuoy },
+  { label: 'Recognition', href: '/admin/recognition', icon: Award },
 ];
 
 // Super Admin navigation - same as admin plus payroll approvals
@@ -255,6 +259,7 @@ const superAdminNavItems: Array<NavItem> = [
     activeFor: ['/super-admin/announcements'],
   },
   { label: 'Tickets', href: '/super-admin/tickets', icon: LifeBuoy },
+  { label: 'Recognition', href: '/admin/recognition', icon: Award },
 ];
 
 const workspaceUserNavItems: Array<NavItem> = [
@@ -331,6 +336,7 @@ const adminInternalSectionConfig: ReadonlyArray<{
       '/super-admin/announcements',
       '/admin/tickets',
       '/super-admin/tickets',
+      '/admin/recognition',
     ],
   },
 ];
@@ -356,7 +362,7 @@ const selfServiceInternalSectionConfig: ReadonlyArray<{
   },
   {
     title: 'Knowledge & Support',
-    hrefs: ['/files', '/announcements', '/information-hub', '/tickets'],
+    hrefs: ['/files', '/announcements', '/information-hub', '/tickets', '/recognition'],
   },
 ];
 

@@ -1,19 +1,30 @@
-import { sendTelegramMessage } from '@/lib/telegram';
-import { NOTIFICATION_PREFERENCES_ROLE_TYPE, normalizeStoredNotificationPreferences } from '@/lib/settings/notification-preferences';
-import { processProjectIntakeMessage } from '@/lib/intake/process-project-intake-message';
-import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { inngest } from '@/lib/inngest/client';
+import { processProjectIntakeMessage } from '@/lib/intake/process-project-intake-message';
+import {
+  NOTIFICATION_PREFERENCES_ROLE_TYPE,
+  normalizeStoredNotificationPreferences,
+} from '@/lib/settings/notification-preferences';
+import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { sendTelegramMessage } from '@/lib/telegram';
 import { requestUhpVolumePointsTelegramUpdate } from '@/lib/uhp-volume-points-manual-send';
 import { NextResponse } from 'next/server';
 
 interface TelegramUpdate {
+  update_id?: number;
   message?: {
     message_id?: number;
     text?: string;
     caption?: string;
     voice?: { file_id?: string; mime_type?: string };
-    chat?: { id?: number | string };
+    message_thread_id?: number;
+    chat?: { id?: number | string; type?: string };
     from?: { id?: number; username?: string };
+    reply_to_message?: {
+      message_id?: number;
+      text?: string;
+      caption?: string;
+      from?: { id?: number; username?: string };
+    };
   };
 }
 
@@ -75,7 +86,12 @@ async function handleVolumePointsCommand(update: TelegramUpdate): Promise<boolea
   const chatId = message?.chat?.id;
   if (chatId === undefined || chatId === null) return true;
   const respond = (responseText: string) =>
-    sendTelegramMessage({ chatId: String(chatId), text: responseText });
+    sendTelegramMessage({
+      chatId: String(chatId),
+      ...(message?.message_thread_id ? { messageThreadId: message.message_thread_id } : {}),
+      ...(message?.message_id ? { replyToMessageId: message.message_id } : {}),
+      text: responseText,
+    });
   const sender = await getVolumePointsLinkedUser(message?.from?.id);
   if (!sender) {
     await respond('Link your Telegram account from Control Hub Settings before using /vp.');
@@ -140,7 +156,6 @@ export async function POST(request: Request) {
     }
 
     if (await handleVolumePointsCommand(update)) return NextResponse.json({ ok: true });
-
     // ----- /start <token> account-linking flow (existing behaviour) -----
     if (text.startsWith('/start')) {
       const [, rawToken] = text.split(/\s+/, 2);
@@ -150,11 +165,11 @@ export async function POST(request: Request) {
 
       const admin = createSupabaseAdminClient();
       const { data, error } = await admin
-      .from('user_role_metadata')
-      .select('user_id, metadata')
-      .eq('role_type', NOTIFICATION_PREFERENCES_ROLE_TYPE)
-      .contains('metadata', { telegramLinkToken: rawToken })
-      .maybeSingle();
+        .from('user_role_metadata')
+        .select('user_id, metadata')
+        .eq('role_type', NOTIFICATION_PREFERENCES_ROLE_TYPE)
+        .contains('metadata', { telegramLinkToken: rawToken })
+        .maybeSingle();
 
       if (error || !data) {
         await sendTelegramMessage({
@@ -169,6 +184,33 @@ export async function POST(request: Request) {
         await sendTelegramMessage({
           chatId: String(chatId),
           text: 'This Telegram linking link is invalid or has expired. Please request a new link from Control Hub Settings.',
+        });
+        return NextResponse.json({ ok: true });
+      }
+
+      if (!update.message?.from?.id) {
+        return NextResponse.json(
+          { error: 'Telegram sender identity is required' },
+          { status: 400 }
+        );
+      }
+
+      const { error: linkError } = await admin.from('telegram_account_links').upsert(
+        {
+          user_id: data.user_id,
+          telegram_user_id: update.message.from.id,
+          private_chat_id: Number(chatId),
+          telegram_username: update.message.from.username?.trim() || null,
+          linked_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id' }
+      );
+      if (linkError) {
+        console.error('[Telegram] Failed to persist normalized account link:', linkError);
+        await sendTelegramMessage({
+          chatId: String(chatId),
+          text: 'This Telegram account is already linked elsewhere or could not be linked. Please contact an administrator.',
         });
         return NextResponse.json({ ok: true });
       }
@@ -202,7 +244,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    // ----- Project intake from CEO / super_admin / admin -----
+    // ----- Project intake from CEO / super_admin / admin (private chats only) -----
+    if (message?.chat?.type && message.chat.type !== 'private')
+      return NextResponse.json({ ok: true });
     if (!text && !voiceFileId) {
       return NextResponse.json({ ok: true });
     }
@@ -286,7 +330,10 @@ export async function POST(request: Request) {
         data: intakePayload,
       });
     } catch (queueError) {
-      console.error('[Telegram] Failed to queue project intake in Inngest, falling back to direct processing:', queueError);
+      console.error(
+        '[Telegram] Failed to queue project intake in Inngest, falling back to direct processing:',
+        queueError
+      );
 
       try {
         await processProjectIntakeMessage({

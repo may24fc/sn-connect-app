@@ -62,6 +62,9 @@ type Events = {
       submittedBy: string;
     };
   };
+  'telegram/ticket-delivery.requested': {
+    data: { deliveryEventId: string };
+  };
 };
 
 export const inngest = new Inngest({

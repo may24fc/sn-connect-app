@@ -19,6 +19,7 @@ import {
   type TicketStatus,
   type TicketTeam,
 } from './_lib';
+import { queuePendingTicketDeliveries } from '@/lib/telegram-community';
 
 interface TicketRow {
   id: string;
@@ -291,6 +292,10 @@ export async function POST(request: NextRequest) {
         hasAttachments: data.has_attachments,
       },
     });
+
+    queuePendingTicketDeliveries(data.id).catch((queueError) =>
+      console.error('[Tickets] Failed to queue Telegram outbox:', queueError)
+    );
 
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {

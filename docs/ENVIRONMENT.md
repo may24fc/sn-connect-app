@@ -120,6 +120,14 @@ Shared service-account credentials drive both the knowledge-base Drive sync and 
 | `TELEGRAM_BOT_USERNAME` | Bot username used to build the one-time `https://t.me/<bot>?start=<token>` account-link URL in Settings. | For Telegram |
 | `TELEGRAM_WEBHOOK_SECRET` | Expected in the `X-Telegram-Bot-Api-Secret-Token` header when Telegram calls the app webhook. Recommended in production. | No |
 | `TELEGRAM_CHAT_ID` | Destination chat/group ID for n8n digest delivery. | For n8n digests |
+| `TELEGRAM_COMMUNITY_BOT_TOKEN` | Token for the dedicated Control Hub Forum bot. Kept separate from the existing notification/linking bot. | For forum integration |
+| `TELEGRAM_COMMUNITY_BOT_USERNAME` | Username of the dedicated forum bot, without `@`; retained for operational identification. | For forum integration |
+| `TELEGRAM_COMMUNITY_WEBHOOK_SECRET` | Required secret for `POST /api/webhooks/telegram-community`; the route fails closed when this is unset. | For forum integration |
+| `TELEGRAM_COMMUNITY_CHAT_ID` | Numeric ID of the existing Control Hub Telegram Forum. | For forum integration |
+| `TELEGRAM_GENERAL_IDEAS_TOPIC_ID` | Topic ID that accepts replied-to `/ticket` idea conversions. | For forum integration |
+| `TELEGRAM_HELP_BUG_TOPIC_ID` | Topic ID that accepts replied-to `/ticket` bug/help conversions. | For forum integration |
+| `TELEGRAM_TICKET_PROGRESS_TOPIC_ID` | Topic ID receiving privacy-safe IT ticket milestones. | For forum integration |
+| `TELEGRAM_COMMUNITY_HIGHLIGHTS_TOPIC_ID` | Topic ID receiving HR-approved weekly/monthly recognition. | For forum integration |
 
 ---
 

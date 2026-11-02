@@ -19,6 +19,7 @@ import {
   type TicketStatus,
   type TicketTeam,
 } from '../_lib';
+import { queuePendingTicketDeliveries } from '@/lib/telegram-community';
 
 interface TicketRow {
   id: string;
@@ -255,6 +256,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         assignedTo: ticket.assigned_to,
       },
     });
+
+    queuePendingTicketDeliveries(ticket.id).catch((queueError) =>
+      console.error('[Tickets] Failed to queue Telegram outbox:', queueError)
+    );
 
     const profilesByUserId = await getEmployeeProfilesByUserId(
       supabaseAdmin,

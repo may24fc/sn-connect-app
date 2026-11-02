@@ -6,6 +6,7 @@ import { evaluateResume } from '@/lib/inngest/functions/evaluate-resume';
 import { processProjectIntake } from '@/lib/inngest/functions/process-project-intake';
 import { processExpenseReceipt } from '@/lib/inngest/functions/process-expense-receipt';
 import { deliverFivePercentSummary } from '@/lib/inngest/functions/deliver-five-percent-summary';
+import { deliverTelegramTicket, sweepTelegramTicketDeliveries } from '@/lib/inngest/functions/deliver-telegram-ticket';
 
 export const runtime = 'nodejs';
 
@@ -18,5 +19,7 @@ export const { GET, POST, PUT } = serve({
     processProjectIntake,
     processExpenseReceipt,
     deliverFivePercentSummary,
+    deliverTelegramTicket,
+    sweepTelegramTicketDeliveries,
   ],
 });
