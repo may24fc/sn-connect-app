@@ -7,10 +7,13 @@ export interface ImageQualityReport {
   issues: string[];
 }
 
-const MIN_LONG_SIDE = 1024;
+const MIN_LONG_SIDE = 800;
 const MIN_SHORT_SIDE = 600;
 const MIN_SHARPNESS_SCORE = 6;
 const MIN_CONTRAST_SCORE = 28;
+// Exported or scanned receipts at this size have smooth, anti-aliased text that scores low
+// on the Laplacian estimator even when perfectly legible, so blur is not used to reject them.
+const DIGITAL_RECEIPT_LONG_SIDE = 1600;
 
 function computeContrast(lumaValues: Uint8ClampedArray): number {
   const length = lumaValues.length;
@@ -122,7 +125,9 @@ export async function validateReceiptImageQuality(file: File): Promise<ImageQual
     );
   }
 
-  if (sharpnessScore < MIN_SHARPNESS_SCORE) {
+  const isHighResolutionDigital =
+    longSide >= DIGITAL_RECEIPT_LONG_SIDE && contrastScore >= MIN_CONTRAST_SCORE;
+  if (sharpnessScore < MIN_SHARPNESS_SCORE && !isHighResolutionDigital) {
     issues.push('Image appears blurry. Please retake with steadier focus and lighting.');
   }
 

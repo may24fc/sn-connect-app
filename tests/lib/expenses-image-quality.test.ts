@@ -4,14 +4,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 function buildImageData(
   width: number,
   height: number,
-  mode: 'flat' | 'checkerboard'
+  mode: 'flat' | 'checkerboard' | 'gradient'
 ): Uint8ClampedArray {
   const data = new Uint8ClampedArray(width * height * 4);
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const idx = (y * width + x) * 4;
-      const value = mode === 'flat' ? 128 : (x + y) % 2 === 0 ? 0 : 255;
+      const value =
+        mode === 'flat'
+          ? 128
+          : mode === 'gradient'
+            ? Math.round((x / Math.max(1, width - 1)) * 255)
+            : (x + y) % 2 === 0
+              ? 0
+              : 255;
 
       data[idx] = value;
       data[idx + 1] = value;
@@ -38,8 +45,8 @@ describe('validateReceiptImageQuality', () => {
     vi.stubGlobal(
       'createImageBitmap',
       vi.fn(async () => ({
-        width: 800,
-        height: 600,
+        width: 700,
+        height: 500,
         close: vi.fn(),
       }))
     );
@@ -54,7 +61,7 @@ describe('validateReceiptImageQuality', () => {
         height: 0,
         getContext: vi.fn(() => ({
           drawImage: vi.fn(),
-          getImageData: vi.fn(() => ({ data: buildImageData(800, 600, 'checkerboard') })),
+          getImageData: vi.fn(() => ({ data: buildImageData(700, 500, 'checkerboard') })),
         })),
       } as unknown as HTMLCanvasElement;
     }) as typeof document.createElement);
@@ -155,5 +162,48 @@ describe('validateReceiptImageQuality', () => {
       new File(['img'], 'portrait-receipt.jpg', { type: 'image/jpeg' })
     );
     expect(report.isValid).toBe(true);
+  });
+
+  function mockImage(width: number, height: number, mode: 'flat' | 'checkerboard' | 'gradient') {
+    const ratio = Math.max(width / 1200, height / 1200, 1);
+    const sampleWidth = Math.round(width / ratio);
+    const sampleHeight = Math.round(height / ratio);
+    vi.stubGlobal('createImageBitmap', vi.fn(async () => ({ width, height, close: vi.fn() })));
+    vi.spyOn(document, 'createElement').mockImplementation(((tagName: string) => {
+      if (tagName !== 'canvas') return originalCreateElement(tagName as keyof HTMLElementTagNameMap);
+      return {
+        width: 0,
+        height: 0,
+        getContext: vi.fn(() => ({
+          drawImage: vi.fn(),
+          getImageData: vi.fn(() => ({ data: buildImageData(sampleWidth, sampleHeight, mode) })),
+        })),
+      } as unknown as HTMLCanvasElement;
+    }) as typeof document.createElement);
+  }
+
+  it('accepts the 600x820 phone scan from Finance testing', async () => {
+    mockImage(600, 820, 'checkerboard');
+    const report = await validateReceiptImageQuality(
+      new File(['img'], 'phone-scan.jpg', { type: 'image/jpeg' })
+    );
+    expect(report.isValid).toBe(true);
+  });
+
+  it('does not reject a clean high-resolution digital receipt as blurry', async () => {
+    mockImage(1240, 1754, 'gradient');
+    const report = await validateReceiptImageQuality(
+      new File(['img'], 'digital-receipt.png', { type: 'image/png' })
+    );
+    expect(report.sharpnessScore).toBeLessThan(6);
+    expect(report.isValid).toBe(true);
+  });
+
+  it('still rejects a soft phone-resolution photo as blurry', async () => {
+    mockImage(1100, 800, 'gradient');
+    const report = await validateReceiptImageQuality(
+      new File(['img'], 'soft-photo.jpg', { type: 'image/jpeg' })
+    );
+    expect(report.issues.some((issue) => issue.includes('blurry'))).toBe(true);
   });
 });
