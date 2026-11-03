@@ -72,9 +72,9 @@
     "semantic_hash": ""
   },
   "apps/web/next-env.d.ts": {
-    "mtime": 1792119401.5862448,
-    "seen": 1792373717.3936608,
-    "ast_hash": "90426577ad8f38459f3e566411c85589",
+    "mtime": 1792725022.215588,
+    "seen": 1792726388.6710827,
+    "ast_hash": "7186a97a893460078d6a59ad66024291",
     "semantic_hash": ""
   },
   "apps/web/next.config.ts": {
@@ -444,9 +444,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/christmas-tree/_lib.ts": {
-    "mtime": 1792643867.551649,
-    "seen": 1792644131.6980848,
-    "ast_hash": "7d509ee41d3550db27ab71e679f37c3e",
+    "mtime": 1792724258.2253704,
+    "seen": 1792726388.6728108,
+    "ast_hash": "8c5572468ea8020a02142ee284fa12ae",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/christmas-tree/current/route.ts": {
@@ -2454,9 +2454,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/hooks/useChristmasTree.ts": {
-    "mtime": 1792643678.943606,
-    "seen": 1792644131.6987085,
-    "ast_hash": "4240227537085a6c7756d00d19b4c164",
+    "mtime": 1792724269.1702058,
+    "seen": 1792726388.6752412,
+    "ast_hash": "f55128e0be577ec6258ffbaf88654f58",
     "semantic_hash": ""
   },
   "apps/web/src/hooks/useCompanyPulse.ts": {
@@ -3174,8 +3174,8 @@
     "semantic_hash": "7a0dc3198c754c2a24e5a4a5466f950f"
   },
   "apps/web/src/lib/generated/application-update-summary.generated.ts": {
-    "mtime": 1792642608.7998543,
-    "seen": 1792644131.698914,
+    "mtime": 1792645866.5256145,
+    "seen": 1792726388.6760406,
     "ast_hash": "7322821048c7b2c5f9f9ddca7c61261a",
     "semantic_hash": "7322821048c7b2c5f9f9ddca7c61261a"
   },
@@ -3420,9 +3420,9 @@
     "semantic_hash": "d2be90d498e6b1fec8662b9ae1642723"
   },
   "apps/web/src/lib/schemas/christmas-tree.schema.ts": {
-    "mtime": 1792643561.0702443,
-    "seen": 1792644131.698972,
-    "ast_hash": "4f80653df7387053b6077ded031be7bf",
+    "mtime": 1792724269.4881518,
+    "seen": 1792726388.6763108,
+    "ast_hash": "8c4df0d639554552b74b59b7577050db",
     "semantic_hash": ""
   },
   "apps/web/src/lib/schemas/crm.schema.ts": {
@@ -3612,8 +3612,8 @@
     "semantic_hash": ""
   },
   "apps/web/tsconfig.json": {
-    "mtime": 1792065989.6943228,
-    "seen": 1792114392.054511,
+    "mtime": 1792725414.178302,
+    "seen": 1792726388.6766207,
     "ast_hash": "488e27ff857638b96dd615dbbbe22f51",
     "semantic_hash": ""
   },
@@ -10170,9 +10170,9 @@
     "semantic_hash": ""
   },
   "docs/apps/web/architecture/optimistic-ui.md": {
-    "mtime": 1792643817.57444,
-    "seen": 1792644131.7002575,
-    "ast_hash": "f6f8d69e81d4a179a14ca15f26fa013b",
+    "mtime": 1792724269.6997871,
+    "seen": 1792726388.6822226,
+    "ast_hash": "aa6dd7dde833fd7e51c81029922080cb",
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpAccessManagerDialog.tsx": {
@@ -11028,9 +11028,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx": {
-    "mtime": 1792643867.5816462,
-    "seen": 1792644131.6979165,
-    "ast_hash": "10b5a95865a57b28830ea100eaafd078",
+    "mtime": 1792726144.7187932,
+    "seen": 1792726388.6717749,
+    "ast_hash": "efdd394a5265faaa91def1b1b87beb4d",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/dashboard/components/KPIEntryWidget.tsx": {
@@ -13104,15 +13104,15 @@
     "semantic_hash": ""
   },
   "e2e/christmas-tree-layout.spec.ts": {
-    "mtime": 1792644108.309265,
-    "seen": 1792644131.6991754,
-    "ast_hash": "86152f46c8bdc8af6df275ed2a5d0eee",
+    "mtime": 1792725231.60366,
+    "seen": 1792726388.6773806,
+    "ast_hash": "f41875d99dbf79aa038abd7586d84d3a",
     "semantic_hash": ""
   },
   "docs/features/christmas-tree/task-tracker.md": {
-    "mtime": 1792642893.785844,
-    "seen": 1792644131.7003124,
-    "ast_hash": "84dd332a1eba17d6bd37d7758e1de1b6",
+    "mtime": 1792726343.3940341,
+    "seen": 1792726388.6827474,
+    "ast_hash": "f49bd98b8e146761cba16cec3b1ad4d2",
     "semantic_hash": ""
   },
   "apps/web/src/components/data-display/DateRangeFilter.tsx": {
@@ -13140,9 +13140,9 @@
     "semantic_hash": ""
   },
   "docs/features/christmas-tree/optimization.md": {
-    "mtime": 1792580910.9286935,
-    "seen": 1792640129.6668916,
-    "ast_hash": "d370eeb105bf460a6cb8b0aab6520bb3",
+    "mtime": 1792645408.321768,
+    "seen": 1792726388.6827393,
+    "ast_hash": "fa854bc7fca39445ab67ac54362c88f7",
     "semantic_hash": ""
   },
   "e2e/okr-kpi-historical-roster.spec.ts": {
@@ -13476,9 +13476,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/christmas-tree/decorations/route.ts": {
-    "mtime": 1792643642.0502274,
-    "seen": 1792644131.6980872,
-    "ast_hash": "07fbd42a9df90f6a52efd301604c530e",
+    "mtime": 1792726144.6918569,
+    "seen": 1792726388.672842,
+    "ast_hash": "3fd661c7f9e894a08fedfaacb9028582",
     "semantic_hash": ""
   },
   "supabase/migrations/20261022000001_add_christmas_tree_admin_controls.sql": {
@@ -13488,15 +13488,15 @@
     "semantic_hash": ""
   },
   "tests/api/christmas-tree-admin-controls.test.ts": {
-    "mtime": 1792643956.85609,
-    "seen": 1792644131.699965,
-    "ast_hash": "185daae8d4d3d4c772ef9c6914e4689d",
+    "mtime": 1792726208.6666832,
+    "seen": 1792726388.6808248,
+    "ast_hash": "c92790b8960398361a6aee5fb4d63af9",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/christmas-tree/ChristmasTreeStrand.tsx": {
-    "mtime": 1792644108.1142006,
-    "seen": 1792644131.697914,
-    "ast_hash": "73b5675727a6adbde5876fb5e532b05a",
+    "mtime": 1792644914.9467678,
+    "seen": 1792726388.671769,
+    "ast_hash": "08b911a52c0f6398671a7f9567ce80a9",
     "semantic_hash": ""
   },
   "supabase/migrations/20261022000002_add_christmas_tree_strand_geometry.sql": {
