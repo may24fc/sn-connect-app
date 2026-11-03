@@ -130,7 +130,9 @@ describe('UHP n8n workflows', () => {
     const format = new Function('$json', '$', code) as (
       input: unknown,
       lookup: unknown
-    ) => Array<{ json: { telegramText: string; intervalStartedAt: string } }>;
+    ) => Array<{
+      json: { telegramText: string; intervalStartedAt: string; totalActualVp: number };
+    }>;
     const lookup = () => ({
       first: () => ({
         json: {
@@ -162,6 +164,18 @@ describe('UHP n8n workflows', () => {
     expect(noChangeMessage).toContain('Jordan | 10 VP');
     expect(noChangeMessage).toContain('No changes since the previous digest.');
     expect(noChangeMessage).not.toContain('target');
+
+    for (const [totalActualVp, displayedTotal] of [
+      [206.5 + 99.7 + 112.35, '418.55'],
+      [0.1 + 0.2, '0.3'],
+      [99.999, '100'],
+      [206.5, '206.5'],
+      [0, '0'],
+    ] as const) {
+      const { json } = format({ data: { ...digest, totalActualVp } }, lookup)[0];
+      expect(json.telegramText.split('\n')).toContain(`TOTAL  ${displayedTotal} VP`);
+      expect(json.totalActualVp).toBe(totalActualVp);
+    }
 
     const changedMessage = format(
       {
