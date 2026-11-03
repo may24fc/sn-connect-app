@@ -71,14 +71,18 @@ type FinanceLedgerClient = {
 const money = (amount: number, currency: string) =>
   new Intl.NumberFormat('en-AU', { style: 'currency', currency }).format(amount);
 const label = (value: string | null) => (value ?? 'unknown').replaceAll('_', ' ');
+const paymentLabel = (value: string | null) => (value === 'confirmed' ? 'paid' : label(value));
+const matchLabel = (value: string | null) =>
+  value === 'variance_flagged' ? 'Amount differs' : value === 'resolved' ? 'matched' : label(value);
 const statusBadge = (value: string | null) => {
   const base = 'inline-block rounded-full px-2 py-0.5 text-xs font-medium capitalize';
-  if (value === 'approved' || value === 'confirmed' || value === 'matched')
+  if (value === 'approved' || value === 'confirmed' || value === 'matched' || value === 'resolved')
     return `${base} bg-emerald-100 text-emerald-800`;
   if (value === 'rejected' || value === 'variance_flagged')
     return `${base} bg-red-100 text-red-800`;
-  if (value === 'unmatched' || value === 'unpaid')
-    return `${base} bg-orange-100 text-orange-800`;
+  if (value === 'unmatched') return `${base} bg-sky-100 text-sky-900`;
+  if (value === 'unpaid') return `${base} bg-orange-100 text-orange-800`;
+  if (value === null || value === 'unknown') return `${base} bg-slate-100 text-slate-700`;
   return `${base} bg-amber-100 text-amber-900`;
 };
 
@@ -223,7 +227,13 @@ export default async function FinanceExpenses({
       {tab === 'review' ? (
         <>
           {context.capabilities.role === 'super_admin' ? <FinanceApproverSettings /> : null}
-          <FinanceUnifiedReviewQueue />
+          <FinanceUnifiedReviewQueue
+            deskHref={
+              context.capabilities.role === 'admin' || context.capabilities.role === 'super_admin'
+                ? '/admin/expenses'
+                : '/expenses/desk'
+            }
+          />
         </>
       ) : tab === 'subscriptions' ? (
         <FinanceCatalogPanel
@@ -309,14 +319,24 @@ export default async function FinanceExpenses({
                       <span className={statusBadge(row.approval_state)}>{label(row.approval_state)}</span>
                     </td>
                     <td className="p-3">
-                      <span className={statusBadge(row.payment_status)}>{label(row.payment_status)}</span>
+                      <span className={statusBadge(row.payment_status)}>{paymentLabel(row.payment_status)}</span>
                     </td>
                     <td className="p-3">
-                      <span className={statusBadge(row.match_status)}>{row.match_status === 'variance_flagged' ? 'Amount differs' : label(row.match_status)}</span>
+                      <span
+                        className={statusBadge(row.match_status)}
+                        title={row.match_status === 'resolved' ? 'Amount difference signed off' : undefined}
+                      >
+                        {matchLabel(row.match_status)}
+                      </span>
                     </td>
                     <td className="p-3">{row.receipt_document_id ? 'Attached' : 'Awaiting'}</td>
                     <td className="p-3 text-right">
-                      <FinanceExpenseCorrection id={row.id} paymentSource={row.payment_source} paymentStatus={row.payment_status} />
+                      <FinanceExpenseCorrection
+                        id={row.id}
+                        categoryCode={row.category_code}
+                        paymentSource={row.payment_source}
+                        paymentStatus={row.payment_status}
+                      />
                     </td>
                   </tr>
                 ))}

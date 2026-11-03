@@ -13,7 +13,8 @@ import { downloadMonthlyExpenseReport } from '@/hooks/useExpenseImport';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useDeleteExpense, useExpenses, useLeadershipDecision } from '@/hooks/useExpenses';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { formatFinanceDate } from '@/lib/format';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Button,
   Card,
@@ -66,9 +67,13 @@ const SETTLED_MATCH_STATUSES = new Set(['matched', 'resolved']);
 
 export default function AdminExpensesDashboard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const { addToast } = useToast();
-  const [activeTab, setActiveTab] = useState<'matching' | 'exceptions' | 'settled'>('matching');
+  const [activeTab, setActiveTab] = useState<'matching' | 'exceptions' | 'settled'>(() => {
+    const requested = searchParams.get('tab');
+    return requested === 'exceptions' || requested === 'settled' ? requested : 'matching';
+  });
   const [decisionNotes, setDecisionNotes] = useState<{ [key: string]: string }>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentIdFilter, setDepartmentIdFilter] = useState('all');
@@ -236,17 +241,7 @@ export default function AdminExpensesDashboard() {
     }));
   };
 
-  const formatDate = (dateStr: string) => {
-    try {
-      return new Date(dateStr).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      });
-    } catch {
-      return dateStr;
-    }
-  };
+  const formatDate = (dateStr: string) => formatFinanceDate(dateStr);
 
   return (
     <div className="flex-1 space-y-6 p-8 overflow-y-auto max-h-[calc(100vh-4rem)] bg-zinc-50 dark:bg-zinc-950">
@@ -278,7 +273,7 @@ export default function AdminExpensesDashboard() {
           </TabsTrigger>
           <TabsTrigger value="exceptions" className="gap-2">
             <AlertCircle className="h-4 w-4" />
-            Variance Review ({exceptions.length})
+            Amount differences ({exceptions.length})
           </TabsTrigger>
           <TabsTrigger value="settled" className="gap-2">
             <History className="h-4 w-4" />

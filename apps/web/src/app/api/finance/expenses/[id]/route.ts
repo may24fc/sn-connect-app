@@ -1,9 +1,17 @@
 import { logActivity } from '@/lib/audit';
 import { canReviewFinance, getFinanceContext } from '@/lib/finance/auth';
+import {
+  FINANCE_CATEGORIES,
+  type FinanceCategoryCode,
+  categoryToLegacyType,
+} from '@/lib/finance/categories';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const correctionSchema = z.object({
+  categoryCode: z
+    .enum(FINANCE_CATEGORIES.map((category) => category.code) as [string, ...string[]])
+    .optional(),
   paymentSource: z.enum(['unknown', 'personal_card', 'company_card', 'bank_transfer']),
   paymentStatus: z.enum(['unknown', 'unpaid', 'confirmed']),
 });
@@ -24,22 +32,26 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const db = context.admin as any;
   const current = await db
     .from('expense_entries')
-    .select('id,payment_source,payment_status')
+    .select('id,category_code,payment_source,payment_status')
     .eq('id', id)
     .is('deleted_at', null)
     .maybeSingle();
   if (current.error || !current.data)
     return NextResponse.json({ error: 'Expense not found' }, { status: 404 });
+  const categoryCode = parsed.data.categoryCode as FinanceCategoryCode | undefined;
   const updated = await db
     .from('expense_entries')
     .update({
+      ...(categoryCode
+        ? { category_code: categoryCode, expense_type: categoryToLegacyType(categoryCode) }
+        : {}),
       payment_source: parsed.data.paymentSource,
       payment_status: parsed.data.paymentStatus,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
     .is('deleted_at', null)
-    .select('id,payment_source,payment_status')
+    .select('id,category_code,payment_source,payment_status')
     .single();
   if (updated.error)
     return NextResponse.json({ error: 'Could not update expense details' }, { status: 500 });

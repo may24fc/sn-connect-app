@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@hr-portal/ui';
+import { formatFinanceDate } from '@/lib/format';
 
 type ReviewEntry = {
   id: string;
@@ -12,11 +13,13 @@ type ReviewEntry = {
   currency: string;
   submitted_by?: string;
   can_decide?: boolean;
+  source_type?: string;
+  matched_entry_id?: string | null;
 };
 
 type ReviewItem = ReviewEntry & { kind: 'difference' | 'approval' | 'unmatched' };
 
-export function FinanceUnifiedReviewQueue() {
+export function FinanceUnifiedReviewQueue({ deskHref }: { deskHref: string }) {
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
@@ -32,8 +35,18 @@ export function FinanceUnifiedReviewQueue() {
       const [differenceBody, approvalBody, unmatchedBody] = await Promise.all([
         differences.json(), approvals.json(), unmatched.json(),
       ]);
+      const differenceEntries: ReviewEntry[] = differenceBody.data ?? [];
+      const flaggedIds = new Set(differenceEntries.map((entry) => entry.id));
       setItems([
-        ...(differenceBody.data ?? []).map((entry: ReviewEntry) => ({ ...entry, kind: 'difference' as const })),
+        ...differenceEntries
+          // A matched pair shares one difference; list it once, under the staff request.
+          .filter(
+            (entry) =>
+              entry.source_type !== 'direct_payment' ||
+              !entry.matched_entry_id ||
+              !flaggedIds.has(entry.matched_entry_id)
+          )
+          .map((entry) => ({ ...entry, kind: 'difference' as const })),
         ...(approvalBody.data ?? []).map((entry: ReviewEntry) => ({ ...entry, kind: 'approval' as const })),
         ...(unmatchedBody.data ?? []).map((entry: ReviewEntry) => ({ ...entry, kind: 'unmatched' as const })),
       ]);
@@ -64,13 +77,13 @@ export function FinanceUnifiedReviewQueue() {
           <article key={`${item.kind}-${item.id}`} className="flex flex-wrap items-center justify-between gap-3 p-3 text-sm">
             <div>
               <p className="font-medium">{item.vendor_name} · {item.currency} {Number(item.total_amount).toFixed(2)}</p>
-              <p className="text-xs text-muted-foreground">{item.transaction_date} · {item.kind === 'difference' ? 'Amount differs' : item.kind === 'approval' ? 'Approval needed' : 'Unmatched request'}</p>
+              <p className="text-xs text-muted-foreground">{formatFinanceDate(item.transaction_date)} · {item.kind === 'difference' ? 'Amount differs' : item.kind === 'approval' ? 'Approval needed' : 'Unmatched request'}</p>
               {item.kind === 'approval' && item.can_decide === false ? <p className="text-xs font-medium text-amber-700">Submitted by you · another approver must decide</p> : null}
             </div>
             {item.kind === 'approval' ? (
               <div className="flex gap-2"><Button variant="outline" size="sm" type="button" disabled={busy !== null || item.can_decide === false} onClick={() => void decide(item.id, 'rejected')}>Reject</Button><Button size="sm" type="button" disabled={busy !== null || item.can_decide === false} onClick={() => void decide(item.id, 'approved')}>Approve</Button></div>
             ) : (
-              <Link className="rounded border px-3 py-1 font-medium text-primary" href={item.kind === 'difference' ? '/admin/expenses' : '/expenses/verify'}>{item.kind === 'difference' ? 'Review difference' : 'Match request'}</Link>
+              <Link className="rounded border px-3 py-1 font-medium text-primary" href={item.kind === 'difference' ? `${deskHref}?tab=exceptions` : '/expenses/verify'}>{item.kind === 'difference' ? 'Review difference' : 'Match request'}</Link>
             )}
           </article>
         ))}
