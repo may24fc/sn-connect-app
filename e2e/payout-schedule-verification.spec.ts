@@ -50,6 +50,7 @@ test('invoice dialog keeps the third October payout open at 4 PM PHT', async ({
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/invoice');
   await page.getByRole('button', { name: 'Submit Invoice' }).click();
+  await expect(page.getByText(/Accepted: PDF, Word, Excel.*max 10MB/)).toBeVisible();
   await page.getByRole('combobox').click();
 
   await expect(
@@ -70,7 +71,9 @@ test('invoice dialog keeps the third October payout open at 4 PM PHT', async ({
   expect(browserErrors).toEqual([]);
 });
 
-test('employees can edit drafts and delete every unpaid invoice status', async ({ page }, testInfo) => {
+test('employees can edit drafts and delete every unpaid invoice status', async ({
+  page,
+}, testInfo) => {
   const browserErrors: string[] = [];
   page.on('console', (message) => {
     if (message.type() === 'error') {
