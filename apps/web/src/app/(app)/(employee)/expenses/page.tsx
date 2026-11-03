@@ -12,6 +12,8 @@ import {
 } from '@/hooks/useExpenses';
 import { validateReceiptImageQuality } from '@/lib/expenses/image-quality';
 import { FINANCE_CATEGORIES, categoryToLegacyType, type FinanceCategoryCode } from '@/lib/finance/categories';
+import { formatFinanceDate } from '@/lib/format';
+import { OwnExpenseDetailsEditor, canEditOwnExpense } from '@/components/finance/OwnExpenseDetailsEditor';
 import {
   Button,
   Card,
@@ -362,9 +364,9 @@ export default function EmployeeExpensesPage() {
       case 'matched':
         return <Badge variant="success" className="w-fit bg-emerald-500/10 text-emerald-600 border-none">Matched</Badge>;
       case 'variance_flagged':
-        return <Badge variant="destructive" className="w-fit border-none">Variance Flagged</Badge>;
+        return <Badge variant="destructive" className="w-fit border-none">Amount differs</Badge>;
       case 'resolved':
-        return <Badge variant="outline" className="w-fit border-zinc-300 text-zinc-600">Resolved</Badge>;
+        return <Badge variant="success" className="w-fit bg-emerald-500/10 text-emerald-600 border-none" title="Amount difference signed off">Matched</Badge>;
       default:
         return <Badge variant="outline" className="w-fit border-zinc-300 text-zinc-500">Unmatched</Badge>;
     }
@@ -375,17 +377,7 @@ export default function EmployeeExpensesPage() {
     return mappedType?.name ?? expense.expense_type;
   };
 
-  const formatDate = (dateStr: string) => {
-    try {
-      return new Date(dateStr).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      });
-    } catch {
-      return dateStr;
-    }
-  };
+  const formatDate = (dateStr: string) => formatFinanceDate(dateStr);
 
   return (
     <div className="flex-1 space-y-6 p-8 overflow-y-auto max-h-[calc(100vh-4rem)]">
@@ -393,10 +385,10 @@ export default function EmployeeExpensesPage() {
         <div>
           <PageTitle className="flex items-center gap-2">
             <Receipt className="h-6 w-6 text-indigo-500" />
-            My Expenses & Payments
+            My Expenses
           </PageTitle>
           <p className="mt-1 text-sm text-muted-foreground">
-            Log spend requests to stay accountable, or record direct payments with receipt uploads for the matching queue.
+            Log a spend request before you buy, or upload receipts for what you've already paid.
           </p>
         </div>
 
@@ -408,14 +400,14 @@ export default function EmployeeExpensesPage() {
                 Log Request
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-lg overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-lg font-bold">Log a Spend Request</DialogTitle>
                 <DialogDescription>
                   Track what you're asking for. Accounting will reconcile this against the actual payment once it's made.
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-2">
+              <div className="grid min-w-0 gap-4 py-2">
                 <div className="grid gap-2">
                   <Label htmlFor="request-vendor">Vendor / Service</Label>
                   <Input
@@ -426,26 +418,29 @@ export default function EmployeeExpensesPage() {
                     placeholder="e.g. OpenAI, Canva, Grab"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="grid min-w-0 gap-2">
                     <Label htmlFor="request-date">Transaction Date</Label>
                     <Input id="request-date" type="date" value={requestDate} onChange={(e) => setRequestDate(e.target.value)} />
                   </div>
-                  <div className="grid gap-2">
-                    <Label>Category</Label>
+                  <div className="grid min-w-0 gap-2">
+                    <Label htmlFor="request-category">Category</Label>
                     <Select value={requestCategory} onValueChange={(value) => setRequestCategory(value as FinanceCategoryCode)}>
-                      <SelectTrigger>
+                      <SelectTrigger id="request-category" className="min-w-0">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {FINANCE_CATEGORIES.map((type) => (
-                          <SelectItem key={type.code} value={type.code}>{type.name} — {type.example}</SelectItem>
+                          <SelectItem key={type.code} value={type.code}>{type.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-muted-foreground">
+                      {FINANCE_CATEGORIES.find((item) => item.code === requestCategory)?.example}
+                    </p>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <div className="grid gap-2">
                     <Label>Currency</Label>
                     <Select value={requestCurrency} onValueChange={(value) => setRequestCurrency(value as typeof requestCurrency)}>
@@ -529,10 +524,10 @@ export default function EmployeeExpensesPage() {
                 <DialogHeader>
                   <DialogTitle className="text-lg font-bold flex items-center gap-2">
                     <Sparkles className="h-5 w-5 text-indigo-500 animate-pulse" />
-                    Bulk Upload Receipt Queue
+                    Upload Receipts
                   </DialogTitle>
                   <DialogDescription>
-                    Upload up to 10 receipts per batch. Quality checks run in-browser first, then OCR extraction runs asynchronously in background workers.
+                    Add up to 10 receipts (photo or PDF). For each one, pick the category, how you paid, and what it was for. We read the vendor, date and amount for you.
                   </DialogDescription>
                 </DialogHeader>
               </div>
@@ -664,9 +659,8 @@ export default function EmployeeExpensesPage() {
                   <TableHeader className="bg-zinc-50 ddark:bg-zinc-900">
                     <TableRow className="border-b border-zinc-200 dark:border-zinc-800">
                       <TableHead className="font-semibold text-zinc-600 dark:text-zinc-400">Vendor</TableHead>
-                      {isRequestOnlyView ? (
-                        <TableHead className="font-semibold text-zinc-600 dark:text-zinc-400">Category</TableHead>
-                      ) : (
+                      <TableHead className="font-semibold text-zinc-600 dark:text-zinc-400">Category</TableHead>
+                      {isRequestOnlyView ? null : (
                         <TableHead className="font-semibold text-zinc-600 dark:text-zinc-400">Type</TableHead>
                       )}
                       <TableHead className="font-semibold text-zinc-600 dark:text-zinc-400">Date</TableHead>
@@ -675,7 +669,7 @@ export default function EmployeeExpensesPage() {
                         {isRequestOnlyView ? 'Request Status' : 'Status'}
                       </TableHead>
                       <TableHead className="font-semibold text-zinc-600 dark:text-zinc-400">Match</TableHead>
-                      <TableHead className="w-14 text-right font-semibold text-zinc-600 dark:text-zinc-400">Actions</TableHead>
+                      <TableHead className="w-24 text-right font-semibold text-zinc-600 dark:text-zinc-400">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -684,13 +678,17 @@ export default function EmployeeExpensesPage() {
                         <TableCell className="font-medium text-zinc-900 dark:text-zinc-50">
                           {expense.vendor_name}
                         </TableCell>
-                        {isRequestOnlyView ? (
-                          <TableCell>
-                            <Badge variant="outline" className="w-fit border-zinc-300 text-zinc-600">
-                              {getExpenseTypeLabel(expense)}
-                            </Badge>
-                          </TableCell>
-                        ) : (
+                        <TableCell>
+                          <Badge variant="outline" className="w-fit border-zinc-300 text-zinc-600">
+                            {getExpenseTypeLabel(expense)}
+                          </Badge>
+                          {expense.payment_source && expense.payment_source !== 'unknown' ? (
+                            <p className="mt-1 text-xs capitalize text-muted-foreground">
+                              {expense.payment_source.replaceAll('_', ' ')}
+                            </p>
+                          ) : null}
+                        </TableCell>
+                        {isRequestOnlyView ? null : (
                           <TableCell>
                             <Badge variant="outline" className="w-fit border-zinc-300 text-zinc-600 capitalize">
                               {expense.source_type === 'staff_request' ? 'Request' : 'Payment'}
@@ -709,7 +707,10 @@ export default function EmployeeExpensesPage() {
                         <TableCell>
                           {getMatchStatusBadge(expense.match_status)}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="whitespace-nowrap text-right">
+                          {canEditOwnExpense(expense, user?.id) ? (
+                            <OwnExpenseDetailsEditor expense={expense} />
+                          ) : null}
                           {DELETABLE_STATUSES.has(expense.processing_status) ? (
                             <Button
                               variant="ghost"

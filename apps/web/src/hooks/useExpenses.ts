@@ -483,6 +483,35 @@ export function useLeadershipDecision() {
  * Hook for deleting expense entries.
  * Endpoint enforces role and processing-state permissions.
  */
+/** Server-confirmed: the server re-checks ownership and that the entry is still unreviewed and unmatched. */
+export function useUpdateOwnExpenseDetails() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: {
+      id: string;
+      categoryCode: string;
+      paymentSource: string;
+      businessJustification: string;
+    }) => {
+      const { id, ...body } = params;
+      const res = await fetch(`/api/expenses/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.error || 'Failed to update expense details');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: expenseKeys.all });
+    },
+  });
+}
+
 export function useDeleteExpense() {
   const queryClient = useQueryClient();
 

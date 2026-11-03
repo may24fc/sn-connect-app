@@ -87,8 +87,12 @@ function parseExpenseUploadFormData(formData: FormData): {
 
   const businessJustification =
     typeof businessJustificationRaw === 'string' && businessJustificationRaw.trim().length > 0
-      ? businessJustificationRaw.trim()
+      ? businessJustificationRaw.trim().slice(0, 2000)
       : null;
+
+  if (!businessJustification) {
+    throw new Error('Business purpose is required');
+  }
 
   return { file, businessJustification };
 }
@@ -161,6 +165,7 @@ function getErrorStatusCode(message: string): number {
     message.includes('No file provided') ||
     message.includes('File size exceeds') ||
     message.includes('Unsupported file type') ||
+    message.includes('Business purpose is required') ||
     message.includes('No employee profile found')
   ) {
     return 400;

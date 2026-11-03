@@ -15,17 +15,14 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import { AlertCircle, ArrowLeftRight, CheckCircle2, FileImage, Loader2, Scale, ScanEye } from 'lucide-react';
+import { formatFinanceDate } from '@/lib/format';
 
 function formatMoney(currency: string, amount: number): string {
   return `${currency} ${Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function formatDate(dateStr: string): string {
-  try {
-    return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-  } catch {
-    return dateStr;
-  }
+  return formatFinanceDate(dateStr);
 }
 
 export default function ExpenseMatchingQueuePage() {
