@@ -277,6 +277,32 @@ test('monthly expected rent and effective-month terms stay server-confirmed', as
     has_expected_rent_override: false,
   };
   let currentProperty = { ...property };
+  const maintenance = [
+    {
+      id: 'm1',
+      property_id: propertyId,
+      job_date: '2026-10-02',
+      description: 'Plumbing',
+      contractor: 'Fix-It',
+      cost_aud: 180,
+      invoice_reference: 'INV-1',
+      status: 'paid',
+      created_by: 'user',
+      created_at: '2026-10-02T00:00:00Z',
+    },
+    {
+      id: 'm2',
+      property_id: propertyId,
+      job_date: '2026-10-03',
+      description: 'Gutter clean',
+      contractor: null,
+      cost_aud: 220,
+      invoice_reference: null,
+      status: 'scheduled',
+      created_by: 'user',
+      created_at: '2026-10-03T00:00:00Z',
+    },
+  ];
   const mutations: Array<Record<string, unknown>> = [];
   await page.route('**/api/finance/properties?month=2026-10', async (route) => {
     await route.fulfill({
@@ -284,7 +310,7 @@ test('monthly expected rent and effective-month terms stay server-confirmed', as
         data: {
           properties: [currentProperty],
           payments: [],
-          maintenance: [],
+          maintenance,
           statusEvents: [],
         },
       },
@@ -322,6 +348,14 @@ test('monthly expected rent and effective-month terms stay server-confirmed', as
         term_effective_month: '2026-10-01',
       };
     }
+    if (payload.kind === 'details') {
+      currentProperty = {
+        ...currentProperty,
+        property_code: payload.propertyCode as string,
+        agent_name: payload.agentName as null,
+        receiving_account_label: payload.receivingAccountLabel as null,
+      };
+    }
     await route.fulfill({ status: 200, json: { data: payload } });
   });
 
@@ -331,22 +365,40 @@ test('monthly expected rent and effective-month terms stay server-confirmed', as
   });
   await expect(page.getByText(/Loading property register/)).toHaveCount(0);
   await page.getByRole('button', { name: 'Edit expected rent' }).click();
-  await page.getByLabel('Expected rent for 2026-10 (AUD)').fill('2700');
+  const expectedRentDialog = page.getByRole('dialog', { name: 'Expected rent for October 2026' });
+  await expect(expectedRentDialog).toBeVisible();
+  await page.getByLabel('Expected rent for October 2026 (AUD)').fill('2700');
   await page.getByLabel('Calculation note (optional)').fill('2 weeks × $650 + 2 weeks × $700');
   await page.getByRole('button', { name: 'Save record' }).click();
-  await expect(page.getByText('Expected rent saved for 2026-10')).toBeVisible();
+  await expect(page.getByText('Expected rent saved for October 2026')).toBeVisible();
   await expect(page.getByText(/Manual override · 2 weeks/)).toBeVisible();
 
-  await page.getByRole('button', { name: 'Change terms from 2026-10' }).click();
+  await page.getByRole('button', { name: 'Change terms from October 2026' }).click();
+  await expect(page.getByRole('dialog', { name: 'Change terms from October 2026' })).toBeVisible();
   await page.getByLabel('Rent amount (AUD)').fill('700');
   await page.getByRole('button', { name: 'Save record' }).click();
   await expect(
-    page.getByText('Property terms saved from 2026-10; earlier months are unchanged')
+    page.getByText('Property terms saved from October 2026; earlier months are unchanged')
   ).toBeVisible();
+
+  await page.getByRole('button', { name: 'Edit details' }).click();
+  const detailsDialog = page.getByRole('dialog', { name: 'Edit property details' });
+  await detailsDialog.getByLabel('Property ID').fill('P001');
+  await detailsDialog.getByLabel('Agent (optional)').fill('Ray White');
+  await detailsDialog.getByLabel('Rent paid into (optional)').fill('CBA rent account');
+  await detailsDialog.getByRole('button', { name: 'Save record' }).click();
+  await expect(page.getByText('Property details saved')).toBeVisible();
+  await expect(page.getByText('Agent: Ray White · Rent paid into: CBA rent account')).toBeVisible();
   expect(mutations).toEqual([
     expect.objectContaining({ kind: 'expected_rent', expectedRentAud: 2700 }),
     expect.objectContaining({ kind: 'terms', effectiveMonth: '2026-10', weeklyRentAud: 700 }),
+    expect.objectContaining({ kind: 'details', propertyCode: 'P001', agentName: 'Ray White' }),
   ]);
+
+  await page.getByRole('tab', { name: 'Maintenance' }).click();
+  await expect(page.getByRole('rowheader', { name: 'Total · 2 jobs' })).toBeVisible();
+  await expect(page.locator('tfoot')).toContainText('$400.00');
+  await expect(page.locator('tfoot')).toContainText('1 without invoice reference');
 
   await page.screenshot({
     path: testInfo.outputPath('property-monthly-expected-rent-desktop.png'),
@@ -371,7 +423,8 @@ test('subscription register handles long rows and load errors on mobile', async 
     page.getByRole('heading', { name: /Good (morning|afternoon|evening)/i })
   ).toBeVisible({ timeout: 45_000 });
   await page.setViewportSize({ width: 390, height: 844 });
-  const catalogUrl = '**/api/finance/catalog?month=2026-10-01';
+  const catalogUrl = (url: URL) =>
+    url.pathname === '/api/finance/catalog' && url.searchParams.has('month');
   await page.route(catalogUrl, async (route) => {
     await route.fulfill({
       json: {
@@ -445,6 +498,145 @@ test('legacy detail panels fetch only after expansion', async ({ page }) => {
   await page.getByText('Open detailed expense analytics').click();
   expect((await departmentResponse).status()).toBe(200);
 });
+
+test('saved snapshot opens a readable report instead of raw data', async ({ page }, testInfo) => {
+  await page.goto('/login');
+  await page.getByLabel('Email').fill('admin@example.com');
+  await page.locator('#password').fill('password');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(
+    page.getByRole('heading', { name: /Good (morning|afternoon|evening)/i })
+  ).toBeVisible({ timeout: 45_000 });
+  const consoleErrors: Array<string> = [];
+  page.on('pageerror', (error) => consoleErrors.push(error.message));
+
+  const snapshotId = '22222222-2222-4222-8222-222222222222';
+  const snapshot = {
+    id: snapshotId,
+    status: 'draft',
+    exception_count: 2,
+    created_at: '2026-10-28T03:15:00Z',
+    report_month: '2026-10-01',
+    report_data: {
+      reportMonthLabel: 'October 2026',
+      generatedAt: '2026-10-28T03:15:00Z',
+      summary: [
+        { metric: 'Total Spend (AUD)', currentMonth: 4035.1, previousMonth: 3500, momPercentChange: 15.29 },
+        { metric: 'Average Spend Per Entry', currentMonth: 576.44, previousMonth: 500, momPercentChange: 15.29 },
+      ],
+      categoryBreakdown: [
+        { category: 'software', spendAud: 3000, percentOfTotal: 74.35 },
+        { category: 'travel', spendAud: 1035.1, percentOfTotal: 25.65 },
+      ],
+      previousCategoryBreakdown: [{ category: 'software', spendAud: 3500, percentOfTotal: 100 }],
+      departmentBreakdown: [{ departmentName: 'Operations', spendAud: 4035.1, momVariationPercent: 15.29 }],
+      previousDepartmentBreakdown: [{ departmentName: 'Operations', spendAud: 3500 }],
+      pipelineStatus: { autoApproved: 1, awaitingAssociateReview: 2, approved: 4, draftExtracted: 0 },
+      anomalies: [
+        {
+          vendorName: 'Sample Airline',
+          transactionDate: '2026-10-10',
+          totalAmountAud: 820.5,
+          varianceAmountAud: 20.5,
+          reason: 'variance_flagged',
+        },
+      ],
+      unknownPayments: [
+        { vendorName: 'Office supplier', transactionDate: '2026-10-12', currency: 'AUD', amount: 25 },
+      ],
+      paymentStatusCounts: { unknown: 1, unpaid: 2, confirmed: 4 },
+      subscriptionsAsOfSnapshot: [],
+      wiseImportRowsForMonth: [],
+    },
+  };
+  await page.route(
+    (url) => url.pathname === '/api/finance/reports' && url.searchParams.get('month') === '2026-10',
+    async (route) => {
+      if (new URL(route.request().url()).searchParams.get('snapshot') === snapshotId) {
+        await route.fulfill({ json: { data: snapshot } });
+        return;
+      }
+      await route.fulfill({
+        json: {
+          data: {
+            report: { anomalies: [], unknownPayments: [], paymentStatusCounts: { unknown: 0, unpaid: 0, confirmed: 0 } },
+            snapshots: [
+              { id: snapshotId, status: 'draft', exception_count: 2, created_at: snapshot.created_at },
+            ],
+          },
+        },
+      });
+    }
+  );
+
+  for (const viewport of [
+    { width: 1440, height: 900, name: 'desktop' },
+    { width: 390, height: 844, name: 'mobile' },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/finance/reports?month=2026-10');
+    await page.getByRole('button', { name: 'View saved snapshot' }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByRole('heading', { name: 'Draft snapshot · October 2026' })).toBeVisible();
+    await expect(
+      dialog.getByRole('region', { name: 'Snapshot totals' }).getByText('$4,035.10')
+    ).toBeVisible();
+    await expect(dialog.getByRole('cell', { name: 'Software & Subscriptions' })).toBeVisible();
+    await expect(dialog.getByText('Amount differs')).toBeVisible();
+    await expect(dialog.getByRole('cell', { name: '10 Oct 2026' })).toBeVisible();
+    await expect(dialog.getByText(/report_data|reportMonthLabel|generatedAt/)).toHaveCount(0);
+    const dialogBox = await dialog.boundingBox();
+    expect((dialogBox?.x ?? 0) + (dialogBox?.width ?? 0)).toBeLessThanOrEqual(viewport.width);
+    await page.screenshot({ path: testInfo.outputPath(`snapshot-${viewport.name}.png`) });
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+  }
+  expect(consoleErrors).toEqual([]);
+});
+
+for (const account of [
+  { email: 'admin@example.com', desk: '/admin/expenses' },
+  { email: 'accounting@example.com', desk: '/expenses/desk' },
+] as const) {
+  test(`amount differences open the ${account.desk} review tab`, async ({ page }) => {
+    await page.goto('/login');
+    await page.getByLabel('Email').fill(account.email);
+    await page.locator('#password').fill('password');
+    await page.getByRole('button', { name: 'Sign in' }).click();
+    await expect(
+      page.getByRole('heading', { name: /Good (morning|afternoon|evening)/i })
+    ).toBeVisible({ timeout: 90_000 });
+    const difference = {
+      id: '33333333-3333-4333-8333-333333333333',
+      vendor_name: 'Sample Airline',
+      transaction_date: '2026-10-10',
+      total_amount: 820.5,
+      currency: 'AUD',
+    };
+    await page.route(
+      (url) => url.pathname === '/api/expenses' && url.searchParams.get('matchStatus') !== null,
+      async (route) => {
+        const status = new URL(route.request().url()).searchParams.get('matchStatus');
+        await route.fulfill({ json: { data: status === 'variance_flagged' ? [difference] : [] } });
+      }
+    );
+    await page.route('**/api/finance/review', async (route) => route.fulfill({ json: { data: [] } }));
+    await page.goto('/finance/expenses?tab=review');
+    const link = page.getByRole('link', { name: 'Review difference' });
+    await expect(link).toHaveAttribute('href', `${account.desk}?tab=exceptions`);
+    await expect(page.getByText('10 Oct 2026 · Amount differs')).toBeVisible();
+    await page.unroute((url) => url.pathname === '/api/expenses' && url.searchParams.get('matchStatus') !== null);
+    await link.click();
+    await expect(page).toHaveURL(new RegExp(`${account.desk}\\?tab=exceptions$`), {
+      timeout: 60_000,
+    });
+    await expect(page.getByRole('tab', { name: /Amount differences/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+      { timeout: 45_000 }
+    );
+  });
+}
 
 test('invoice register shows readable, collapsed pay periods', async ({ page }, testInfo) => {
   await page.goto('/login');
