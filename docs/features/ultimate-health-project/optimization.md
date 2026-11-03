@@ -2,6 +2,10 @@
 
 ## Relevant Code Map
 
+- [Yearly VP chart](../../../apps/web/src/components/uhp/UhpVolumePointsChart.tsx), [VP page](../../../apps/web/src/components/uhp/UhpVolumePointsPage.tsx), [summary API](../../../apps/web/src/app/api/uhp/volume-points/summary/route.ts), [final-total migration and monthly aggregate](../../../supabase/migrations/20261103000002_add_uhp_vp_final_monthly_totals.sql), [SQL contract/RLS tests](../../../tests/sql/uhp-vp-monthly-actuals-local.sql), [API tests](../../../tests/api/uhp-vp-target-standards.test.ts), and [chart browser regression](../../../e2e/uhp-vp-monthly-chart.spec.ts) - historical source precedence and at-a-glance monthly comparison.
+
+- [Standards and monthly override resolver](../../../apps/web/src/lib/uhp-volume-points.ts), [targets API](../../../apps/web/src/app/api/uhp/volume-points/targets/route.ts), [standards migration](../../../supabase/migrations/20261103000001_add_uhp_vp_standard_targets.sql), [resolver tests](../../../tests/lib/uhp-volume-points.test.ts), [API tests](../../../tests/api/uhp-vp-target-standards.test.ts), [local seed/RLS tests](../../../tests/sql/uhp-vp-standards-local.sql), and [standards browser regression](../../../e2e/uhp-vp-standards.spec.ts) - inherited goals and explicit monthly exceptions.
+
 - [Reminder schedule and history API](../../../apps/web/src/app/api/uhp/reminders/route.ts)
 - [Authenticated n8n callback route](../../../apps/web/src/app/api/uhp/reminders/runs/route.ts)
 - [Callback secret validation](../../../apps/web/src/app/api/uhp/_lib.ts)
@@ -26,6 +30,45 @@
 - [WE form status activity query](../../../apps/web/src/app/api/uhp/_lib.ts), [deduplicated evaluation summary](../../../apps/web/src/lib/uhp.ts), [summary tests](../../../tests/lib/uhp-outreach-summary.test.ts), [period query test](../../../tests/api/uhp-outreach-period.test.ts), and [browser regression](../../../e2e/uhp-wellness-evaluation.spec.ts) - status milestone and appointment attribution.
 
 ## Records
+
+### Implemented - 2026-11-03: Monthly VP chart with authoritative historical totals
+
+- Problem/evidence: The page had monthly/quarterly KPIs but no January–December comparison. Historical spreadsheet final totals have no order/category detail; inserting fake entries would invent attribution and adding them to existing orders would double-count.
+- Reference review: [IBM Carbon simple charts](https://www.carbondesignsystem.com/building-blocks/data-visualization/simple-charts) recommends bars for comparing discrete values; [Highcharts column charts](https://www.highcharts.com/docs/chart-and-series-types/column-chart) documents vertical comparison of values. Applied this to one bar per calendar month, not the spreadsheet's redundant 3D presentation. Exact labels and a monthly values table make the figures available beyond hover and color.
+- Delivered design: Year selector; all twelve month positions; two-decimal labels; teal approved-final versus blue tracked-order sources; recorded total/reported-month count; empty-year messaging; horizontally scrollable mobile chart; accessible monthly values table and dark-theme axes. Missing months remain null/"Not reported", distinct from an explicit zero.
+- Data contract: Approved January–September 2026 totals sum to **14,071.22 VP**. Read-only final totals replace corresponding order sums in a security-invoker, RLS-scoped monthly aggregation. Other months use non-deleted tracked entries. Monthly/quarterly Actual VP and digest total use the same precedence; category/member details remain tracked data, with a dashboard explanation. Optimistic entry changes update tracked chart months and roll back exactly on failure, never modifying approved final totals.
+- Validation: Local migration and rollback-only SQL tests passed for imports, replacement, explicit zero, missing months, 1,501-row aggregation, soft deletion and read/write permissions. Web TypeScript and 47 API/helper/workflow tests passed. Four chart/standards Playwright journeys passed as admin and super admin at 1440x900 and 390x844 on local `/uhp/volume-points`; chart fixtures use real local history and simulate November's chart total only. Checked exact labels/table values, sources, final-month rollback, empty year, tooltip, failure/retry, overflow, dark mode and axis colors; screenshots inspected. Focused Biome passed with page complexity warnings.
+- Production: Explicitly approved historical migration `20261103000002` applied using an isolated migration directory; dry run listed only that migration. Read-only REST/RPC verified all nine exact figures, their sum and final-source precedence; linked history confirms import applied while standards `20261103000001` is still unapplied.
+- Delivery update: The later approved commit/push workflow applied standards `20261103000001` after an inspected `--include-all --dry-run`; linked history and read-only November seed verification passed. Full `pnpm build` and both local rollback-only SQL suites passed. Production web deployment verification remains deferred until the pushed revision finishes deployment. No latency improvement is claimed; this delivers a data/visualization capability, not a measured performance optimization.
+
+```mermaid
+flowchart LR
+  F[Approved final monthly totals] --> R[Monthly aggregation with final precedence]
+  O[Non-deleted tracked orders] --> R
+  R --> C[Yearly chart and values table]
+  R --> K[Monthly and quarterly Actual VP]
+  F --> D[Digest total with final precedence]
+  O --> D
+  O --> B[Tracked category and member breakdown]
+```
+
+### Implemented - 2026-11-03: Reusable Volume Points standards and scoped monthly editing
+
+- Problem/evidence: The targets and summary APIs read only `uhp_vp_month_targets`; switching from a populated November to an unset December returned zero. The editor did not distinguish recurring standards from a one-month change.
+- Reference review: [YNAB targets](https://support.ynab.com/en_us/how-to-use-targets-rk5kkI9ks) document repeatable category goals, supporting reusable per-category standards. [QuickBooks recurring template editing](https://quickbooks.intuit.com/learn-support/en-us/help-article/memorize-transactions/edit-recurring-template/L0eW5Sjrh_US_en_US) distinguishes "Update for all" from "One time only", supporting an explicit editing scope. These are interaction references, not copied visual designs.
+- Delivered design: Separate **Edit standards** and **Edit this month** controls; **Use standards for this month** removes saved monthly exceptions. Standards begin in November 2026, seeded from existing November rows. Each saved category/month, including an explicit zero, overrides the standards. Earlier unsaved months remain zero rather than acquiring retroactive goals. A save for one month explicitly saves all five displayed categories; editing standards does not rewrite these monthly values.
+- Consistency: A shared resolver feeds dashboard monthly/quarterly totals and the digest data. Standards edits, month saves, and resets update visible totals/percentages optimistically, roll back on failure, and reconcile with the server; period changes and duplicate submissions are blocked while saving.
+- Acceptance conditions: December inherits November's seed, November stays unchanged after standards edits, individual zero overrides persist, resetting restores current standards, quarters sum each resolved month, and failed saves restore prior totals without losing draft input.
+- Validation: Local migration applied; 24 API/helper tests, 19 n8n workflow tests, and web TypeScript passed. Local SQL seed and RLS checks passed in a rolled-back transaction for admin, granted associate, ungranted employee, and read/write workspace users. `PLAYWRIGHT_BASE_URL=http://localhost:3001 pnpm exec playwright test --config playwright.local.config.ts uhp-vp-standards.spec.ts` passed two local-authenticated journeys as admin and super admin with mocked VP APIs at 1440x900 and 390x844. Coverage includes standards inheritance, preserved November values, explicit zero overrides, standards edits, reset, reload, quarterly sums, pending locks, save-failure rollback/draft retention, summary failure/retry, empty setup, mobile saving, and dark mode. Desktop/mobile light/dark and error screenshots were inspected. Biome passed with page complexity warnings. Production deployment requires explicit approval; no full build or full repository suite was run.
+- Tradeoff: Standards are live defaults, not historical snapshots; changes affect every unsaved category/month from November onward. Saved month rows remain the historical boundary. No latency improvement is claimed or measured.
+
+```mermaid
+flowchart LR
+  S[November seed or edited standards] --> R[Resolve each category and month]
+  O[Saved monthly overrides including zero] --> R
+  R --> M[Monthly and quarterly dashboard]
+  R --> D[Telegram digest data]
+```
 
 ### Implemented - 2026-10-23: Period-aware manual Call tracking
 
@@ -305,6 +348,12 @@ flowchart LR
 ```
 
 ## Change Log
+
+- 2026-11-03 (delivery): Full monorepo build passed; applied and verified the remaining production standards migration after commit/push approval, including all five November seed categories. Both local SQL suites passed again. Production web deployment verification remains pending.
+
+- 2026-11-03: Added and locally verified monthly VP comparison and final-total source precedence; imported and read back January–September 2026 totals in production, with the unapproved standards migration excluded. Web release remains deferred; no performance claim.
+
+- 2026-11-03: Implemented reusable VP goal storage and shared inheritance with scoped editors; local seed/RLS tests, API/helper tests, workflow tests, web TypeScript, and both local admin/super-admin browser journeys passed. Production deployment remains deferred.
 
 - 2026-10-24: Applied and verified the Call-column migration in production through the build-fix-commit-push migration gate.
 - 2026-10-23: Added period-aware manual Call tracking to Outreach, with optimistic row rollback, server-reconciled Calls metrics, digest integration, local migration validation, focused tests, and desktop/mobile Playwright coverage.

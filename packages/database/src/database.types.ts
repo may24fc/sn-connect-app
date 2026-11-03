@@ -10540,6 +10540,27 @@ export type Database = {
           },
         ]
       }
+      uhp_vp_month_actuals: {
+        Row: {
+          reporting_month: string
+          volume_points: number
+          source: string
+          created_at: string
+        }
+        Insert: {
+          reporting_month: string
+          volume_points: number
+          source: string
+          created_at?: string
+        }
+        Update: {
+          reporting_month?: string
+          volume_points?: number
+          source?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       uhp_vp_month_targets: {
         Row: {
           category: string
@@ -10612,6 +10633,55 @@ export type Database = {
           },
           {
             foreignKeyName: "uhp_vp_month_targets_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      uhp_vp_standard_targets: {
+        Row: {
+          category: string
+          effective_from: string
+          forecast_vp: number
+          target_vp: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          category: string
+          effective_from?: string
+          forecast_vp?: number
+          target_vp?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          category?: string
+          effective_from?: string
+          forecast_vp?: number
+          target_vp?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "uhp_vp_standard_targets_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "uhp_vp_standard_targets_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "uhp_vp_standard_targets_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "users"
@@ -12622,6 +12692,14 @@ export type Database = {
           required_role: Database["public"]["Enums"]["user_role"]
         }
         Returns: boolean
+      }
+      uhp_vp_monthly_actuals: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          reporting_month: string
+          volume_points: number
+          source: string
+        }[]
       }
       user_has_uhp_module_access: {
         Args: {

@@ -9,6 +9,11 @@ import {
 } from '@/lib/metrics-period';
 import { UHP_VP_CATEGORY_LABELS } from '@/lib/uhp';
 import {
+  type VolumePointMonthlyActual,
+  type VolumePointStandardTarget,
+  resolveVolumePointTargets,
+} from '@/lib/uhp-volume-points';
+import {
   Button,
   Card,
   CardContent,
@@ -30,6 +35,7 @@ import {
 import { Loader2, Pencil, Plus, RefreshCw, Send, Trash2 } from 'lucide-react';
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { UhpAccessManagerButton } from './UhpAccessManagerDialog';
+import { UhpVolumePointsChart } from './UhpVolumePointsChart';
 import { UhpWorkspaceHeader } from './UhpWorkspaceHeader';
 
 type CategorySummary = {
@@ -46,7 +52,13 @@ type Summary = {
   totalActualVp: number;
   totalTargetVp: number;
   totalForecastVp: number;
+  standardTargets: Array<VolumePointStandardTarget>;
+  effectiveTargets: ReturnType<typeof resolveVolumePointTargets>;
+  overall: Array<VolumePointMonthlyActual>;
+  finalizedMonths: Array<string>;
 };
+type TargetDrafts = Record<string, { targetVp: number; forecastVp: number }>;
+type TargetScope = 'month' | 'standards';
 type Entry = {
   id: string;
   member_name: string;
@@ -59,6 +71,61 @@ type Entry = {
 };
 type PeriodMode = 'month' | 'quarter';
 
+function updateSummaryTargets(
+  summary: Summary,
+  drafts: TargetDrafts,
+  scope: TargetScope | 'reset'
+): Summary {
+  const month = summary.reportingMonth.slice(0, 7);
+  const standards =
+    scope === 'standards'
+      ? Object.entries(drafts).map(([category, row]) => ({
+          category,
+          target_vp: row.targetVp,
+          forecast_vp: row.forecastVp,
+          effective_from: '2026-11-01',
+        }))
+      : summary.standardTargets;
+  const overrides =
+    scope === 'reset'
+      ? []
+      : scope === 'month'
+        ? Object.entries(drafts).map(([category, row]) => ({
+            reporting_month: `${month}-01`,
+            category,
+            target_vp: row.targetVp,
+            forecast_vp: row.forecastVp,
+          }))
+        : (summary.effectiveTargets ?? []).filter((row) => row.source === 'override');
+  const effectiveTargets = resolveVolumePointTargets(
+    summary.categories.map((row) => row.category),
+    month,
+    month,
+    overrides,
+    standards ?? []
+  );
+  const categories = summary.categories.map((row) => {
+    const target = effectiveTargets.find((item) => item.category === row.category);
+    const targetVp = target?.target_vp ?? 0;
+    const forecastVp = target?.forecast_vp ?? 0;
+    return {
+      ...row,
+      targetVp,
+      forecastVp,
+      targetPercent: targetVp ? Math.round((row.actualVp / targetVp) * 1000) / 10 : 0,
+      forecastPercent: forecastVp ? Math.round((row.actualVp / forecastVp) * 1000) / 10 : 0,
+    };
+  });
+  return {
+    ...summary,
+    categories,
+    standardTargets: standards ?? [],
+    effectiveTargets,
+    totalTargetVp: categories.reduce((sum, row) => sum + row.targetVp, 0),
+    totalForecastVp: categories.reduce((sum, row) => sum + row.forecastVp, 0),
+  };
+}
+
 function updateSummaryEntries(
   summary: Summary | null,
   previous: Entry | null,
@@ -67,9 +134,30 @@ function updateSummaryEntries(
   if (!summary) return summary;
   const previousVp = previous ? Number(previous.volume_points) : 0;
   const nextVp = next ? Number(next.volume_points) : 0;
+  const finalized = new Set(summary.finalizedMonths ?? []);
+  const previousMonth = previous ? `${previous.order_date.slice(0, 7)}-01` : null;
+  const nextMonth = next ? `${next.order_date.slice(0, 7)}-01` : null;
+  const actuals = new Map((summary.overall ?? []).map((row) => [row.reportingMonth, row]));
+  for (const [entryMonth, delta] of [
+    [previousMonth, -previousVp],
+    [nextMonth, nextVp],
+  ] as const) {
+    if (!entryMonth || finalized.has(entryMonth)) continue;
+    const row = actuals.get(entryMonth);
+    if (row?.source === 'final') continue;
+    actuals.set(entryMonth, {
+      reportingMonth: entryMonth,
+      volumePoints: (row?.volumePoints ?? 0) + delta,
+      source: 'orders',
+    });
+  }
   return {
     ...summary,
-    totalActualVp: summary.totalActualVp - previousVp + nextVp,
+    totalActualVp:
+      summary.totalActualVp -
+      (previousMonth && !finalized.has(previousMonth) ? previousVp : 0) +
+      (nextMonth && !finalized.has(nextMonth) ? nextVp : 0),
+    overall: [...actuals.values()],
     categories: summary.categories.map((item) => {
       let actualVp = item.actualVp;
       if (previous?.category === item.category) actualVp -= previousVp;
@@ -108,9 +196,15 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
   const [showForm, setShowForm] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [showTargets, setShowTargets] = useState(false);
-  const [targetDrafts, setTargetDrafts] = useState<
-    Record<string, { targetVp: number; forecastVp: number }>
-  >({});
+  const [targetScope, setTargetScope] = useState<TargetScope>('month');
+  const [savingTargets, setSavingTargets] = useState(false);
+  const [targetDrafts, setTargetDrafts] = useState<TargetDrafts>({});
+  const monthLabel = new Date(`${month}-01T00:00:00Z`).toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+  const hasMonthOverrides = summary?.effectiveTargets?.some((row) => row.source === 'override');
   const load = useCallback(async () => {
     const requestId = beginPeriodRequest();
     setLoading(true);
@@ -275,35 +369,42 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
     }
   }
 
-  function openTargets() {
+  function openTargets(scope: TargetScope) {
+    setTargetScope(scope);
     setTargetDrafts(
       Object.fromEntries(
         (summary?.categories ?? []).map((row) => [
           row.category,
-          { targetVp: row.targetVp, forecastVp: row.forecastVp },
+          scope === 'standards'
+            ? {
+                targetVp: Number(
+                  summary?.standardTargets?.find((item) => item.category === row.category)
+                    ?.target_vp ?? 0
+                ),
+                forecastVp: Number(
+                  summary?.standardTargets?.find((item) => item.category === row.category)
+                    ?.forecast_vp ?? 0
+                ),
+              }
+            : { targetVp: row.targetVp, forecastVp: row.forecastVp },
         ])
       )
     );
     setShowTargets(true);
   }
 
-  async function saveTargets() {
+  async function saveTargets(event?: FormEvent<HTMLFormElement>, reset = false) {
+    event?.preventDefault();
     if (!summary) return;
     const previous = summary;
-    setSummary({
-      ...summary,
-      totalTargetVp: Object.values(targetDrafts).reduce((sum, row) => sum + row.targetVp, 0),
-      totalForecastVp: Object.values(targetDrafts).reduce((sum, row) => sum + row.forecastVp, 0),
-      categories: summary.categories.map((row) => ({
-        ...row,
-        ...(targetDrafts[row.category] ?? {}),
-      })),
-    });
+    setSavingTargets(true);
+    setSummary(updateSummaryTargets(summary, targetDrafts, reset ? 'reset' : targetScope));
     try {
       const response = await fetch('/api/uhp/volume-points/targets', {
-        method: 'PUT',
+        method: reset ? 'DELETE' : 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          scope: targetScope,
           reportingMonth: `${month}-01`,
           targets: Object.entries(targetDrafts).map(([category, values]) => ({
             category,
@@ -315,7 +416,14 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
       if (!response.ok) throw new Error(payload.error ?? 'Failed to save targets');
       setShowTargets(false);
       await load();
-      addToast({ variant: 'success', title: 'Targets and forecasts saved' });
+      addToast({
+        variant: 'success',
+        title: reset
+          ? 'Month now uses standards'
+          : targetScope === 'standards'
+            ? 'Standard targets and forecasts saved'
+            : `Targets and forecasts saved for ${monthLabel}`,
+      });
     } catch (error) {
       setSummary(previous);
       addToast({
@@ -323,6 +431,8 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
         title: 'Could not save targets',
         description: error instanceof Error ? error.message : 'Please try again.',
       });
+    } finally {
+      setSavingTargets(false);
     }
   }
 
@@ -349,6 +459,7 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
             </Button>
             <Button
               className="sm:min-w-32"
+              disabled={savingTargets}
               onClick={() => {
                 setEditingEntry(null);
                 setShowForm((value) => !value);
@@ -367,6 +478,7 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
               <Label htmlFor="vp-period-mode">View by</Label>
               <Select
                 value={periodMode}
+                disabled={savingTargets}
                 onValueChange={(value) => {
                   const nextMode = value as PeriodMode;
                   setPeriodMode(nextMode);
@@ -389,8 +501,12 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
                   id="vp-period"
                   type="month"
                   value={month}
+                  disabled={savingTargets}
                   onChange={(event) => {
-                    if (event.target.value) setMonth(event.target.value);
+                    if (event.target.value) {
+                      setShowTargets(false);
+                      setMonth(event.target.value);
+                    }
                   }}
                   className="w-full sm:w-48"
                 />
@@ -411,9 +527,26 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
             </div>
           </div>
           {periodMode === 'month' ? (
-            <Button variant="outline" onClick={openTargets} className="w-full sm:w-auto">
-              Set monthly targets
-            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button
+                variant="outline"
+                onClick={() => openTargets('standards')}
+                disabled={
+                  loading || loadError || loadedPeriod !== periodKey || savingTargets || saving
+                }
+              >
+                Edit standards
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => openTargets('month')}
+                disabled={
+                  loading || loadError || loadedPeriod !== periodKey || savingTargets || saving
+                }
+              >
+                Edit this month
+              </Button>
+            </div>
           ) : (
             <p className="text-sm text-muted-foreground">
               Quarterly targets and forecasts are the totals of their three months.
@@ -526,63 +659,102 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
       {showTargets && (
         <Card>
           <CardContent className="space-y-4 p-5">
-            <div>
-              <h2 className="font-semibold">Monthly targets and forecasts</h2>
-              <p className="text-sm text-muted-foreground">
-                Set the goals used by the dashboard and daily Telegram digest.
-              </p>
-            </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              {summary?.categories.map((row) => (
-                <div key={row.category} className="grid grid-cols-2 gap-2 rounded-md border p-3">
-                  <p className="col-span-2 text-sm font-medium">
-                    {UHP_VP_CATEGORY_LABELS[row.category as keyof typeof UHP_VP_CATEGORY_LABELS]}
-                  </p>
-                  <div>
-                    <Label>Target VP</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={targetDrafts[row.category]?.targetVp ?? 0}
-                      onChange={(event) =>
-                        setTargetDrafts((current) => ({
-                          ...current,
-                          [row.category]: {
-                            ...(current[row.category] ?? { forecastVp: 0 }),
-                            targetVp: Number(event.target.value),
-                          },
-                        }))
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Label>Forecast VP</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={targetDrafts[row.category]?.forecastVp ?? 0}
-                      onChange={(event) =>
-                        setTargetDrafts((current) => ({
-                          ...current,
-                          [row.category]: {
-                            ...(current[row.category] ?? { targetVp: 0 }),
-                            forecastVp: Number(event.target.value),
-                          },
-                        }))
-                      }
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={() => void saveTargets()}>Save targets</Button>
-              <Button variant="outline" onClick={() => setShowTargets(false)}>
-                Cancel
-              </Button>
-            </div>
+            <form className="space-y-4" onSubmit={(event) => void saveTargets(event)}>
+              <div>
+                <h2 className="font-semibold">
+                  {targetScope === 'standards'
+                    ? 'Standard monthly targets and forecasts'
+                    : `Targets and forecasts for ${monthLabel}`}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {targetScope === 'standards'
+                    ? 'Used from November 2026 onward whenever a category has no saved monthly override. Existing monthly overrides stay unchanged.'
+                    : 'Changes apply only to this month. Other months and the standards stay unchanged.'}
+                </p>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {summary?.categories.map((row) => (
+                  <fieldset
+                    key={row.category}
+                    disabled={savingTargets}
+                    className="grid grid-cols-2 gap-2 rounded-md border p-3"
+                  >
+                    <legend className="px-1 text-sm font-medium">
+                      {UHP_VP_CATEGORY_LABELS[row.category as keyof typeof UHP_VP_CATEGORY_LABELS]}
+                    </legend>
+                    <div>
+                      <Label htmlFor={`vp-target-${row.category}`}>Target VP</Label>
+                      <Input
+                        id={`vp-target-${row.category}`}
+                        type="number"
+                        min="0"
+                        max="9999999999.99"
+                        step="0.01"
+                        required
+                        value={targetDrafts[row.category]?.targetVp ?? 0}
+                        onChange={(event) =>
+                          setTargetDrafts((current) => ({
+                            ...current,
+                            [row.category]: {
+                              ...(current[row.category] ?? { forecastVp: 0 }),
+                              targetVp: Number(event.target.value),
+                            },
+                          }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`vp-forecast-${row.category}`}>Forecast VP</Label>
+                      <Input
+                        id={`vp-forecast-${row.category}`}
+                        type="number"
+                        min="0"
+                        max="9999999999.99"
+                        step="0.01"
+                        required
+                        value={targetDrafts[row.category]?.forecastVp ?? 0}
+                        onChange={(event) =>
+                          setTargetDrafts((current) => ({
+                            ...current,
+                            [row.category]: {
+                              ...(current[row.category] ?? { targetVp: 0 }),
+                              forecastVp: Number(event.target.value),
+                            },
+                          }))
+                        }
+                      />
+                    </div>
+                  </fieldset>
+                ))}
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                <Button type="submit" disabled={savingTargets}>
+                  {savingTargets
+                    ? 'Saving...'
+                    : targetScope === 'standards'
+                      ? 'Save standards'
+                      : 'Save for this month'}
+                </Button>
+                {targetScope === 'month' && hasMonthOverrides && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={savingTargets}
+                    onClick={() => void saveTargets(undefined, true)}
+                  >
+                    Use standards for this month
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={savingTargets}
+                  onClick={() => setShowTargets(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
           </CardContent>
         </Card>
       )}
@@ -600,6 +772,17 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
         </div>
       ) : (
         <>
+          {periodMode === 'month' && (
+            <p className="text-sm text-muted-foreground" aria-live="polite">
+              {hasMonthOverrides
+                ? 'This month has saved overrides. Categories without overrides use the standards.'
+                : month >= '2026-11'
+                  ? summary?.standardTargets?.length
+                    ? 'This month uses the standard targets and forecasts.'
+                    : 'No standards are saved yet. Edit standards to set reusable monthly goals.'
+                  : 'Standard targets start in November 2026. You can set overrides for this month.'}
+            </p>
+          )}
           <div className="grid gap-3 sm:grid-cols-3">
             <Card>
               <CardContent className="p-5">
@@ -626,6 +809,10 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
               </CardContent>
             </Card>
           </div>
+          <UhpVolumePointsChart
+            actuals={summary?.overall ?? []}
+            periodYear={periodRange.fromMonth.slice(0, 4)}
+          />
           <Card>
             <CardContent className="p-0">
               <div className="flex items-center justify-between border-b p-4 font-medium">
@@ -634,11 +821,19 @@ export function UhpVolumePointsPage({ isAdmin = false }: { isAdmin?: boolean }) 
                   variant="ghost"
                   size="sm"
                   onClick={() => void load()}
+                  disabled={savingTargets}
                   aria-label="Refresh volume points"
                 >
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
+              {Boolean(summary?.finalizedMonths?.length) && (
+                <p className="border-b px-4 py-3 text-sm text-muted-foreground">
+                  Actual VP includes approved final monthly totals for this period. Category
+                  progress and entries below show tracked orders only; historical category/member
+                  details were not supplied and may not add up to the final total.
+                </p>
+              )}
               <Table>
                 <TableHeader>
                   <TableRow>

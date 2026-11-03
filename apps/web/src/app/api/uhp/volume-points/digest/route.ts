@@ -1,6 +1,7 @@
 import { uhpVpDigestRunSchema } from '@/lib/schemas/uhp.schema';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { UHP_VP_CATEGORY_LABELS, UHP_VP_CATEGORY_VALUES } from '@/lib/uhp';
+import { resolveVolumePointTargets, summarizeVolumePointCategories } from '@/lib/uhp-volume-points';
 import { type NextRequest, NextResponse } from 'next/server';
 import { isValidN8nCallback } from '../../_lib';
 
@@ -19,35 +20,53 @@ export async function GET(request: NextRequest) {
     .maybeSingle();
   const intervalStartedAt =
     lastRun?.interval_ended_at ?? new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
-  const [entriesResult, changedResult, targetsResult] = await Promise.all([
-    admin
-      .from('uhp_vp_entries')
-      .select('member_name, category, volume_points')
-      .eq('reporting_month', reportingMonth)
-      .is('deleted_at', null),
-    admin
-      .from('uhp_vp_entries')
-      .select('id, member_name, category, volume_points, updated_at')
-      .gte('updated_at', intervalStartedAt)
-      .lte('updated_at', now.toISOString())
-      .is('deleted_at', null),
-    admin
-      .from('uhp_vp_month_targets')
-      .select('category, target_vp, forecast_vp')
-      .eq('reporting_month', reportingMonth),
-  ]);
-  if (entriesResult.error || changedResult.error || targetsResult.error) {
+  const [entriesResult, changedResult, targetsResult, standardsResult, finalResult] =
+    await Promise.all([
+      admin
+        .from('uhp_vp_entries')
+        .select('member_name, category, volume_points')
+        .eq('reporting_month', reportingMonth)
+        .is('deleted_at', null),
+      admin
+        .from('uhp_vp_entries')
+        .select('id, member_name, category, volume_points, updated_at')
+        .gte('updated_at', intervalStartedAt)
+        .lte('updated_at', now.toISOString())
+        .is('deleted_at', null),
+      admin
+        .from('uhp_vp_month_targets')
+        .select('reporting_month, category, target_vp, forecast_vp')
+        .eq('reporting_month', reportingMonth),
+      admin.from('uhp_vp_standard_targets').select('*'),
+      admin
+        .from('uhp_vp_month_actuals')
+        .select('volume_points')
+        .eq('reporting_month', reportingMonth)
+        .maybeSingle(),
+    ]);
+  if (
+    entriesResult.error ||
+    changedResult.error ||
+    targetsResult.error ||
+    standardsResult.error ||
+    finalResult.error
+  ) {
     return NextResponse.json({ error: 'Failed to build digest' }, { status: 500 });
   }
-  const targets = new Map((targetsResult.data ?? []).map((row) => [row.category, row]));
-  const categories = UHP_VP_CATEGORY_VALUES.map((category) => ({
-    category,
-    label: UHP_VP_CATEGORY_LABELS[category],
-    actualVp: (entriesResult.data ?? [])
-      .filter((entry) => entry.category === category)
-      .reduce((sum, entry) => sum + Number(entry.volume_points), 0),
-    targetVp: Number(targets.get(category)?.target_vp ?? 0),
-    forecastVp: Number(targets.get(category)?.forecast_vp ?? 0),
+  const targets = resolveVolumePointTargets(
+    UHP_VP_CATEGORY_VALUES,
+    reportingMonth.slice(0, 7),
+    reportingMonth.slice(0, 7),
+    targetsResult.data ?? [],
+    standardsResult.data ?? []
+  );
+  const categories = summarizeVolumePointCategories(
+    UHP_VP_CATEGORY_VALUES,
+    entriesResult.data ?? [],
+    targets
+  ).map((row) => ({
+    ...row,
+    label: UHP_VP_CATEGORY_LABELS[row.category as keyof typeof UHP_VP_CATEGORY_LABELS],
   }));
   return NextResponse.json({
     data: {
@@ -58,7 +77,9 @@ export async function GET(request: NextRequest) {
       changedEntries: changedResult.data ?? [],
       changeCount: changedResult.data?.length ?? 0,
       categories,
-      totalActualVp: categories.reduce((sum, row) => sum + row.actualVp, 0),
+      totalActualVp: finalResult.data
+        ? Number(finalResult.data.volume_points)
+        : categories.reduce((sum, row) => sum + row.actualVp, 0),
       totalTargetVp: categories.reduce((sum, row) => sum + row.targetVp, 0),
       totalForecastVp: categories.reduce((sum, row) => sum + row.forecastVp, 0),
     },

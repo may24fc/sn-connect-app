@@ -1,7 +1,16 @@
 import { UHP_VP_CATEGORY_VALUES } from '@/lib/uhp';
-import { summarizeVolumePointCategories } from '@/lib/uhp-volume-points';
+import { resolveVolumePointTargets, summarizeVolumePointCategories } from '@/lib/uhp-volume-points';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { requireUhpModule } from '../../_lib';
+
+const monthlyActualsSchema = z.array(
+  z.object({
+    reporting_month: z.string(),
+    volume_points: z.number().nonnegative(),
+    source: z.enum(['final', 'orders']),
+  })
+);
 
 export async function GET(request: NextRequest) {
   const auth = await requireUhpModule('volume_points');
@@ -18,7 +27,7 @@ export async function GET(request: NextRequest) {
   }
   const fromReportingMonth = `${fromMonth}-01`;
   const toReportingMonth = `${toMonth}-01`;
-  const [entriesResult, targetsResult, overallResult] = await Promise.all([
+  const [entriesResult, targetsResult, overallResult, standardsResult] = await Promise.all([
     auth.context.admin
       .from('uhp_vp_entries')
       .select('category, volume_points, amount, currency')
@@ -30,40 +39,51 @@ export async function GET(request: NextRequest) {
       .select('*')
       .gte('reporting_month', fromReportingMonth)
       .lte('reporting_month', toReportingMonth),
-    auth.context.admin
-      .from('uhp_vp_entries')
-      .select('reporting_month, volume_points')
-      .is('deleted_at', null)
-      .order('reporting_month'),
+    auth.context.admin.rpc('uhp_vp_monthly_actuals'),
+    auth.context.admin.from('uhp_vp_standard_targets').select('*'),
   ]);
-  if (entriesResult.error || targetsResult.error || overallResult.error) {
+  if (entriesResult.error || targetsResult.error || overallResult.error || standardsResult.error) {
     return NextResponse.json({ error: 'Failed to calculate summary' }, { status: 500 });
   }
+  const effectiveTargets = resolveVolumePointTargets(
+    UHP_VP_CATEGORY_VALUES,
+    fromMonth,
+    toMonth,
+    targetsResult.data ?? [],
+    standardsResult.data ?? []
+  );
   const categories = summarizeVolumePointCategories(
     UHP_VP_CATEGORY_VALUES,
     entriesResult.data ?? [],
-    targetsResult.data ?? []
+    effectiveTargets
   );
-  const overall = new Map<string, number>();
-  for (const row of overallResult.data ?? []) {
-    overall.set(
-      row.reporting_month,
-      (overall.get(row.reporting_month) ?? 0) + Number(row.volume_points)
-    );
+  const actuals = monthlyActualsSchema.safeParse(overallResult.data);
+  if (!actuals.success) {
+    return NextResponse.json({ error: 'Invalid monthly actuals response' }, { status: 500 });
   }
+  const overall = actuals.data.map((row) => ({
+    reportingMonth: row.reporting_month,
+    volumePoints: Number(row.volume_points),
+    source: row.source,
+  }));
+  const selectedActuals = overall.filter(
+    (row) => row.reportingMonth >= fromReportingMonth && row.reportingMonth <= toReportingMonth
+  );
   return NextResponse.json({
     data: {
       reportingMonth: fromReportingMonth,
       fromMonth,
       toMonth,
       categories,
-      totalActualVp: categories.reduce((sum, row) => sum + row.actualVp, 0),
+      effectiveTargets,
+      standardTargets: standardsResult.data ?? [],
+      totalActualVp: selectedActuals.reduce((sum, row) => sum + row.volumePoints, 0),
+      finalizedMonths: selectedActuals
+        .filter((row) => row.source === 'final')
+        .map((row) => row.reportingMonth),
       totalTargetVp: categories.reduce((sum, row) => sum + row.targetVp, 0),
       totalForecastVp: categories.reduce((sum, row) => sum + row.forecastVp, 0),
-      overall: [...overall.entries()].map(([monthKey, volumePoints]) => ({
-        reportingMonth: monthKey,
-        volumePoints,
-      })),
+      overall,
     },
   });
 }

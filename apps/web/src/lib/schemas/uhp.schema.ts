@@ -109,14 +109,25 @@ export const uhpVpEntrySchema = z.object({
 export const uhpVpEntryUpdateSchema = uhpVpEntrySchema.partial();
 
 export const uhpVpTargetsSchema = z.object({
+  scope: z.enum(['month', 'standards']).default('month'),
   reportingMonth: z.string().date(),
-  targets: z.array(
-    z.object({
-      category: z.enum(UHP_VP_CATEGORY_VALUES),
-      targetVp: z.number().finite().min(0),
-      forecastVp: z.number().finite().min(0),
-    })
-  ),
+  targets: z
+    .array(
+      z.object({
+        category: z.enum(UHP_VP_CATEGORY_VALUES),
+        targetVp: z.number().finite().min(0).max(9999999999.99),
+        forecastVp: z.number().finite().min(0).max(9999999999.99),
+      })
+    )
+    .min(1)
+    .max(UHP_VP_CATEGORY_VALUES.length)
+    .refine((rows) => new Set(rows.map((row) => row.category)).size === rows.length, {
+      message: 'Categories must be unique',
+    }),
+});
+
+export const uhpVpTargetResetSchema = z.object({
+  reportingMonth: z.string().date(),
 });
 
 export const uhpMetricsQuerySchema = z
