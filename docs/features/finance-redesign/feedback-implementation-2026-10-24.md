@@ -36,6 +36,17 @@ The PDFs were text-extracted and reviewed on 2026-10-24. The second PDF contains
 - Validation: four migrations applied to local Supabase; 7 focused Vitest assertions passed; web typecheck passed; production web build passed; the focused Finance Playwright run covered the complete admin route matrix, Wise, property workflow, expanded-detail, dark-mode, and subscriptions. A dedicated local Accounting account then passed the complete Finance/Properties route matrix at desktop and mobile widths with no captured console errors, failed local requests, or mobile overflow; representative screenshots were inspected.
 - Production migrations `20261026000001` through `20261026000004` were deployed after an exact four-file dry run. Linked history matched afterward and a follow-up production dry run reported the database up to date. The separately authorized production test-record cleanup is recorded below and in the feature tracker.
 
+## 2026-11-03 Re-review Follow-up
+
+A code re-review against both PDFs found that items 3, 5, and 8 and testing note T10 were only partly delivered. The follow-up is in migrations `20261103000003_finance_feedback_followup_remap_and_match_payment.sql` and `20261103000004_finance_feedback_gap_fixes.sql`, both deployed to production on 2026-11-03 (app code changes pending deployment):
+
+- **Item 3:** the original remap used PostgreSQL `\b` (a backspace, not a word boundary), so plain `AWS` and `… Ads` vendors were never remapped. Word-bounded rules now apply to the legacy catch-all categories, and audit-backed restoration undoes unbounded `meta`/`desk`/`chair` false positives such as Zendesk or Metabase.
+- **Item 5:** matching now marks the staff request paid as well as the payment, existing matched pairs are backfilled, and the UI uses Paid / Matched / Amount differs.
+- **Item 8:** **Review difference** now opens the role-appropriate desk on its Amount differences tab (Accounting was previously bounced from `/admin/expenses`), and each matched pair is listed once.
+- **T10:** saved snapshots open in a readable dialog.
+
+Remaining gaps are recorded under Deferred in [task-tracker.md](task-tracker.md).
+
 ## Feedback Inventory and Implementation Plan
 
 ### 1. AUD receipts excluded from Overview totals
