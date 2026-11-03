@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@hr-portal/ui';
+import { FinanceSnapshotDetail, type FinanceSnapshotRecord } from '@/components/finance/FinanceSnapshotDetail';
+import { formatFinanceDate, formatFinanceDateTime } from '@/lib/format';
 type Snapshot = { id: string; status: string; exception_count: number; created_at: string };
-type SnapshotView = Snapshot & { report_month: string; report_data: Record<string, unknown> };
 type ReportData = {
   report: {
     anomalies: Array<unknown>;
@@ -24,7 +25,7 @@ export function FinanceReportControls({ month }: { month: string }) {
   const [data, setData] = useState<ReportData | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const [selectedSnapshot, setSelectedSnapshot] = useState<SnapshotView | null>(null);
+  const [selectedSnapshot, setSelectedSnapshot] = useState<FinanceSnapshotRecord | null>(null);
   const load = useCallback(async () => {
     try {
       const response = await fetch(`/api/finance/reports?month=${month}`, { cache: 'no-store' });
@@ -65,7 +66,7 @@ export function FinanceReportControls({ month }: { month: string }) {
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? 'Could not load saved snapshot');
-      setSelectedSnapshot(body.data as SnapshotView);
+      setSelectedSnapshot(body.data as FinanceSnapshotRecord);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not load saved snapshot');
     } finally {
@@ -126,7 +127,7 @@ export function FinanceReportControls({ month }: { month: string }) {
           </p>
           <p className="text-xs text-muted-foreground">
             {data?.report.paymentStatusCounts
-              ? `${data.report.paymentStatusCounts.confirmed} confirmed · ${data.report.paymentStatusCounts.unpaid} unpaid · ${data.report.paymentStatusCounts.unknown} unknown direct payments`
+              ? `${data.report.paymentStatusCounts.confirmed} paid · ${data.report.paymentStatusCounts.unpaid} unpaid · ${data.report.paymentStatusCounts.unknown} unknown direct payments`
               : ''}
           </p>
         </div>
@@ -141,7 +142,7 @@ export function FinanceReportControls({ month }: { month: string }) {
             <ul className="mt-2 max-h-40 overflow-y-auto text-xs">
               {data.report.unknownPayments.map((row, index) => (
                 <li key={`${row.transactionDate}-${row.vendorName}-${index}`}>
-                  {row.transactionDate} · {row.vendorName} · {row.currency} {row.amount.toFixed(2)}
+                  {formatFinanceDate(row.transactionDate)} · {row.vendorName} · {row.currency} {row.amount.toFixed(2)}
                 </li>
               ))}
             </ul>
@@ -179,7 +180,7 @@ export function FinanceReportControls({ month }: { month: string }) {
             {data.snapshots.map((item) => (
               <li key={item.id} className="rounded-lg border p-2">
                 {item.status === 'final' ? 'Final' : 'Draft'} ·{' '}
-                {new Date(item.created_at).toLocaleString()} · {item.exception_count} exceptions ·{' '}
+                {formatFinanceDateTime(item.created_at)} · {item.exception_count} exceptions ·{' '}
                 <Button variant="link"
                   type="button"
                   disabled={busy}
@@ -201,36 +202,7 @@ export function FinanceReportControls({ month }: { month: string }) {
           <p className="text-muted-foreground">No snapshots for this month.</p>
         )}
       </div>
-      {selectedSnapshot ? (
-        <section className="rounded-lg border bg-muted/30 p-4 text-sm" aria-label="Saved snapshot details">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h3 className="font-semibold">Saved {selectedSnapshot.status} snapshot</h3>
-              <p className="text-xs text-muted-foreground">
-                {selectedSnapshot.report_month} · {new Date(selectedSnapshot.created_at).toLocaleString()} ·{' '}
-                {selectedSnapshot.exception_count} exceptions
-              </p>
-            </div>
-            <Button variant="outline" size="sm" type="button" onClick={() => setSelectedSnapshot(null)}>
-              Close
-            </Button>
-          </div>
-          <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {Object.entries(selectedSnapshot.report_data)
-              .filter(([, value]) => typeof value === 'number' || typeof value === 'string')
-              .slice(0, 12)
-              .map(([key, value]) => (
-                <div key={key} className="rounded border bg-card p-3">
-                  <dt className="text-xs text-muted-foreground">{key.replaceAll('_', ' ')}</dt>
-                  <dd className="mt-1 font-semibold">{String(value)}</dd>
-                </div>
-              ))}
-          </dl>
-          <p className="mt-3 text-xs text-muted-foreground">
-            Use the CSV download for the complete retained detail.
-          </p>
-        </section>
-      ) : null}
+      <FinanceSnapshotDetail snapshot={selectedSnapshot} onClose={() => setSelectedSnapshot(null)} />
       <p className="rounded-lg bg-[#e6f0f1] p-3 text-xs text-[#0f3f4b]">
         A draft may record open exceptions. Final snapshots are paused until Finance confirms the
         complete blocking policy. Export a saved snapshot above for a retained CSV; the PDF is a

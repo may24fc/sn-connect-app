@@ -106,6 +106,20 @@ export function formatFinanceDate(value: string | null | undefined): string {
   }).format(date);
 }
 
+/** Formats a Finance timestamp consistently as `30 Oct 2026, 2:15 pm`. */
+export function formatFinanceDateTime(value: string | null | undefined): string {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat('en-AU', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date);
+}
+
 /**
  * Formats a Finance `YYYY-MM-DD` period, collapsing the parts both ends share:
  * `16 Oct 2026`, `1–15 Oct 2026`, `16 Oct – 3 Nov 2026`, `28 Dec 2026 – 3 Jan 2027`.
