@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Button, tableHeaderClassName, tableHeadTextClassName } from '@hr-portal/ui';
+import { formatFinanceDateTime } from '@/lib/format';
 
 type ReadyInvoice = {
   id: string;
@@ -237,7 +238,7 @@ export function FinanceWiseBatches({ hideAmounts = false }: { hideAmounts?: bool
               <span className="font-medium">
                 {batch.id} · {batch.status}
               </span>
-              <span>{new Date(batch.created_at).toLocaleString()}</span>
+              <span>{formatFinanceDateTime(batch.created_at)}</span>
             </div>
             <p className="my-2 text-muted-foreground">
               {batch.items.length} invoices ·{' '}

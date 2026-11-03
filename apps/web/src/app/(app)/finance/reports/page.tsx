@@ -3,6 +3,7 @@ import { FinanceDetailDisclosure } from '@/components/finance/FinanceDetailDiscl
 import { FinanceReportControls } from '@/components/finance/FinanceReportControls';
 import { canReviewFinance, getFinanceContext } from '@/lib/finance/auth';
 import { type FinanceOverviewData, summarizeFinanceOverview } from '@/lib/finance/overview';
+import { formatFinanceDateRange } from '@/lib/format';
 import { notFound } from 'next/navigation';
 import { Button, tableHeaderClassName, tableHeadTextClassName, PageTitle, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
 
@@ -131,9 +132,12 @@ export default async function FinanceReportsPage({
                 className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 text-sm"
               >
                 <span>
-                  {row.bucket_start} to{' '}
-                  {new Date(`${row.bucket_end}T00:00:00Z`).toISOString().slice(0, 10)} (end
-                  exclusive)
+                  {formatFinanceDateRange(
+                    row.bucket_start,
+                    new Date(Date.parse(`${row.bucket_end}T00:00:00Z`) - 86_400_000)
+                      .toISOString()
+                      .slice(0, 10)
+                  )}
                 </span>
                 <span className="tabular-nums">
                   {row.converted_count ? money(Number(row.spend_aud)) : 'No converted records'}

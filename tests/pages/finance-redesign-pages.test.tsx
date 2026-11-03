@@ -7,7 +7,6 @@ vi.mock('@/lib/finance/auth', () => ({
 }));
 vi.mock('@/app/(app)/(admin)/admin/expenses/page', () => ({ default: () => null }));
 vi.mock('@/app/(app)/(admin)/admin/expenses/analytics/page', () => ({ default: () => null }));
-vi.mock('@/components/finance/FinanceApprovalQueue', () => ({ FinanceApprovalQueue: () => null }));
 vi.mock('@/components/finance/FinanceApproverSettings', () => ({
   FinanceApproverSettings: () => null,
 }));
@@ -106,7 +105,7 @@ describe('Finance redesign pages', () => {
       })
     );
     expect(html).toContain('Quarterly recorded spend');
-    expect(html).toContain('2026-04-01');
+    expect(html).toMatch(/1 Apr\s*–\s*30 June? 2026/);
     expect(html).toContain('month-end report pack below remains for June 2026');
     expect(html).toContain('Report pack 2026-06');
   });

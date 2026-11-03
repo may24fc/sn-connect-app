@@ -15,6 +15,8 @@ type Subscription = {
   monthly_amount_aud: number | null;
   billing_amount: number | null;
   billing_currency: string;
+  billing_fx_rate?: number | null;
+  billing_fx_converted_at?: string | null;
   seats: number | null;
   last_charged: string | null;
   next_renewal: string | null;
@@ -89,6 +91,21 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
     setSaving(false);
     if (response.ok) void load();
     else setError('Could not clear budget');
+  }
+  async function convertSubscription(id: string) {
+    setSaving(true);
+    setError('');
+    const response = await fetch(`/api/finance/catalog/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshConversion: true }),
+    });
+    setSaving(false);
+    if (response.ok) void load();
+    else
+      setError(
+        (await response.json().catch(() => null))?.error ?? 'Could not convert this subscription'
+      );
   }
   async function addSubscription(event: React.FormEvent) {
     event.preventDefault();
@@ -168,7 +185,8 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
         <h2 className="text-lg font-semibold">Subscription register</h2>
         <p className="mb-3 text-sm text-muted-foreground">
           Recurring service metadata, not extra expense charges. Actual AI spend also appears in All
-          expenses. Run rate includes active records with known amounts only.
+          expenses. Run rate includes active records with a known AUD amount; other currencies are
+          converted at the rate on the day they are saved.
         </p>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[980px] text-left text-sm">
@@ -212,13 +230,34 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
                           style: 'currency',
                           currency: item.billing_currency,
                         }).format(Number(item.billing_amount))}
+                    {item.billing_currency !== 'AUD' && item.billing_amount !== null ? (
+                      item.monthly_amount_aud === null ? (
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="block h-auto p-0 text-xs"
+                          type="button"
+                          disabled={saving}
+                          onClick={() => void convertSubscription(item.id)}
+                        >
+                          Convert to AUD
+                        </Button>
+                      ) : (
+                        <span className="block text-xs text-muted-foreground">
+                          ≈ {money(Number(item.monthly_amount_aud))}
+                          {item.billing_fx_converted_at
+                            ? ` · rate ${Number(item.billing_fx_rate).toFixed(4)} on ${formatFinanceDate(item.billing_fx_converted_at)}`
+                            : ''}
+                        </span>
+                      )
+                    ) : null}
                   </td>
                   <td className="border-b p-3 tabular-nums">
                     {item.monthly_amount_aud === null
                       ? 'Unknown'
                       : money(Number(item.monthly_amount_aud) * 12)}
                   </td>
-                  <td className="border-b p-3">{item.last_charged ?? 'No linked charge'}</td>
+                  <td className="border-b p-3">{item.last_charged ? formatFinanceDate(item.last_charged) : 'No linked charge'}</td>
                   <td className="border-b p-3">{item.next_renewal ? formatFinanceDate(item.next_renewal) : 'Not set'}</td>
                   <td className="border-b p-3">
                     <span

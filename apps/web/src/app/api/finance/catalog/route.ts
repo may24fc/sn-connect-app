@@ -1,4 +1,5 @@
 import { canReviewFinance, getFinanceContext } from '@/lib/finance/auth';
+import { convertSubscriptionToAud } from '@/lib/finance/subscription-fx';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -162,6 +163,11 @@ export async function POST(request: NextRequest) {
     if (error) return NextResponse.json({ error: 'Could not clear budget' }, { status: 500 });
     return NextResponse.json({ data: null });
   }
+  const conversion = await convertSubscriptionToAud(
+    db,
+    parsed.data.billingAmount,
+    parsed.data.billingCurrency
+  );
   const { data, error } = await db
     .from('finance_subscriptions')
     .insert({
@@ -170,8 +176,7 @@ export async function POST(request: NextRequest) {
       payment_source: parsed.data.paymentSource,
       billing_amount: parsed.data.billingAmount,
       billing_currency: parsed.data.billingCurrency,
-      monthly_amount_aud:
-        parsed.data.billingCurrency === 'AUD' ? parsed.data.billingAmount : null,
+      ...conversion,
       seats: parsed.data.seats,
       next_renewal: parsed.data.nextRenewal,
       notes: parsed.data.notes,

@@ -1,5 +1,6 @@
 import { canReviewFinance, getFinanceContext } from '@/lib/finance/auth';
 import { type FinanceOverviewData, summarizeFinanceOverview } from '@/lib/finance/overview';
+import { formatFinanceDate } from '@/lib/format';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Button, tableHeadTextClassName, PageTitle } from '@hr-portal/ui';
@@ -28,6 +29,7 @@ export default async function FinanceOverview({
       .from('expense_entries')
       .select('transaction_date')
       .is('deleted_at', null)
+      .eq('source_type', 'direct_payment')
       .order('transaction_date', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -221,7 +223,7 @@ export default async function FinanceOverview({
                   className="flex flex-wrap justify-between gap-2 border-b py-2 last:border-0"
                 >
                   <span>
-                    {item.vendor_name} · {item.next_renewal}
+                    {item.vendor_name} · {formatFinanceDate(item.next_renewal)}
                   </span>
                   <span className="tabular-nums">
                     {item.monthly_amount_aud === null
