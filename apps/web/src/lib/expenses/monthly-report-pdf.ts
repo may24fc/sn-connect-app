@@ -475,7 +475,7 @@ function anomalyBadgePalette(reason: 'variance_flagged' | 'price_spike'): { text
     return {
       text: '#B45309',
       background: '#FFF7ED',
-      label: 'Variance Flagged',
+      label: 'Amount Differs',
     };
   }
 
