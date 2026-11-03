@@ -114,6 +114,15 @@ export type PropertyClient = {
   from(table: 'finance_property_monthly_expected_rent'): PropertyQuery<PropertyExpectedRent>;
 };
 
+/** Suggests the next sequential `P###` property ID after the highest existing one. */
+export function nextPropertyCode(codes: Array<string>): string {
+  const highest = codes.reduce((max, code) => {
+    const match = /^P(\d+)$/i.exec(code.trim());
+    return match ? Math.max(max, Number(match[1])) : max;
+  }, 0);
+  return `P${String(highest + 1).padStart(3, '0')}`;
+}
+
 export function monthlyRent(weekly: number): number {
   return Math.round(((Number(weekly) * 52) / 12 + Number.EPSILON) * 100) / 100;
 }

@@ -3,15 +3,38 @@
 import {
   type MaintenanceJob,
   type PropertyRegister,
+  nextPropertyCode,
   propertySummary,
 } from '@/lib/finance/properties';
 import { formatFinanceDate } from '@/lib/format';
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { Button, tableHeaderClassName, tableHeadTextClassName, tabsListClassName, tabsTriggerClassName, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  tableHeaderClassName,
+  tableHeadTextClassName,
+  tabsListClassName,
+  tabsTriggerClassName,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@hr-portal/ui';
 
 const money = (value: number) =>
   new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(value);
-type FormKind = 'property' | 'rent' | 'maintenance' | 'terms' | 'expected_rent';
+type FormKind = 'property' | 'rent' | 'maintenance' | 'terms' | 'expected_rent' | 'details';
+const isDialogForm = (kind: FormKind) =>
+  kind === 'terms' || kind === 'expected_rent' || kind === 'details';
+const monthLabel = (month: string) =>
+  new Intl.DateTimeFormat('en-AU', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
+    new Date(`${month}-01T00:00:00Z`)
+  );
 type Tab = 'rent' | 'maintenance';
 type Correction =
   | { kind: 'rent_void'; id: string }
@@ -40,6 +63,7 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
   const [notice, setNotice] = useState<string | null>(null);
   const correctionRef = useRef<HTMLElement>(null);
   const today = new Date().toISOString().slice(0, 10);
+  const monthText = monthLabel(month);
 
   const load = useCallback(
     async (signal?: AbortSignal) => {
@@ -134,13 +158,24 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                       : Number(text('rentAmountAud')),
                   dueDay: Number(text('dueDay')),
                 }
-              : {
-                  kind: 'expected_rent',
-                  propertyId: text('propertyId'),
-                  month,
-                  expectedRentAud: text('expectedRentAud') ? Number(text('expectedRentAud')) : null,
-                  calculationNote: optional('calculationNote'),
-                };
+              : formKind === 'details'
+                ? {
+                    kind: 'details',
+                    propertyId: text('propertyId'),
+                    propertyCode: text('propertyCode'),
+                    name: text('name'),
+                    agentName: optional('agentName'),
+                    receivingAccountLabel: optional('receivingAccountLabel'),
+                  }
+                : {
+                    kind: 'expected_rent',
+                    propertyId: text('propertyId'),
+                    month,
+                    expectedRentAud: text('expectedRentAud')
+                      ? Number(text('expectedRentAud'))
+                      : null,
+                    calculationNote: optional('calculationNote'),
+                  };
     setSaving(true);
     setError(null);
     setNotice(null);
@@ -162,10 +197,12 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
             : formKind === 'maintenance'
               ? 'Maintenance logged'
               : formKind === 'terms'
-                ? `Property terms saved from ${month}; earlier months are unchanged`
-                : payload.expectedRentAud === null
-                  ? `Expected rent reset to the monthly default for ${month}`
-                  : `Expected rent saved for ${month}`
+                ? `Property terms saved from ${monthText}; earlier months are unchanged`
+                : formKind === 'details'
+                  ? 'Property details saved'
+                  : payload.expectedRentAud === null
+                  ? `Expected rent reset to the monthly default for ${monthText}`
+                  : `Expected rent saved for ${monthText}`
       );
       await load();
     } catch (cause) {
@@ -180,7 +217,19 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
   const selectedProperty = register.properties.find(
     (property) => property.id === selectedPropertyId
   );
-  function openPropertyForm(kind: 'terms' | 'expected_rent', propertyId: string) {
+  const formTitle =
+    formKind === 'property'
+      ? 'Add property'
+      : formKind === 'rent'
+        ? 'Record rent received'
+        : formKind === 'maintenance'
+          ? 'Log maintenance'
+          : formKind === 'terms'
+            ? `Change terms from ${monthText}`
+            : formKind === 'details'
+              ? 'Edit property details'
+              : `Expected rent for ${monthText}`;
+  function openPropertyForm(kind: 'terms' | 'expected_rent' | 'details', propertyId: string) {
     setError(null);
     setNotice(null);
     setSelectedPropertyId(propertyId);
@@ -220,99 +269,22 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
     }
   }
 
-  return (
-    <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
-          Terms take effect from the first of the selected month with no daily proration. A monthly
-          expected-rent override can record Finance's weekly total; later term changes leave prior
-          months unchanged.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            onClick={() => {
-              setError(null);
-              setFormKind('property');
-            }}
-          >
-            + Add property
-          </Button>
-          <Button variant="outline"
-            type="button"
-            onClick={() => {
-              setError(null);
-              setFormKind('rent');
-            }}
-            disabled={!register.properties.length}
-          >
-            Record rent
-          </Button>
-          <Button variant="outline"
-            type="button"
-            onClick={() => {
-              setError(null);
-              setFormKind('maintenance');
-            }}
-            disabled={!register.properties.length}
-          >
-            Log maintenance
-          </Button>
-        </div>
-      </div>
-      {notice && (
-        <output className="block w-full break-words rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-          {notice}
-        </output>
-      )}
-      {error && (
-        <p
-          role="alert"
-          className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800"
-        >
-          {error}
-        </p>
-      )}
-      {formKind && (
-        <section
-          aria-label={`${formKind} entry`}
-          role={formKind === 'terms' || formKind === 'expected_rent' ? 'dialog' : undefined}
-          aria-modal={formKind === 'terms' || formKind === 'expected_rent' ? true : undefined}
-          className={
-            formKind === 'terms' || formKind === 'expected_rent'
-              ? 'fixed inset-x-4 top-1/2 z-50 max-h-[calc(100vh-2rem)] -translate-y-1/2 overflow-y-auto rounded-xl border bg-card p-5 shadow-xl sm:left-1/2 sm:max-w-3xl sm:-translate-x-1/2'
-              : 'rounded-xl border bg-card p-5 shadow-sm'
-          }
-        >
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">
-              {formKind === 'property'
-                ? 'Add property'
-                : formKind === 'rent'
-                  ? 'Record rent received'
-                  : formKind === 'maintenance'
-                    ? 'Log maintenance'
-                    : formKind === 'terms'
-                      ? `Change terms from ${month}`
-                      : `Expected rent for ${month}`}
-            </h2>
-            <Button variant="outline"
-              type="button"
-              onClick={() => {
-                setFormKind(null);
-                setSelectedPropertyId(null);
-              }}
-              disabled={saving}
-            >
-              Cancel
-            </Button>
-          </div>
+  const formFields = (
           <form onSubmit={create} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {formKind === 'property' ? (
               <>
                 <label className={labelClass}>
                   Property ID
-                  <input className={inputClass} name="propertyCode" required maxLength={40} placeholder="e.g. SYD-001" />
+                  <input
+                    className={inputClass}
+                    name="propertyCode"
+                    required
+                    maxLength={40}
+                    pattern="[A-Za-z0-9_\-]+"
+                    defaultValue={nextPropertyCode(
+                      register.properties.map((property) => property.property_code)
+                    )}
+                  />
                 </label>
                 <label className={labelClass}>
                   Property name
@@ -345,7 +317,7 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                   <input className={inputClass} name="agentName" maxLength={180} />
                 </label>
                 <label className={labelClass}>
-                  Receiving account label (optional)
+                  Rent paid into (optional)
                   <input className={inputClass} name="receivingAccountLabel" maxLength={180} placeholder="Account nickname only" />
                 </label>
                 <label className={labelClass}>
@@ -394,7 +366,7 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                 <input type="hidden" name="propertyId" value={selectedProperty.id} />
                 <p className="self-center text-sm font-semibold">{selectedProperty.name}</p>
                 <label className={labelClass}>
-                  Occupancy from {month}
+                  Occupancy from {monthText}
                   <Select defaultValue={selectedProperty.occupancy} name="occupancy">
                     <SelectTrigger>
                       <SelectValue />
@@ -452,15 +424,59 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                   />
                 </label>
                 <p className="self-center text-xs text-muted-foreground">
-                  Saved from the first of {month}. No past month is recalculated.
+                  Saved from the first of {monthText}. No past month is recalculated.
                 </p>
+              </>
+            ) : formKind === 'details' && selectedProperty ? (
+              <>
+                <input type="hidden" name="propertyId" value={selectedProperty.id} />
+                <label className={labelClass}>
+                  Property ID
+                  <input
+                    className={inputClass}
+                    name="propertyCode"
+                    required
+                    maxLength={40}
+                    pattern="[A-Za-z0-9_\-]+"
+                    defaultValue={selectedProperty.property_code}
+                  />
+                </label>
+                <label className={labelClass}>
+                  Name
+                  <input
+                    className={inputClass}
+                    name="name"
+                    required
+                    maxLength={180}
+                    defaultValue={selectedProperty.name}
+                  />
+                </label>
+                <label className={labelClass}>
+                  Agent (optional)
+                  <input
+                    className={inputClass}
+                    name="agentName"
+                    maxLength={180}
+                    defaultValue={selectedProperty.agent_name ?? ''}
+                  />
+                </label>
+                <label className={labelClass}>
+                  Rent paid into (optional)
+                  <input
+                    className={inputClass}
+                    name="receivingAccountLabel"
+                    maxLength={180}
+                    defaultValue={selectedProperty.receiving_account_label ?? ''}
+                    placeholder="Account nickname only"
+                  />
+                </label>
               </>
             ) : formKind === 'expected_rent' && selectedProperty ? (
               <>
                 <input type="hidden" name="propertyId" value={selectedProperty.id} />
                 <p className="self-center text-sm font-semibold">{selectedProperty.name}</p>
                 <label className={labelClass}>
-                  Expected rent for {month} (AUD)
+                  Expected rent for {monthText} (AUD)
                   <input
                     className={inputClass}
                     name="expectedRentAud"
@@ -536,7 +552,7 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                       <input className={inputClass} name="reference" maxLength={255} />
                     </label>
                     <p className="self-center text-sm text-muted-foreground">
-                      Records payment against {month}. Partial payments are supported.
+                      Records payment against {monthText}. Partial payments are supported.
                     </p>
                   </>
                 ) : (
@@ -600,8 +616,101 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
               </Button>
             </div>
           </form>
+  );
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          Terms take effect from the first of the selected month with no daily proration. A monthly
+          expected-rent override can record Finance's weekly total; later term changes leave prior
+          months unchanged.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            onClick={() => {
+              setError(null);
+              setFormKind('property');
+            }}
+          >
+            + Add property
+          </Button>
+          <Button variant="outline"
+            type="button"
+            onClick={() => {
+              setError(null);
+              setFormKind('rent');
+            }}
+            disabled={!register.properties.length}
+          >
+            Record rent
+          </Button>
+          <Button variant="outline"
+            type="button"
+            onClick={() => {
+              setError(null);
+              setFormKind('maintenance');
+            }}
+            disabled={!register.properties.length}
+          >
+            Log maintenance
+          </Button>
+        </div>
+      </div>
+      {notice && (
+        <output className="block w-full break-words rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+          {notice}
+        </output>
+      )}
+      {error && (
+        <p
+          role="alert"
+          className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+        >
+          {error}
+        </p>
+      )}
+      {formKind && !isDialogForm(formKind) && (
+        <section aria-label={`${formKind} entry`} className="rounded-xl border bg-card p-5 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">{formTitle}</h2>
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => {
+                setFormKind(null);
+                setSelectedPropertyId(null);
+              }}
+              disabled={saving}
+            >
+              Cancel
+            </Button>
+          </div>
+          {formFields}
         </section>
       )}
+      <Dialog
+        open={formKind !== null && isDialogForm(formKind)}
+        onOpenChange={(open) => {
+          if (!open && !saving) {
+            setFormKind(null);
+            setSelectedPropertyId(null);
+          }
+        }}
+      >
+        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-3xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{formTitle}</DialogTitle>
+            <DialogDescription>
+              {selectedProperty
+                ? `${selectedProperty.name} · ${selectedProperty.property_code}`
+                : 'Property details'}
+            </DialogDescription>
+          </DialogHeader>
+          {formKind !== null && isDialogForm(formKind) ? formFields : null}
+        </DialogContent>
+      </Dialog>
       {correction && (
         <section
           ref={correctionRef}
@@ -670,7 +779,7 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
           >
             {[
               ['Expected rent', summary.due, 'Monthly defaults plus Finance overrides'],
-              ['Rent received', summary.received, `Payments allocated to ${month}`],
+              ['Rent received', summary.received, `Payments allocated to ${monthText}`],
               ['Overdue rent', summary.overdue, 'Past due date and still outstanding'],
               [
                 'Maintenance recorded',
@@ -704,6 +813,10 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                           {property.property_code} · {property.property_type} ·{' '}
                           {property.tenant_name ||
                             (property.occupancy === 'vacant' ? 'Vacant' : 'Tenant not recorded')}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Agent: {property.agent_name || 'Not recorded'} · Rent paid into:{' '}
+                          {property.receiving_account_label || 'Not recorded'}
                         </p>
                       </div>
                       <span className={`rounded-full px-3 py-1 text-xs font-semibold ${propertyStatusClass(status)}`}>
@@ -756,7 +869,14 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                         type="button"
                         onClick={() => openPropertyForm('terms', property.id)}
                       >
-                        Change terms from {month}
+                        Change terms from {monthText}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        type="button"
+                        onClick={() => openPropertyForm('details', property.id)}
+                      >
+                        Edit details
                       </Button>
                     </div>
                   </article>
@@ -766,7 +886,7 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
           </section>
           <section className="overflow-hidden rounded-xl border bg-card shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
-              <h2 className="text-lg font-semibold">Property register · {month}</h2>
+              <h2 className="text-lg font-semibold">Property register · {monthText}</h2>
               <div role="tablist" aria-label="Property records" className={tabsListClassName}>
                 <button
                   type="button"
@@ -824,17 +944,25 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                             <td className="px-5 py-3">{money(due)}</td>
                             <td className="px-5 py-3">{money(received)}</td>
                             <td className="px-5 py-3">
-                              {register.payments
-                                .filter(
-                                  (payment) =>
-                                    payment.property_id === property.id && !payment.voided_at
-                                )
-                                .map((payment) => payment.received_on)
-                                .sort()
-                                .at(-1) ?? '—'}
+                              {formatFinanceDate(
+                                register.payments
+                                  .filter(
+                                    (payment) =>
+                                      payment.property_id === property.id && !payment.voided_at
+                                  )
+                                  .map((payment) => payment.received_on)
+                                  .sort()
+                                  .at(-1) ?? null
+                              )}
                             </td>
                             <td className="px-5 py-3">{money(outstanding)}</td>
-                            <td className="px-5 py-3">{status}</td>
+                            <td className="px-5 py-3">
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-xs font-semibold ${propertyStatusClass(status)}`}
+                              >
+                                {status}
+                              </span>
+                            </td>
                           </tr>
                         )
                       )}
@@ -867,7 +995,7 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                   <tbody>
                     {register.maintenance.map((job) => (
                       <tr key={job.id} className="border-t">
-                        <td className="px-5 py-3">{job.job_date}</td>
+                        <td className="px-5 py-3">{formatFinanceDate(job.job_date)}</td>
                         <td className="px-5 py-3">
                           {names.get(job.property_id) ?? 'Unknown property'}
                         </td>
@@ -899,7 +1027,7 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                                   .filter((event) => event.maintenance_id === job.id)
                                   .map((event) => (
                                     <li key={event.id}>
-                                      {event.changed_at.slice(0, 10)}:{' '}
+                                      {formatFinanceDate(event.changed_at)}:{' '}
                                       {event.previous_status.replace('_', ' ')} →{' '}
                                       {event.next_status.replace('_', ' ')}
                                     </li>
@@ -911,16 +1039,33 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                       </tr>
                     ))}
                   </tbody>
+                  <tfoot className="border-t-2 bg-muted/30 font-semibold">
+                    <tr>
+                      <th scope="row" colSpan={4} className="px-5 py-3 text-left">
+                        Total · {register.maintenance.length}{' '}
+                        {register.maintenance.length === 1 ? 'job' : 'jobs'}
+                      </th>
+                      <td className="px-5 py-3 tabular-nums">
+                        {money(
+                          register.maintenance.reduce((sum, job) => sum + Number(job.cost_aud), 0)
+                        )}
+                      </td>
+                      <td colSpan={2} className="px-5 py-3 text-xs font-normal text-muted-foreground">
+                        {register.maintenance.filter((job) => !job.invoice_reference).length} without
+                        invoice reference
+                      </td>
+                    </tr>
+                  </tfoot>
                 </table>
               ) : (
                 <p className="p-8 text-center text-sm text-muted-foreground">
-                  No maintenance recorded for {month}.
+                  No maintenance recorded for {monthText}.
                 </p>
               )}
             </div>
             {tab === 'rent' && (
               <div className="border-t">
-                <h3 className="px-5 py-4 font-semibold">Recorded rent payments · {month}</h3>
+                <h3 className="px-5 py-4 font-semibold">Recorded rent payments · {monthText}</h3>
                 {register.payments.length ? (
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[650px] text-left text-sm">
@@ -941,12 +1086,12 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                             <td className="px-5 py-3">
                               {names.get(payment.property_id) ?? 'Unknown property'}
                             </td>
-                            <td className="px-5 py-3">{payment.received_on}</td>
+                            <td className="px-5 py-3">{formatFinanceDate(payment.received_on)}</td>
                             <td className="px-5 py-3">{money(Number(payment.amount_aud))}</td>
                             <td className="px-5 py-3">{payment.reference || '—'}</td>
                             <td className="px-5 py-3">
                               {payment.voided_at ? (
-                                `Voided ${payment.voided_at.slice(0, 10)}: ${payment.void_reason}`
+                                `Voided ${formatFinanceDate(payment.voided_at)}: ${payment.void_reason}`
                               ) : (
                                 <Button variant="link"
                                   type="button"
@@ -965,7 +1110,7 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                   </div>
                 ) : (
                   <p className="px-5 pb-5 text-sm text-muted-foreground">
-                    No rent payments recorded for {month}.
+                    No rent payments recorded for {monthText}.
                   </p>
                 )}
               </div>

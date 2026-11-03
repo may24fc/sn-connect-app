@@ -1,5 +1,18 @@
-import { type PropertyRegister, monthlyRent, propertySummary } from '@/lib/finance/properties';
+import {
+  type PropertyRegister,
+  monthlyRent,
+  nextPropertyCode,
+  propertySummary,
+} from '@/lib/finance/properties';
 import { describe, expect, it } from 'vitest';
+
+describe('nextPropertyCode', () => {
+  it('starts at P001 and follows the highest P### code, ignoring other formats', () => {
+    expect(nextPropertyCode([])).toBe('P001');
+    expect(nextPropertyCode(['PROP-1A2B3C4D', 'P002', 'p009', 'SYD-001'])).toBe('P010');
+    expect(nextPropertyCode(['P999'])).toBe('P1000');
+  });
+});
 
 describe('Finance property figures', () => {
   const register: PropertyRegister = {

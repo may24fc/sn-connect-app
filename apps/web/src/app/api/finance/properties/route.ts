@@ -56,7 +56,18 @@ const entrySchema = z.discriminatedUnion('kind', [
     expectedRentAud: z.number().nonnegative().max(1e9).multipleOf(0.01).nullable(),
     calculationNote: z.string().trim().max(500).nullable(),
   }),
+  z.object({
+    kind: z.literal('details'),
+    propertyId: z.string().uuid(),
+    propertyCode: z.string().trim().min(1).max(40).regex(/^[A-Za-z0-9_-]+$/),
+    name: z.string().trim().min(1).max(180),
+    agentName: z.string().trim().max(180).nullable(),
+    receivingAccountLabel: z.string().trim().max(180).nullable(),
+  }),
 ]);
+
+const isUniqueViolation = (error: unknown) =>
+  typeof error === 'object' && error !== null && (error as { code?: string }).code === '23505';
 
 function propertyDb(admin: unknown): PropertyClient {
   return admin as PropertyClient;
@@ -254,6 +265,8 @@ export async function POST(request: NextRequest) {
       })
       .select('*')
       .single();
+    if (isUniqueViolation(error))
+      return NextResponse.json({ error: 'That property ID is already in use' }, { status: 409 });
     if (error || !data)
       return NextResponse.json({ error: 'Could not add property' }, { status: 500 });
     logActivity(context.admin, {
@@ -263,6 +276,30 @@ export async function POST(request: NextRequest) {
       recordId: data.id,
     });
     return NextResponse.json({ data }, { status: 201 });
+  }
+  if (entry.kind === 'details') {
+    const { data, error } = await db
+      .from('finance_properties')
+      .update({
+        property_code: entry.propertyCode.toUpperCase(),
+        name: entry.name,
+        agent_name: entry.agentName,
+        receiving_account_label: entry.receivingAccountLabel,
+      })
+      .eq('id', entry.propertyId)
+      .select('*')
+      .single();
+    if (isUniqueViolation(error))
+      return NextResponse.json({ error: 'That property ID is already in use' }, { status: 409 });
+    if (error || !data)
+      return NextResponse.json({ error: 'Could not update property details' }, { status: 500 });
+    logActivity(context.admin, {
+      userId: context.user.id,
+      action: 'finance_property_details_update',
+      tableName: 'finance_properties',
+      recordId: entry.propertyId,
+    });
+    return NextResponse.json({ data });
   }
   if (entry.kind === 'rent') {
     const { data, error } = await db
