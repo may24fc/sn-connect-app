@@ -14,6 +14,8 @@ const correctionSchema = z.object({
     .optional(),
   paymentSource: z.enum(['unknown', 'personal_card', 'company_card', 'bank_transfer']),
   paymentStatus: z.enum(['unknown', 'unpaid', 'confirmed']),
+  // A number records the AUD charged on the card or bank statement; null returns to the daily estimate.
+  actualAud: z.number().positive().max(1e10).multipleOf(0.01).nullable().optional(),
 });
 const RECEIPT_BUCKET = 'expense-receipts';
 const ALLOWED_RECEIPTS = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
@@ -32,26 +34,43 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const db = context.admin as any;
   const current = await db
     .from('expense_entries')
-    .select('id,category_code,payment_source,payment_status')
+    .select('id,currency,category_code,payment_source,payment_status,total_amount_aud,aud_amount_basis')
     .eq('id', id)
     .is('deleted_at', null)
     .maybeSingle();
   if (current.error || !current.data)
     return NextResponse.json({ error: 'Expense not found' }, { status: 404 });
+  const actualAud = parsed.data.actualAud;
+  if (actualAud !== undefined && String(current.data.currency).toUpperCase() === 'AUD')
+    return NextResponse.json(
+      { error: 'Actual AUD applies only to foreign-currency expenses' },
+      { status: 400 }
+    );
   const categoryCode = parsed.data.categoryCode as FinanceCategoryCode | undefined;
+  const now = new Date().toISOString();
   const updated = await db
     .from('expense_entries')
     .update({
       ...(categoryCode
         ? { category_code: categoryCode, expense_type: categoryToLegacyType(categoryCode) }
         : {}),
+      ...(actualAud === undefined
+        ? {}
+        : actualAud === null
+          ? { aud_amount_basis: null, aud_actual_recorded_by: null, aud_actual_recorded_at: null }
+          : {
+              total_amount_aud: actualAud,
+              aud_amount_basis: 'actual',
+              aud_actual_recorded_by: context.user.id,
+              aud_actual_recorded_at: now,
+            }),
       payment_source: parsed.data.paymentSource,
       payment_status: parsed.data.paymentStatus,
-      updated_at: new Date().toISOString(),
+      updated_at: now,
     })
     .eq('id', id)
     .is('deleted_at', null)
-    .select('id,category_code,payment_source,payment_status')
+    .select('id,category_code,payment_source,payment_status,total_amount_aud,aud_amount_basis')
     .single();
   if (updated.error)
     return NextResponse.json({ error: 'Could not update expense details' }, { status: 500 });

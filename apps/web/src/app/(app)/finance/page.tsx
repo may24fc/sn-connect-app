@@ -148,6 +148,11 @@ export default async function FinanceOverview({
         <div className="rounded-xl border bg-card p-5">
           <p className="text-sm text-muted-foreground">Recorded spend · {monthLabel(selectedMonth)}</p>
           <p className="mt-2 text-2xl font-bold tabular-nums">{money(summary.recordedSpendAud)}</p>
+          {Number(summary.estimatedSpendAud ?? 0) > 0 ? (
+            <p className="mt-1 text-xs font-medium text-amber-800">
+              Includes {money(Number(summary.estimatedSpendAud))} estimated at daily rates
+            </p>
+          ) : null}
           <p className="mt-1 text-xs text-muted-foreground">
             {comparison.changePercent === null
               ? `No comparable AUD spend in ${monthLabel(previous)}`
@@ -165,7 +170,7 @@ export default async function FinanceOverview({
           </p>
         </div>
         <div className="rounded-xl border bg-card p-5">
-          <p className="text-sm text-muted-foreground">Amounts awaiting FX conversion</p>
+          <p className="text-sm text-muted-foreground">Amounts awaiting an exchange rate</p>
           <p className="mt-2 text-2xl font-bold tabular-nums">{summary.unconvertedEntries}</p>
           {summary.unconvertedTotals?.length ? (
             <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground">
@@ -177,7 +182,7 @@ export default async function FinanceOverview({
               ))}
             </ul>
           ) : (
-            <p className="mt-1 text-xs text-muted-foreground">No amounts are waiting for conversion</p>
+            <p className="mt-1 text-xs text-muted-foreground">Foreign currency is estimated at daily rates</p>
           )}
         </div>
         <div className="rounded-xl border bg-card p-5">
@@ -194,7 +199,7 @@ export default async function FinanceOverview({
         <section className="rounded-xl border bg-card p-5 lg:col-span-5">
           <h2 className="font-semibold">Recorded spend by payment source</h2>
           <p className="mb-3 text-xs text-muted-foreground">
-            {monthLabel(selectedMonth)} · converted AUD direct payments
+            {monthLabel(selectedMonth)} · AUD direct payments, incl. daily-rate estimates
           </p>
           <dl className="space-y-2 text-sm">
             {[
@@ -248,7 +253,7 @@ export default async function FinanceOverview({
             <div>
               <h2 className="font-semibold">Spend by category</h2>
               <p className="text-xs text-muted-foreground">
-                {monthLabel(selectedMonth)} · AUD amounts with a known conversion
+                {monthLabel(selectedMonth)} · AUD, incl. daily-rate estimates
               </p>
             </div>
             <Link
@@ -290,7 +295,7 @@ export default async function FinanceOverview({
             </div>
           ) : (
             <p className="py-6 text-sm text-muted-foreground">
-              No converted direct payments recorded this month.
+              No direct payments with an AUD amount this month.
             </p>
           )}
         </section>

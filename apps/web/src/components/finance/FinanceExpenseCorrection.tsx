@@ -16,19 +16,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@hr-portal/ui';
+import { formatFinanceDate } from '@/lib/format';
 import { useRouter } from 'next/navigation';
 import { useId, useState } from 'react';
+
+const aud = (value: number) =>
+  new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(value);
 
 export function FinanceExpenseCorrection({
   id,
   categoryCode,
   paymentSource,
   paymentStatus,
+  currency = 'AUD',
+  totalAmount = 0,
+  totalAmountAud = null,
+  audBasis = null,
+  rateDate = null,
 }: {
   id: string;
   categoryCode: string | null;
   paymentSource: string | null;
   paymentStatus: string | null;
+  currency?: string;
+  totalAmount?: number;
+  totalAmountAud?: number | null;
+  audBasis?: string | null;
+  rateDate?: string | null;
 }) {
   const router = useRouter();
   const fieldId = useId();
@@ -36,11 +50,42 @@ export function FinanceExpenseCorrection({
   const [category, setCategory] = useState(categoryCode ?? 'other');
   const [source, setSource] = useState(paymentSource ?? 'unknown');
   const [status, setStatus] = useState(paymentStatus ?? 'unknown');
+  const isForeign = currency.toUpperCase() !== 'AUD';
+  const [actualAud, setActualAud] = useState(
+    audBasis === 'actual' && totalAmountAud !== null ? String(totalAmountAud) : ''
+  );
+  const [revertToEstimate, setRevertToEstimate] = useState(false);
   const [busy, setBusy] = useState(false);
   const [receipt, setReceipt] = useState<File | null>(null);
   const [error, setError] = useState('');
 
+  function openEditor() {
+    setCategory(categoryCode ?? 'other');
+    setSource(paymentSource ?? 'unknown');
+    setStatus(paymentStatus ?? 'unknown');
+    setActualAud(audBasis === 'actual' && totalAmountAud !== null ? String(totalAmountAud) : '');
+    setRevertToEstimate(false);
+    setReceipt(null);
+    setError('');
+    setOpen(true);
+  }
+
+  function actualAudPayload(): { actualAud?: number | null } | null {
+    if (!isForeign) return {};
+    if (revertToEstimate) return { actualAud: null };
+    const trimmed = actualAud.trim();
+    if (!trimmed) return audBasis === 'actual' ? { actualAud: null } : {};
+    const value = Number(trimmed);
+    if (!Number.isFinite(value) || value <= 0) return null;
+    return { actualAud: Math.round(value * 100) / 100 };
+  }
+
   async function save() {
+    const actualField = actualAudPayload();
+    if (actualField === null) {
+      setError('Enter the actual AUD as an amount greater than zero, or leave it blank.');
+      return;
+    }
     setBusy(true);
     setError('');
     const response = await fetch(`/api/finance/expenses/${id}`, {
@@ -50,6 +95,7 @@ export function FinanceExpenseCorrection({
         categoryCode: category,
         paymentSource: source,
         paymentStatus: status,
+        ...actualField,
       }),
     });
     setBusy(false);
@@ -81,7 +127,7 @@ export function FinanceExpenseCorrection({
 
   return (
     <>
-      <Button variant="link" size="sm" className="mt-1" type="button" onClick={() => setOpen(true)}>
+      <Button variant="link" size="sm" className="mt-1" type="button" onClick={openEditor}>
         Edit details
       </Button>
       <Dialog open={open} onOpenChange={(next) => (busy ? undefined : setOpen(next))}>
@@ -89,7 +135,7 @@ export function FinanceExpenseCorrection({
           <DialogHeader>
             <DialogTitle>Edit expense details</DialogTitle>
             <DialogDescription>
-              Amount, vendor and date stay as recorded. Changes are audited.
+              Vendor and date stay as recorded. Changes are audited.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
@@ -135,6 +181,45 @@ export function FinanceExpenseCorrection({
                 </SelectContent>
               </Select>
             </div>
+            {isForeign ? (
+              <div className="grid gap-1.5 rounded-lg border bg-muted/30 p-3">
+                <Label htmlFor={`${fieldId}-actual-aud`}>Actual AUD from card or bank statement</Label>
+                <p className="text-xs text-muted-foreground">
+                  {totalAmount.toLocaleString('en-AU', { minimumFractionDigits: 2 })} {currency.toUpperCase()} ·{' '}
+                  {audBasis === 'actual' && totalAmountAud !== null
+                    ? `Actual ${aud(totalAmountAud)} recorded`
+                    : totalAmountAud !== null
+                      ? `Estimated ${aud(totalAmountAud)} at the daily rate${rateDate ? ` for ${formatFinanceDate(rateDate)}` : ''}`
+                      : 'No daily rate available yet'}
+                </p>
+                <input
+                  id={`${fieldId}-actual-aud`}
+                  type="number"
+                  inputMode="decimal"
+                  min="0.01"
+                  step="0.01"
+                  value={revertToEstimate ? '' : actualAud}
+                  disabled={revertToEstimate}
+                  onChange={(event) => setActualAud(event.target.value)}
+                  placeholder={totalAmountAud !== null ? totalAmountAud.toFixed(2) : '0.00'}
+                  className="rounded-md border bg-card px-3 py-2 text-sm"
+                />
+                {audBasis === 'actual' ? (
+                  <label className="flex items-center gap-2 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={revertToEstimate}
+                      onChange={(event) => setRevertToEstimate(event.target.checked)}
+                    />
+                    Remove the actual amount and use the daily estimate
+                  </label>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Replaces the estimate once the charge is on the statement. Leave blank to keep the estimate.
+                  </p>
+                )}
+              </div>
+            ) : null}
             <div className="grid gap-1.5">
               <Label htmlFor={`${fieldId}-receipt`}>Attach or replace receipt</Label>
               <input

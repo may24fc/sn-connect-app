@@ -122,7 +122,7 @@ export default async function FinanceReportsPage({
             spend
           </h2>
           <p className="mb-4 text-xs text-muted-foreground">
-            Converted AUD direct payments only. The month-end report pack below remains for{' '}
+            AUD direct payments; foreign currency uses daily-rate estimates until Finance records the statement amount. The month-end report pack below remains for{' '}
             {monthLabel(month)}.
           </p>
           <div className="space-y-3">
@@ -201,7 +201,7 @@ export default async function FinanceReportsPage({
         <div className="rounded-xl border bg-card p-5">
           <p className="text-sm text-muted-foreground">Awaiting conversion</p>
           <p className="mt-2 text-2xl font-bold tabular-nums">{current.unconvertedEntries}</p>
-          <p className="text-xs text-muted-foreground">Not included in AUD totals</p>
+          <p className="text-xs text-muted-foreground">No daily rate available yet</p>
         </div>
       </section>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(300px,2fr)]">
@@ -210,7 +210,7 @@ export default async function FinanceReportsPage({
             <h2 className="font-semibold">
               Spend by category: {monthLabel(previous)} vs {monthLabel(month)}
             </h2>
-            <p className="text-xs text-muted-foreground">AUD · converted direct payments only</p>
+            <p className="text-xs text-muted-foreground">AUD direct payments · foreign currency estimated at daily rates</p>
           </div>
           {rows.length ? (
             <>

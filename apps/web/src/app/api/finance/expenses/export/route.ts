@@ -16,6 +16,12 @@ const filters = z.object({
   q: z.string().trim().max(100).optional(),
 });
 
+const AUD_BASIS_LABELS: Record<string, string> = {
+  reporting_currency: 'AUD',
+  daily_estimate: 'Estimate (daily rate)',
+  actual: 'Actual (statement)',
+};
+
 type ExportRow = {
   transaction_date: string;
   vendor_name: string;
@@ -25,6 +31,7 @@ type ExportRow = {
   total_amount: number;
   currency: string;
   total_amount_aud: number | null;
+  aud_amount_basis: string | null;
   approval_state: string | null;
   payment_status: string | null;
   match_status: string | null;
@@ -42,7 +49,7 @@ export async function GET(request: NextRequest) {
   let query = context.admin
     .from('expense_entries')
     .select(
-      'transaction_date,vendor_name,category_code,expense_type,payment_source,total_amount,currency,total_amount_aud,approval_state,payment_status,match_status',
+      'transaction_date,vendor_name,category_code,expense_type,payment_source,total_amount,currency,total_amount_aud,aud_amount_basis,approval_state,payment_status,match_status',
       { count: 'exact' }
     )
     .is('deleted_at', null)
@@ -90,6 +97,7 @@ export async function GET(request: NextRequest) {
       'Amount',
       'Currency',
       'AUD amount',
+      'AUD basis',
       'Approval',
       'Payment',
       'Match',
@@ -102,6 +110,8 @@ export async function GET(request: NextRequest) {
       String(row.total_amount),
       row.currency,
       row.total_amount_aud === null ? '' : String(row.total_amount_aud),
+      AUD_BASIS_LABELS[row.aud_amount_basis ?? ''] ??
+        (row.total_amount_aud === null ? 'Awaiting rate' : ''),
       row.approval_state ?? 'unknown',
       row.payment_status ?? 'unknown',
       row.match_status ?? 'unknown',

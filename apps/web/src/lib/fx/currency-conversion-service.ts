@@ -87,15 +87,19 @@ export class CurrencyConversionService {
     }
 
     if (normalizedCurrency === 'PHP') {
-      const wiseRate = await fetchWisePublicPhpAudRate();
+      try {
+        const wiseRate = await fetchWisePublicPhpAudRate();
 
-      return {
-        sourceCurrency: 'PHP',
-        exchangeRateToAud: wiseRate.exchangeRateToAud,
-        fxRatesFetchedAt: wiseRate.fetchedAt,
-        fxSource: 'wise_public',
-        resolvedFrom: 'wise_public',
-      };
+        return {
+          sourceCurrency: 'PHP',
+          exchangeRateToAud: wiseRate.exchangeRateToAud,
+          fxRatesFetchedAt: wiseRate.fetchedAt,
+          fxSource: 'wise_public',
+          resolvedFrom: 'wise_public',
+        };
+      } catch {
+        // Wise's public endpoint can require authentication; fall through to the cached daily rates.
+      }
     }
 
     try {

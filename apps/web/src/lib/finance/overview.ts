@@ -7,6 +7,14 @@ export type FinanceOverviewData = {
     amount: number;
     entry_count: number;
   }>;
+  /** AUD included in recordedSpendAud that is a daily-rate estimate, not a statement amount. */
+  estimatedSpendAud?: number;
+  estimatedTotals?: Array<{
+    currency: string;
+    amount: number;
+    amount_aud: number;
+    entry_count: number;
+  }>;
   categoryBudgets: Array<{
     code: string;
     name: string;

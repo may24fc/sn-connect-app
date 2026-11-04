@@ -46,6 +46,8 @@ type ExpenseRow = {
   source_type: string;
   business_justification: string | null;
   receipt_document_id: string | null;
+  aud_amount_basis: string | null;
+  fx_rates_fetched_at: string | null;
 };
 
 type Category = { code: string; name: string };
@@ -111,6 +113,9 @@ export default async function FinanceExpenses({
   let totals: {
     count: number;
     convertedAud: number;
+    estimatedAud?: number;
+    estimatedCount?: number;
+    unconvertedCount?: number;
     totalsByCurrency: Array<{ currency: string; amount: number; entry_count: number }>;
   } | null = null;
   const category = query.category ?? '';
@@ -127,7 +132,7 @@ export default async function FinanceExpenses({
     let ledger = db
       .from('expense_entries')
       .select(
-        'id,transaction_date,vendor_name,category_code,expense_type,payment_source,payment_status,approval_state,match_status,total_amount,currency,total_amount_aud,source_system,source_type,business_justification,receipt_document_id',
+        'id,transaction_date,vendor_name,category_code,expense_type,payment_source,payment_status,approval_state,match_status,total_amount,currency,total_amount_aud,aud_amount_basis,fx_rates_fetched_at,source_system,source_type,business_justification,receipt_document_id',
         { count: 'exact' }
       )
       .is('deleted_at', null)
@@ -259,7 +264,13 @@ export default async function FinanceExpenses({
                   <span key={item.currency}>{money(Number(item.amount), item.currency)}</span>
                 ))}
                 <span className="text-muted-foreground">
-                  {money(Number(totals.convertedAud), 'AUD')} converted total
+                  {money(Number(totals.convertedAud), 'AUD')} AUD total
+                  {Number(totals.estimatedCount ?? 0) > 0
+                    ? ` · includes ${money(Number(totals.estimatedAud ?? 0), 'AUD')} estimated at daily rates (${totals.estimatedCount})`
+                    : ''}
+                  {Number(totals.unconvertedCount ?? 0) > 0
+                    ? ` · ${totals.unconvertedCount} awaiting a rate`
+                    : ''}
                 </span>
               </div>
             ) : null}
@@ -307,11 +318,27 @@ export default async function FinanceExpenses({
                     <td className="p-3 capitalize">{label(row.payment_source)}</td>
                     <td className="whitespace-nowrap p-3 tabular-nums">
                       {money(Number(row.total_amount), row.currency)}
-                      {row.currency !== 'AUD' ? (
+                      {row.currency.toUpperCase() !== 'AUD' ? (
                         <div className="text-xs text-muted-foreground">
-                          {row.total_amount_aud === null
-                            ? 'AUD conversion pending'
-                            : `≈ ${money(Number(row.total_amount_aud), 'AUD')}`}
+                          {row.total_amount_aud === null ? (
+                            'AUD conversion pending'
+                          ) : row.aud_amount_basis === 'actual' ? (
+                            <span title="AUD from the card or bank statement">
+                              {money(Number(row.total_amount_aud), 'AUD')}{' '}
+                              <span className="rounded bg-emerald-100 px-1 font-medium text-emerald-800">
+                                Actual
+                              </span>
+                            </span>
+                          ) : (
+                            <span
+                              title={`Estimated at the daily rate${row.fx_rates_fetched_at ? ` for ${formatFinanceDate(row.fx_rates_fetched_at.slice(0, 10))}` : ''}; replace with the statement amount when known`}
+                            >
+                              ≈ {money(Number(row.total_amount_aud), 'AUD')}{' '}
+                              <span className="rounded bg-amber-100 px-1 font-medium text-amber-900">
+                                Estimate
+                              </span>
+                            </span>
+                          )}
                         </div>
                       ) : null}
                     </td>
@@ -336,6 +363,11 @@ export default async function FinanceExpenses({
                         categoryCode={row.category_code}
                         paymentSource={row.payment_source}
                         paymentStatus={row.payment_status}
+                        currency={row.currency}
+                        totalAmount={Number(row.total_amount)}
+                        totalAmountAud={row.total_amount_aud === null ? null : Number(row.total_amount_aud)}
+                        audBasis={row.aud_amount_basis}
+                        rateDate={row.fx_rates_fetched_at?.slice(0, 10) ?? null}
                       />
                     </td>
                   </tr>

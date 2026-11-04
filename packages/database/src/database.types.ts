@@ -2062,6 +2062,9 @@ export type Database = {
           ai_credit_account: string | null
           ai_debit_account: string | null
           approval_state: string
+          aud_actual_recorded_at: string | null
+          aud_actual_recorded_by: string | null
+          aud_amount_basis: string | null
           business_justification: string | null
           category_code: string | null
           created_at: string
@@ -2111,6 +2114,9 @@ export type Database = {
           ai_credit_account?: string | null
           ai_debit_account?: string | null
           approval_state?: string
+          aud_actual_recorded_at?: string | null
+          aud_actual_recorded_by?: string | null
+          aud_amount_basis?: string | null
           business_justification?: string | null
           category_code?: string | null
           created_at?: string
@@ -2160,6 +2166,9 @@ export type Database = {
           ai_credit_account?: string | null
           ai_debit_account?: string | null
           approval_state?: string
+          aud_actual_recorded_at?: string | null
+          aud_actual_recorded_by?: string | null
+          aud_amount_basis?: string | null
           business_justification?: string | null
           category_code?: string | null
           created_at?: string
@@ -2205,6 +2214,27 @@ export type Database = {
           verified_debit_account?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "expense_entries_aud_actual_recorded_by_fkey"
+            columns: ["aud_actual_recorded_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "expense_entries_aud_actual_recorded_by_fkey"
+            columns: ["aud_actual_recorded_by"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "expense_entries_aud_actual_recorded_by_fkey"
+            columns: ["aud_actual_recorded_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "expense_entries_department_id_fkey"
             columns: ["department_id"]
@@ -2423,35 +2453,50 @@ export type Database = {
       }
       finance_properties: {
         Row: {
+          agent_name: string | null
           created_at: string
           created_by: string
           due_day: number
           id: string
           name: string
           occupancy: string
+          property_code: string
           property_type: string
+          receiving_account_label: string | null
+          rent_amount_aud: number
+          rent_cadence: string
           tenant_name: string | null
           weekly_rent_aud: number
         }
         Insert: {
+          agent_name?: string | null
           created_at?: string
           created_by: string
           due_day: number
           id?: string
           name: string
           occupancy?: string
+          property_code: string
           property_type: string
+          receiving_account_label?: string | null
+          rent_amount_aud: number
+          rent_cadence?: string
           tenant_name?: string | null
           weekly_rent_aud: number
         }
         Update: {
+          agent_name?: string | null
           created_at?: string
           created_by?: string
           due_day?: number
           id?: string
           name?: string
           occupancy?: string
+          property_code?: string
           property_type?: string
+          receiving_account_label?: string | null
+          rent_amount_aud?: number
+          rent_cadence?: string
           tenant_name?: string | null
           weekly_rent_aud?: number
         }
@@ -2759,6 +2804,8 @@ export type Database = {
           effective_month: string
           occupancy: string
           property_id: string
+          rent_amount_aud: number
+          rent_cadence: string
           tenant_name: string | null
           weekly_rent_aud: number
         }
@@ -2769,6 +2816,8 @@ export type Database = {
           effective_month: string
           occupancy: string
           property_id: string
+          rent_amount_aud: number
+          rent_cadence?: string
           tenant_name?: string | null
           weekly_rent_aud: number
         }
@@ -2779,6 +2828,8 @@ export type Database = {
           effective_month?: string
           occupancy?: string
           property_id?: string
+          rent_amount_aud?: number
+          rent_cadence?: string
           tenant_name?: string | null
           weekly_rent_aud?: number
         }
@@ -2871,6 +2922,10 @@ export type Database = {
       finance_subscriptions: {
         Row: {
           active: boolean
+          billing_amount: number | null
+          billing_currency: string
+          billing_fx_converted_at: string | null
+          billing_fx_rate: number | null
           category_code: string
           created_at: string
           created_by: string | null
@@ -2885,6 +2940,10 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          billing_amount?: number | null
+          billing_currency?: string
+          billing_fx_converted_at?: string | null
+          billing_fx_rate?: number | null
           category_code: string
           created_at?: string
           created_by?: string | null
@@ -2899,6 +2958,10 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          billing_amount?: number | null
+          billing_currency?: string
+          billing_fx_converted_at?: string | null
+          billing_fx_rate?: number | null
           category_code?: string
           created_at?: string
           created_by?: string | null
@@ -3164,6 +3227,8 @@ export type Database = {
           created_at: string
           fetched_at: string
           id: string
+          provider: string
+          rate_date: string
           rates: Json
         }
         Insert: {
@@ -3171,6 +3236,8 @@ export type Database = {
           created_at?: string
           fetched_at?: string
           id?: string
+          provider: string
+          rate_date: string
           rates: Json
         }
         Update: {
@@ -3178,6 +3245,8 @@ export type Database = {
           created_at?: string
           fetched_at?: string
           id?: string
+          provider?: string
+          rate_date?: string
           rates?: Json
         }
         Relationships: []
@@ -10542,22 +10611,22 @@ export type Database = {
       }
       uhp_vp_month_actuals: {
         Row: {
-          reporting_month: string
-          volume_points: number
-          source: string
           created_at: string
+          reporting_month: string
+          source: string
+          volume_points: number
         }
         Insert: {
-          reporting_month: string
-          volume_points: number
-          source: string
           created_at?: string
+          reporting_month: string
+          source: string
+          volume_points: number
         }
         Update: {
-          reporting_month?: string
-          volume_points?: number
-          source?: string
           created_at?: string
+          reporting_month?: string
+          source?: string
+          volume_points?: number
         }
         Relationships: []
       }
@@ -11671,6 +11740,61 @@ export type Database = {
           },
         ]
       }
+      workspace_access_grants: {
+        Row: {
+          access_level: string
+          created_at: string
+          deleted_at: string | null
+          granted_by: string | null
+          id: string
+          updated_at: string
+          user_id: string
+          workspace: string
+        }
+        Insert: {
+          access_level: string
+          created_at?: string
+          deleted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+          workspace: string
+        }
+        Update: {
+          access_level?: string
+          created_at?: string
+          deleted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+          workspace?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_access_grants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "workspace_access_grants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "workspace_access_grants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       employee_directory: {
@@ -12090,11 +12214,41 @@ export type Database = {
         }
         Returns: boolean
       }
+      disconnect_telegram_account: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      finance_expense_filtered_totals: {
+        Args: {
+          target_month?: string
+          target_payment_source?: string
+          target_category?: string
+          vendor_search?: string
+        }
+        Returns: Json
+      }
+      finance_fx_rate_to_aud: {
+        Args: {
+          currency: string
+          on_date: string
+        }
+        Returns: {
+          rate_to_aud: number
+          rate_date: string
+          provider: string
+        }[]
+      }
       finance_overview: {
         Args: {
           target_month: string
         }
         Returns: Json
+      }
+      finance_refresh_fx_estimates: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       finance_spend_trend: {
         Args: {
@@ -12497,6 +12651,12 @@ export type Database = {
         }
         Returns: Json
       }
+      purge_deleted_performance_insight_conversations: {
+        Args: {
+          p_retention?: unknown
+        }
+        Returns: number
+      }
       purge_directory_user: {
         Args: {
           p_user_id: string
@@ -12618,6 +12778,14 @@ export type Database = {
         }
         Returns: number
       }
+      uhp_vp_monthly_actuals: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          reporting_month: string
+          volume_points: number
+          source: string
+        }[]
+      }
       update_finance_maintenance_status: {
         Args: {
           job_id: string
@@ -12637,6 +12805,13 @@ export type Database = {
       user_can_manage_pa_task_lookups: {
         Args: {
           target_user_id: string
+        }
+        Returns: boolean
+      }
+      user_can_write_workspace: {
+        Args: {
+          target_user_id: string
+          target_workspace: string
         }
         Returns: boolean
       }
@@ -12693,18 +12868,17 @@ export type Database = {
         }
         Returns: boolean
       }
-      uhp_vp_monthly_actuals: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          reporting_month: string
-          volume_points: number
-          source: string
-        }[]
-      }
       user_has_uhp_module_access: {
         Args: {
           target_user_id: string
           target_module: string
+        }
+        Returns: boolean
+      }
+      user_has_workspace_access: {
+        Args: {
+          target_user_id: string
+          target_workspace: string
         }
         Returns: boolean
       }
@@ -12723,6 +12897,20 @@ export type Database = {
       user_is_marketing_member: {
         Args: {
           target_user_id: string
+        }
+        Returns: boolean
+      }
+      user_is_project_contributor: {
+        Args: {
+          p_project_id: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
+      user_leads_project: {
+        Args: {
+          p_project_id: string
+          p_user_id: string
         }
         Returns: boolean
       }
@@ -12779,7 +12967,13 @@ export type Database = {
       }
     }
     Enums: {
-      account_kind: "workforce" | "reviewer" | "test" | "service" | "privileged"
+      account_kind:
+        | "workforce"
+        | "reviewer"
+        | "test"
+        | "service"
+        | "privileged"
+        | "workspace"
       ai_spend_type: "api" | "subscription"
       announcement_category:
         | "hr_updates"
@@ -12990,7 +13184,13 @@ export type Database = {
         | "resolved"
         | "closed"
       ticket_team: "hr" | "it"
-      user_role: "employee" | "associate" | "admin" | "super_admin" | "reviewer"
+      user_role:
+        | "employee"
+        | "associate"
+        | "admin"
+        | "super_admin"
+        | "reviewer"
+        | "workspace_user"
       user_status:
         | "active"
         | "on_leave"
@@ -13102,3 +13302,4 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
     ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+
