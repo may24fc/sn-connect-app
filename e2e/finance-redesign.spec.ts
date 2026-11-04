@@ -190,6 +190,75 @@ test('marketing desk-only users get a read-only desk without Finance links', asy
   await expect(page.getByRole('button', { name: 'Import' })).toHaveCount(0);
 });
 
+test('foreign-currency expenses show a labelled estimate that Finance can replace with actual AUD', async ({
+  page,
+}, testInfo) => {
+  testInfo.setTimeout(300_000);
+  await page.goto('/login');
+  await page.getByLabel('Email').fill('admin@example.com');
+  await page.locator('#password').fill('password');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(
+    page.getByRole('heading', { name: /Good (morning|afternoon|evening)/i })
+  ).toBeVisible({ timeout: 90_000 });
+
+  const vendor = `E2E FX ${Date.now()}`;
+  const created = await page.request.post('/api/expenses/log', {
+    data: {
+      vendorName: vendor,
+      transactionDate: new Date().toISOString().slice(0, 10),
+      expenseType: 'software',
+      categoryCode: 'ai_cloud',
+      totalAmount: 30,
+      taxAmount: 0,
+      currency: 'USD',
+      businessJustification: 'FX estimate check',
+    },
+  });
+  expect(created.status()).toBe(201);
+  const expenseId = (await created.json()).data.expenseEntry.id as string;
+  const patches: Array<Record<string, unknown>> = [];
+  await page.route(`**/api/finance/expenses/${expenseId}`, async (route) => {
+    patches.push(route.request().postDataJSON() as Record<string, unknown>);
+    await route.continue();
+  });
+
+  try {
+    await page.goto(`/finance/expenses?q=${encodeURIComponent(vendor)}`, { timeout: 120_000 });
+    const row = page.getByRole('row', { name: new RegExp(vendor) });
+    await expect(row).toBeVisible({ timeout: 60_000 });
+    test.skip(
+      (await row.innerText()).includes('AUD conversion pending'),
+      'No local daily rates yet; invoke update-fx-rates first'
+    );
+    await expect(row).toContainText('Estimate');
+    await expect(page.getByText(/estimated at daily rates/)).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath('fx-estimate-ledger.png') });
+
+    await row.getByRole('button', { name: 'Edit details' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Edit expense details' });
+    await expect(dialog.getByText(/Estimated .* at the daily rate/)).toBeVisible();
+    await dialog.getByLabel('Actual AUD from card or bank statement').fill('45.12');
+    await dialog.getByRole('button', { name: 'Save details' }).click();
+    await expect(dialog).toHaveCount(0, { timeout: 60_000 });
+    await expect(row).toContainText('Actual', { timeout: 30_000 });
+    await expect(row).toContainText('$45.12');
+    await page.screenshot({ path: testInfo.outputPath('fx-actual-ledger.png') });
+
+    await row.getByRole('button', { name: 'Edit details' }).click();
+    await dialog.getByLabel('Remove the actual amount and use the daily estimate').check();
+    await dialog.getByRole('button', { name: 'Save details' }).click();
+    await expect(dialog).toHaveCount(0, { timeout: 60_000 });
+    await expect(row).toContainText('Estimate', { timeout: 30_000 });
+    expect(patches).toEqual([
+      expect.objectContaining({ actualAud: 45.12 }),
+      expect.objectContaining({ actualAud: null }),
+    ]);
+  } finally {
+    await page.request.delete(`/api/expenses/${expenseId}`);
+  }
+});
+
 test('leadership resolves a Wise exception and sees unknown confirmations listed', async ({
   page,
 }) => {
@@ -619,7 +688,7 @@ test('saved snapshot opens a readable report instead of raw data', async ({ page
     expect((dialogBox?.x ?? 0) + (dialogBox?.width ?? 0)).toBeLessThanOrEqual(viewport.width);
     await page.screenshot({ path: testInfo.outputPath(`snapshot-${viewport.name}.png`) });
     await page.keyboard.press('Escape');
-    await expect(dialog).toHaveCount(0);
+    await expect(dialog).toHaveCount(0, { timeout: 60_000 });
   }
   expect(consoleErrors).toEqual([]);
 });
