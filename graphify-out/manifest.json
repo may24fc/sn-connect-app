@@ -3138,15 +3138,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/lib/expenses/monthly-report-pdf.ts": {
-    "mtime": 1793705460.5812802,
-    "seen": 1793706306.3338776,
-    "ast_hash": "92ceb70ae73ab9a6c3f5858de5a487c3",
+    "mtime": 1793758592.787867,
+    "seen": 1793760199.9551406,
+    "ast_hash": "061313e415439fe91a677620557a60c0",
     "semantic_hash": ""
   },
   "apps/web/src/lib/expenses/monthly-report.ts": {
-    "mtime": 1791778455.8348906,
-    "seen": 1791778702.5942981,
-    "ast_hash": "4b8759289f29af39a3f2f2acf36fca37",
+    "mtime": 1793758592.7889655,
+    "seen": 1793760199.9551425,
+    "ast_hash": "e5045b0fc4dc4792c557ce36a339bce5",
     "semantic_hash": ""
   },
   "apps/web/src/lib/format.ts": {
@@ -3174,8 +3174,8 @@
     "semantic_hash": "7a0dc3198c754c2a24e5a4a5466f950f"
   },
   "apps/web/src/lib/generated/application-update-summary.generated.ts": {
-    "mtime": 1793705495.4650695,
-    "seen": 1793706306.3338995,
+    "mtime": 1793759842.405741,
+    "seen": 1793760199.9551728,
     "ast_hash": "7322821048c7b2c5f9f9ddca7c61261a",
     "semantic_hash": "7322821048c7b2c5f9f9ddca7c61261a"
   },
@@ -7638,9 +7638,9 @@
     "semantic_hash": "150b3687205875991c9410c7c54a8f6e"
   },
   "tests/api/dashboard-analytics-route.test.ts": {
-    "mtime": 1791342960.7232666,
-    "seen": 1791343180.263304,
-    "ast_hash": "b6ee1673c499e0cef89e72003d61e518",
+    "mtime": 1793758673.8785028,
+    "seen": 1793760199.9562373,
+    "ast_hash": "ca4874963388c311f2e5bda15acc74d4",
     "semantic_hash": ""
   },
   "tests/api/dashboard-pending-route.test.ts": {
@@ -7842,9 +7842,9 @@
     "semantic_hash": ""
   },
   "tests/lib/expenses-monthly-report.test.ts": {
-    "mtime": 1791779671.567938,
-    "seen": 1791785974.2522302,
-    "ast_hash": "328fc0dacc4178f7e7dd22c918228cfc",
+    "mtime": 1793758592.7927067,
+    "seen": 1793760199.9563804,
+    "ast_hash": "053da310fd800ffa1671fabfb768387d",
     "semantic_hash": ""
   },
   "tests/lib/mutation-helpers.test.ts": {
@@ -10392,9 +10392,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(admin)/admin/expenses/page.tsx": {
-    "mtime": 1793705460.5554397,
-    "seen": 1793706306.3323877,
-    "ast_hash": "bdd5b69c6946e7d4f5466b88a033e5fb",
+    "mtime": 1793758592.783651,
+    "seen": 1793760199.9540422,
+    "ast_hash": "55b039adb75d4f869521e72d5778b060",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(admin)/admin/interns/[id]/page.tsx": {
@@ -12228,9 +12228,9 @@
     "semantic_hash": ""
   },
   "docs/features/finance-redesign/task-tracker.md": {
-    "mtime": 1793706217.414241,
-    "seen": 1793706306.3363104,
-    "ast_hash": "519a747bbdb0ba8658a141a63c062101",
+    "mtime": 1793759804.4233534,
+    "seen": 1793760199.9567406,
+    "ast_hash": "4e20f541ddff53687cdaec0e2218d428",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/finance/expenses/page.tsx": {
@@ -12324,9 +12324,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/lib/finance/categories.ts": {
-    "mtime": 1791342383.460487,
-    "seen": 1791343180.2625313,
-    "ast_hash": "b68e1868b5560c7627cec6171742b71b",
+    "mtime": 1793758817.1629725,
+    "seen": 1793760199.955147,
+    "ast_hash": "184788aafdad45358474a6f2110d907e",
     "semantic_hash": ""
   },
   "supabase/migrations/20261007000004_employee_directory_ignore_placeholder_departments.sql": {
@@ -12462,9 +12462,9 @@
     "semantic_hash": ""
   },
   "tests/pages/finance-redesign-pages.test.tsx": {
-    "mtime": 1793705460.5858705,
-    "seen": 1793706306.3359206,
-    "ast_hash": "1c3c2cbf38b62464f1d72e4d2d41c958",
+    "mtime": 1793758592.7944326,
+    "seen": 1793760199.9564137,
+    "ast_hash": "ca4c5c4800154d9b878032dbf59b83c8",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/finance/properties/page.tsx": {
@@ -12498,15 +12498,15 @@
     "semantic_hash": ""
   },
   "tests/api/finance-properties-route.test.ts": {
-    "mtime": 1791900778.524096,
-    "seen": 1791901047.9798276,
-    "ast_hash": "416f77db89b7c0bb185086a257b829da",
+    "mtime": 1793758592.7915244,
+    "seen": 1793760199.9562552,
+    "ast_hash": "0b80ec003826a8138f1b63072b190241",
     "semantic_hash": ""
   },
   "tests/lib/finance-properties.test.ts": {
-    "mtime": 1793705460.5847902,
-    "seen": 1793706306.335886,
-    "ast_hash": "6abedd0c3e6e84127a8f823d2b2fe1ec",
+    "mtime": 1793758592.79378,
+    "seen": 1793760199.956384,
+    "ast_hash": "b4962264799948c192f069ec2fca2cc0",
     "semantic_hash": ""
   },
   "tests/pages/sfo-performance-crm.test.tsx": {
@@ -12708,9 +12708,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/finance/reports/export/route.ts": {
-    "mtime": 1793705460.5702784,
-    "seen": 1793706306.3331072,
-    "ast_hash": "584c85ad8b5a50598a551af1c898ec81",
+    "mtime": 1793758592.7851171,
+    "seen": 1793760199.9545093,
+    "ast_hash": "1c308315d50f5dae428cf7a1922180af",
     "semantic_hash": ""
   },
   "apps/web/src/components/admin/TerminationReasonField.tsx": {
@@ -13950,9 +13950,9 @@
     "semantic_hash": ""
   },
   "docs/features/finance-redesign/feedback-implementation-2026-10-24.md": {
-    "mtime": 1793704008.1296675,
-    "seen": 1793706306.336306,
-    "ast_hash": "ffad424b9d4625a5a2c6618e8781708b",
+    "mtime": 1793709940.9752562,
+    "seen": 1793760199.956737,
+    "ast_hash": "68b7f3f49e1b91e56abb155819ad7fd4",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/uhp/volume-points/send-telegram/route.ts": {
@@ -14214,9 +14214,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/finance/FinanceSnapshotDetail.tsx": {
-    "mtime": 1793703687.4781985,
-    "seen": 1793706306.3335798,
-    "ast_hash": "f727f5ada551090e98ba526c8152065a",
+    "mtime": 1793758592.7864416,
+    "seen": 1793760199.9548662,
+    "ast_hash": "30ba062d1506eacedfc22bc8fea001d1",
     "semantic_hash": ""
   },
   "apps/web/src/components/finance/OwnExpenseDetailsEditor.tsx": {
@@ -14268,9 +14268,9 @@
     "semantic_hash": ""
   },
   "tests/sql/finance-gap-fixes-local.sql": {
-    "mtime": 1793704715.832671,
-    "seen": 1793706306.3359368,
-    "ast_hash": "0a1190f6306617c55f617080e8f4b2b4",
+    "mtime": 1793758592.796193,
+    "seen": 1793760199.9564278,
+    "ast_hash": "66d13ed3e254df4236c192f6d4fcbff1",
     "semantic_hash": ""
   },
   "tests/sql/finance-match-payment-local.sql": {
@@ -14283,6 +14283,12 @@
     "mtime": 1793676916.369488,
     "seen": 1793706306.3359542,
     "ast_hash": "120fb3ec6a742ee99e560c6ace9efd1d",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261104000001_finance_snapshot_exception_dedupe.sql": {
+    "mtime": 1793758176.3672273,
+    "seen": 1793760199.9562066,
+    "ast_hash": "6dff083c50e1f1ed928f08a007d9f9b5",
     "semantic_hash": ""
   }
 }
