@@ -171,8 +171,15 @@ export default async function FinanceReportsPage({
             {money(Number(current.recordedSpendAud) + Number(earlier.recordedSpendAud))}
           </p>
           <p className="text-xs text-muted-foreground">
-            {monthLabel(previous)} + {monthLabel(month)} · converted AUD
+            {monthLabel(previous)} + {monthLabel(month)} · AUD
           </p>
+          {Number(current.estimatedSpendAud ?? 0) + Number(earlier.estimatedSpendAud ?? 0) > 0 ? (
+            <p className="mt-1 text-xs font-medium text-amber-800">
+              Includes{' '}
+              {money(Number(current.estimatedSpendAud ?? 0) + Number(earlier.estimatedSpendAud ?? 0))}{' '}
+              estimated at daily rates
+            </p>
+          ) : null}
         </div>
         <div className="rounded-xl border bg-card p-5">
           <p className="text-sm text-muted-foreground">

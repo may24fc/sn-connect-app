@@ -613,6 +613,13 @@ function collectInsights(report: MonthlyExpenseReport): string[] {
     lines.push('No anomalies were flagged in this reporting window.');
   }
 
+  if (report.audEstimates?.currentMonthEntries) {
+    const { currentMonthAud, currentMonthEntries } = report.audEstimates;
+    lines.push(
+      `Total spend includes ${formatMoney(currentMonthAud)} estimated at daily exchange rates for ${currentMonthEntries} foreign-currency payment${currentMonthEntries === 1 ? '' : 's'}; Finance replaces estimates with card or bank statement amounts once recorded.`,
+    );
+  }
+
   return lines;
 }
 

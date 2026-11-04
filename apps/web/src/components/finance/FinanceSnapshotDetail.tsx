@@ -234,6 +234,14 @@ function SnapshotReport({ report }: { report: FinanceSnapshotReport }) {
           </div>
         ))}
       </section>
+      {report.audEstimates?.currentMonthEntries ? (
+        <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          Total spend includes {money(report.audEstimates.currentMonthAud)} estimated at daily
+          exchange rates ({report.audEstimates.currentMonthEntries} foreign-currency{' '}
+          {report.audEstimates.currentMonthEntries === 1 ? 'payment' : 'payments'}) at the time this
+          snapshot was saved.
+        </p>
+      ) : null}
       <Section title="Spend by category (AUD)">
         {categories.length ? (
           <Table

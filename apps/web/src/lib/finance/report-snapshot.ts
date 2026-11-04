@@ -66,6 +66,14 @@ export const financeSnapshotReportSchema = z.object({
   paymentStatusCounts: z
     .object({ unknown: z.number(), unpaid: z.number(), confirmed: z.number() })
     .optional(),
+  audEstimates: z
+    .object({
+      currentMonthAud: z.number(),
+      currentMonthEntries: z.number(),
+      previousMonthAud: z.number(),
+      previousMonthEntries: z.number(),
+    })
+    .optional(),
   subscriptionsAsOfSnapshot: z
     .array(
       z.object({

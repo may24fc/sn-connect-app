@@ -57,6 +57,18 @@ export async function GET(request: NextRequest) {
       row.momPercentChange === null ? '' : String(row.momPercentChange),
       '',
     ]),
+    ...(report.audEstimates
+      ? [
+          [
+            'AUD estimates',
+            'Estimated at daily exchange rates',
+            String(report.audEstimates.currentMonthAud),
+            String(report.audEstimates.previousMonthAud),
+            '',
+            `Entries: ${report.audEstimates.currentMonthEntries} this month, ${report.audEstimates.previousMonthEntries} previous month; included in Total Spend until replaced by statement amounts`,
+          ],
+        ]
+      : []),
     ...report.categoryBreakdown.map((row) => [
       'Category',
       financeCategoryName(row.category),

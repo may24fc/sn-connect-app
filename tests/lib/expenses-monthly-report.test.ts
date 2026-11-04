@@ -12,6 +12,7 @@ interface FakeRow {
   total_amount_aud: number | null;
   currency: string;
   payment_status: string;
+  aud_amount_basis?: string | null;
   category_code?: string | null;
   expense_type: string | null;
   processing_status: string;
@@ -184,5 +185,24 @@ describe('buildMonthlyExpenseReport', () => {
       referenceDate
     );
     expect(report.categoryBreakdown.map((entry) => entry.category)).toEqual(['ai_cloud', 'travel']);
+  });
+
+  it('reports how much of each month is a daily-rate estimate', async () => {
+    const report = await buildMonthlyExpenseReport(
+      buildFakeAdminClient([
+        row({ transaction_date: '2026-07-03', currency: 'USD', total_amount: 30, total_amount_aud: 43.03, aud_amount_basis: 'daily_estimate' }),
+        row({ transaction_date: '2026-07-04', currency: 'USD', total_amount: 30, total_amount_aud: 45.12, aud_amount_basis: 'actual' }),
+        row({ transaction_date: '2026-07-05', total_amount_aud: 100, aud_amount_basis: 'reporting_currency' }),
+        row({ transaction_date: '2026-06-20', currency: 'PHP', total_amount: 580, total_amount_aud: 13.1, aud_amount_basis: 'daily_estimate' }),
+      ]),
+      referenceDate
+    );
+    expect(report.summary[0]?.currentMonth).toBe(188.15);
+    expect(report.audEstimates).toEqual({
+      currentMonthAud: 43.03,
+      currentMonthEntries: 1,
+      previousMonthAud: 13.1,
+      previousMonthEntries: 1,
+    });
   });
 });

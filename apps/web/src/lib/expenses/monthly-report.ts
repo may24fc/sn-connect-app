@@ -57,12 +57,20 @@ export interface MonthlyExpenseReport {
     amount: number;
   }>;
   paymentStatusCounts: { unknown: number; unpaid: number; confirmed: number };
+  /** Portion of the AUD totals that is a daily-rate estimate rather than a statement amount. */
+  audEstimates: {
+    currentMonthAud: number;
+    currentMonthEntries: number;
+    previousMonthAud: number;
+    previousMonthEntries: number;
+  };
 }
 
 type MonthlyReportRow = {
   transaction_date: string;
   total_amount: number;
   total_amount_aud: number | null;
+  aud_amount_basis?: string | null;
   currency: string;
   payment_status: string;
   category_code: string | null;
@@ -167,7 +175,7 @@ export async function buildMonthlyExpenseReport(
     const { data, error, count } = await adminClient
       .from('expense_entries')
       .select(
-        'transaction_date, total_amount, total_amount_aud, currency, payment_status, category_code, expense_type, processing_status, match_status, risk_bucket, matched_variance_amount, vendor_name, department_id, department:departments(name), employee:employees!expense_entries_employee_id_fkey(department)',
+        'transaction_date, total_amount, total_amount_aud, aud_amount_basis, currency, payment_status, category_code, expense_type, processing_status, match_status, risk_bucket, matched_variance_amount, vendor_name, department_id, department:departments(name), employee:employees!expense_entries_employee_id_fkey(department)',
         { count: 'exact' }
       )
       .is('deleted_at', null)
@@ -198,6 +206,16 @@ export async function buildMonthlyExpenseReport(
 
   const currentTotalSpend = currentRows.reduce((sum, row) => sum + amountOf(row), 0);
   const previousTotalSpend = previousRows.reduce((sum, row) => sum + amountOf(row), 0);
+  const estimatedRows = (monthRows: MonthlyReportRow[]) =>
+    monthRows.filter((row) => row.aud_amount_basis === 'daily_estimate');
+  const currentEstimated = estimatedRows(currentRows);
+  const previousEstimated = estimatedRows(previousRows);
+  const audEstimates = {
+    currentMonthAud: round2(currentEstimated.reduce((sum, row) => sum + amountOf(row), 0)),
+    currentMonthEntries: currentEstimated.length,
+    previousMonthAud: round2(previousEstimated.reduce((sum, row) => sum + amountOf(row), 0)),
+    previousMonthEntries: previousEstimated.length,
+  };
   const currentEntryCount = currentRows.length;
   const previousEntryCount = previousRows.length;
   const currentAverage = currentEntryCount > 0 ? currentTotalSpend / currentEntryCount : 0;
@@ -324,5 +342,6 @@ export async function buildMonthlyExpenseReport(
       unpaid: currentRows.filter((row) => row.payment_status === 'unpaid').length,
       confirmed: currentRows.filter((row) => row.payment_status === 'confirmed').length,
     },
+    audEstimates,
   };
 }
