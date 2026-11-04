@@ -298,10 +298,7 @@ function AppShellInner({
           showCrmAccess={Boolean(crmAccess.data?.canAccess)}
           showMarketingAdSpendAccess={Boolean(marketingAdSpendAccess.data?.canAccess)}
           showRevenueForecastAccess={Boolean(revenueForecastAccess.data?.canAccess)}
-          showExpenseDeskAccess={
-            expensesAccess.capabilities.canViewDeskGlobal ||
-            expensesAccess.capabilities.canViewDeskDepartment
-          }
+          showExpenseDeskAccess={expensesAccess.capabilities.canViewDeskGlobal}
           showFinancePropertiesAccess={expensesAccess.capabilities.isAccounting}
           showAiSpendingAccess={Boolean(aiSpendingAccess.data?.canAccess)}
           showUhpClientTracker={uhpModules.includes('client_tracker')}
@@ -323,10 +320,7 @@ function AppShellInner({
             showCrmAccess={Boolean(crmAccess.data?.canAccess)}
             showMarketingAdSpendAccess={Boolean(marketingAdSpendAccess.data?.canAccess)}
             showRevenueForecastAccess={Boolean(revenueForecastAccess.data?.canAccess)}
-            showExpenseDeskAccess={
-              expensesAccess.capabilities.canViewDeskGlobal ||
-              expensesAccess.capabilities.canViewDeskDepartment
-            }
+            showExpenseDeskAccess={expensesAccess.capabilities.canViewDeskGlobal}
             showFinancePropertiesAccess={expensesAccess.capabilities.isAccounting}
             showAiSpendingAccess={Boolean(aiSpendingAccess.data?.canAccess)}
             showUhpClientTracker={uhpModules.includes('client_tracker')}

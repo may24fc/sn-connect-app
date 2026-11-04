@@ -160,6 +160,36 @@ test('accounting sees Finance navigation', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Reports', exact: true })).toBeVisible();
 });
 
+test('marketing desk-only users get a read-only desk without Finance links', async ({ page }) => {
+  await page.goto('/login');
+  await page.getByLabel('Email').fill('employee@example.com');
+  await page.locator('#password').fill('password');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(
+    page.getByRole('heading', { name: /Good (morning|afternoon|evening)/i })
+  ).toBeVisible({ timeout: 90_000 });
+
+  await expect(page.getByRole('button', { name: 'My Expenses', exact: true })).toBeVisible({
+    timeout: 45_000,
+  });
+  for (const name of ['Overview', 'Expenses', 'Staff Payments', 'Reports']) {
+    await expect(page.getByRole('button', { name, exact: true })).toHaveCount(0);
+  }
+
+  await page.goto('/expenses/desk');
+  await expect(page.getByRole('heading', { name: 'Expense Desk' })).toBeVisible({ timeout: 90_000 });
+  await expect(page.getByRole('tab', { name: /Settled Ledger/ })).toBeVisible({ timeout: 45_000 });
+  await expect(page.getByRole('tab', { name: /Amount differences/ })).toHaveAttribute(
+    'aria-selected',
+    'true'
+  );
+  await expect(page.getByRole('tab', { name: 'Matching Queue' })).toHaveCount(0);
+  await expect(page.getByText('Forbidden Access')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Open Executive Analytics' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Export' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Import' })).toHaveCount(0);
+});
+
 test('leadership resolves a Wise exception and sees unknown confirmations listed', async ({
   page,
 }) => {

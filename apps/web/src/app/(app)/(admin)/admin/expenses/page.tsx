@@ -89,7 +89,14 @@ export default function AdminExpensesDashboard() {
   // Finance reviewers read settled records in Finance › Expenses › All expenses; department-scoped
   // desk users cannot open Finance, so the settled tab remains their ledger view.
   const showSettledLedger = !expenseAccessLoading && !expenseCapabilities.canViewDeskGlobal;
-  const currentTab = activeTab === 'settled' && !showSettledLedger ? 'matching' : activeTab;
+  // Matching is limited to Accounting and leadership; department-scoped viewers start on amount differences.
+  const showMatchingQueue = expenseAccessLoading || expenseCapabilities.canMatch;
+  const requestedTab = activeTab === 'settled' && !showSettledLedger ? 'matching' : activeTab;
+  const currentTab = requestedTab === 'matching' && !showMatchingQueue ? 'exceptions' : requestedTab;
+  const canDecideDifferences = !expenseAccessLoading && expenseCapabilities.canMatch;
+  // Mirrors the role allow-list in /api/expenses/import.
+  const canImportLedger = ['admin', 'super_admin', 'associate'].includes(user?.role ?? '');
+  const canDeleteSettled = user?.role === 'admin' || user?.role === 'super_admin';
   const expensesDeskBasePath =
     user?.role === 'admin' || user?.role === 'super_admin' ? '/admin/expenses' : '/expenses/desk';
 
@@ -259,10 +266,13 @@ export default function AdminExpensesDashboard() {
             Expense Desk
           </PageTitle>
           <p className="mt-1 text-sm text-muted-foreground">
-            Match requests to payments and sign off amount differences.
-            {showSettledLedger ? ' Settled records stay in the ledger tab.' : ''}
+            {showMatchingQueue
+              ? 'Match requests to payments and sign off amount differences.'
+              : "Your department's amount differences and settled records. Finance handles matching and sign-off."}
+            {showSettledLedger && showMatchingQueue ? ' Settled records stay in the ledger tab.' : ''}
           </p>
         </div>
+        {canDecideDifferences ? (
         <Button
           variant="outline"
           className="gap-2"
@@ -271,15 +281,18 @@ export default function AdminExpensesDashboard() {
           <LineChart className="h-4 w-4" />
           Open Executive Analytics
         </Button>
+        ) : null}
       </div>
 
       <Tabs value={currentTab} onValueChange={(value) => setActiveTab(value as 'matching' | 'exceptions' | 'settled')} className="space-y-6">
         <div className="flex flex-wrap items-center gap-3">
           <TabsList className="w-fit">
-            <TabsTrigger value="matching" className="gap-2">
-              <Scale className="h-4 w-4" />
-              Matching Queue
-            </TabsTrigger>
+            {showMatchingQueue ? (
+              <TabsTrigger value="matching" className="gap-2">
+                <Scale className="h-4 w-4" />
+                Matching Queue
+              </TabsTrigger>
+            ) : null}
             <TabsTrigger value="exceptions" className="gap-2">
               <AlertCircle className="h-4 w-4" />
               Amount differences ({exceptions.length})
@@ -331,6 +344,7 @@ export default function AdminExpensesDashboard() {
             <ClearFiltersButton count={activeFilterCount} onClear={clearFilters} />
 
             <div className="flex items-center gap-2 sm:ml-auto">
+              {canDecideDifferences ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="gap-2">
@@ -355,10 +369,13 @@ export default function AdminExpensesDashboard() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              ) : null}
+              {canImportLedger ? (
               <Button variant="outline" onClick={() => setImportDialogOpen(true)} className="gap-2">
                 <Upload className="h-4 w-4" />
                 Import
               </Button>
+              ) : null}
             </div>
           </div>
         ) : null}
@@ -446,6 +463,7 @@ export default function AdminExpensesDashboard() {
                       </div>
 
                       {/* Decider comments */}
+                      {canDecideDifferences ? (
                       <div className="space-y-1 text-xs">
                         <Label htmlFor={`decide-${expense.id}`} className="font-bold text-zinc-700 dark:text-zinc-300">
                           Review Signature Comments / Denial Notes
@@ -459,8 +477,14 @@ export default function AdminExpensesDashboard() {
                           className="min-h-[60px]"
                         />
                       </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          Finance reviews and signs off this difference.
+                        </p>
+                      )}
                     </CardContent>
 
+                    {canDecideDifferences ? (
                     <div className="p-6 pt-0 border-t border-zinc-100 dark:border-zinc-800 flex gap-3">
                       <Button
                         variant="outline"
@@ -478,6 +502,7 @@ export default function AdminExpensesDashboard() {
                         <FileCheck2 className="mr-2 h-4 w-4" /> Approve Booking
                       </Button>
                     </div>
+                    ) : null}
                   </Card>
                 );
               })}
@@ -555,7 +580,7 @@ export default function AdminExpensesDashboard() {
                           {expense.reviewer_notes || 'No remarks recorded.'}
                         </TableCell>
                         <TableCell className="text-right pr-4">
-                          {deletingId === expense.id ? (
+                          {!canDeleteSettled ? null : deletingId === expense.id ? (
                             <div className="flex items-center gap-1 justify-end">
                               <Button
                                 size="sm"
