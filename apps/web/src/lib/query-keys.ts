@@ -710,6 +710,13 @@ export const queryKeys = {
       [...queryKeys.projects.all, 'documentation', projectId] as const,
     milestones: (projectId: string) =>
       [...queryKeys.projects.all, 'milestones', projectId] as const,
+    leadCandidates: (userId: string) =>
+      [...queryKeys.projects.all, 'lead-candidates', userId] as const,
+    invitations: () => [...queryKeys.projects.all, 'invitations'] as const,
+    myInvitations: (userId: string) =>
+      [...queryKeys.projects.invitations(), 'mine', userId] as const,
+    projectInvitations: (projectId: string) =>
+      [...queryKeys.projects.invitations(), 'project', projectId] as const,
     contributorCandidatesFor: (projectId: string) =>
       [...queryKeys.projects.all, 'contributor-candidates', projectId] as const,
     contributorCandidates: (projectId: string, search: string) =>

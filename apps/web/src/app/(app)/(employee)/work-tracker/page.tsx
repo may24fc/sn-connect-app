@@ -766,13 +766,21 @@ function RoadmapView({
   const [currentPage, setCurrentPage] = useState(1);
   const [healthFilter, setHealthFilter] = useState('all');
   const [ownerFilter, setOwnerFilter] = useState('all');
+  const projectLeads = (project: ProjectWorkSummary) =>
+    project.projectLeads?.length
+      ? project.projectLeads
+      : [{ userId: project.leadUserId, name: project.leadName, avatarUrl: project.leadAvatarUrl }];
   const visibleByHealth = projects.filter(
     (project) =>
       (healthFilter === 'all' || project.health === healthFilter) &&
-      (ownerFilter === 'all' || project.leadUserId === ownerFilter)
+      (ownerFilter === 'all' || projectLeads(project).some((lead) => lead.userId === ownerFilter))
   );
   const ownerOptions = Array.from(
-    new Map(projects.map((project) => [project.leadUserId, project.leadName ?? 'Unknown lead']))
+    new Map(
+      projects.flatMap((project) =>
+        projectLeads(project).map((lead) => [lead.userId, lead.name ?? 'Unknown lead'] as const)
+      )
+    )
   );
   const healthOrder: Record<string, number> = { blocked: 0, overdue: 1, at_risk: 2, on_track: 3 };
   const sortedProjects = [...visibleByHealth].sort(
@@ -847,11 +855,11 @@ function RoadmapView({
               setCurrentPage(1);
             }}
           >
-            <SelectTrigger className="w-44" aria-label="Filter projects by owner">
+            <SelectTrigger className="w-44" aria-label="Filter projects by lead">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All owners</SelectItem>
+              <SelectItem value="all">All project leads</SelectItem>
               {ownerOptions.map(([id, name]) => (
                 <SelectItem key={id} value={id}>
                   {name}
@@ -880,7 +888,7 @@ function RoadmapView({
             <thead className={`${tableHeaderClassName} ${tableHeadTextClassName}`}>
               <tr>
                 <th className="px-4 py-3">Project</th>
-                <th className="px-4 py-3">Owner</th>
+                <th className="px-4 py-3">Project leads</th>
                 <th className="px-4 py-3">Target date</th>
                 <th className="px-4 py-3">Health</th>
                 <th className="px-4 py-3">Execution</th>
@@ -908,20 +916,14 @@ function RoadmapView({
                     ) : null}
                   </td>
                   <td className="px-4 py-3">
-                    {project.leadName ? (
-                      <span className="flex min-w-0 items-center gap-2">
-                        <UserAvatar
-                          name={project.leadName}
-                          avatarUrl={project.leadAvatarUrl}
-                          size="xs"
-                        />
-                        <span className="truncate">{project.leadName}</span>
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">
-                        {project.leadUserId ? 'Unknown lead' : 'Unassigned'}
-                      </span>
-                    )}
+                    <div className="space-y-1">
+                      {projectLeads(project).map((lead) => (
+                        <span key={lead.userId} className="flex min-w-0 items-center gap-2">
+                          <UserAvatar name={lead.name} avatarUrl={lead.avatarUrl} size="xs" />
+                          <span className="truncate">{lead.name ?? 'Unknown lead'}</span>
+                        </span>
+                      ))}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-sm">{formatDueDate(project.dueDate)}</td>
                   <td className="px-4 py-3">

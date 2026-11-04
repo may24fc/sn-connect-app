@@ -3,7 +3,7 @@
 import { ProjectDescriptionFields } from '@/components/projects/ProjectDescriptionFields';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBackNavigation } from '@/hooks/useBackNavigation';
-import { useCreateProject } from '@/hooks/useProjects';
+import { useCreateProject, useProjectLeadCandidates } from '@/hooks/useProjects';
 import {
   type ProjectDescriptionSections,
   composeProjectDescription,
@@ -14,6 +14,7 @@ import {
   CardContent,
   Input,
   Label,
+  TaskAssigneeSelect,
   useToast,
   PageTitle,
 } from '@hr-portal/ui';
@@ -29,6 +30,12 @@ export default function NewProjectPage() {
   const handleBack = useBackNavigation({ fallbackPath: projectListPath });
   const { addToast } = useToast();
   const createProject = useCreateProject();
+  const {
+    data: leadCandidates,
+    isLoading: leadsLoading,
+    isError: leadsError,
+    refetch: refetchLeads,
+  } = useProjectLeadCandidates(user?.id);
 
   const today = new Date().toISOString().slice(0, 10);
   const [name, setName] = useState('');
@@ -40,6 +47,23 @@ export default function NewProjectPage() {
   const [startDate, setStartDate] = useState(today);
   const [targetEndDate, setTargetEndDate] = useState('');
   const [isCompletedAlready, setIsCompletedAlready] = useState(false);
+  const [selectedLeadIds, setSelectedLeadIds] = useState<Array<string> | null>(null);
+  const projectLeadIds = selectedLeadIds ?? (user?.id ? [user.id] : []);
+  const leadOptions = user
+    ? [
+        {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          department: null,
+          position: null,
+          avatarUrl: user.avatarUrl ?? null,
+          requiresInvitation: false,
+        },
+        ...(leadCandidates?.data ?? []).filter((candidate) => candidate.id !== user.id),
+      ]
+    : [];
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -48,18 +72,36 @@ export default function NewProjectPage() {
       addToast({ title: 'Missing fields', description: 'Name, start, and target end are required.', variant: 'warning' });
       return;
     }
+    const [primaryLeadId, ...coLeadUserIds] = projectLeadIds;
+    if (!primaryLeadId) {
+      addToast({
+        title: 'Select a project lead',
+        description: 'Every project needs at least one lead.',
+        variant: 'warning',
+      });
+      return;
+    }
     try {
       const composedDescription = composeProjectDescription(descriptionSections);
       const result = await createProject.mutateAsync({
         name: name.trim(),
         description: composedDescription || null,
-        leadUserId: user.id,
+        leadUserId: primaryLeadId,
+        coLeadUserIds,
         startDate,
         targetEndDate,
         status: isCompletedAlready ? 'completed' : 'active',
         isCompletedAlready,
       });
-      addToast({ title: 'Project created', description: name.trim(), variant: 'success' });
+      addToast({
+        title: 'Project created',
+        description: result.pendingPrimary
+          ? 'You are primary lead until the invited lead accepts.'
+          : result.pendingInvitationCount
+            ? `${result.pendingInvitationCount} project invitation${result.pendingInvitationCount === 1 ? '' : 's'} sent.`
+            : name.trim(),
+        variant: 'success',
+      });
       router.push(
         `/projects/${result.data.id}?returnTo=${encodeURIComponent(projectListPath)}`
       );
@@ -130,6 +172,41 @@ export default function NewProjectPage() {
                   />
                 </div>
               </div>
+              <TaskAssigneeSelect
+                title="Project leads"
+                description="Leads manage the project. Contributors can participate without lead management access."
+                searchLabel="Search project leads"
+                searchPlaceholder={user?.role === 'admin' || user?.role === 'super_admin'
+                  ? 'Search by name or email...'
+                  : 'Search by name...'}
+                emptyMessage="No project leads found"
+                employees={leadOptions}
+                selectedIds={projectLeadIds}
+                onSelectionChange={setSelectedLeadIds}
+                primaryId={projectLeadIds[0] ?? null}
+                getPersonNote={(personId) =>
+                  leadOptions.find((person) => person.id === personId)?.requiresInvitation
+                    ? 'Invitation required'
+                    : null
+                }
+                isLoading={leadsLoading}
+                disabled={createProject.isPending}
+              />
+              <p className="text-xs text-muted-foreground">
+                The first selected lead is the proposed primary. People outside departments you
+                lead receive an invitation and join only if they accept, including when you are
+                an administrator. If the proposed primary needs an invitation, you remain primary
+                until they accept. The current primary determines the initial department; accepting
+                an invitation does not automatically add another department.
+              </p>
+              {leadsError ? (
+                <div role="alert" className="flex flex-wrap items-center gap-2 text-sm text-destructive">
+                  Could not load eligible project leads.
+                  <Button type="button" variant="outline" size="sm" onClick={() => void refetchLeads()}>
+                    Retry
+                  </Button>
+                </div>
+              ) : null}
               <ProjectDescriptionFields
                 value={descriptionSections}
                 onChange={setDescriptionSections}

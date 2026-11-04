@@ -288,7 +288,10 @@ export async function POST(request: NextRequest) {
 
     if (error || !data) {
       console.error('Error creating task:', error);
-      return NextResponse.json({ error: getTaskWriteErrorMessage(error) }, { status: 500 });
+      return NextResponse.json(
+        { error: getTaskWriteErrorMessage(error) },
+        { status: error?.code === '42501' ? 403 : 500 }
+      );
     }
 
     // Notify assignee about the new task

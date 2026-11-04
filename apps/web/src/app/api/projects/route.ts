@@ -1,12 +1,9 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { logActivity } from '@/lib/audit';
-import { validatePersonAssignment } from '@/lib/people/assignment-validation';
 import { loadDirectoryPeople } from '@/lib/people/directory-people';
 import { projectCreateSchema } from '@/lib/schemas/project.schema';
-import {
-  canAssignUser,
-  getWorkManagementScope,
-} from '@/lib/work-management/permissions';
+import { getWorkManagementScope } from '@/lib/work-management/permissions';
+import { z } from 'zod';
 import { getProjectAuthedContext, isProjectAdmin } from './_lib';
 
 export const dynamic = 'force-dynamic';
@@ -37,7 +34,24 @@ export async function GET(request: NextRequest) {
 
   if (status) query = query.eq('status', status);
   if (health) query = query.eq('health', health);
-  if (leadUserId) query = query.eq('lead_user_id', leadUserId);
+  if (leadUserId) {
+    if (!z.string().uuid().safeParse(leadUserId).success) {
+      return NextResponse.json({ error: 'Invalid project lead' }, { status: 400 });
+    }
+    const { data: leadMemberships, error: leadMembershipsError } = await supabaseAdmin
+      .from('project_contributors')
+      .select('project_id')
+      .eq('user_id', leadUserId)
+      .eq('role', 'lead');
+    if (leadMembershipsError) {
+      console.error('GET /api/projects lead lookup failed:', leadMembershipsError);
+      return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 });
+    }
+    const coLedProjectIds = (leadMemberships ?? []).map((membership) => membership.project_id);
+    query = coLedProjectIds.length
+      ? query.or(`lead_user_id.eq.${leadUserId},id.in.(${coLedProjectIds.join(',')})`)
+      : query.eq('lead_user_id', leadUserId);
+  }
 
   // Non-admins are limited to projects they participate in or actively lead by department.
   if (!isProjectAdmin(role) || mineOnly) {
@@ -152,20 +166,27 @@ export async function GET(request: NextRequest) {
   // projects the caller may see, and the detail route exposes the same members, so the admin
   // client resolves names without widening access.
   const contributorIdsByProject = new Map<string, Array<string>>();
+  const leadIdsByProject = new Map<string, Array<string>>();
   if (projectIds.length > 0) {
     const { data: contributorRows, error: contributorsError } = await supabaseAdmin
       .from('project_contributors')
-      .select('project_id, user_id')
+      .select('project_id, user_id, role')
       .in('project_id', projectIds);
 
     if (contributorsError) {
       console.error('GET /api/projects contributor lookup failed:', contributorsError);
+      return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 });
     }
 
-    for (const row of (contributorRows ?? []) as Array<{ project_id: string; user_id: string }>) {
+    for (const row of contributorRows ?? []) {
       const ids = contributorIdsByProject.get(row.project_id) ?? [];
       ids.push(row.user_id);
       contributorIdsByProject.set(row.project_id, ids);
+      if (row.role === 'lead') {
+        const leadIds = leadIdsByProject.get(row.project_id) ?? [];
+        leadIds.push(row.user_id);
+        leadIdsByProject.set(row.project_id, leadIds);
+      }
     }
   }
 
@@ -211,6 +232,7 @@ export async function GET(request: NextRequest) {
       primary_department: getPrimaryDepartment(project.id),
       lead_name: people.get(project.lead_user_id)?.name ?? null,
       lead_avatar_url: people.get(project.lead_user_id)?.avatarUrl ?? null,
+      lead_user_ids: [...new Set([project.lead_user_id, ...(leadIdsByProject.get(project.id) ?? [])])],
       contributor_people: getContributorPeople(project),
     })),
     pagination: { page, pageSize, total: count ?? 0 },
@@ -219,8 +241,7 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/projects
- * Creates a new project. Caller becomes the lead by default if not specified.
- * Auto-adds lead as a contributor.
+ * Creates a project and its direct assignments or pending invitations atomically.
  */
 export async function POST(request: NextRequest) {
   const auth = await getProjectAuthedContext();
@@ -245,103 +266,47 @@ export async function POST(request: NextRequest) {
 
   const input = parsed.data;
 
-  if (
-    !(await canAssignUser(supabaseAdmin, user.id, role, input.leadUserId, null))
-  ) {
+  if (input.supervisorId && !isProjectAdmin(role)) {
     return NextResponse.json(
-      { error: 'You can only create projects for yourself or members of a department you lead' },
+      { error: 'Only admins can assign a project supervisor' },
       { status: 403 }
     );
   }
 
-  if (input.supervisorId) {
-    // The supervisor gains manage rights over the project, so only admins may assign one.
-    if (!isProjectAdmin(role)) {
+  const { data, error } = await supabaseAdmin.rpc('create_project_with_leads', {
+    p_actor: user.id,
+    p_input: input,
+  });
+  if (error) {
+    if (error.code === '42501') {
       return NextResponse.json(
-        { error: 'Only admins can assign a project supervisor' },
+        { error: 'Invite an out-of-scope supervisor as a project lead before appointing them' },
         { status: 403 }
       );
     }
-
-    const supervisorCheck = await validatePersonAssignment(supabaseAdmin, input.supervisorId, {
-      label: 'Supervisor',
-    });
-    if (!supervisorCheck.ok) {
-      return NextResponse.json({ error: supervisorCheck.error }, { status: supervisorCheck.status });
+    if (error.code === '23514' || error.code === '22007' || error.code === '22008') {
+      return NextResponse.json({ error: 'Check the project dates and active lead accounts' }, { status: 400 });
     }
+    console.error('POST /api/projects failed:', error.code);
+    return NextResponse.json({ error: 'Failed to create project and send invitations' }, { status: 500 });
   }
-
-  const progressPct = input.progressPct ?? (input.isCompletedAlready ? 100 : 0);
-
-  const { data: created, error } = await supabaseAdmin
-    .from('projects')
-    .insert({
-      name: input.name,
-      description: input.description ?? null,
-      lead_user_id: input.leadUserId,
-      supervisor_id: input.supervisorId ?? null,
-      start_date: input.startDate,
-      target_end_date: input.targetEndDate,
-      status: progressPct >= 100 ? 'completed' : input.status,
-      progress_pct: progressPct,
-      created_by: user.id,
-    })
-    .select('*')
-    .single();
-
-  if (error || !created) {
-    console.error('POST /api/projects failed:', error);
-    return NextResponse.json({ error: error?.message ?? 'Failed to create project' }, { status: 500 });
-  }
-
-  // Auto-add lead as a contributor (idempotent due to PK). Without this row the lead's membership is
-  // incomplete, so a failure here removes the just-created project instead of leaving it half-made.
-  const { error: leadContributorError } = await supabaseAdmin
-    .from('project_contributors')
-    .upsert(
-      { project_id: created.id, user_id: input.leadUserId, role: 'lead' },
-      { onConflict: 'project_id,user_id' }
-    );
-
-  if (leadContributorError) {
-    console.error('POST /api/projects failed to add the lead contributor:', leadContributorError.message);
-    const { error: rollbackError } = await supabaseAdmin.from('projects').delete().eq('id', created.id);
-    if (rollbackError) {
-      console.error('POST /api/projects failed to roll back the project:', rollbackError.message);
-    }
+  const result = z.object({
+    data: z.object({ id: z.string().uuid() }).passthrough(),
+    pendingInvitationCount: z.number().int().nonnegative(),
+    pendingPrimary: z.boolean(),
+  }).safeParse(data);
+  if (!result.success) {
+    console.error('POST /api/projects returned an invalid result');
     return NextResponse.json({ error: 'Failed to create project' }, { status: 500 });
-  }
-
-  const { data: leadUser } = await supabaseAdmin
-    .from('users')
-    .select('department_id')
-    .eq('id', input.leadUserId)
-    .maybeSingle();
-  if (leadUser?.department_id) {
-    const { error: projectDepartmentError } = await supabaseAdmin
-      .from('project_departments')
-      .insert({
-        project_id: created.id,
-        department_id: leadUser.department_id,
-        status: 'active',
-        invited_by: user.id,
-        responded_by: user.id,
-        responded_at: new Date().toISOString(),
-      });
-    if (projectDepartmentError) {
-      console.error('POST /api/projects failed to add project department:', projectDepartmentError);
-      await supabaseAdmin.from('projects').delete().eq('id', created.id);
-      return NextResponse.json({ error: 'Failed to create project' }, { status: 500 });
-    }
   }
 
   logActivity(supabase, {
     userId: user.id,
     action: 'project_created',
     tableName: 'projects',
-    recordId: created.id,
-    metadata: { name: input.name },
+    recordId: result.data.data.id,
+    metadata: { pendingInvitations: result.data.pendingInvitationCount },
   });
 
-  return NextResponse.json({ data: created }, { status: 201 });
+  return NextResponse.json(result.data, { status: 201 });
 }

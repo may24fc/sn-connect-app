@@ -16,6 +16,9 @@ Department management for the organizational structure. Departments are referenc
 |--------|------|------|-------------|
 | `GET` | `/api/departments` | Any authenticated | List departments |
 | `POST` | `/api/departments` | admin, super_admin | Create department |
+| `GET` | `/api/departments/leads` | Any authenticated | List active lead appointments |
+| `POST` | `/api/departments/leads` | super_admin | Appoint a directory account to a department |
+| `DELETE` | `/api/departments/leads` | super_admin | Revoke one department/user appointment |
 
 ---
 
@@ -139,6 +142,39 @@ curl -X POST https://your-app.com/api/departments \
 
 ---
 
+## Department lead appointments
+
+`POST` and `DELETE /api/departments/leads` accept:
+
+```json
+{
+  "departmentId": "uuid",
+  "userId": "uuid"
+}
+```
+
+- Super-admins can search by name, email, or position across the whole directory,
+  including directory-visible admins and leadership. The picker uses paginated
+  server search, not a department-filtered roster.
+- Appointment eligibility follows the directory population: workforce accounts
+  that are not deleted or terminated. Privileged non-workforce and reviewer-only
+  identities are not offered. The destination department must exist and not be deleted.
+- Once appointed, a lead's authority comes from the active appointment regardless of
+  account kind; only deletion, termination, or revoking the appointment removes it.
+- One person can hold active appointments in multiple departments, with multiple
+  co-leads per department. Appointing a lead never changes their home department.
+- Authority follows non-revoked appointments rather than home-department membership.
+  Leads can manage eligible members of every department they lead. Project membership
+  for someone outside those departments requires an accepted individual invitation,
+  including for administrators; the separate project-department and task-assignment
+  checks remain in place. Existing global admin project visibility is unchanged.
+- Revoking an appointment removes only that department's lead authority. Other
+  appointments and independent project ownership remain intact.
+- Appointments and removals are server-confirmed, audited operations. Duplicate
+  active appointments return `200`; new appointments return `201`. Invalid inputs
+  or ineligible candidates return `400`, missing departments return `404`, and
+  validation/storage failures return `500`.
+
 ## Database Schema
 
 ### `departments` Table
@@ -161,4 +197,4 @@ curl -X POST https://your-app.com/api/departments \
 
 ---
 
-*Last updated: 2026-02-27*
+*Last updated: 2026-11-04*

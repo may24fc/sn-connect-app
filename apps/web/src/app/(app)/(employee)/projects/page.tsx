@@ -103,7 +103,10 @@ export default function ProjectsListPage() {
             Projects
           </PageTitle>
           <p className="mt-1 text-sm text-muted-foreground">
-            Track your monthly milestones and earn points
+            Track your monthly milestones and earn points.{' '}
+            <Link href="/projects/invitations" className="underline underline-offset-2 hover:text-foreground">
+              Review project invitations
+            </Link>
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -192,7 +195,12 @@ export default function ProjectsListPage() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {projects.map((p) => {
-              const canEdit = isAdmin || p.lead_user_id === user?.id;
+              const canEdit =
+                isAdmin ||
+                p.lead_user_id === user?.id ||
+                p.created_by === user?.id ||
+                p.supervisor_id === user?.id ||
+                (user?.status !== 'terminated' && !!user?.id && !!p.lead_user_ids?.includes(user.id));
               return (
                 <Link key={p.id} href={`/projects/${p.id}`}>
                   <ProjectCard

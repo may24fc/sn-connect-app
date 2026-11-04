@@ -53,6 +53,7 @@ export interface ProjectRecord {
   // Lead identity, resolved server-side so the lead shows even when they are not an associate.
   lead_name?: string | null;
   lead_avatar_url?: string | null;
+  lead_user_ids?: Array<string>;
   // GET /api/projects only: contributor identities for the card avatar stack.
   contributor_people?: Array<ProjectPersonSummary>;
   created_by: string | null;
@@ -224,6 +225,7 @@ export interface CreateProjectInput {
   name: string;
   description?: string | null;
   leadUserId: string;
+  coLeadUserIds?: Array<string>;
   supervisorId?: string | null;
   startDate: string;
   targetEndDate: string;
@@ -237,7 +239,7 @@ export function useCreateProject() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateProjectInput) =>
-      jsonFetch<{ data: ProjectRecord }>('/api/projects', {
+      jsonFetch<{ data: ProjectRecord; pendingInvitationCount: number; pendingPrimary: boolean }>('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(input),
@@ -245,6 +247,111 @@ export function useCreateProject() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.workTracker.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.adminProjects.overview() });
+    },
+  });
+}
+
+export interface ProjectLeadCandidate {
+  id: string;
+  name: string;
+  email: string | null;
+  role: string | null;
+  department: string | null;
+  position: string | null;
+  avatarUrl: string | null;
+  requiresInvitation: boolean;
+}
+
+export function useProjectLeadCandidates(userId: string | null | undefined, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.projects.leadCandidates(userId ?? ''),
+    queryFn: () => jsonFetch<{ data: Array<ProjectLeadCandidate> }>('/api/projects/lead-candidates'),
+    enabled: enabled && !!userId,
+    staleTime: STALE_TIMES.dynamic,
+  });
+}
+
+export interface MyProjectInvitation {
+  id: string;
+  project_id: string;
+  project_name: string;
+  project_description: string | null;
+  inviter_name: string;
+  role: 'lead' | 'contributor';
+  make_primary: boolean;
+  created_at: string;
+}
+
+export interface PendingProjectInvitation {
+  id: string;
+  invitee_id: string;
+  invitee_name: string;
+  role: 'lead' | 'contributor';
+  make_primary: boolean;
+  created_at: string;
+}
+
+export function useMyProjectInvitations(userId: string | null | undefined) {
+  return useQuery({
+    queryKey: queryKeys.projects.myInvitations(userId ?? ''),
+    queryFn: () => jsonFetch<{ data: Array<MyProjectInvitation> }>('/api/projects/invitations'),
+    enabled: !!userId,
+    staleTime: STALE_TIMES.dynamic,
+  });
+}
+
+export function usePendingProjectInvitations(projectId: string, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.projects.projectInvitations(projectId),
+    queryFn: () =>
+      jsonFetch<{ data: Array<PendingProjectInvitation> }>(`/api/projects/${projectId}/invitations`),
+    enabled: enabled && !!projectId,
+    staleTime: STALE_TIMES.dynamic,
+  });
+}
+
+export function useRespondProjectInvitation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ invitationId, action }: { invitationId: string; action: 'accept' | 'decline' }) =>
+      jsonFetch<{
+        ok: true;
+        status: 'accepted' | 'declined';
+        projectId: string;
+        makePrimary: boolean;
+        primaryChanged: boolean;
+      }>(`/api/projects/invitations/${invitationId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      }),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.invitations() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(result.projectId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.workTracker.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.adminProjects.overview() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
+    },
+  });
+}
+
+export function useCancelProjectInvitation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, invitationId }: { projectId: string; invitationId: string }) =>
+      jsonFetch<{ ok: true }>(
+        `/api/projects/${projectId}/invitations?invitationId=${encodeURIComponent(invitationId)}`,
+        { method: 'DELETE' }
+      ),
+    onSuccess: (_data, vars) => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.projects.projectInvitations(vars.projectId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.projects.contributorCandidatesFor(vars.projectId),
+      });
     },
   });
 }
@@ -275,6 +382,7 @@ export function useUpdateProject() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.workTracker.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.adminProjects.overview() });
     },
   });
 }
@@ -288,6 +396,7 @@ export function useDeleteProject() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.workTracker.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.adminProjects.overview() });
     },
   });
 }
@@ -735,7 +844,7 @@ export function useAddProjectContributor() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ projectId, userId, role = 'contributor' }: AddProjectContributorInput) =>
-      jsonFetch<{ ok: true }>(`/api/projects/${projectId}/contributors`, {
+      jsonFetch<{ ok: true; outcome: 'assigned' | 'invited' }>(`/api/projects/${projectId}/contributors`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, role }),
@@ -746,6 +855,11 @@ export function useAddProjectContributor() {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.projects.contributorCandidatesFor(vars.projectId),
       });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.projects.projectInvitations(vars.projectId),
+      });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.workTracker.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.adminProjects.overview() });
     },
   });
 }
@@ -765,6 +879,11 @@ export function useRemoveProjectContributor() {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.projects.contributorCandidatesFor(vars.projectId),
       });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.projects.projectInvitations(vars.projectId),
+      });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.workTracker.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.adminProjects.overview() });
     },
   });
 }
@@ -777,6 +896,7 @@ export interface ProjectContributorCandidate {
   position: string | null;
   department_name: string | null;
   role: string | null;
+  requires_invitation: boolean;
 }
 
 /**

@@ -280,7 +280,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     if (error || !data) {
       console.error('Error updating task:', error);
-      return NextResponse.json({ error: getTaskWriteErrorMessage(error) }, { status: 500 });
+      return NextResponse.json(
+        { error: getTaskWriteErrorMessage(error) },
+        { status: error?.code === '42501' ? 403 : 500 }
+      );
     }
 
     // Send notifications based on what changed

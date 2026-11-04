@@ -91,7 +91,7 @@ import {
   Users,
   UserCog,
 } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from 'react';
 import { WeeklyFocusCard } from '@/components/weekly-focus/WeeklyFocusCard';
 import { MondayCommitmentModal } from '@/components/modals/MondayCommitmentModal';
@@ -301,6 +301,7 @@ function DescriptionSection({ title, items }: { title: string; items: string[] }
 export default function ProjectDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const projectId = params?.id ?? '';
   const { user } = useAuth();
   const { addToast } = useToast();
@@ -318,12 +319,18 @@ export default function ProjectDetailPage() {
   const documentation = projectDocumentationResp?.data ?? [];
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
-  const isReadOnlyAdminView = isAdmin;
+  const isPersonalProject =
+    !!project &&
+    (project.lead_user_id === user?.id ||
+      project.created_by === user?.id ||
+      project.supervisor_id === user?.id ||
+      project.contributors.some((contributor) => contributor.user_id === user?.id));
+  const isReadOnlyAdminView =
+    isAdmin && (searchParams.get('mode') === 'readonly' || !isPersonalProject);
   const { data: myProjectCommitment, isLoading: loadingMyProjectCommitment } = useMyWeeklyCommitment({
     enabled: !isReadOnlyAdminView && Boolean(projectId),
     projectId,
   });
-  const isLead = !!project && project.lead_user_id === user?.id;
   const canEditProject = !!project?.can_manage && !isReadOnlyAdminView;
   const canAddDocumentation =
     !!project &&
@@ -334,14 +341,13 @@ export default function ProjectDetailPage() {
       project.contributors.some((contributor) => contributor.user_id === user?.id));
   const projectListPath = isAdmin ? '/admin/war-room' : '/projects';
   const handleBack = useBackNavigation({ fallbackPath: projectListPath });
-  // The contributors API allows the project lead, the supervisor, and admins.
-  // Admins land on this page in read-only mode, so they manage from the admin view.
   const canManageContributors =
     !!project && !isReadOnlyAdminView && project.can_manage;
   const canCompleteMilestones =
     !!project &&
     !isReadOnlyAdminView &&
-    (isLead || project.contributors.some((contributor) => contributor.user_id === user?.id));
+    (project.can_manage ||
+      project.contributors.some((contributor) => contributor.user_id === user?.id));
   const [manageContributorsOpen, setManageContributorsOpen] = useState(false);
   const [manageDepartmentsOpen, setManageDepartmentsOpen] = useState(false);
 

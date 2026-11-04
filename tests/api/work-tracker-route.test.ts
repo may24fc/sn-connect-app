@@ -369,4 +369,60 @@ describe('/api/work-tracker GET route', () => {
     expect(body.people.map((person: { name: string }) => person.name)).toEqual(['Alex', 'Bryn']);
     expect(body.people[0].completedTaskCount).toBe(1);
   });
+
+  it.each([
+    ['co-lead', 'lead'],
+    ['contributor', 'contributor'],
+    ['creator', 'creator'],
+  ])('shows a %s with the correct project role', async (userId, expectedRole) => {
+    const people = ['primary', 'co-lead', 'contributor', 'creator'].map((id) => ({
+      user_id: id,
+      full_name: `${id} person`,
+      department_name: 'Operations',
+      role: 'employee',
+      status: 'active',
+      avatar_url: null,
+    }));
+    const tableRows: Record<string, Array<Record<string, unknown>>> = {
+      employee_directory: people,
+      projects: [{
+        id: 'project-1',
+        name: 'Shared project',
+        description: null,
+        lead_user_id: 'primary',
+        created_by: 'creator',
+        supervisor_id: null,
+        status: 'active',
+        health: 'on_track',
+        progress_pct: 25,
+        target_end_date: null,
+        updated_at: '2026-10-01T00:00:00.000Z',
+      }],
+      project_contributors: [
+        { project_id: 'project-1', user_id: 'primary', role: 'lead' },
+        { project_id: 'project-1', user_id: 'co-lead', role: 'lead' },
+        { project_id: 'project-1', user_id: 'contributor', role: 'contributor' },
+        { project_id: 'project-1', user_id: 'creator', role: 'contributor' },
+      ],
+    };
+    const from = vi.fn((table: string) => query({ data: tableRows[table] ?? [], error: null }));
+    vi.mocked(getProjectAuthedContext).mockResolvedValue({
+      ok: true,
+      context: { supabaseAdmin: { from }, user: { id: userId }, role: 'employee' } as never,
+    });
+
+    const response = await GET(
+      new NextRequest('http://localhost/api/work-tracker?scope=mine&days=30')
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.person.items).toEqual([
+      expect.objectContaining({ id: 'project-1', projectRole: expectedRole }),
+    ]);
+    expect(body.projects[0].projectLeads).toEqual([
+      expect.objectContaining({ userId: 'primary' }),
+      expect.objectContaining({ userId: 'co-lead' }),
+    ]);
+  });
 });

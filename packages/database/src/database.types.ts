@@ -7166,6 +7166,116 @@ export type Database = {
           },
         ]
       }
+      project_member_invitations: {
+        Row: {
+          created_at: string
+          expected_primary_id: string | null
+          id: string
+          invited_by: string
+          invitee_id: string
+          make_primary: boolean
+          project_id: string
+          responded_at: string | null
+          role: Database["public"]["Enums"]["project_contributor_role"]
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          expected_primary_id?: string | null
+          id?: string
+          invited_by: string
+          invitee_id: string
+          make_primary?: boolean
+          project_id: string
+          responded_at?: string | null
+          role: Database["public"]["Enums"]["project_contributor_role"]
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          expected_primary_id?: string | null
+          id?: string
+          invited_by?: string
+          invitee_id?: string
+          make_primary?: boolean
+          project_id?: string
+          responded_at?: string | null
+          role?: Database["public"]["Enums"]["project_contributor_role"]
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_member_invitations_expected_primary_id_fkey"
+            columns: ["expected_primary_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "project_member_invitations_expected_primary_id_fkey"
+            columns: ["expected_primary_id"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "project_member_invitations_expected_primary_id_fkey"
+            columns: ["expected_primary_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_member_invitations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "project_member_invitations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "project_member_invitations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_member_invitations_invitee_id_fkey"
+            columns: ["invitee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "project_member_invitations_invitee_id_fkey"
+            columns: ["invitee_id"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "project_member_invitations_invitee_id_fkey"
+            columns: ["invitee_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_member_invitations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_milestones: {
         Row: {
           approved_at: string | null
@@ -12044,6 +12154,15 @@ export type Database = {
       }
     }
     Functions: {
+      assign_project_member: {
+        Args: {
+          p_project_id: string
+          p_actor: string
+          p_target: string
+          p_role: Database["public"]["Enums"]["project_contributor_role"]
+        }
+        Returns: Json
+      }
       binary_quantize:
         | {
             Args: {
@@ -12099,6 +12218,14 @@ export type Database = {
           employee_id: string
         }
         Returns: number
+      }
+      cancel_project_member_invitation: {
+        Args: {
+          p_project_id: string
+          p_invitation_id: string
+          p_actor: string
+        }
+        Returns: Json
       }
       check_and_award_badges: {
         Args: {
@@ -12177,6 +12304,21 @@ export type Database = {
         }
         Returns: Json
       }
+      create_project_member_invitations: {
+        Args: {
+          p_project_id: string
+          p_invited_by: string
+          p_invitations: Json
+        }
+        Returns: Json
+      }
+      create_project_with_leads: {
+        Args: {
+          p_actor: string
+          p_input: Json
+        }
+        Returns: Json
+      }
       create_ticket_from_telegram: {
         Args: {
           p_submitted_by: string
@@ -12192,6 +12334,12 @@ export type Database = {
           ticket_id: string
           created: boolean
         }[]
+      }
+      current_user_can_assign_project_lead: {
+        Args: {
+          p_target_user_id: string
+        }
+        Returns: boolean
       }
       current_user_has_active_review_engagement: {
         Args: Record<PropertyKey, never>
@@ -12717,6 +12865,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      remove_project_member: {
+        Args: {
+          p_project_id: string
+          p_actor: string
+          p_target: string
+        }
+        Returns: Json
+      }
       resources_search_vector: {
         Args: {
           title: string
@@ -12724,6 +12880,14 @@ export type Database = {
           tags: string[]
         }
         Returns: unknown
+      }
+      respond_project_member_invitation: {
+        Args: {
+          p_invitation_id: string
+          p_invitee_id: string
+          p_action: string
+        }
+        Returns: Json
       }
       restore_knowledge_source_version: {
         Args: {
@@ -12752,6 +12916,22 @@ export type Database = {
           updated_at: string
           url: string | null
         }
+      }
+      set_project_primary_lead: {
+        Args: {
+          p_project_id: string
+          p_actor: string
+          p_target: string
+        }
+        Returns: Json
+      }
+      set_project_supervisor: {
+        Args: {
+          p_project_id: string
+          p_actor: string
+          p_target: string | null
+        }
+        Returns: Json
       }
       soft_delete: {
         Args: {
@@ -12802,9 +12982,23 @@ export type Database = {
         }
         Returns: boolean
       }
+      user_can_directly_assign_project_member: {
+        Args: {
+          p_actor: string
+          p_target: string
+        }
+        Returns: boolean
+      }
       user_can_manage_pa_task_lookups: {
         Args: {
           target_user_id: string
+        }
+        Returns: boolean
+      }
+      user_can_manage_project_invites: {
+        Args: {
+          p_project_id: string
+          p_actor: string
         }
         Returns: boolean
       }
@@ -13302,4 +13496,3 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
     ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
-

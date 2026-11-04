@@ -20,6 +20,13 @@ interface InternRow {
   current_streak: number;
 }
 
+interface OverviewProject {
+  id: string;
+  lead_user_id: string;
+  progress_pct: number | null;
+  health: string | null;
+}
+
 /**
  * GET /api/admin/projects/overview
  * Aggregated cross-associate project + gamification stats for the admin Projects dashboard.
@@ -47,8 +54,11 @@ export async function GET() {
     .map((associate: { user_id: string | null }) => associate.user_id)
     .filter((userId): userId is string => !!userId);
 
-  const [{ data: projects, error: projectsErr }, { data: gamification, error: gamificationErr }] =
-    await Promise.all([
+  const [
+    { data: primaryProjects, error: projectsErr },
+    { data: leadMemberships, error: membershipsErr },
+    { data: gamification, error: gamificationErr },
+  ] = await Promise.all([
       supabaseAdmin
         .from('projects')
         .select('id, lead_user_id, progress_pct, health, status')
@@ -58,10 +68,15 @@ export async function GET() {
         )
         .is('deleted_at', null),
       supabaseAdmin
+        .from('project_contributors')
+        .select('project_id, user_id')
+        .eq('role', 'lead')
+        .in('user_id', internIds.length ? internIds : ['00000000-0000-0000-0000-000000000000']),
+      supabaseAdmin
         .from('user_gamification')
         .select('user_id, points_total, current_tier, current_streak')
         .in('user_id', internIds.length ? internIds : ['00000000-0000-0000-0000-000000000000']),
-    ]);
+  ]);
 
   if (projectsErr) {
     return NextResponse.json({ error: projectsErr.message }, { status: 500 });
@@ -69,6 +84,37 @@ export async function GET() {
 
   if (gamificationErr) {
     return NextResponse.json({ error: gamificationErr.message }, { status: 500 });
+  }
+  if (membershipsErr) {
+    return NextResponse.json({ error: membershipsErr.message }, { status: 500 });
+  }
+
+  const coLedProjectIds = [...new Set((leadMemberships ?? []).map((row) => row.project_id))];
+  const projectsById = new Map<string, OverviewProject>(
+    (primaryProjects ?? []).map((project) => [project.id, project])
+  );
+  if (coLedProjectIds.length) {
+    const { data: coLedProjects, error: coLedProjectsErr } = await supabaseAdmin
+      .from('projects')
+      .select('id, lead_user_id, progress_pct, health, status')
+      .in('id', coLedProjectIds)
+      .is('deleted_at', null);
+    if (coLedProjectsErr) {
+      return NextResponse.json({ error: coLedProjectsErr.message }, { status: 500 });
+    }
+    for (const project of coLedProjects ?? []) projectsById.set(project.id, project);
+  }
+
+  const projectIdsByAssociate = new Map<string, Set<string>>();
+  function addAssociateProject(userId: string, projectId: string): void {
+    if (!projectsById.has(projectId)) return;
+    const ids = projectIdsByAssociate.get(userId) ?? new Set<string>();
+    ids.add(projectId);
+    projectIdsByAssociate.set(userId, ids);
+  }
+  for (const project of primaryProjects ?? []) addAssociateProject(project.lead_user_id, project.id);
+  for (const membership of leadMemberships ?? []) {
+    addAssociateProject(membership.user_id, membership.project_id);
   }
 
   const gamMap = new Map<string, { points_total: number; current_tier: string; current_streak: number }>();
@@ -91,9 +137,10 @@ export async function GET() {
         return [];
       }
 
-      const myProjects = (projects ?? []).filter(
-        (project: { lead_user_id: string }) => project.lead_user_id === associate.user_id
-      );
+      const myProjects = [...(projectIdsByAssociate.get(associate.user_id) ?? [])].flatMap((id) => {
+        const project = projectsById.get(id);
+        return project ? [project] : [];
+      });
       const total = myProjects.length;
       const sumPct = myProjects.reduce(
         (sum: number, project: { progress_pct: number | null }) => sum + (project.progress_pct ?? 0),
@@ -133,7 +180,15 @@ export async function GET() {
 
   const byDept = new Map<
     string,
-    { department: string; on_track: number; at_risk: number; overdue: number; blocked: number; intern_count: number }
+    {
+      department: string;
+      on_track: number;
+      at_risk: number;
+      overdue: number;
+      blocked: number;
+      intern_count: number;
+      projectIds: Set<string>;
+    }
   >();
 
   for (const row of rows) {
@@ -145,33 +200,41 @@ export async function GET() {
       overdue: 0,
       blocked: 0,
       intern_count: 0,
+      projectIds: new Set<string>(),
     };
 
-    current.on_track += row.on_track;
-    current.at_risk += row.at_risk;
-    current.overdue += row.overdue;
-    current.blocked += row.blocked;
+    for (const projectId of projectIdsByAssociate.get(row.user_id) ?? []) {
+      if (current.projectIds.has(projectId)) continue;
+      current.projectIds.add(projectId);
+      const health = projectsById.get(projectId)?.health;
+      if (health === 'on_track') current.on_track++;
+      else if (health === 'at_risk') current.at_risk++;
+      else if (health === 'overdue') current.overdue++;
+      else if (health === 'blocked') current.blocked++;
+    }
     current.intern_count += 1;
     byDept.set(key, current);
   }
 
-  const totals = rows.reduce(
-    (acc, row) => {
-      acc.projects += row.project_count;
-      acc.on_track += row.on_track;
-      acc.at_risk += row.at_risk;
-      acc.overdue += row.overdue;
-      acc.blocked += row.blocked;
-      acc.points += row.total_points;
-      return acc;
-    },
-    { projects: 0, on_track: 0, at_risk: 0, overdue: 0, blocked: 0, points: 0 }
-  );
+  const totals = {
+    projects: projectsById.size,
+    on_track: 0,
+    at_risk: 0,
+    overdue: 0,
+    blocked: 0,
+    points: rows.reduce((sum, row) => sum + row.total_points, 0),
+  };
+  for (const project of projectsById.values()) {
+    if (project.health === 'on_track') totals.on_track++;
+    else if (project.health === 'at_risk') totals.at_risk++;
+    else if (project.health === 'overdue') totals.overdue++;
+    else if (project.health === 'blocked') totals.blocked++;
+  }
 
   return NextResponse.json({
     data: {
       interns: rows.sort((left, right) => right.total_points - left.total_points),
-      departments: Array.from(byDept.values()),
+      departments: Array.from(byDept.values(), ({ projectIds: _projectIds, ...department }) => department),
       totals,
     },
   });

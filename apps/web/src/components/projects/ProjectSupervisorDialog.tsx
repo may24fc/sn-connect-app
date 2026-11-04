@@ -63,6 +63,7 @@ export function ProjectSupervisorDialog({
           <DialogTitle>Project supervisor</DialogTitle>
           <DialogDescription>
             The supervisor can manage this project&apos;s contributors, milestones, and tasks.
+            Someone outside departments you lead must first accept an invitation as a project lead.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">

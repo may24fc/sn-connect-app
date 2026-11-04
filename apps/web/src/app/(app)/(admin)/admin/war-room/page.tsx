@@ -3,7 +3,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminProjectsOverview } from '@/hooks/useGamification';
 import { useProjectPoolCount } from '@/hooks/useProjectPool';
-import { toContributorAvatars, useProjects } from '@/hooks/useProjects';
+import { type ProjectRecord, toContributorAvatars, useProjects } from '@/hooks/useProjects';
 import {
   Badge,
   Button,
@@ -138,7 +138,7 @@ export default function AdminProjectsPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {myProjects.map((project) => (
-                <Link key={project.id} href={`/admin/projects/${project.id}?mode=readonly`}>
+                <Link key={project.id} href={`/projects/${project.id}`}>
                   <ProjectCard
                     name={project.name}
                     description={project.description}
@@ -349,7 +349,7 @@ export default function AdminProjectsPage() {
                         <tr>
                           <th className="px-4 py-2">Project</th>
                           <th className="px-4 py-2">Health</th>
-                          <th className="px-4 py-2">Assigned Person</th>
+                          <th className="px-4 py-2">Project leads</th>
                           <th className="px-4 py-2 text-right">Progress</th>
                         </tr>
                       </thead>
@@ -375,11 +375,7 @@ export default function AdminProjectsPage() {
                               ) : null}
                             </td>
                             <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">
-                              <ProjectLeadCell
-                                leadUserId={project.lead_user_id}
-                                leadName={project.lead_name ?? null}
-                                leadAvatarUrl={project.lead_avatar_url ?? null}
-                              />
+                              <ProjectLeadCell project={project} />
                             </td>
                             <td className="px-4 py-3 text-right font-medium text-zinc-700 dark:text-zinc-300">
                               {Math.round(project.progress_pct)}%
@@ -399,25 +395,26 @@ export default function AdminProjectsPage() {
   );
 }
 
-/** "Unassigned" only when the project genuinely has no lead; otherwise the lead's photo and name. */
-function ProjectLeadCell({
-  leadUserId,
-  leadName,
-  leadAvatarUrl,
-}: {
-  leadUserId: string | null;
-  leadName: string | null;
-  leadAvatarUrl: string | null;
-}) {
-  if (!leadUserId) {
-    return <span className="text-zinc-500">Unassigned</span>;
-  }
-
+function ProjectLeadCell({ project }: { project: ProjectRecord }) {
+  const peopleById = new Map(
+    (project.contributor_people ?? []).map((person) => [person.user_id, person])
+  );
+  const leadIds = project.lead_user_ids ?? [project.lead_user_id];
   return (
-    <span className="flex min-w-0 items-center gap-2">
-      <UserAvatar name={leadName} avatarUrl={leadAvatarUrl} size="xs" />
-      <span className="truncate">{leadName ?? 'Unknown member'}</span>
-    </span>
+    <div className="space-y-1">
+      {leadIds.map((id) => {
+        const person = peopleById.get(id);
+        const name = person?.name ?? (id === project.lead_user_id ? project.lead_name : null);
+        const avatar =
+          person?.avatar_url ?? (id === project.lead_user_id ? project.lead_avatar_url : null);
+        return (
+          <span key={id} className="flex min-w-0 items-center gap-2">
+            <UserAvatar name={name} avatarUrl={avatar} size="xs" />
+            <span className="truncate">{name ?? 'Unknown member'}</span>
+          </span>
+        );
+      })}
+    </div>
   );
 }
 

@@ -1,129 +1,178 @@
+import { getProjectAuthedContext } from '@/app/api/projects/_lib';
+import { DELETE, GET, POST } from '@/app/api/projects/[id]/contributors/route';
+import { classifyProjectMemberAssignments } from '@/lib/work-management/permissions';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/app/api/projects/_lib', () => ({
-  getProjectAuthedContext: vi.fn(),
-  isProjectAdmin: vi.fn((role: string | null) => role === 'admin'),
+vi.mock('@/app/api/projects/_lib', () => ({ getProjectAuthedContext: vi.fn() }));
+vi.mock('@/lib/audit', () => ({ logActivity: vi.fn() }));
+vi.mock('@/lib/work-management/permissions', () => ({
+  canManageProject: vi.fn(async (_client, _projectId, userId) => userId === ACTOR_ID),
+  classifyProjectMemberAssignments: vi.fn(async () => ({
+    ok: true, directUserIds: [], invitationUserIds: [TARGET_ID],
+  })),
 }));
 
-vi.mock('@/lib/audit', () => ({
-  logActivity: vi.fn(),
-}));
+const ACTOR_ID = 'aaaaaaaa-0000-4000-8000-000000000001';
+const TARGET_ID = 'aaaaaaaa-0000-4000-8000-000000000002';
+const PRIMARY_ID = 'aaaaaaaa-0000-4000-8000-000000000003';
+const INVITATION_ID = 'aaaaaaaa-0000-4000-8000-000000000004';
+const PROJECT_ID = 'bbbbbbbb-0000-4000-8000-000000000001';
+const params = { params: Promise.resolve({ id: PROJECT_ID }) };
 
-import { getProjectAuthedContext } from '@/app/api/projects/_lib';
-import { GET } from '@/app/api/projects/[id]/contributors/route';
-
-const LEAD_ID = 'lead-user';
-
-function createAdminClient(options: { leadUserId: string; existing: Array<string> }) {
-  const filterCalls: Array<[string, string, string]> = [];
-  const ilikeCalls: Array<[string, string]> = [];
-  const directoryRows = [
-    {
-      user_id: 'person-1',
-      full_name: 'Ana Reyes',
-      avatar_url: null,
-      position: ' Designer ',
-      department_name: 'Unassigned',
-      role: 'employee',
-      email: 'ana@example.com',
+function createAdminClient(options: {
+  assignment?: object;
+  removal?: object;
+  inviteError?: { code: string };
+} = {}) {
+  const filters: Array<[string, string, string]> = [];
+  const searches: Array<[string, string]> = [];
+  const directory = {
+    select: () => directory,
+    not: () => directory,
+    neq: () => directory,
+    filter: (column: string, operator: string, value: string) => {
+      filters.push([column, operator, value]); return directory;
     },
-  ];
-  const directoryQuery = {
-    select: vi.fn(() => directoryQuery),
-    not: vi.fn(() => directoryQuery),
-    neq: vi.fn(() => directoryQuery),
-    filter: vi.fn((column: string, operator: string, value: string) => {
-      filterCalls.push([column, operator, value]);
-      return directoryQuery;
+    ilike: (column: string, value: string) => {
+      searches.push([column, value]); return directory;
+    },
+    order: () => directory,
+    range: async () => ({
+      data: [{
+        user_id: TARGET_ID, full_name: 'Ana Reyes', avatar_url: null,
+        position: ' Designer ', department_name: 'Unassigned', role: 'employee',
+      }],
+      error: null, count: 1,
     }),
-    ilike: vi.fn((column: string, value: string) => {
-      ilikeCalls.push([column, value]);
-      return directoryQuery;
-    }),
-    order: vi.fn(() => directoryQuery),
-    range: vi.fn(async () => ({ data: directoryRows, error: null, count: 1 })),
   };
-
   const from = vi.fn((table: string) => {
-    if (table === 'projects') {
-      return {
-        select: () => ({
-          eq: () => ({
-            maybeSingle: async () => ({
-              data: { lead_user_id: options.leadUserId, supervisor_id: null },
-              error: null,
-            }),
-          }),
-        }),
-      };
-    }
     if (table === 'project_contributors') {
-      return {
-        select: () => ({
-          eq: async () => ({ data: options.existing.map((user_id) => ({ user_id })), error: null }),
-        }),
-      };
+      return { select: () => ({ eq: async () => ({ data: [{ user_id: PRIMARY_ID }], error: null }) }) };
     }
-    if (table === 'employee_directory') {
-      return directoryQuery;
-    }
+    if (table === 'employee_directory') return directory;
     throw new Error(`Unexpected table: ${table}`);
   });
-
-  return { client: { from }, filterCalls, ilikeCalls };
+  const rpc = vi.fn(async (name: string) => {
+    if (name === 'assign_project_member') {
+      return { data: options.assignment ?? { ok: true }, error: null };
+    }
+    if (name === 'remove_project_member') {
+      return { data: options.removal ?? { ok: true }, error: null };
+    }
+    if (name === 'create_project_member_invitations') {
+      return {
+        data: options.inviteError ? null : [{ id: INVITATION_ID, userId: TARGET_ID }],
+        error: options.inviteError ?? null,
+      };
+    }
+    throw new Error(`Unexpected RPC: ${name}`);
+  });
+  return { client: { from, rpc }, rpc, filters, searches };
 }
 
-function request(search = '') {
-  const query = search ? `?search=${encodeURIComponent(search)}` : '';
-  return new NextRequest(`http://localhost/api/projects/project-1/contributors${query}`);
+function authenticate(client: object, role = 'employee', userId = ACTOR_ID) {
+  vi.mocked(getProjectAuthedContext).mockResolvedValue({
+    ok: true, context: { supabaseAdmin: client, supabase: {}, user: { id: userId }, role },
+  } as never);
 }
 
-const params = { params: Promise.resolve({ id: 'project-1' }) };
+function addRequest(role: 'lead' | 'contributor') {
+  return new NextRequest(`http://localhost/api/projects/${PROJECT_ID}/contributors`, {
+    method: 'POST', body: JSON.stringify({ userId: TARGET_ID, role }),
+  });
+}
 
-describe('GET /api/projects/[id]/contributors', () => {
+describe('project contributors and invitation decisions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(classifyProjectMemberAssignments).mockResolvedValue({
+      ok: true, directUserIds: [], invitationUserIds: [TARGET_ID],
+    });
   });
 
-  it('lets the project lead search people without directory access', async () => {
-    const admin = createAdminClient({ leadUserId: LEAD_ID, existing: [LEAD_ID] });
-    vi.mocked(getProjectAuthedContext).mockResolvedValue({
-      ok: true,
-      context: { supabaseAdmin: admin.client, supabase: {}, user: { id: LEAD_ID }, role: 'associate' },
-    } as never);
+  it.each(['employee', 'admin'])(
+    'sends an out-of-scope contributor invitation for a %s actor',
+    async (role) => {
+      const admin = createAdminClient({ assignment: { error: 'invitation_required' } });
+      authenticate(admin.client, role);
+      const response = await POST(addRequest('contributor'), params);
+      expect(response.status).toBe(201);
+      await expect(response.json()).resolves.toEqual({ ok: true, outcome: 'invited' });
+      expect(admin.rpc).toHaveBeenCalledWith('create_project_member_invitations', {
+        p_project_id: PROJECT_ID, p_invited_by: ACTOR_ID,
+        p_invitations: [{ userId: TARGET_ID, role: 'contributor' }],
+      });
+    }
+  );
 
-    const response = await GET(request('50%'), params);
+  it('invites an existing contributor before promoting them to lead', async () => {
+    const admin = createAdminClient({ assignment: { error: 'invitation_required' } });
+    authenticate(admin.client);
+    expect((await POST(addRequest('lead'), params)).status).toBe(201);
+    expect(admin.rpc).toHaveBeenCalledWith('create_project_member_invitations', expect.objectContaining({
+      p_invitations: [{ userId: TARGET_ID, role: 'lead' }],
+    }));
+  });
 
+  it('uses the database-confirmed direct assignment and demotion path', async () => {
+    const admin = createAdminClient();
+    authenticate(admin.client);
+    const response = await POST(addRequest('lead'), params);
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toEqual({ ok: true, outcome: 'assigned' });
+    expect(admin.rpc).toHaveBeenCalledTimes(1);
+    expect(admin.rpc).toHaveBeenCalledWith('assign_project_member', {
+      p_project_id: PROJECT_ID, p_actor: ACTOR_ID, p_target: TARGET_ID, p_role: 'lead',
+    });
+  });
+
+  it('reports an existing invitation and protects the primary lead', async () => {
+    const admin = createAdminClient({
+      assignment: { error: 'pending_invitation' }, removal: { error: 'primary_lead' },
+    });
+    authenticate(admin.client);
+    expect((await POST(addRequest('lead'), params)).status).toBe(409);
+    const remove = new NextRequest(
+      `http://localhost/api/projects/${PROJECT_ID}/contributors?userId=${PRIMARY_ID}`,
+      { method: 'DELETE' }
+    );
+    expect((await DELETE(remove, params)).status).toBe(400);
+    expect(admin.rpc).not.toHaveBeenCalledWith('create_project_member_invitations', expect.anything());
+  });
+
+  it('does not report success when the invitation notification cannot be persisted', async () => {
+    const admin = createAdminClient({
+      assignment: { error: 'invitation_required' }, inviteError: { code: 'XX000' },
+    });
+    authenticate(admin.client);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    expect((await POST(addRequest('lead'), params)).status).toBe(500);
+  });
+
+  it('returns searchable candidate identities with invitation labels', async () => {
+    const admin = createAdminClient();
+    authenticate(admin.client, 'associate');
+    const response = await GET(
+      new NextRequest(`http://localhost/api/projects/${PROJECT_ID}/contributors?search=50%25`),
+      params
+    );
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      data: [
-        {
-          user_id: 'person-1',
-          full_name: 'Ana Reyes',
-          avatar_url: null,
-          position: 'Designer',
-          department_name: null,
-          role: 'employee',
-        },
-      ],
+      data: [{
+        user_id: TARGET_ID, full_name: 'Ana Reyes', avatar_url: null, position: 'Designer',
+        department_name: null, role: 'employee', requires_invitation: true,
+      }],
       total: 1,
     });
-    // Current contributors are excluded server-side, and LIKE wildcards are matched literally.
-    expect(admin.filterCalls).toEqual([['user_id', 'not.in', `(${LEAD_ID})`]]);
-    expect(admin.ilikeCalls).toEqual([['full_name', '%50\\%%']]);
+    expect(admin.filters).toEqual([['user_id', 'not.in', `(${PRIMARY_ID})`]]);
+    expect(admin.searches).toEqual([['full_name', '%50\\%%']]);
   });
 
-  it('refuses people who cannot manage the project', async () => {
-    const admin = createAdminClient({ leadUserId: LEAD_ID, existing: [] });
-    vi.mocked(getProjectAuthedContext).mockResolvedValue({
-      ok: true,
-      context: { supabaseAdmin: admin.client, supabase: {}, user: { id: 'someone-else' }, role: 'employee' },
-    } as never);
-
-    const response = await GET(request(), params);
-
-    expect(response.status).toBe(403);
-    expect(admin.client.from).not.toHaveBeenCalledWith('employee_directory');
+  it('refuses someone who cannot manage the project', async () => {
+    const admin = createAdminClient();
+    authenticate(admin.client, 'employee', TARGET_ID);
+    expect((await POST(addRequest('lead'), params)).status).toBe(403);
+    expect(admin.rpc).not.toHaveBeenCalled();
   });
 });

@@ -17,7 +17,7 @@ export type WorkItem =
       dueDate: string | null;
       updatedAt: string;
       href: string;
-      projectRole: 'lead' | 'contributor';
+      projectRole: 'lead' | 'contributor' | 'creator' | 'supervisor';
     }
   | {
       source: 'task';
@@ -66,6 +66,7 @@ export interface ProjectWorkSummary {
   leadUserId: string;
   leadName: string | null;
   leadAvatarUrl: string | null;
+  projectLeads?: Array<{ userId: string; name: string | null; avatarUrl: string | null }>;
   totalTasks: number;
   completedTasks: number;
   blockedTasks: number;

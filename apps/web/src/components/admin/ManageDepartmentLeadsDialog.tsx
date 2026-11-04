@@ -1,11 +1,11 @@
 'use client';
 
+import { PersonSearchSelect } from '@/components/people/PersonSearchSelect';
 import {
   useAppointDepartmentLead,
   useDepartmentLeads,
   useRemoveDepartmentLead,
 } from '@/hooks/useDepartmentLeads';
-import { useDirectory } from '@/hooks/useDirectory';
 import type { Department } from '@hr-portal/database';
 import {
   Avatar,
@@ -27,7 +27,7 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import { ShieldCheck, Trash2, UserPlus } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 function initials(name: string) {
   return name
@@ -50,26 +50,18 @@ export function ManageDepartmentLeadsDialog({
   const { addToast } = useToast();
   const [departmentId, setDepartmentId] = useState('');
   const [candidateId, setCandidateId] = useState('');
-  const { data: leadsResponse, isLoading: leadsLoading } = useDepartmentLeads(open);
-  const { data: directoryResponse, isLoading: peopleLoading } = useDirectory(
-    { page: 1, pageSize: 500, excludeTerminated: true, roles: ['employee', 'associate'] },
-    { enabled: open }
-  );
+  const {
+    data: leadsResponse,
+    isLoading: leadsLoading,
+    error: leadsError,
+    refetch: refetchLeads,
+  } = useDepartmentLeads(open);
   const appoint = useAppointDepartmentLead();
   const remove = useRemoveDepartmentLead();
   const leads = leadsResponse?.data ?? [];
-  const selectedDepartment = departments.find((department) => department.id === departmentId);
-  const candidates = useMemo(
-    () =>
-      (directoryResponse?.data ?? []).filter(
-        (person) =>
-          person.department_id === departmentId &&
-          !leads.some(
-            (lead) => lead.department_id === departmentId && lead.user_id === person.user_id
-          )
-      ),
-    [departmentId, directoryResponse?.data, leads]
-  );
+  const existingLeadIds = leads
+    .filter((lead) => lead.department_id === departmentId)
+    .map((lead) => lead.user_id);
 
   async function handleAppoint() {
     if (!(departmentId && candidateId)) return;
@@ -95,16 +87,18 @@ export function ManageDepartmentLeadsDialog({
             Manage department leads
           </DialogTitle>
           <DialogDescription>
-            Department leads can create and assign project work only for active members of their own
-            department. Multiple co-leads are supported.
+            Search across all departments to appoint a lead. One person can lead multiple
+            departments without changing their home department. Leads can manage work for active
+            members of the departments they lead, and each department can have multiple co-leads.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-3 rounded-lg border bg-muted/30 p-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-          <div className="space-y-2">
+        <div className="grid gap-3 rounded-lg border bg-muted/30 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+          <div className="space-y-2 sm:col-span-2">
             <Label>Department</Label>
             <Select
               value={departmentId}
+              disabled={appoint.isPending}
               onValueChange={(value) => {
                 setDepartmentId(value);
                 setCandidateId('');
@@ -122,28 +116,27 @@ export function ManageDepartmentLeadsDialog({
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label>New lead</Label>
-            <Select
-              value={candidateId}
-              onValueChange={setCandidateId}
-              disabled={!departmentId || peopleLoading}
-            >
-              <SelectTrigger aria-label="New department lead">
-                <SelectValue
-                  placeholder={departmentId ? 'Select a member' : 'Choose a department first'}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {candidates.map((person) => (
-                  <SelectItem key={person.user_id} value={person.user_id}>
-                    {person.full_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="min-w-0 space-y-2">
+            <Label htmlFor="department-lead-search">New lead</Label>
+            <PersonSearchSelect
+              key={`${open}-${departmentId}`}
+              id="department-lead-search"
+              value={candidateId || null}
+              onChange={(value) => setCandidateId(value ?? '')}
+              excludeUserIds={existingLeadIds}
+              emptyLabel={departmentId ? 'Search all departments' : 'Choose a department first'}
+              disabled={!departmentId || leadsLoading || !!leadsError || appoint.isPending}
+            />
           </div>
-          <Button onClick={() => void handleAppoint()} disabled={!candidateId || appoint.isPending}>
+          <Button
+            onClick={() => void handleAppoint()}
+            disabled={
+              !(departmentId && candidateId) ||
+              existingLeadIds.includes(candidateId) ||
+              !!leadsError ||
+              appoint.isPending
+            }
+          >
             <UserPlus className="mr-2 h-4 w-4" />
             {appoint.isPending ? 'Adding…' : 'Add lead'}
           </Button>
@@ -204,22 +197,24 @@ export function ManageDepartmentLeadsDialog({
                       </Button>
                     </div>
                   ))
-                ) : (
+                ) : !(leadsLoading || leadsError) ? (
                   <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
                     No department leads assigned.
                   </p>
-                )}
+                ) : null}
               </section>
             );
           })}
           {leadsLoading ? (
             <p className="text-sm text-muted-foreground">Loading department leads…</p>
           ) : null}
-          {selectedDepartment && candidates.length === 0 && !peopleLoading ? (
-            <p className="text-sm text-muted-foreground">
-              All eligible {selectedDepartment.name} members are already leads, or this department
-              has no eligible members.
-            </p>
+          {leadsError ? (
+            <div role="alert" className="space-y-2">
+              <p className="text-sm text-destructive">Could not load department leads.</p>
+              <Button variant="outline" onClick={() => void refetchLeads()}>
+                Retry
+              </Button>
+            </div>
           ) : null}
         </div>
       </DialogContent>

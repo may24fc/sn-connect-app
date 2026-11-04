@@ -45,6 +45,16 @@ Core actions:
 
 Project detail route is available for deep inspection of milestones, progress, and contributors.
 
+Project co-leads have management access; ordinary contributors do not gain it from their
+contributor role alone. Existing project contributors previously labelled `lead` become
+co-leads with management access after the co-lead migration. Creators, supervisors,
+department leads, and administrators may independently have management authority.
+
+Administrators are not exempt from individual invitation consent. A person outside
+the administrator's appointed departments must accept before being added as a
+contributor or lead. To appoint an out-of-scope supervisor, first invite them as a project
+lead and wait for acceptance. Pending invitations can be cancelled in **Manage Contributors**.
+
 ## Related Docs
 
 - [Performance Management](performance-management.md)

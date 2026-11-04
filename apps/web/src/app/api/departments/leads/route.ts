@@ -66,31 +66,44 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid department lead' }, { status: 400 });
 
   const { departmentId, userId } = parsed.data;
-  const { data: candidate } = await context.supabaseAdmin
-    .from('users')
-    .select('department_id, role, status')
-    .eq('id', userId)
-    .is('deleted_at', null)
+  const { data: candidate, error: candidateError } = await context.supabaseAdmin
+    .from('employee_directory')
+    .select('user_id, status')
+    .eq('user_id', userId)
     .maybeSingle();
-  if (
-    !candidate ||
-    candidate.department_id !== departmentId ||
-    candidate.status === 'terminated' ||
-    !['employee', 'associate'].includes(candidate.role)
-  ) {
+  if (candidateError) {
+    return NextResponse.json({ error: 'Failed to validate department lead' }, { status: 500 });
+  }
+  if (!candidate || candidate.status === 'terminated') {
     return NextResponse.json(
-      { error: 'A lead must be an active employee or associate in that department' },
+      { error: 'A lead must be an active directory account' },
       { status: 400 }
     );
   }
 
-  const { data: existing } = await context.supabaseAdmin
+  const { data: department, error: departmentError } = await context.supabaseAdmin
+    .from('departments')
+    .select('id')
+    .eq('id', departmentId)
+    .is('deleted_at', null)
+    .maybeSingle();
+  if (departmentError) {
+    return NextResponse.json({ error: 'Failed to validate department' }, { status: 500 });
+  }
+  if (!department) {
+    return NextResponse.json({ error: 'Department not found' }, { status: 404 });
+  }
+
+  const { data: existing, error: existingError } = await context.supabaseAdmin
     .from('department_leads')
     .select('id')
     .eq('department_id', departmentId)
     .eq('user_id', userId)
     .is('revoked_at', null)
     .maybeSingle();
+  if (existingError) {
+    return NextResponse.json({ error: 'Failed to check department leads' }, { status: 500 });
+  }
   if (existing) return NextResponse.json({ data: existing }, { status: 200 });
 
   const { data, error } = await context.supabaseAdmin
@@ -112,7 +125,7 @@ export async function POST(request: NextRequest) {
     userId,
     type: 'system',
     title: 'Department lead access granted',
-    message: 'You can now manage projects and tasks for members of your department.',
+    message: 'You can now manage projects and tasks for members of a department you lead.',
     link: '/work-tracker',
     metadata: { departmentId },
   });

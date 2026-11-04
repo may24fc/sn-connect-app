@@ -34,7 +34,7 @@ export async function getProjectAuthedContext(): Promise<
 
   const { data: roleData, error: roleError } = await supabase
     .from('users')
-    .select('role')
+    .select('role, status')
     .eq('id', user.id)
     .is('deleted_at', null)
     .maybeSingle();
@@ -44,7 +44,7 @@ export async function getProjectAuthedContext(): Promise<
   }
 
   const role = normalizeDbRoleClaim(roleData?.role ?? null);
-  if (!role) {
+  if (!role || roleData?.status === 'terminated') {
     return { ok: false, status: 401, error: 'Unauthorized' };
   }
 

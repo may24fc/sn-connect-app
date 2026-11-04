@@ -24,7 +24,7 @@ type WorkItem =
       dueDate: string | null;
       updatedAt: string;
       href: string;
-      projectRole: 'lead' | 'contributor';
+      projectRole: 'lead' | 'contributor' | 'creator' | 'supervisor';
     }
   | {
       source: 'task';
@@ -57,6 +57,8 @@ interface ProjectRow {
   name: string;
   description: string | null;
   lead_user_id: string;
+  created_by: string | null;
+  supervisor_id: string | null;
   status: string;
   health: string;
   progress_pct: number | null;
@@ -137,7 +139,7 @@ export async function GET(request: NextRequest) {
     supabaseAdmin
       .from('projects')
       .select(
-        'id, name, description, lead_user_id, status, health, progress_pct, target_end_date, updated_at'
+        'id, name, description, lead_user_id, created_by, supervisor_id, status, health, progress_pct, target_end_date, updated_at'
       )
       .is('deleted_at', null),
     supabaseAdmin.from('project_contributors').select('project_id, user_id, role'),
@@ -237,15 +239,31 @@ export async function GET(request: NextRequest) {
     due_date: string;
     status: string;
   }>;
-  const projectMembers = new Map<string, Map<string, 'lead' | 'contributor'>>();
+  const projectMembers = new Map<
+    string,
+    Map<string, 'lead' | 'contributor' | 'creator' | 'supervisor'>
+  >();
 
   for (const project of projects) {
-    projectMembers.set(project.id, new Map([[project.lead_user_id, 'lead']]));
+    const members = new Map<string, 'lead' | 'contributor' | 'creator' | 'supervisor'>([
+      [project.lead_user_id, 'lead'],
+    ]);
+    if (project.supervisor_id && !members.has(project.supervisor_id)) {
+      members.set(project.supervisor_id, 'supervisor');
+    }
+    if (project.created_by && !members.has(project.created_by)) {
+      members.set(project.created_by, 'creator');
+    }
+    projectMembers.set(project.id, members);
   }
   for (const contributor of contributorsResult.data ?? []) {
     const members = projectMembers.get(contributor.project_id);
-    if (!members || members.has(contributor.user_id)) continue;
-    members.set(contributor.user_id, 'contributor');
+    if (!members) continue;
+    if (contributor.role === 'lead') {
+      members.set(contributor.user_id, 'lead');
+    } else if (!members.has(contributor.user_id)) {
+      members.set(contributor.user_id, 'contributor');
+    }
   }
 
   const buildItems = (userId: string): Array<WorkItem> => {
@@ -355,9 +373,11 @@ export async function GET(request: NextRequest) {
       ? projects.filter((project) => projectMembers.get(project.id)?.has(user.id))
       : projects;
   const directoryPeople: Map<string, DirectoryPerson> = await loadDirectoryPeople(supabaseAdmin, [
-    ...visibleProjects
-      .map((project) => project.lead_user_id)
-      .filter((leadUserId) => !staffById.has(leadUserId)),
+    ...visibleProjects.flatMap((project) =>
+      [...(projectMembers.get(project.id)?.entries() ?? [])]
+        .filter(([leadUserId, memberRole]) => memberRole === 'lead' && !staffById.has(leadUserId))
+        .map(([leadUserId]) => leadUserId)
+    ),
     ...(scope === 'mine' && !staffById.has(user.id) ? [user.id] : []),
   ]);
   const buildProjectSummary = (project: ProjectRow) => {
@@ -373,6 +393,17 @@ export async function GET(request: NextRequest) {
           !['approved', 'completed'].includes(milestone.status)
       )
       .sort((left, right) => left.due_date.localeCompare(right.due_date))[0];
+    const projectLeads = [...(projectMembers.get(project.id)?.entries() ?? [])]
+      .filter(([, memberRole]) => memberRole === 'lead')
+      .map(([userId]) => {
+        const member = staffById.get(userId);
+        const person = directoryPeople.get(userId);
+        return {
+          userId,
+          name: member?.full_name?.trim() || person?.name || null,
+          avatarUrl: member?.avatar_url?.trim() || person?.avatarUrl || null,
+        };
+      });
     return {
       id: project.id,
       name: project.name,
@@ -387,6 +418,7 @@ export async function GET(request: NextRequest) {
       leadUserId: project.lead_user_id,
       leadName: leadStaff?.full_name?.trim() || leadPerson?.name || null,
       leadAvatarUrl: leadStaff?.avatar_url?.trim() || leadPerson?.avatarUrl || null,
+      projectLeads,
       totalTasks: projectTasks.length,
       completedTasks: projectTasks.filter((task) => task.status === 'completed').length,
       blockedTasks: projectTasks.filter((task) => task.status === 'blocked').length,

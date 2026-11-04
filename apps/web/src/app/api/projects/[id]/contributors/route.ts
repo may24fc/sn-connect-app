@@ -1,9 +1,18 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { logActivity } from '@/lib/audit';
 import { normalizeDepartmentName, normalizePersonName } from '@/lib/people/directory-people';
+import {
+  createProjectMemberInvitations,
+  invitationRpcResultSchema,
+  projectInvitationError,
+} from '@/lib/projects/member-invitations';
 import { contributorAddSchema } from '@/lib/schemas/project.schema';
 import { getProjectAuthedContext } from '../../_lib';
-import { canManageProject } from '@/lib/work-management/permissions';
+import {
+  canManageProject,
+  classifyProjectMemberAssignments,
+} from '@/lib/work-management/permissions';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
@@ -88,14 +97,23 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Failed to load people' }, { status: 500 });
   }
 
+  const rows = (data ?? []) as Array<CandidateRow>;
+  const classification = await classifyProjectMemberAssignments(
+    supabaseAdmin, user.id, role, rows.map((row) => row.user_id)
+  );
+  if (!classification.ok) {
+    return NextResponse.json({ error: classification.error }, { status: classification.status });
+  }
+  const invitationIds = new Set(classification.invitationUserIds);
   return NextResponse.json({
-    data: ((data ?? []) as Array<CandidateRow>).map((row) => ({
+    data: rows.map((row) => ({
       user_id: row.user_id,
       full_name: normalizePersonName(row.full_name) ?? 'Unnamed account',
       avatar_url: row.avatar_url,
       position: row.position?.trim() || null,
       department_name: normalizeDepartmentName(row.department_name),
       role: row.role,
+      requires_invitation: invitationIds.has(row.user_id),
     })),
     total: count ?? 0,
   });
@@ -126,24 +144,44 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     );
   }
 
-  const { error } = await supabaseAdmin
-    .from('project_contributors')
-    .upsert(
-      { project_id: projectId, user_id: parsed.data.userId, role: parsed.data.role },
-      { onConflict: 'project_id,user_id' }
-    );
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  const { data, error } = await supabaseAdmin.rpc('assign_project_member', {
+    p_project_id: projectId,
+    p_actor: user.id,
+    p_target: parsed.data.userId,
+    p_role: parsed.data.role,
+  });
+  if (error) {
+    console.error('Failed to assign project member:', error.code);
+    return NextResponse.json({ error: 'Failed to update project membership' }, { status: 500 });
+  }
+  const result = invitationRpcResultSchema.safeParse(data);
+  if (!result.success || (!result.data.ok && !result.data.error)) {
+    console.error('Project membership assignment returned an invalid response');
+    return NextResponse.json({ error: 'Failed to update project membership' }, { status: 500 });
+  }
+  let outcome: 'assigned' | 'invited' = 'assigned';
+  if (result.data.error === 'invitation_required') {
+    const invitation = await createProjectMemberInvitations(supabaseAdmin, projectId, user.id, [
+      { userId: parsed.data.userId, role: parsed.data.role },
+    ]);
+    if (!invitation.ok) {
+      return NextResponse.json({ error: invitation.error }, { status: invitation.status });
+    }
+    outcome = 'invited';
+  } else if (result.data.error) {
+    const failure = projectInvitationError(result.data.error);
+    return NextResponse.json({ error: failure.error }, { status: failure.status });
+  }
 
   logActivity(supabase, {
     userId: user.id,
-    action: 'project_contributor_added',
-    tableName: 'project_contributors',
+    action: outcome === 'invited' ? 'project_member_invited' : 'project_contributor_added',
+    tableName: outcome === 'invited' ? 'project_member_invitations' : 'project_contributors',
     recordId: projectId,
     metadata: { contributor: parsed.data.userId, role: parsed.data.role },
   });
 
-  return NextResponse.json({ ok: true }, { status: 201 });
+  return NextResponse.json({ ok: true, outcome }, { status: 201 });
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
@@ -157,17 +195,29 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   }
 
   const userIdToRemove = request.nextUrl.searchParams.get('userId');
-  if (!userIdToRemove) {
-    return NextResponse.json({ error: 'userId query param required' }, { status: 400 });
+  const parsedUserId = z.string().uuid().safeParse(userIdToRemove);
+  if (!parsedUserId.success) {
+    return NextResponse.json({ error: 'A valid userId query parameter is required' }, { status: 400 });
   }
 
-  const { error } = await supabaseAdmin
-    .from('project_contributors')
-    .delete()
-    .eq('project_id', projectId)
-    .eq('user_id', userIdToRemove);
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  const { data, error } = await supabaseAdmin.rpc('remove_project_member', {
+    p_project_id: projectId,
+    p_actor: user.id,
+    p_target: parsedUserId.data,
+  });
+  if (error) {
+    console.error('Failed to remove project member:', error.code);
+    return NextResponse.json({ error: 'Failed to remove project member' }, { status: 500 });
+  }
+  const result = invitationRpcResultSchema.safeParse(data);
+  if (!result.success || (!result.data.ok && !result.data.error)) {
+    console.error('Project member removal returned an invalid response');
+    return NextResponse.json({ error: 'Failed to remove project member' }, { status: 500 });
+  }
+  if (result.data.error) {
+    const failure = projectInvitationError(result.data.error);
+    return NextResponse.json({ error: failure.error }, { status: failure.status });
+  }
 
   logActivity(supabase, {
     userId: user.id,

@@ -17,6 +17,11 @@
 - [Project departments API](../../../apps/web/src/app/api/projects/[id]/departments/route.ts): invite, accept, reject, cancel, and detach workflow.
 - [Department-lead migration](../../../supabase/migrations/20261020000001_department_leads_and_work_management.sql): governance tables, RLS, completion ledger, and XP allocation.
 - [Department-lead browser test](../../../e2e/department-lead-work-tracker.spec.ts): privacy-safe department workload at desktop and mobile widths.
+- [Lead management dialog](../../../apps/web/src/components/admin/ManageDepartmentLeadsDialog.tsx) and [shared people picker](../../../apps/web/src/components/people/PersonSearchSelect.tsx): searchable directory-wide appointments.
+- [Appointment API tests](../../../tests/api/department-leads-route.test.ts), [scope tests](../../../tests/lib/work-management-permissions.test.ts), and [management browser tests](../../../e2e/leadership-account-classification.spec.ts): eligibility, multiple departments, removal, and failure recovery.
+- [Project creation](../../../apps/web/src/app/(app)/(employee)/projects/new/page.tsx), [contributor management](../../../apps/web/src/components/projects/ManageContributorsDialog.tsx), and [invitation review](../../../apps/web/src/app/(app)/(employee)/projects/invitations/page.tsx): project-lead selection, pending states, and recipient decisions.
+- [Project membership RPCs](../../../supabase/migrations/20261104000004_project_member_invitations.sql) and [co-lead permissions](../../../supabase/migrations/20261104000003_project_co_leads.sql): atomic assignments, notifications, response locking, and RLS protections.
+- [Invitation API tests](../../../tests/api/project-member-invitations-route.test.ts), [local invitation SQL](../../../tests/sql/project-member-invitations-local.sql), [local co-lead SQL](../../../tests/sql/project-co-leads-local.sql), and [project browser journeys](../../../e2e/project-co-leads.spec.ts): consent, authorization, error recovery, and responsive workflows.
 
 ## Visual Guide
 
@@ -95,6 +100,7 @@ flowchart LR
 - 2026-10-12: Audited Work Tracker end to end, distinguished confirmed code behavior from proposed UX changes, researched official reference products, and prioritized completeness and metric integrity before visual polish. No product code was changed.
 - 2026-10-12: Implemented local UI/API improvements and added focused API/browser coverage. No production deployment. Baseline measurement was unavailable because local services did not respond; no performance delta claimed. Remaining areas are listed above.
 - 2026-10-20: Implemented and validated department-lead governance, shared-project invitations, scoped assignment, privacy-safe department reporting, explicit milestone completion, and deterministic exactly-once XP distribution. The two owning migrations were applied and ledger-verified in local and production Supabase. No latency improvement was targeted or claimed.
+- 2026-11-04: Implemented directory-wide lead search and independent multi-department appointment scope. Focused tests, desktop/mobile Chromium checks, typecheck and targeted lint passed. No database changes, deployment, or latency claim.
 
 ## Department Lead Governance Update — 2026-10-20
 
@@ -102,6 +108,7 @@ flowchart LR
 
 - Problem/evidence: assignment was global-admin-only, while granting ordinary project participation broad management rights would expose people and projects outside a lead's department.
 - Delivered solution: super-admins can appoint multiple active leads only from active users in the same canonical department. Every management request revalidates the appointment against the user's current department, and assignee selection is limited to that department. Admins and super-admins retain global scope.
+- Historical note: the home-department restriction is superseded by the 2026-11-04 multi-department update below.
 - Validation: focused project/task/Work Tracker API tests passed 13/13; web typecheck passed. Local Supabase migration and lint ran; lint reported one unrelated pre-existing `get_knowledge_source_versions` error.
 - References: [Linear member roles](https://linear.app/docs/members-roles), [Linear issue assignment](https://linear.app/docs/assigning-issues), and [Jira project roles](https://support.atlassian.com/jira/kb/grant-access-to-single-jira-project-that-uses-a-shared-permission-scheme/).
 
@@ -120,7 +127,7 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    A[Super-admin appoints eligible lead] --> B[Canonical department scope]
+    A[Super-admin appoints eligible lead] --> B[Appointed department scopes]
     B --> C[Lead assigns department member]
     B --> D[Project manager invites department]
     D --> E{Target lead decision}
@@ -131,3 +138,143 @@ flowchart LR
     I --> J[Unique reward run]
     J --> K[Task-weighted XP ledger]
 ```
+
+## Multi-department Lead Search Update - 2026-11-04
+
+### Implemented - searchable appointments independent of home department
+
+- Problem/evidence: the management dialog filtered a capped directory page by home
+  department, the appointment API rejected people from other departments and non-staff
+  roles, and the shared permission resolver silently discarded appointments outside
+  the lead's current home department. A picker-only fix would not grant working access.
+- Solution: reuse the existing paginated `PersonSearchSelect` for name/email/position
+  search across all directory-visible accounts, including admins and leadership.
+  Validate the same directory population on the API. Derive lead scope from all active
+  appointments without changing home-department membership. Exclude current leads only
+  for the selected department; keep appointments/removals server-confirmed.
+- Boundaries: missing, deleted, terminated, and non-directory candidates cannot be
+  appointed; missing/deleted departments are rejected. Revoking one department does
+  not revoke other appointments. Project membership and target-member eligibility
+  checks remain in place; global admin permissions are unchanged. Terminated/deleted
+  leads do not retain department scope; active appointments grant scope regardless of
+  account kind (for example, leadership or privileged accounts).
+- Validation: 35 focused API/scope/picker/Work Tracker tests passed, web typecheck and
+  targeted Biome passed, and three Chromium tests passed against mocked APIs. Checked
+  `/admin/directory` as super-admin at desktop 1440x960 and mobile 390x844: search,
+  empty search, keyboard selection, duplicate exclusion, multi-department appointment,
+  removal independent of other departments, pending confirmation and recoverable errors.
+  Search/appointed-state screenshots were inspected; successful-flow console checks passed.
+  No live database mutation, migration or production deployment was performed. No latency
+  improvement is targeted or claimed.
+- Reference patterns: [GitHub assignment](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/assigning-issues-and-pull-requests-to-other-github-users)
+  documents typing a username then selecting a person; [Linear assignment](https://linear.app/docs/assigning-issues)
+  separates workspace-wide assignment from private-team eligibility. Here, search
+  spans the permitted directory population while department appointments determine
+  work-management scope; competitor styling and unrelated permissions are not copied.
+- Acceptance: a super-admin can find an account outside Operations, appoint them to
+  both Operations and Marketing, remove only Operations, and retain Marketing access.
+  Empty/error/pending states must be explicit, duplicate appointments excluded,
+  and the search/selected states usable at desktop and mobile widths.
+
+### Validation commands and limitations
+
+- Passed: `pnpm exec vitest run tests\api\department-leads-route.test.ts tests\lib\work-management-permissions.test.ts tests\components\PersonSearchSelect.test.tsx tests\api\work-tracker-route.test.ts` (35 tests).
+- Passed: `pnpm --filter @hr-portal/web typecheck`.
+- Passed: `pnpm exec biome check --write apps\web\src\components\admin\ManageDepartmentLeadsDialog.tsx apps\web\src\app\api\departments\leads\route.ts apps\web\src\lib\work-management\permissions.ts tests\api\department-leads-route.test.ts tests\lib\work-management-permissions.test.ts e2e\leadership-account-classification.spec.ts`.
+- Passed: the local browser command below (three tests). The original shared-cache run
+  encountered an invalid Next chunk; the isolated cache passed and was removed afterward,
+  together with its automatically generated tsconfig include. Playwright stopped its server.
+- Additional consumer check: `pnpm exec vitest run tests\api\projects-route.test.ts tests\api\project-contributors-route.test.ts tests\api\tasks-route.test.ts tests\api\tasks-id-route.test.ts` yielded eight passing tests and two existing contributor-mock failures. The contributor mock omits `.is()`, already required by unchanged `canManageProject` at HEAD; unrelated test repair was not included.
+- Intentionally skipped: full repository build/suite and live database checks; the change
+  is covered by targeted API/scope tests and browser mocks and requires no schema migration.
+
+```powershell
+$env:PLAYWRIGHT_HTML_OPEN='never'
+$env:NEXT_DIST_DIR='.next-department-leads-e2e'
+$env:PLAYWRIGHT_WEB_PORT='3012'
+pnpm exec playwright test --config playwright.local.config.ts leadership-account-classification.spec.ts --grep "department|same lead" --reporter=list --timeout=90000
+```
+
+## Multiple Project Leads and Individual Invitations - 2026-11-04
+
+### Implemented - role clarity and consent before cross-department assignment
+
+- Problem/evidence: project ownership previously exposed only one primary lead,
+  while the contributor label `lead` did not consistently grant management rights.
+  Adding a person outside the assigner's departments could grant project access
+  without that person's agreement.
+- Delivered solution: allow multiple leads, explain the difference from ordinary
+  contributors, and present searchable candidates with an invitation-required
+  indicator. Direct assignment is limited to the actor or people in departments
+  the actor actively leads; administrators follow the same consent rule. A pending
+  invite grants no new access, preserves any existing membership, and can be
+  accepted, declined, or cancelled. A proposed primary becomes co-lead instead
+  if a newer primary was chosen before acceptance.
+- Reliability/security: project creation, membership changes and notification
+  writes are transactional; recipient identity and active status are checked
+  server-side. Project and invitation locks use a consistent order, and direct
+  database and implicit task-assignment paths cannot bypass consent. Project
+  membership and department activation remain separate.
+- UX references: [GitHub organization invitations](https://docs.github.com/en/organizations/managing-membership-in-your-organization/inviting-users-to-join-your-organization)
+  documents acceptance before membership and cancellation before acceptance;
+  [Slack pending invitations](https://slack.com/help/articles/360060363633-Manage-pending-invitations-and-invite-links-for-your-workspace)
+  documents visible pending invitations and manager cancellation. This app uses
+  in-app notifications and explicit accept/decline; expiry is not implemented.
+- Validation: 76 focused API/scope/hook tests, web/UI typechecks, and seven
+  Chromium journeys passed using mocked APIs. Checked `/projects/new` (department
+  lead and admin), `/projects/[id]` (co-lead and contributor), `/work-tracker`,
+  `/admin/war-room`, `/notifications`, and `/projects/invitations` (invitee);
+  covered 1440x960 desktop and 390x844 mobile, keyboard selection, pending/cancel,
+  accept/decline, loading/error recovery and overflow. Inspected new-project,
+  contributor-dialog, invitation-review and accepted-state mobile screenshots.
+  The existing department-lead suite also passed three super-admin browser tests.
+- Deployment/limitations: both migrations were applied locally and, with explicit
+  approval, in production; the migration histories agree and the final production
+  dry run reports up to date. Local SQL tests passed against the migrated schema,
+  and database types were generated locally with the nullable supervisor argument
+  restored to reflect its actual API contract. No real-API browser flow,
+  simultaneous multi-session response test, or application rollout verification
+  was performed. The broad lint run exposed an unchanged array-index-key error in
+  the project detail page; focused new-file lint passed with warnings. No latency
+  improvement is claimed.
+
+```mermaid
+flowchart LR
+    A[Manager selects person and role] --> B{Actor leads their department?}
+    B -->|Yes or self| C[Assign directly]
+    B -->|No, including admin| D[Persist invitation and notification]
+    D --> E{Recipient decides}
+    E -->|Accept| F[Grant requested membership]
+    E -->|Decline or manager cancels| G[Keep existing membership unchanged]
+```
+
+### Focused validation commands
+
+```powershell
+pnpm exec vitest run tests\api\projects-route.test.ts tests\api\project-member-invitations-route.test.ts tests\api\project-lead-candidates-route.test.ts tests\api\project-contributors-route.test.ts tests\api\admin-projects-overview-route.test.ts tests\api\department-leads-route.test.ts tests\api\work-tracker-route.test.ts tests\lib\work-management-permissions.test.ts tests\hooks\useProjectLeadership.test.tsx
+pnpm --filter @hr-portal/web typecheck
+pnpm --filter @hr-portal/ui typecheck
+$env:NEXT_DIST_DIR='.next-copilot-build'
+pnpm build
+$env:PLAYWRIGHT_BASE_URL='http://localhost:3003'
+$env:PLAYWRIGHT_WEB_PORT='3003'
+$env:NEXT_DIST_DIR='.next-copilot-co-leads'
+pnpm exec playwright test --config playwright.local.config.ts 'project-co-leads.spec.ts' --reporter=list --timeout=90000
+```
+
+Both SQL suites were run locally by replacing each test file's migration marker
+with the relevant migration contents and piping the combined script to
+`docker exec -i supabase_db_sn-hr-portal psql -U postgres -d postgres -v ON_ERROR_STOP=1`.
+Each suite ends with `ROLLBACK`. For the invitation suite, insert both co-lead and
+invitation migrations in timestamp order when running against an unmigrated local
+schema; after local migration, run the files without inserting migrations. The SQL
+tests target local only. Production migrations were applied separately after approval.
+
+### Change log
+
+- 2026-11-04: Implemented multi-lead and consent flows; verified focused tests,
+  rollback-only SQL and mocked desktop/mobile journeys.
+- 2026-11-04: Applied and verified both local and approved production migrations,
+  regenerated types, reran local SQL/76 focused tests, and passed the full build.
+  Real-API browser validation, concurrent-response testing, and application rollout
+  verification remain open in the [task tracker](task-tracker.md).
