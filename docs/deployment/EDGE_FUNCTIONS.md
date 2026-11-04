@@ -26,7 +26,7 @@ Edge Functions are deployed automatically via GitHub Actions on every push that 
 | `associate-weekly-summary` | Weekly summary of associate activity |
 | `milestone-announcements` | Publishes milestone-based announcements |
 | `probation-check` | Checks and updates employee probation status |
-| `update-fx-rates` | Fetches and stores latest FX rates |
+| `update-fx-rates` | Stores daily AUD-based rates (Frankfurter, falling back to ExchangeRate-API; no key) and refreshes expense AUD estimates. POST `{ "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" }` backfills up to 400 days from Frankfurter |
 | `announcements-lifecycle` | Archives/expires announcements by status |
 | `resources-lifecycle` | Archives/expires resources by status |
 | `cleanup-soft-deleted` | Permanently removes old soft-deleted records |

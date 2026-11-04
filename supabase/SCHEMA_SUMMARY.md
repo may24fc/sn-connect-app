@@ -179,7 +179,7 @@ In-app notification system with deep-link support.
 | `invoices` / `invoice_line_items` | Invoice submission and approval |
 | `wise_payments` | Wise transfer records and status |
 | `employee_banking_info` | Payout details and Wise recipient IDs |
-| `fx_rates` | Daily exchange rates (`update-fx-rates` Edge Function) |
+| `fx_rates` | Daily AUD-based exchange rates per provider and `rate_date` (`update-fx-rates` Edge Function); drive expense `aud_amount_basis = 'daily_estimate'` until Finance records the actual statement AUD |
 | `bank_registry` | Supported banks per country |
 
 ### Expenses & Spend

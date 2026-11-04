@@ -253,7 +253,7 @@ Schedule Trigger (cron expression, UTC timezone)
 | `onboarding-new-employee` | Webhook | `/api/onboarding/initiate` | — | — | — | — |
 | `offboarding-exit-process` | Webhook | `/api/offboarding/initiate` | — | — | — | — |
 | `probation-check` | Cron | `[Control Hub] Cron: Probation Check` | `0 0 * * *` | 8 AM | 1 AM | 10 AM |
-| `update-fx-rates` | Cron | `[Control Hub] Cron: Update FX Rates` | `0 0 * * *` | 8 AM | 1 AM | 10 AM |
+| `update-fx-rates` | Cron | `[Control Hub Prod] Cron: Update FX Rates` | `0 0 * * *` | 8 AM | 1 AM | 10 AM |
 | `milestone-announcements` | Cron | `[Control Hub] Cron: Milestone Announcements` | `0 0 * * *` | 8 AM | 1 AM | 10 AM |
 | `announcements-lifecycle` | Cron | `[Control Hub] Cron: Content Lifecycle` | `*/15 * * * *` | Every 15m | Every 15m | Every 15m |
 | `resources-lifecycle` | Cron | `[Control Hub] Cron: Content Lifecycle` | `*/15 * * * *` | Every 15m | Every 15m | Every 15m |

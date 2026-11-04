@@ -105,7 +105,7 @@ Shared service-account credentials drive both the knowledge-base Drive sync and 
 | `INTAKE_WEBHOOK_SECRET` | Shared secret verifying inbound requests to `/api/projects/intake`. | For project intake |
 | `MUX_TOKEN_ID` / `MUX_TOKEN_SECRET` | Mux API credentials for video resource upload and playback. | For video resources |
 | `MUX_WEBHOOK_TOKEN` | Verifies Mux webhook calls to `/api/resources/mux/webhook`. | For video resources |
-| `OPEN_EXCHANGE_RATES_API_KEY` | Read by the `update-fx-rates` Edge Function. The function returns an error without it. | For FX rates |
+| `OPEN_EXCHANGE_RATES_API_KEY` | No longer read. `update-fx-rates` now uses the free, no-key Frankfurter API with an ExchangeRate-API fallback. | Not required |
 | `EXPENSE_OCR_INLINE_FALLBACK` | Set `true` to run expense OCR inline instead of via Inngest. Already implied outside production. | No |
 | `ALLOWED_ORIGINS` | CORS allow-list for Edge Functions. | No |
 | `FIVE_PERCENT_SUMMARY_RECIPIENTS` | Comma-separated emails that receive the monthly 5% Reflection AI summary (Inngest `performance-five-percent-summary-email`). Sent once everyone has submitted, or on the month's last working day otherwise. Skipped with a warning when unset. Portal only. | For the 5% summary email |
