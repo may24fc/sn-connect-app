@@ -8,7 +8,7 @@ disable-model-invocation: false
 
 # Build, Fix, Commit, Push
 
-Complete the requested delivery workflow end to end for this pnpm/Turborepo repository. Preserve unrelated user changes. When the pending delivery includes new database migrations, apply them to local and production as described below; otherwise, do not change either database.
+Complete the requested delivery workflow end to end for this pnpm/Turborepo repository. Preserve unrelated user changes. When the pending delivery includes new database migrations, validate them locally and apply them to production only with explicit production-deployment approval; otherwise, do not change either database.
 
 ## Preflight
 
@@ -34,30 +34,7 @@ Complete the requested delivery workflow end to end for this pnpm/Turborepo repo
    ```
 
 2. If there are no new migration files, record that the migration gate was not applicable and continue without database changes.
-3. If migrations are present, state the target environment before every database-changing command. Run every Supabase command through `pnpm exec supabase` so the repo-pinned CLI (`supabase` in `package.json`) is used; a globally installed CLI can be a different major version with different flags and authentication.
-
-   **Local is applied automatically.** Do not ask the user to start Docker, start Supabase, or confirm the local migration; the local stack is the safe development target. First make sure the Docker daemon is running, starting Docker Desktop yourself when it is not (it can take 1-3 minutes). Use a bounded probe because `docker info` hangs while the daemon is down:
-
-   ```powershell
-   function Test-DockerReady {
-     $job = Start-Job { docker info --format '{{.ServerVersion}}' 2>$null }
-     $done = Wait-Job $job -Timeout 15
-     $ready = $done -and ((Receive-Job $job) -match '\d')
-     Remove-Job $job -Force
-     [bool]$ready
-   }
-
-   if (-not (Test-DockerReady)) {
-     if (-not (Get-Process -Name 'Docker Desktop' -ErrorAction SilentlyContinue)) {
-       Start-Process 'C:\Program Files\Docker\Docker\Docker Desktop.exe'
-     }
-     $deadline = (Get-Date).AddMinutes(4)
-     while (-not (Test-DockerReady) -and (Get-Date) -lt $deadline) { Start-Sleep -Seconds 10 }
-     if (-not (Test-DockerReady)) { throw 'Docker Desktop did not become ready within 4 minutes.' }
-   }
-   ```
-
-   If Docker Desktop is installed elsewhere, locate it first (`Get-Command docker`, then the sibling `Docker Desktop.exe`). Only stop and report if Docker is not installed or still not ready after the timeout. Then apply and verify **local** first:
+3. If migrations are present, state the target environment before every database-changing command. Run every Supabase command through `pnpm exec supabase` so the repo-pinned CLI (`supabase` in `package.json`) is used; a globally installed CLI can be a different major version with different flags and authentication. Apply and verify **local** first:
 
    ```powershell
    pnpm supabase:start
@@ -65,9 +42,7 @@ Complete the requested delivery workflow end to end for this pnpm/Turborepo repo
    pnpm exec supabase migration list --local
    ```
 
-   Run these immediately after Docker is ready; do not pause for approval. If `supabase:start` reports the stack is already running, continue.
-
-4. After local migration validation passes, apply and verify **production**. `supabase db push` has no `--project-ref` flag; confirm the linked project is production, linking explicitly if it is not, then use `--linked`. Run the dry run, and push only when it reports the intended migration set:
+4. After local migration validation passes, apply and verify **production** only when the user explicitly requests or approves a production deployment. If approval is missing, ask before proceeding; if declined, report production as deferred and do not push code that requires its unapplied migration. `supabase db push` has no `--project-ref` flag; confirm the linked project is production, linking explicitly if it is not, then use `--linked`. Run the dry run, and push only when it reports the intended migration set:
 
    ```powershell
    $productionProjectRef = 'tccdupkjmwwxcvpqnpeb'
@@ -125,7 +100,7 @@ Complete the requested delivery workflow end to end for this pnpm/Turborepo repo
 2. Before pushing, require all of the following:
    - the requested build scope passed during this workflow (`pnpm build` by default, or `pnpm --filter @hr-portal/web build` for web-only requests);
    - focused checks for modified behavior passed where tests exist;
-   - when the delivery contains a new migration, Docker was started automatically if needed, and local and production application and verification completed through the Migration Gate;
+   - when the delivery contains a new migration, local and explicitly approved production application and verification completed through the Migration Gate;
    - `git status --short` is empty, excluding intentionally ignored tool caches;
    - `git log --oneline origin/main..HEAD` contains the expected commits.
 
