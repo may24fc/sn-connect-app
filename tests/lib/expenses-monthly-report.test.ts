@@ -12,6 +12,7 @@ interface FakeRow {
   total_amount_aud: number | null;
   currency: string;
   payment_status: string;
+  category_code?: string | null;
   expense_type: string | null;
   processing_status: string;
   match_status: string | null;
@@ -172,5 +173,16 @@ describe('buildMonthlyExpenseReport', () => {
     const report = await buildMonthlyExpenseReport(buildFakeAdminClient(entries), referenceDate);
     expect(report.summary[0]?.currentMonth).toBe(1001);
     expect(report.paymentStatusCounts.confirmed).toBe(1001);
+  });
+
+  it('groups by the Finance category even when OCR rewrote the legacy expense type', async () => {
+    const report = await buildMonthlyExpenseReport(
+      buildFakeAdminClient([
+        row({ transaction_date: '2026-07-03', category_code: 'ai_cloud', expense_type: 'software' }),
+        row({ transaction_date: '2026-07-04', category_code: null, expense_type: 'travel' }),
+      ]),
+      referenceDate
+    );
+    expect(report.categoryBreakdown.map((entry) => entry.category)).toEqual(['ai_cloud', 'travel']);
   });
 });

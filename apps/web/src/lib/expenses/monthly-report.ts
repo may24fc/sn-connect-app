@@ -65,6 +65,7 @@ type MonthlyReportRow = {
   total_amount_aud: number | null;
   currency: string;
   payment_status: string;
+  category_code: string | null;
   expense_type: string | null;
   processing_status: string;
   match_status: string | null;
@@ -95,6 +96,11 @@ function lastDayOfMonthUtc(monthStart: Date): Date {
 
 function amountOf(row: MonthlyReportRow): number {
   return Number(row.total_amount_aud ?? (row.currency === 'AUD' ? row.total_amount : 0));
+}
+
+// category_code is the Finance-chosen category; expense_type is a legacy field that OCR can overwrite.
+function categoryKeyOf(row: MonthlyReportRow): string {
+  return row.category_code || row.expense_type || 'other';
 }
 
 function resolveDepartmentName(row: MonthlyReportRow): string {
@@ -161,7 +167,7 @@ export async function buildMonthlyExpenseReport(
     const { data, error, count } = await adminClient
       .from('expense_entries')
       .select(
-        'transaction_date, total_amount, total_amount_aud, currency, payment_status, expense_type, processing_status, match_status, risk_bucket, matched_variance_amount, vendor_name, department_id, department:departments(name), employee:employees!expense_entries_employee_id_fkey(department)',
+        'transaction_date, total_amount, total_amount_aud, currency, payment_status, category_code, expense_type, processing_status, match_status, risk_bucket, matched_variance_amount, vendor_name, department_id, department:departments(name), employee:employees!expense_entries_employee_id_fkey(department)',
         { count: 'exact' }
       )
       .is('deleted_at', null)
@@ -214,7 +220,7 @@ export async function buildMonthlyExpenseReport(
 
   const categoryTotals = new Map<string, number>();
   for (const row of currentRows) {
-    const key = row.expense_type || 'other';
+    const key = categoryKeyOf(row);
     categoryTotals.set(key, (categoryTotals.get(key) ?? 0) + amountOf(row));
   }
 
@@ -228,7 +234,7 @@ export async function buildMonthlyExpenseReport(
 
   const prevCategoryTotals = new Map<string, number>();
   for (const row of previousRows) {
-    const key = row.expense_type || 'other';
+    const key = categoryKeyOf(row);
     prevCategoryTotals.set(key, (prevCategoryTotals.get(key) ?? 0) + amountOf(row));
   }
 

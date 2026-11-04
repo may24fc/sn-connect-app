@@ -1,5 +1,6 @@
 import { canReviewFinance, getFinanceContext } from '@/lib/finance/auth';
 import { writeCsv } from '@/lib/finance/csv';
+import { financeCategoryName } from '@/lib/finance/categories';
 import { financeSnapshotReportSchema } from '@/lib/finance/report-snapshot';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -58,7 +59,7 @@ export async function GET(request: NextRequest) {
     ]),
     ...report.categoryBreakdown.map((row) => [
       'Category',
-      row.category,
+      financeCategoryName(row.category),
       String(row.spendAud),
       String(previousCategorySpend.get(row.category) ?? 0),
       String(row.percentOfTotal),
@@ -66,7 +67,7 @@ export async function GET(request: NextRequest) {
     ]),
     ...report.previousCategoryBreakdown
       .filter((row) => !currentCategories.has(row.category))
-      .map((row) => ['Category', row.category, '0', String(row.spendAud), '0', '']),
+      .map((row) => ['Category', financeCategoryName(row.category), '0', String(row.spendAud), '0', '']),
     ...report.departmentBreakdown.map((row) => [
       'Department',
       row.departmentName,

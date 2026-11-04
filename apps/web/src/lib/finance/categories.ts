@@ -18,3 +18,15 @@ export type FinanceCategoryCode = (typeof FINANCE_CATEGORIES)[number]['code'];
 export function categoryToLegacyType(code: FinanceCategoryCode) {
   return FINANCE_CATEGORIES.find((category) => category.code === code)?.legacyType ?? 'other';
 }
+
+/** Display name for a category code, e.g. `ai_cloud` → `AI & Cloud`; unknown codes are title-cased. */
+export function financeCategoryName(code: string): string {
+  return (
+    FINANCE_CATEGORIES.find((category) => category.code === code)?.name ??
+    code
+      .split('_')
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ')
+  );
+}

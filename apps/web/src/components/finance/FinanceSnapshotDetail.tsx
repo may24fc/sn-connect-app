@@ -1,6 +1,6 @@
 'use client';
 
-import { FINANCE_CATEGORIES } from '@/lib/finance/categories';
+import { financeCategoryName as categoryName } from '@/lib/finance/categories';
 import {
   type FinanceSnapshotReport,
   financeSnapshotReportSchema,
@@ -32,9 +32,6 @@ const money = (amount: number, currency = 'AUD') =>
   new Intl.NumberFormat('en-AU', { style: 'currency', currency }).format(amount);
 const percent = (value: number | null) =>
   value === null ? '—' : `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
-const categoryName = (code: string) =>
-  FINANCE_CATEGORIES.find((category) => category.code === code)?.name ??
-  code.replaceAll('_', ' ').replace(/^\w/, (letter) => letter.toUpperCase());
 const monthLabel = (month: string) =>
   new Intl.DateTimeFormat('en-AU', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
     new Date(`${month.slice(0, 7)}-01T00:00:00Z`)

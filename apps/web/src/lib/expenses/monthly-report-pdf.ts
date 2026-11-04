@@ -1,4 +1,5 @@
 import PDFDocument from 'pdfkit';
+import { financeCategoryName } from '@/lib/finance/categories';
 import type { MonthlyExpenseReport } from './monthly-report';
 
 const MARGIN = 48;
@@ -35,10 +36,7 @@ function formatPercent(value: number | null): string {
 }
 
 function formatCategoryLabel(category: string): string {
-  return category
-    .split('_')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
+  return financeCategoryName(category);
 }
 
 function ensureSpace(doc: PDFKit.PDFDocument, neededHeight: number): void {
