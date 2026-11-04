@@ -9,6 +9,7 @@ DECLARE
   before_variances integer;
   overview jsonb;
   trend_spend numeric;
+  snapshot_id uuid;
 BEGIN
   SELECT id INTO owner_id FROM public.users ORDER BY id LIMIT 1;
   IF owner_id IS NULL THEN RAISE EXCEPTION 'Local Finance checks need a user fixture'; END IF;
@@ -40,6 +41,14 @@ BEGIN
   overview := public.finance_overview('2031-02-01');
   IF (overview->>'openVariances')::integer <> before_variances + 1 THEN
     RAISE EXCEPTION 'Matched pair counted % times', (overview->>'openVariances')::integer - before_variances;
+  END IF;
+
+  -- The month-end snapshot also treats the pair and its pending sign-off as one exception.
+  DELETE FROM public.expense_entries WHERE id = receipt_id;
+  snapshot_id := public.create_finance_report_snapshot('2031-02-01', owner_id, '{}'::jsonb, false);
+  IF (SELECT exception_count FROM public.finance_report_snapshots WHERE id = snapshot_id) <> 1 THEN
+    RAISE EXCEPTION 'Snapshot counted % exceptions for one amount difference',
+      (SELECT exception_count FROM public.finance_report_snapshots WHERE id = snapshot_id);
   END IF;
 END $$;
 ROLLBACK;
