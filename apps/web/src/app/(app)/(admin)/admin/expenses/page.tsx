@@ -13,7 +13,9 @@ import { downloadMonthlyExpenseReport } from '@/hooks/useExpenseImport';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useDeleteExpense, useExpenses, useLeadershipDecision } from '@/hooks/useExpenses';
 import { useAuth } from '@/contexts/AuthContext';
+import { useExpensesAccess } from '@/hooks/useExpensesAccess';
 import { formatFinanceDate } from '@/lib/format';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Button,
@@ -83,6 +85,11 @@ export default function AdminExpensesDashboard() {
   const [dateTo, setDateTo] = useState('');
 
   const { data: departmentsData } = useDepartments({ page: 1, pageSize: 200 });
+  const { capabilities: expenseCapabilities, isLoading: expenseAccessLoading } = useExpensesAccess();
+  // Finance reviewers read settled records in Finance › Expenses › All expenses; department-scoped
+  // desk users cannot open Finance, so the settled tab remains their ledger view.
+  const showSettledLedger = !expenseAccessLoading && !expenseCapabilities.canViewDeskGlobal;
+  const currentTab = activeTab === 'settled' && !showSettledLedger ? 'matching' : activeTab;
   const expensesDeskBasePath =
     user?.role === 'admin' || user?.role === 'super_admin' ? '/admin/expenses' : '/expenses/desk';
 
@@ -252,7 +259,8 @@ export default function AdminExpensesDashboard() {
             Expense Desk
           </PageTitle>
           <p className="mt-1 text-sm text-muted-foreground">
-            Review requests vs payments flagged with a matching variance, and monitor the reconciled ledger.
+            Match requests to payments and sign off amount differences.
+            {showSettledLedger ? ' Settled records stay in the ledger tab.' : ''}
           </p>
         </div>
         <Button
@@ -265,23 +273,36 @@ export default function AdminExpensesDashboard() {
         </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'matching' | 'exceptions' | 'settled')} className="space-y-6">
-        <TabsList className="w-fit">
-          <TabsTrigger value="matching" className="gap-2">
-            <Scale className="h-4 w-4" />
-            Matching Queue
-          </TabsTrigger>
-          <TabsTrigger value="exceptions" className="gap-2">
-            <AlertCircle className="h-4 w-4" />
-            Amount differences ({exceptions.length})
-          </TabsTrigger>
-          <TabsTrigger value="settled" className="gap-2">
-            <History className="h-4 w-4" />
-            Settled Ledger & History ({settled.length})
-          </TabsTrigger>
-        </TabsList>
+      <Tabs value={currentTab} onValueChange={(value) => setActiveTab(value as 'matching' | 'exceptions' | 'settled')} className="space-y-6">
+        <div className="flex flex-wrap items-center gap-3">
+          <TabsList className="w-fit">
+            <TabsTrigger value="matching" className="gap-2">
+              <Scale className="h-4 w-4" />
+              Matching Queue
+            </TabsTrigger>
+            <TabsTrigger value="exceptions" className="gap-2">
+              <AlertCircle className="h-4 w-4" />
+              Amount differences ({exceptions.length})
+            </TabsTrigger>
+            {showSettledLedger ? (
+              <TabsTrigger value="settled" className="gap-2">
+                <History className="h-4 w-4" />
+                Settled Ledger & History ({settled.length})
+              </TabsTrigger>
+            ) : null}
+          </TabsList>
+          {!showSettledLedger && !expenseAccessLoading ? (
+            <Link
+              href="/finance/expenses"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+            >
+              <History className="h-4 w-4" />
+              Settled records are in Finance › Expenses
+            </Link>
+          ) : null}
+        </div>
 
-        {activeTab !== 'matching' ? (
+        {currentTab !== 'matching' ? (
           <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-3 shadow-sm">
             <FilterSearchInput value={searchTerm} onChange={setSearchTerm} placeholder="Search vendor" />
             <FilterSelect
@@ -464,6 +485,7 @@ export default function AdminExpensesDashboard() {
           )}
         </TabsContent>
 
+        {showSettledLedger ? (
         <TabsContent value="settled" className="space-y-4 outline-none">
           {isLoading ? (
             <div className="p-12 flex items-center justify-center">
@@ -573,6 +595,7 @@ export default function AdminExpensesDashboard() {
             </Card>
           )}
         </TabsContent>
+        ) : null}
       </Tabs>
 
       <ImportExpensesDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} />
