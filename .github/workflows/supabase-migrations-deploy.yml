@@ -85,7 +85,8 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Match the repo-pinned CLI (packages/database). CLI v3 rejects this repo's config.toml.
+          version: 1.226.4
 
       - name: Link project
         run: supabase link --project-ref ${{ steps.project.outputs.ref }}

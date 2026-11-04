@@ -2,19 +2,21 @@
 
 ## Overview
 
-Edge Functions are deployed automatically via GitHub Actions on every push that touches `supabase/functions/**`. Manual deployment is also supported via workflow dispatch.
+Edge Functions are deployed manually with the repo-pinned Supabase CLI. The GitHub Actions auto-deploy workflow (`supabase-functions-deploy.yml`) was removed on 2026-11-04 after failing on every run since July 2026.
 
-**Workflow file:** `.github/workflows/supabase-functions-deploy.yml`
+```bash
+pnpm exec supabase functions deploy <function-name> --project-ref tccdupkjmwwxcvpqnpeb --no-verify-jwt
+```
+
+Always pass `--no-verify-jwt`: n8n calls functions with an `X-Admin-Key` header, which the Supabase gateway rejects when JWT verification is on.
 
 ---
 
 ## Environments
 
-| Environment | Supabase Project | Triggered By |
-|-------------|-----------------|--------------|
-| Staging | `zihdtxpvugdphieujhzk` | Push to `dev` branch |
-| Production | `tccdupkjmwwxcvpqnpeb` | Push to `master` branch |
-| Manual | Either | `workflow_dispatch` with env selection |
+| Environment | Supabase Project | Deployed by |
+|-------------|-----------------|-------------|
+| Production | `tccdupkjmwwxcvpqnpeb` | Manual CLI deploy (see Overview) |
 
 ---
 
@@ -101,13 +103,9 @@ n8n workflows call Edge Functions via HTTP Request nodes using:
 
 ## Manual Deployment
 
-To manually trigger a deployment:
-
-1. Go to [GitHub Actions](https://github.com/may24fc/sn-connect-app/actions/workflows/supabase-functions-deploy.yml)
-2. Click **Run workflow**
-3. Select branch (`dev` for staging, `master` for production)
-4. Select environment
-5. Click **Run workflow**
+1. Confirm the target: production is `tccdupkjmwwxcvpqnpeb`. Staging is not in use.
+2. Deploy one function: `pnpm exec supabase functions deploy <function-name> --project-ref tccdupkjmwwxcvpqnpeb --no-verify-jwt`
+3. Confirm with `pnpm exec supabase functions list --project-ref tccdupkjmwwxcvpqnpeb`, then call the function once with the production service-role key or `X-Admin-Key`.
 
 ---
 
