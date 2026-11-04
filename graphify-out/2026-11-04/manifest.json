@@ -72,8 +72,8 @@
     "semantic_hash": ""
   },
   "apps/web/next-env.d.ts": {
-    "mtime": 1793157831.1436024,
-    "seen": 1793240352.3313863,
+    "mtime": 1793789986.9109147,
+    "seen": 1793790188.520788,
     "ast_hash": "90426577ad8f38459f3e566411c85589",
     "semantic_hash": ""
   },
@@ -150,9 +150,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/admin/projects/overview/route.ts": {
-    "mtime": 1791342622.908223,
-    "seen": 1791343180.2619643,
-    "ast_hash": "d80d056198f4d94ca952211e522bd6da",
+    "mtime": 1793786490.735429,
+    "seen": 1793790188.5210805,
+    "ast_hash": "d654faa6b42cb5e70dab58ffb2c676a1",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/admin/war-room/overview/route.ts": {
@@ -1122,10 +1122,10 @@
     "semantic_hash": "be6ac6860b4bbd9f9c5323b684ffc33a"
   },
   "apps/web/src/app/api/performance/five-percent-reflections/export-pdf/route.ts": {
-    "mtime": 1788257422.3689365,
-    "seen": 1789664611.8286905,
-    "ast_hash": "21c9855480e0b4130faee18cb4a946a9",
-    "semantic_hash": "21c9855480e0b4130faee18cb4a946a9"
+    "mtime": 1793784076.1894326,
+    "seen": 1793786203.6814253,
+    "ast_hash": "f693f9fd572d44174b9ca92979c7c5c9",
+    "semantic_hash": ""
   },
   "apps/web/src/app/api/performance/five-percent-reflections/route.ts": {
     "mtime": 1791342692.950406,
@@ -1236,9 +1236,9 @@
     "semantic_hash": "4dd3213450c490bdde17ac49f0f4292c"
   },
   "apps/web/src/app/api/projects/[id]/contributors/route.ts": {
-    "mtime": 1792471829.0470493,
-    "seen": 1792473609.369031,
-    "ast_hash": "cbd7f483d9b56be5fc9e74359c6509e5",
+    "mtime": 1793788501.4592276,
+    "seen": 1793790188.5213165,
+    "ast_hash": "44507e7b1412808d9fd1f778b99d1dfd",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/projects/[id]/documentation/route.ts": {
@@ -1254,15 +1254,15 @@
     "semantic_hash": "a6d7512a16ee70ad35a33add563baa3e"
   },
   "apps/web/src/app/api/projects/[id]/route.ts": {
-    "mtime": 1792471828.7468739,
-    "seen": 1792473609.3690386,
-    "ast_hash": "9b00d73772bc4922b1825ddcc6a8713b",
+    "mtime": 1793788589.4857733,
+    "seen": 1793790188.5213227,
+    "ast_hash": "c332486e124d1fbf4c0c4ece661db8ac",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/projects/_lib.ts": {
-    "mtime": 1792471828.5574777,
-    "seen": 1792473609.3690407,
-    "ast_hash": "ff6edc8d6019f18d51e445ff21ff1932",
+    "mtime": 1793788206.961057,
+    "seen": 1793790188.5213237,
+    "ast_hash": "5dddfd555c6cca4304fa1635ed246acf",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/projects/backlog/[id]/route.ts": {
@@ -1314,9 +1314,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/projects/route.ts": {
-    "mtime": 1792471861.828926,
-    "seen": 1792473609.3690574,
-    "ast_hash": "015562c62997de496c9f1b94b4e00adf",
+    "mtime": 1793788470.4365063,
+    "seen": 1793790188.5213366,
+    "ast_hash": "0a1e65b2871340e291e96ec2887722a1",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/reports/[id]/approve/route.ts": {
@@ -1602,9 +1602,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/tasks/[id]/route.ts": {
-    "mtime": 1792472065.5626175,
-    "seen": 1792473609.3691545,
-    "ast_hash": "e42b254f0b944e247d1d5a7eafdbd1ec",
+    "mtime": 1793788782.2676897,
+    "seen": 1793790188.5213978,
+    "ast_hash": "b1c18444c30dba333180f40d5767376f",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/tasks/_lib.ts": {
@@ -1620,9 +1620,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/tasks/route.ts": {
-    "mtime": 1792472276.1644342,
-    "seen": 1792473609.3691595,
-    "ast_hash": "c88d0d75dc0e79eaa7667277d4551759",
+    "mtime": 1793788782.2428596,
+    "seen": 1793790188.5214014,
+    "ast_hash": "cd50fe7dce8c97ea5518986eb47e663d",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/ticket-handlers/me/route.ts": {
@@ -2118,9 +2118,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/performance/FivePercentReflectionForm.tsx": {
-    "mtime": 1793019536.060506,
-    "seen": 1793065281.3160203,
-    "ast_hash": "6ba25a54d93b4ae2244caa1c698de561",
+    "mtime": 1793783989.6389065,
+    "seen": 1793786203.6816905,
+    "ast_hash": "a2fa4b8c8cbc34d11782d201e0cc7963",
     "semantic_hash": ""
   },
   "apps/web/src/components/performance/MonthlyCallFeedbackAdminReview.tsx": {
@@ -2790,9 +2790,9 @@
     "semantic_hash": "14ea650a60479fd0a57313449f97b422"
   },
   "apps/web/src/hooks/useProjects.ts": {
-    "mtime": 1792471829.3332815,
-    "seen": 1792473609.369624,
-    "ast_hash": "561ec7a85ec1d5047d0b2701dc2795c9",
+    "mtime": 1793788656.908199,
+    "seen": 1793790188.5217538,
+    "ast_hash": "81a19062815c030ee5fe9f939bd460b6",
     "semantic_hash": ""
   },
   "apps/web/src/hooks/usePublishAnnouncement.ts": {
@@ -3138,15 +3138,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/lib/expenses/monthly-report-pdf.ts": {
-    "mtime": 1793705460.5812802,
-    "seen": 1793706306.3338776,
-    "ast_hash": "92ceb70ae73ab9a6c3f5858de5a487c3",
+    "mtime": 1793788220.299659,
+    "seen": 1793790188.521832,
+    "ast_hash": "354d1a6f1693dc28b31310619f71e91e",
     "semantic_hash": ""
   },
   "apps/web/src/lib/expenses/monthly-report.ts": {
-    "mtime": 1791778455.8348906,
-    "seen": 1791778702.5942981,
-    "ast_hash": "4b8759289f29af39a3f2f2acf36fca37",
+    "mtime": 1793788220.3484259,
+    "seen": 1793790188.5218327,
+    "ast_hash": "14dc38a00047bd4de4c74c9e85038f05",
     "semantic_hash": ""
   },
   "apps/web/src/lib/format.ts": {
@@ -3156,10 +3156,10 @@
     "semantic_hash": ""
   },
   "apps/web/src/lib/fx/currency-conversion-service.ts": {
-    "mtime": 1788257422.5403335,
-    "seen": 1789664611.8289413,
-    "ast_hash": "b4c1fd66b84a4eb8852e50a3a75bd03a",
-    "semantic_hash": "b4c1fd66b84a4eb8852e50a3a75bd03a"
+    "mtime": 1793784796.9230235,
+    "seen": 1793786203.68192,
+    "ast_hash": "23c6659d6f4bf8ae846029ff86d3a1c2",
+    "semantic_hash": ""
   },
   "apps/web/src/lib/fx/expense-conversion.ts": {
     "mtime": 1788257422.5403335,
@@ -3174,8 +3174,8 @@
     "semantic_hash": "7a0dc3198c754c2a24e5a4a5466f950f"
   },
   "apps/web/src/lib/generated/application-update-summary.generated.ts": {
-    "mtime": 1793705495.4650695,
-    "seen": 1793706306.3338995,
+    "mtime": 1793789911.447959,
+    "seen": 1793790188.5218503,
     "ast_hash": "7322821048c7b2c5f9f9ddca7c61261a",
     "semantic_hash": "7322821048c7b2c5f9f9ddca7c61261a"
   },
@@ -3366,9 +3366,9 @@
     "semantic_hash": "d6b19e45368e4c16ec94af3a7788b13e"
   },
   "apps/web/src/lib/query-keys.ts": {
-    "mtime": 1792824858.6796775,
-    "seen": 1792828701.477623,
-    "ast_hash": "5f77a0c1b792d2ff1e43572c68abafd3",
+    "mtime": 1793788656.874951,
+    "seen": 1793790188.5219138,
+    "ast_hash": "b1a6bd6d25612cd52bc4ab75c18f65bf",
     "semantic_hash": ""
   },
   "apps/web/src/lib/report-utils.ts": {
@@ -3498,9 +3498,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/lib/schemas/project.schema.ts": {
-    "mtime": 1790752750.685657,
-    "seen": 1790753051.2249765,
-    "ast_hash": "445690785802b6d2478eceba6da2c33c",
+    "mtime": 1793786132.3832526,
+    "seen": 1793786203.6820066,
+    "ast_hash": "3330e6a431daffb5e2da2d2b03a3c452",
     "semantic_hash": ""
   },
   "apps/web/src/lib/schemas/report.schema.ts": {
@@ -3612,9 +3612,9 @@
     "semantic_hash": ""
   },
   "apps/web/tsconfig.json": {
-    "mtime": 1793157509.5679026,
-    "seen": 1793157665.4612005,
-    "ast_hash": "caf461f3722e5132448646429c0c4851",
+    "mtime": 1793786995.8998482,
+    "seen": 1793790188.521979,
+    "ast_hash": "877f6945aff284ce88cba57a68acfc42",
     "semantic_hash": ""
   },
   "apps/web/vercel.json": {
@@ -4806,9 +4806,9 @@
     "semantic_hash": ""
   },
   "packages/database/src/database.types.ts": {
-    "mtime": 1793676766.6596496,
-    "seen": 1793706306.3345923,
-    "ast_hash": "a005a98257720150ce1280a9649aa362",
+    "mtime": 1793788551.3822587,
+    "seen": 1793790188.522231,
+    "ast_hash": "f4cf25e16f52bc0678e8a4191b7a853c",
     "semantic_hash": ""
   },
   "packages/database/src/enums.ts": {
@@ -5628,9 +5628,9 @@
     "semantic_hash": ""
   },
   "packages/ui/src/components/tasks/TaskAssigneeSelect.tsx": {
-    "mtime": 1791784947.876729,
-    "seen": 1791785974.2515078,
-    "ast_hash": "69a22f996afd1327d582a405d068026d",
+    "mtime": 1793789380.0358474,
+    "seen": 1793790188.5223777,
+    "ast_hash": "3ddd7925ac355f0c212f759b611b42ab",
     "semantic_hash": ""
   },
   "packages/ui/src/components/tasks/TaskCard.tsx": {
@@ -6378,10 +6378,10 @@
     "semantic_hash": "18b2e4463a2de1ab63ff5b352d1f06e5"
   },
   "supabase/functions/update-fx-rates/index.ts": {
-    "mtime": 1788257423.598793,
-    "seen": 1789664611.8293118,
-    "ast_hash": "7507ea516681a07470d7e97af87182c7",
-    "semantic_hash": "7507ea516681a07470d7e97af87182c7"
+    "mtime": 1793784785.7645462,
+    "seen": 1793786203.6826012,
+    "ast_hash": "1385782c9b282eeb412ed484c6c81de7",
+    "semantic_hash": ""
   },
   "supabase/migrations/20260123000001_create_enums_and_extensions.sql": {
     "mtime": 1788257423.6007943,
@@ -7638,9 +7638,9 @@
     "semantic_hash": "150b3687205875991c9410c7c54a8f6e"
   },
   "tests/api/dashboard-analytics-route.test.ts": {
-    "mtime": 1791342960.7232666,
-    "seen": 1791343180.263304,
-    "ast_hash": "b6ee1673c499e0cef89e72003d61e518",
+    "mtime": 1793758673.8785028,
+    "seen": 1793760199.9562373,
+    "ast_hash": "ca4874963388c311f2e5bda15acc74d4",
     "semantic_hash": ""
   },
   "tests/api/dashboard-pending-route.test.ts": {
@@ -7842,9 +7842,9 @@
     "semantic_hash": ""
   },
   "tests/lib/expenses-monthly-report.test.ts": {
-    "mtime": 1791779671.567938,
-    "seen": 1791785974.2522302,
-    "ast_hash": "328fc0dacc4178f7e7dd22c918228cfc",
+    "mtime": 1793788296.2968507,
+    "seen": 1793790188.5230587,
+    "ast_hash": "3f93447a12d704a17e985fdf6e2ccc06",
     "semantic_hash": ""
   },
   "tests/lib/mutation-helpers.test.ts": {
@@ -7997,12 +7997,6 @@
     "ast_hash": "f877136b1debc2b799445dac68242de9",
     "semantic_hash": "f877136b1debc2b799445dac68242de9"
   },
-  ".github/workflows/daily-milestones.yml": {
-    "mtime": 1788257422.1169183,
-    "seen": 1789664611.829513,
-    "ast_hash": "9dbc16a38b4512b45bce7f5bfb560233",
-    "semantic_hash": "9dbc16a38b4512b45bce7f5bfb560233"
-  },
   ".github/workflows/evaluation-cadence-reminders.yml": {
     "mtime": 1788257422.117918,
     "seen": 1789664611.8295138,
@@ -8027,17 +8021,11 @@
     "ast_hash": "4ca312e3b692366dd74f3d78f9be388d",
     "semantic_hash": "4ca312e3b692366dd74f3d78f9be388d"
   },
-  ".github/workflows/supabase-functions-deploy.yml": {
-    "mtime": 1788257422.1189191,
-    "seen": 1789664611.8295162,
-    "ast_hash": "524c21ad84731664f5aee92372e5a3f6",
-    "semantic_hash": "524c21ad84731664f5aee92372e5a3f6"
-  },
   ".github/workflows/supabase-migrations-deploy.yml": {
-    "mtime": 1789559159.3744075,
-    "seen": 1789664611.8295171,
-    "ast_hash": "fea6a005dea55ac9e89ce7cd9dffd76e",
-    "semantic_hash": "fea6a005dea55ac9e89ce7cd9dffd76e"
+    "mtime": 1793786904.9825013,
+    "seen": 1793790188.523153,
+    "ast_hash": "ebb71f946937cc092a01072f96cf96f4",
+    "semantic_hash": ""
   },
   ".github/workflows/vercel-deploy.yml": {
     "mtime": 1788257422.1189191,
@@ -8076,9 +8064,9 @@
     "semantic_hash": "f15ba3c2db95664a7206e689219d821e"
   },
   "docs/ENVIRONMENT.md": {
-    "mtime": 1793613089.8521466,
-    "seen": 1793676061.6781137,
-    "ast_hash": "b3c6cd62585562687a4f027c2f38f2dc",
+    "mtime": 1793785598.0022514,
+    "seen": 1793786203.6831396,
+    "ast_hash": "693ce250fd8900ce2b33338aabc1d098",
     "semantic_hash": ""
   },
   "docs/README.md": {
@@ -8100,10 +8088,10 @@
     "semantic_hash": "97088aafe8d6d746ef5214039071885d"
   },
   "docs/adr/ADR-004-edge-function-cron-pattern.md": {
-    "mtime": 1793321471.625729,
-    "seen": 1793321504.6660383,
-    "ast_hash": "881a4587908f058fd6ed2885bba84554",
-    "semantic_hash": "881a4587908f058fd6ed2885bba84554"
+    "mtime": 1793785597.9806294,
+    "seen": 1793786203.6831448,
+    "ast_hash": "6a2b75e571b8b72d7764289e57f651be",
+    "semantic_hash": ""
   },
   "docs/adr/ADR-005-resource-categories-table.md": {
     "mtime": 1788257423.1465538,
@@ -8208,10 +8196,10 @@
     "semantic_hash": "a2ee6c8d3084f1985b15ea73a0d12c43"
   },
   "docs/apps/web/admin/projects.md": {
-    "mtime": 1788257423.1570964,
-    "seen": 1789664611.829537,
-    "ast_hash": "7c484270ab40ba311bc27014e2933bc4",
-    "semantic_hash": "7c484270ab40ba311bc27014e2933bc4"
+    "mtime": 1793789465.966195,
+    "seen": 1793790188.5231895,
+    "ast_hash": "0bca896851cc190a29720ed0b01fb82e",
+    "semantic_hash": ""
   },
   "docs/apps/web/admin/recruitment.md": {
     "mtime": 1788257423.1585789,
@@ -8310,10 +8298,10 @@
     "semantic_hash": "640d59476cdfe6c71db9b1e9f2ddc535"
   },
   "docs/apps/web/api/departments.md": {
-    "mtime": 1788257423.172153,
-    "seen": 1789664611.8295484,
-    "ast_hash": "8d14030e820a7bd0c4b5d138ecd2d8d0",
-    "semantic_hash": "8d14030e820a7bd0c4b5d138ecd2d8d0"
+    "mtime": 1793789465.9898663,
+    "seen": 1793790188.5232074,
+    "ast_hash": "8b9eedd12edb1bb1980ad115896b3e44",
+    "semantic_hash": ""
   },
   "docs/apps/web/api/directory.md": {
     "mtime": 1788257423.1734183,
@@ -8646,9 +8634,9 @@
     "semantic_hash": "bb4e6f30b1d38ab6233c82c7733295c8"
   },
   "supabase/SCHEMA_SUMMARY.md": {
-    "mtime": 1789830043.4988506,
-    "seen": 1790151756.9689162,
-    "ast_hash": "4dc6918fc6ea1d8d467839a2f51cbbe8",
+    "mtime": 1793785598.0202925,
+    "seen": 1793786203.6834702,
+    "ast_hash": "96372f21832f0a66469d5ca6cc8980ce",
     "semantic_hash": ""
   },
   "supabase/SETUP.md": {
@@ -9648,9 +9636,9 @@
     "semantic_hash": ""
   },
   "docs/apps/web/user/projects.md": {
-    "mtime": 1790597973.1061194,
-    "seen": 1790599138.0207243,
-    "ast_hash": "ac0550306145ffa597c715f64747f44b",
+    "mtime": 1793789465.944583,
+    "seen": 1793790188.523264,
+    "ast_hash": "4f61424a33f0e809ba91fd099ea80918",
     "semantic_hash": ""
   },
   "docs/apps/web/user/reports.md": {
@@ -9702,9 +9690,9 @@
     "semantic_hash": ""
   },
   "docs/deployment/EDGE_FUNCTIONS.md": {
-    "mtime": 1793321471.6357458,
-    "seen": 1793321504.6662445,
-    "ast_hash": "06ffb96e037a48a69881697dd3651882",
+    "mtime": 1793786905.0597248,
+    "seen": 1793790188.5232744,
+    "ast_hash": "275e930a9aec11633d1d37045b1bfcb1",
     "semantic_hash": ""
   },
   "docs/deployment/README.md": {
@@ -9864,9 +9852,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/projects/ManageContributorsDialog.tsx": {
-    "mtime": 1791794865.3459854,
-    "seen": 1791796902.4063883,
-    "ast_hash": "5c981e057c6ecc371a456ae7e593b747",
+    "mtime": 1793789380.071916,
+    "seen": 1793790188.521627,
+    "ast_hash": "f782dd51354f9b8b938432596d680a0b",
     "semantic_hash": ""
   },
   "apps/web/src/components/resources/BulkUploadResourcesDialog.tsx": {
@@ -10170,9 +10158,9 @@
     "semantic_hash": ""
   },
   "docs/apps/web/architecture/optimistic-ui.md": {
-    "mtime": 1793706152.1948204,
-    "seen": 1793706306.3362236,
-    "ast_hash": "03625d8c9d10439e884ae633dff0a057",
+    "mtime": 1793789466.0210514,
+    "seen": 1793790188.5232332,
+    "ast_hash": "4e5d05ee47be361a5b934c3b75e440fb",
     "semantic_hash": ""
   },
   "apps/web/src/components/uhp/UhpAccessManagerDialog.tsx": {
@@ -10392,9 +10380,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(admin)/admin/expenses/page.tsx": {
-    "mtime": 1793705460.5554397,
-    "seen": 1793706306.3323877,
-    "ast_hash": "bdd5b69c6946e7d4f5466b88a033e5fb",
+    "mtime": 1793760517.3397474,
+    "seen": 1793786203.6809797,
+    "ast_hash": "3761eb7753b90abcbcb070e3ef3d9bc5",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(admin)/admin/interns/[id]/page.tsx": {
@@ -10710,9 +10698,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(admin)/admin/war-room/page.tsx": {
-    "mtime": 1793024875.1962335,
-    "seen": 1793065281.3153458,
-    "ast_hash": "8c0e14666230ca606eab8c067313643f",
+    "mtime": 1793786594.7451668,
+    "seen": 1793790188.5208805,
+    "ast_hash": "1386a7f9cbea3355aef4ff4d67193b6b",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(admin)/admin/war-room/pool/page.tsx": {
@@ -11376,21 +11364,21 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/projects/[id]/page.tsx": {
-    "mtime": 1793023864.9714775,
-    "seen": 1793065281.3155067,
-    "ast_hash": "90192993d7694ded1d9fc8e4dad25b27",
+    "mtime": 1793786462.8007057,
+    "seen": 1793790188.5210114,
+    "ast_hash": "7892edd9cbd5c893c7aab5080c745f9c",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/projects/new/page.tsx": {
-    "mtime": 1793023864.9655454,
-    "seen": 1793065281.3155077,
-    "ast_hash": "167e13e15009ba84cb55ed0575d02db1",
+    "mtime": 1793788677.5982723,
+    "seen": 1793790188.5210137,
+    "ast_hash": "0dffc6b53e2af2273036fbf22e14d2e9",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/projects/page.tsx": {
-    "mtime": 1793023864.96606,
-    "seen": 1793065281.3155084,
-    "ast_hash": "ff0ae730de19d65195fae28dc116e442",
+    "mtime": 1793788730.8701441,
+    "seen": 1793790188.5210147,
+    "ast_hash": "7d4546f230537ebe781a98ce8c8cbd61",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/projects/pool/page.tsx": {
@@ -11514,9 +11502,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/layout/AppShell.tsx": {
-    "mtime": 1793239758.0472376,
-    "seen": 1793240352.3321009,
-    "ast_hash": "d4f2e6ca778ca8eb631f50260ad54982",
+    "mtime": 1793760404.5021772,
+    "seen": 1793786203.6816814,
+    "ast_hash": "30d1b37bf7b3f900d9b0e48779238fc5",
     "semantic_hash": ""
   },
   "packages/ui/src/primitives/app-link.tsx": {
@@ -11526,9 +11514,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/(employee)/work-tracker/page.tsx": {
-    "mtime": 1793023864.9793825,
-    "seen": 1793065281.3155234,
-    "ast_hash": "35c857d8ba545c8bdee006559567d1c1",
+    "mtime": 1793787270.62648,
+    "seen": 1793790188.5210345,
+    "ast_hash": "9691ba5a93825e500badf1117977a97c",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/hub-usage/heartbeat/route.ts": {
@@ -11538,9 +11526,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/work-tracker/route.ts": {
-    "mtime": 1792472766.630047,
-    "seen": 1792473609.369258,
-    "ast_hash": "0adf9e7e106c89e4cf708344b3672356",
+    "mtime": 1793787134.1219177,
+    "seen": 1793790188.5214725,
+    "ast_hash": "e1c06e4f80ab2178edbfa0b940b9e82a",
     "semantic_hash": ""
   },
   "apps/web/src/components/work-tracker/WorkTrackerSectionNav.tsx": {
@@ -11556,9 +11544,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/hooks/useWorkTracker.ts": {
-    "mtime": 1792472766.4260762,
-    "seen": 1792473609.369695,
-    "ast_hash": "6f22f1b4d846a029a56915332a618d70",
+    "mtime": 1793786420.091202,
+    "seen": 1793790188.5218015,
+    "ast_hash": "ff31d79c0d48c630095f7831e0773db5",
     "semantic_hash": ""
   },
   "supabase/migrations/20260928000001_add_christmas_wish_links.sql": {
@@ -11694,9 +11682,9 @@
     "semantic_hash": ""
   },
   "tests/api/work-tracker-route.test.ts": {
-    "mtime": 1792472246.2954469,
-    "seen": 1792473609.3713293,
-    "ast_hash": "c060184972733d87e3edc2e14e62deb3",
+    "mtime": 1793787211.4763198,
+    "seen": 1793790188.5229897,
+    "ast_hash": "8b9475e17b7afdc18482f03892d8be40",
     "semantic_hash": ""
   },
   "apps/web/src/lib/inngest/functions/deliver-five-percent-summary.ts": {
@@ -11904,9 +11892,9 @@
     "semantic_hash": ""
   },
   ".github/skills/build-fix-commit-push/SKILL.md": {
-    "mtime": 1793240834.8849585,
-    "seen": 1793321504.6660042,
-    "ast_hash": "9920f440448036333b9d6040da8408fd",
+    "mtime": 1793789015.0967987,
+    "seen": 1793790188.5231385,
+    "ast_hash": "5cd94388f6a16c24f868a7b076f0710c",
     "semantic_hash": ""
   },
   "docs/features/ultimate-health-project/optimization.md": {
@@ -12144,9 +12132,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/finance/page.tsx": {
-    "mtime": 1793705460.5614393,
-    "seen": 1793706306.332832,
-    "ast_hash": "1235f49d7d73d00dc777472c04d360ea",
+    "mtime": 1793785481.3980253,
+    "seen": 1793786203.6811984,
+    "ast_hash": "4cbb8d50187c6a091adf5db2b2a14a77",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/finance/wise-batches/[id]/export/route.ts": {
@@ -12228,21 +12216,21 @@
     "semantic_hash": ""
   },
   "docs/features/finance-redesign/task-tracker.md": {
-    "mtime": 1793706217.414241,
-    "seen": 1793706306.3363104,
-    "ast_hash": "519a747bbdb0ba8658a141a63c062101",
+    "mtime": 1793789843.3343513,
+    "seen": 1793790188.5233076,
+    "ast_hash": "654d72e94dbe455cfff44336bb169e68",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/finance/expenses/page.tsx": {
-    "mtime": 1793705460.5604396,
-    "seen": 1793706306.3327754,
-    "ast_hash": "374ed6bdecc0e078d396aa5828c0f70e",
+    "mtime": 1793788939.9167068,
+    "seen": 1793790188.5210419,
+    "ast_hash": "d5db7e986261b6b7b3b6cceceef35210",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/finance/reports/page.tsx": {
-    "mtime": 1793705460.562441,
-    "seen": 1793706306.332852,
-    "ast_hash": "b18a9a8a3a6d3fa3e4bf40582c69b0f4",
+    "mtime": 1793788263.677114,
+    "seen": 1793790188.5210488,
+    "ast_hash": "402f3be6c391fda4558a13fd943c8de2",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/finance/staff-payments/page.tsx": {
@@ -12270,9 +12258,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/finance/catalog/[id]/route.ts": {
-    "mtime": 1793705460.5662715,
-    "seen": 1793706306.3330913,
-    "ast_hash": "3ebce1832290031df071f9754f1b023e",
+    "mtime": 1793788857.0425384,
+    "seen": 1793790188.5211968,
+    "ast_hash": "3461865c9aa76d8980e7f11a749ee9ce",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/finance/catalog/route.ts": {
@@ -12282,9 +12270,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/finance/reports/route.ts": {
-    "mtime": 1791900825.391997,
-    "seen": 1791901047.9775715,
-    "ast_hash": "b7d7120b33c9d88d155c9b3c8276eb96",
+    "mtime": 1793788894.8800392,
+    "seen": 1793790188.5212057,
+    "ast_hash": "67f7f97b021a36d035760742f395c4ad",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/finance/review/route.ts": {
@@ -12306,15 +12294,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/finance/FinanceCatalogPanel.tsx": {
-    "mtime": 1793705460.572277,
-    "seen": 1793706306.33356,
-    "ast_hash": "371573d196df5d08878f7dee6a1a839a",
+    "mtime": 1793788949.8582973,
+    "seen": 1793790188.5215657,
+    "ast_hash": "2288ed8afb6e4b5b527052b72fec33f9",
     "semantic_hash": ""
   },
   "apps/web/src/components/finance/FinanceReportControls.tsx": {
-    "mtime": 1793705460.5742767,
-    "seen": 1793706306.3335779,
-    "ast_hash": "46a81ec38df03e5eba68201e92f9cf52",
+    "mtime": 1793788991.554037,
+    "seen": 1793790188.521578,
+    "ast_hash": "9835afe85501d3c05e23d9a422aef643",
     "semantic_hash": ""
   },
   "apps/web/src/components/finance/FinanceWiseBatches.tsx": {
@@ -12324,9 +12312,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/lib/finance/categories.ts": {
-    "mtime": 1791342383.460487,
-    "seen": 1791343180.2625313,
-    "ast_hash": "b68e1868b5560c7627cec6171742b71b",
+    "mtime": 1793758817.1629725,
+    "seen": 1793760199.955147,
+    "ast_hash": "184788aafdad45358474a6f2110d907e",
     "semantic_hash": ""
   },
   "supabase/migrations/20261007000004_employee_directory_ignore_placeholder_departments.sql": {
@@ -12372,9 +12360,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/lib/finance/overview.ts": {
-    "mtime": 1792841911.8887498,
-    "seen": 1792844933.8374364,
-    "ast_hash": "8f778e926ff7f9e2bea3935e9980ff89",
+    "mtime": 1793784937.4154732,
+    "seen": 1793786203.6819105,
+    "ast_hash": "03d808d45a1e7f40e75619efd439d149",
     "semantic_hash": ""
   },
   "apps/web/src/lib/people/assignment-validation.ts": {
@@ -12396,9 +12384,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/finance/expenses/export/route.ts": {
-    "mtime": 1791345036.324793,
-    "seen": 1791345471.8347642,
-    "ast_hash": "e316e5d6b8d291aa8a1a929e03a4f90d",
+    "mtime": 1793784976.4940066,
+    "seen": 1793786203.6813421,
+    "ast_hash": "f780c93e6ce97832335defb325653d90",
     "semantic_hash": ""
   },
   "apps/web/src/components/finance/FinanceExpenseExport.tsx": {
@@ -12408,9 +12396,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/projects/ProjectSupervisorDialog.tsx": {
-    "mtime": 1791343813.479656,
-    "seen": 1791345013.156069,
-    "ast_hash": "b2fbb2759255fecb4d30bfe660f649ec",
+    "mtime": 1793788730.8989685,
+    "seen": 1793790188.5216308,
+    "ast_hash": "bba636bb7851687d76ce7c4e01f34aad",
     "semantic_hash": ""
   },
   "apps/web/src/lib/people/employee-number.ts": {
@@ -12462,9 +12450,9 @@
     "semantic_hash": ""
   },
   "tests/pages/finance-redesign-pages.test.tsx": {
-    "mtime": 1793705460.5858705,
-    "seen": 1793706306.3359206,
-    "ast_hash": "1c3c2cbf38b62464f1d72e4d2d41c958",
+    "mtime": 1793789097.4642222,
+    "seen": 1793790188.5230906,
+    "ast_hash": "11415cf15ae81927ab9ad70a7abbc11d",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/finance/properties/page.tsx": {
@@ -12474,15 +12462,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/finance/properties/route.ts": {
-    "mtime": 1793705460.5692835,
-    "seen": 1793706306.3331053,
-    "ast_hash": "94a3f21c09d3eb3271d70ef6e50041cf",
+    "mtime": 1793788883.6136272,
+    "seen": 1793790188.5212035,
+    "ast_hash": "9aa50ffdb286dda03e6f4f487b518b1a",
     "semantic_hash": ""
   },
   "apps/web/src/components/finance/FinancePropertiesPanel.tsx": {
-    "mtime": 1793705870.3505168,
-    "seen": 1793706306.3335767,
-    "ast_hash": "18ec42ed40a414903048af740f023496",
+    "mtime": 1793788978.1868904,
+    "seen": 1793790188.521577,
+    "ast_hash": "c2278af67ed842a753924746c9d17d53",
     "semantic_hash": ""
   },
   "apps/web/src/lib/finance/properties.ts": {
@@ -12498,15 +12486,15 @@
     "semantic_hash": ""
   },
   "tests/api/finance-properties-route.test.ts": {
-    "mtime": 1791900778.524096,
-    "seen": 1791901047.9798276,
-    "ast_hash": "416f77db89b7c0bb185086a257b829da",
+    "mtime": 1793789018.1774592,
+    "seen": 1793790188.5229473,
+    "ast_hash": "464b042bc6860da8b30721715cc22b83",
     "semantic_hash": ""
   },
   "tests/lib/finance-properties.test.ts": {
-    "mtime": 1793705460.5847902,
-    "seen": 1793706306.335886,
-    "ast_hash": "6abedd0c3e6e84127a8f823d2b2fe1ec",
+    "mtime": 1793758592.79378,
+    "seen": 1793760199.956384,
+    "ast_hash": "b4962264799948c192f069ec2fca2cc0",
     "semantic_hash": ""
   },
   "tests/pages/sfo-performance-crm.test.tsx": {
@@ -12576,9 +12564,9 @@
     "semantic_hash": ""
   },
   "tests/components/FinancePropertiesPanel.test.tsx": {
-    "mtime": 1791347028.2281353,
-    "seen": 1791347802.903857,
-    "ast_hash": "d7278ea3391c8cbc4c2a198655fe13e5",
+    "mtime": 1793789319.9358196,
+    "seen": 1793790188.523007,
+    "ast_hash": "f30c688ac4b214ddd20e7c7361f3b617",
     "semantic_hash": ""
   },
   "tests/components/finance-properties-navigation.test.tsx": {
@@ -12708,9 +12696,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/finance/reports/export/route.ts": {
-    "mtime": 1793705460.5702784,
-    "seen": 1793706306.3331072,
-    "ast_hash": "584c85ad8b5a50598a551af1c898ec81",
+    "mtime": 1793788233.3753424,
+    "seen": 1793790188.5212047,
+    "ast_hash": "992e564969bfe3ca05413c62a49cda10",
     "semantic_hash": ""
   },
   "apps/web/src/components/admin/TerminationReasonField.tsx": {
@@ -12750,9 +12738,9 @@
     "semantic_hash": ""
   },
   "tests/api/projects-route.test.ts": {
-    "mtime": 1792472257.4695313,
-    "seen": 1792473609.3713095,
-    "ast_hash": "5459b81c2d2d58c9f38354269ce8a07c",
+    "mtime": 1793788942.8240833,
+    "seen": 1793790188.5229688,
+    "ast_hash": "20a5e51793be358f60fa2e2e7c6fad6d",
     "semantic_hash": ""
   },
   "tests/api/users-termination-route.test.ts": {
@@ -12798,9 +12786,9 @@
     "semantic_hash": ""
   },
   "tests/api/project-contributors-route.test.ts": {
-    "mtime": 1791773711.3009052,
-    "seen": 1791774216.4335668,
-    "ast_hash": "81c9ea2939a81b4a6de6f339644dea3e",
+    "mtime": 1793789004.6633246,
+    "seen": 1793790188.5229657,
+    "ast_hash": "0e4c0a725f0bbc2d9cae906c77304376",
     "semantic_hash": ""
   },
   "apps/web/src/lib/api/pagination.ts": {
@@ -12810,9 +12798,9 @@
     "semantic_hash": ""
   },
   "e2e/finance-redesign.spec.ts": {
-    "mtime": 1793706041.121829,
-    "seen": 1793706306.3344505,
-    "ast_hash": "8f56b196826ad59ea02876c4fb2fbd28",
+    "mtime": 1793785383.2471845,
+    "seen": 1793786203.6821928,
+    "ast_hash": "c26e94f9c37ce99218dee0dc0b212625",
     "semantic_hash": ""
   },
   "tests/lib/dry-audit-regressions.test.ts": {
@@ -12834,15 +12822,15 @@
     "semantic_hash": ""
   },
   "docs/features/work-tracker/optimization.md": {
-    "mtime": 1792474077.5598571,
-    "seen": 1792580651.7779806,
-    "ast_hash": "a0a404c03bd92d8e50d5a22bb2153b0a",
+    "mtime": 1793790009.827663,
+    "seen": 1793790188.5233371,
+    "ast_hash": "08b73888694e89a19b9f470c3c1005b1",
     "semantic_hash": ""
   },
   "docs/features/work-tracker/task-tracker.md": {
-    "mtime": 1792833934.841964,
-    "seen": 1792834213.7191262,
-    "ast_hash": "a3e94a65c2620da9c679909c2eb4e57a",
+    "mtime": 1793789993.6719277,
+    "seen": 1793790188.5233383,
+    "ast_hash": "e73c56cef338eab9175ed6e5e66f1c59",
     "semantic_hash": ""
   },
   "apps/web/src/lib/auth/password-reset-audit.ts": {
@@ -13074,9 +13062,9 @@
     "semantic_hash": ""
   },
   "tests/api/finance-reports-route.test.ts": {
-    "mtime": 1791900772.3368556,
-    "seen": 1791901047.9798334,
-    "ast_hash": "5db7cc39158d00e9f5a7ca6c3a051892",
+    "mtime": 1793789034.3803177,
+    "seen": 1793790188.5229504,
+    "ast_hash": "a85c344e1d9d369cace97e8716d0290a",
     "semantic_hash": ""
   },
   "tests/sql/finance-property-terms-local.sql": {
@@ -13368,9 +13356,9 @@
     "semantic_hash": ""
   },
   "e2e/leadership-account-classification.spec.ts": {
-    "mtime": 1792472589.4453208,
-    "seen": 1792473609.3703804,
-    "ast_hash": "eb6b2f17ec8597209420d69e4383686e",
+    "mtime": 1793783984.9094558,
+    "seen": 1793786203.6821952,
+    "ast_hash": "d2b98766dffe544506d4bb4176d3b3a4",
     "semantic_hash": ""
   },
   "supabase/migrations/20261016000002_add_privileged_account_kind.sql": {
@@ -13404,9 +13392,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/departments/leads/route.ts": {
-    "mtime": 1792473083.1213658,
-    "seen": 1792473609.3686981,
-    "ast_hash": "d5457aed787c4dab775baefce3dc49bc",
+    "mtime": 1793783548.2236881,
+    "seen": 1793786203.6813114,
+    "ast_hash": "58f493ec627fc705a68ba4b62c018eff",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/projects/[id]/departments/route.ts": {
@@ -13416,9 +13404,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/admin/ManageDepartmentLeadsDialog.tsx": {
-    "mtime": 1792473092.7756665,
-    "seen": 1792473609.369312,
-    "ast_hash": "ff3c1dfd309e7bacc23ff2978119413b",
+    "mtime": 1793783827.240419,
+    "seen": 1793786203.681626,
+    "ast_hash": "f7567792220676769d4917b609fc57b3",
     "semantic_hash": ""
   },
   "apps/web/src/components/projects/ManageProjectDepartmentsDialog.tsx": {
@@ -13434,9 +13422,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/lib/work-management/permissions.ts": {
-    "mtime": 1792473092.5848126,
-    "seen": 1792473609.3701284,
-    "ast_hash": "91677a0bdfad7e86c921cdca7c6f0f9f",
+    "mtime": 1793788206.941049,
+    "seen": 1793790188.5219748,
+    "ast_hash": "6d3701e8cc87abca2c865abef4fa61da",
     "semantic_hash": ""
   },
   "e2e/department-lead-work-tracker.spec.ts": {
@@ -13902,15 +13890,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/finance/expenses/[id]/route.ts": {
-    "mtime": 1793705460.5682714,
-    "seen": 1793706306.3330967,
-    "ast_hash": "c5ebc26f8c3d8914db9f13c70c296051",
+    "mtime": 1793788912.4661849,
+    "seen": 1793790188.5211995,
+    "ast_hash": "6fb08b88ea3296cdfb171fc435b0a593",
     "semantic_hash": ""
   },
   "apps/web/src/components/finance/FinanceExpenseCorrection.tsx": {
-    "mtime": 1793705496.97235,
-    "seen": 1793706306.3335645,
-    "ast_hash": "d5c1bd5d0c8973e92f90c4cf40261235",
+    "mtime": 1793784867.4162142,
+    "seen": 1793786203.6816669,
+    "ast_hash": "c52d7999ea039ddc767c76fdf1c409a7",
     "semantic_hash": ""
   },
   "apps/web/src/components/finance/FinanceUnifiedReviewQueue.tsx": {
@@ -13950,9 +13938,9 @@
     "semantic_hash": ""
   },
   "docs/features/finance-redesign/feedback-implementation-2026-10-24.md": {
-    "mtime": 1793704008.1296675,
-    "seen": 1793706306.336306,
-    "ast_hash": "ffad424b9d4625a5a2c6618e8781708b",
+    "mtime": 1793709940.9752562,
+    "seen": 1793760199.956737,
+    "ast_hash": "68b7f3f49e1b91e56abb155819ad7fd4",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/uhp/volume-points/send-telegram/route.ts": {
@@ -14214,9 +14202,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/finance/FinanceSnapshotDetail.tsx": {
-    "mtime": 1793703687.4781985,
-    "seen": 1793706306.3335798,
-    "ast_hash": "f727f5ada551090e98ba526c8152065a",
+    "mtime": 1793788246.8544173,
+    "seen": 1793790188.5215795,
+    "ast_hash": "b9318c44dffee30c1b6ba32e6d214e4d",
     "semantic_hash": ""
   },
   "apps/web/src/components/finance/OwnExpenseDetailsEditor.tsx": {
@@ -14232,9 +14220,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/lib/finance/report-snapshot.ts": {
-    "mtime": 1793703687.4655797,
-    "seen": 1793706306.333889,
-    "ast_hash": "2862d7595914687cc48231e0bd8d5150",
+    "mtime": 1793788220.2935812,
+    "seen": 1793790188.5218415,
+    "ast_hash": "86c51016bb7bde327a673e5cef5d1fa7",
     "semantic_hash": ""
   },
   "apps/web/src/lib/finance/subscription-fx.ts": {
@@ -14268,9 +14256,9 @@
     "semantic_hash": ""
   },
   "tests/sql/finance-gap-fixes-local.sql": {
-    "mtime": 1793704715.832671,
-    "seen": 1793706306.3359368,
-    "ast_hash": "0a1190f6306617c55f617080e8f4b2b4",
+    "mtime": 1793758592.796193,
+    "seen": 1793760199.9564278,
+    "ast_hash": "66d13ed3e254df4236c192f6d4fcbff1",
     "semantic_hash": ""
   },
   "tests/sql/finance-match-payment-local.sql": {
@@ -14283,6 +14271,1632 @@
     "mtime": 1793676916.369488,
     "seen": 1793706306.3359542,
     "ast_hash": "120fb3ec6a742ee99e560c6ace9efd1d",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261104000001_finance_snapshot_exception_dedupe.sql": {
+    "mtime": 1793758176.3672273,
+    "seen": 1793760199.9562066,
+    "ast_hash": "6dff083c50e1f1ed928f08a007d9f9b5",
+    "semantic_hash": ""
+  },
+  "apps/web/src/lib/performance/five-percent-reflection-pdf.ts": {
+    "mtime": 1793783946.6641004,
+    "seen": 1793786203.6819618,
+    "ast_hash": "6c119ba76b1a6233eb0b10f244cda4be",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261104000002_finance_daily_fx_estimates.sql": {
+    "mtime": 1793784722.4744928,
+    "seen": 1793786203.6828766,
+    "ast_hash": "595bf2559d5d5e42ec15ed4a91519b4b",
+    "semantic_hash": ""
+  },
+  "tests/api/department-leads-route.test.ts": {
+    "mtime": 1793783827.1976357,
+    "seen": 1793786203.68291,
+    "ast_hash": "23380434a481643b7f5592d2c46bd466",
+    "semantic_hash": ""
+  },
+  "tests/lib/work-management-permissions.test.ts": {
+    "mtime": 1793788952.029464,
+    "seen": 1793790188.523087,
+    "ast_hash": "335d701bd74f0d4a2b4bdad8095f90db",
+    "semantic_hash": ""
+  },
+  "tests/sql/finance-fx-estimates-local.sql": {
+    "mtime": 1793784752.8283274,
+    "seen": 1793786203.683077,
+    "ast_hash": "00275a0e1d8e3456fe145fa4cf391dee",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/app-build-manifest.json": {
+    "mtime": 1793789916.3228014,
+    "seen": 1793790188.5205288,
+    "ast_hash": "70edfafe314c3bb90867840c19309523",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/build-manifest.json": {
+    "mtime": 1793789916.321803,
+    "seen": 1793790188.5205312,
+    "ast_hash": "35f1562458fde1518b2c9808eefc3fc1",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/cache/next-devtools-config.json": {
+    "mtime": 1793789240.657659,
+    "seen": 1793790188.5205324,
+    "ast_hash": "99914b932bd37a50b983c5e7c90ae93b",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/package.json": {
+    "mtime": 1793789240.659291,
+    "seen": 1793790188.5205336,
+    "ast_hash": "a6b7eb31b5dcf3835a90ea0d201f21e3",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/prerender-manifest.json": {
+    "mtime": 1793789241.072522,
+    "seen": 1793790188.5205357,
+    "ast_hash": "e1a9258cd01c4601c77c437cb3cf2d79",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/react-loadable-manifest.json": {
+    "mtime": 1793789916.321803,
+    "seen": 1793790188.5205374,
+    "ast_hash": "3864a3cad07312cc9cd8c63618115533",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/routes-manifest.json": {
+    "mtime": 1793789241.0705216,
+    "seen": 1793790188.52054,
+    "ast_hash": "d7ce9ec89ba009be741cfda3c4e6cbad",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/app-paths-manifest.json": {
+    "mtime": 1793789914.230018,
+    "seen": 1793790188.5205412,
+    "ast_hash": "a38598b921d37ccdc815cb716103e39b",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/app/(app)/(admin)/admin/directory/page.js": {
+    "mtime": 1793789914.2072995,
+    "seen": 1793790188.5205426,
+    "ast_hash": "4cef9393501d7516636fe1039cf12f06",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/app/(app)/(admin)/admin/directory/page_client-reference-manifest.js": {
+    "mtime": 1793789916.3378015,
+    "seen": 1793790188.5205438,
+    "ast_hash": "f4e30f21a98698c1f75dc4af64a89e78",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/app/(app)/(admin)/admin/war-room/page.js": {
+    "mtime": 1793789801.8014753,
+    "seen": 1793790188.5205448,
+    "ast_hash": "7b24ea7ef3adc18602e31c9eb3a9b64f",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/app/(app)/(admin)/admin/war-room/page_client-reference-manifest.js": {
+    "mtime": 1793789916.3358037,
+    "seen": 1793790188.5205467,
+    "ast_hash": "8b619e4eaee1036cf1d0931034baf982",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/app/(app)/(employee)/notifications/page.js": {
+    "mtime": 1793789914.2062845,
+    "seen": 1793790188.520548,
+    "ast_hash": "2dbdeb26268980d108a85ba5e0a4dbd1",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/app/(app)/(employee)/notifications/page_client-reference-manifest.js": {
+    "mtime": 1793789916.3358037,
+    "seen": 1793790188.520549,
+    "ast_hash": "22084960f8573a16f52be27ea8828f73",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/app/(app)/(employee)/projects/[id]/page.js": {
+    "mtime": 1793789797.9061136,
+    "seen": 1793790188.5205507,
+    "ast_hash": "d2790ca71dc378073e8b0a6df3a66051",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/app/(app)/(employee)/projects/[id]/page_client-reference-manifest.js": {
+    "mtime": 1793789916.3358037,
+    "seen": 1793790188.5205517,
+    "ast_hash": "c9a750cf3d94b3a233d74b7d748116e8",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/app/(app)/(employee)/projects/invitations/page.js": {
+    "mtime": 1793789807.6784897,
+    "seen": 1793790188.5205529,
+    "ast_hash": "ec726340f7c86e3e0bfa6c6832cdd37b",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/app/(app)/(employee)/projects/invitations/page_client-reference-manifest.js": {
+    "mtime": 1793789916.3368,
+    "seen": 1793790188.5205545,
+    "ast_hash": "bfd87484a6b7337274ca6ef66af36441",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/app/(app)/(employee)/projects/new/page.js": {
+    "mtime": 1793789914.2062845,
+    "seen": 1793790188.5205555,
+    "ast_hash": "333b1eb353d0a557019aa3836499850a",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/app/(app)/(employee)/projects/new/page_client-reference-manifest.js": {
+    "mtime": 1793789916.3238025,
+    "seen": 1793790188.5205574,
+    "ast_hash": "8b88792369c6856dd19caedd7979d804",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/app/(app)/(employee)/work-tracker/page.js": {
+    "mtime": 1793789651.694978,
+    "seen": 1793790188.5205584,
+    "ast_hash": "16d8e032bdda2e7975cd8f5c2c0a4362",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/app/(app)/(employee)/work-tracker/page_client-reference-manifest.js": {
+    "mtime": 1793789916.3358037,
+    "seen": 1793790188.5205593,
+    "ast_hash": "04a94b4147fdb2dd86202e48882a090a",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/app/(auth)/login/page.js": {
+    "mtime": 1793789797.905115,
+    "seen": 1793790188.5205605,
+    "ast_hash": "4a86d6f9a3f3a5e5282a9d3c8935bc43",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/app/(auth)/login/page_client-reference-manifest.js": {
+    "mtime": 1793789916.3327992,
+    "seen": 1793790188.5205617,
+    "ast_hash": "a0b830347b689987fc92b408551680e3",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/app/page.js": {
+    "mtime": 1793789797.9111168,
+    "seen": 1793790188.520563,
+    "ast_hash": "f9fbb4880baa6d289c357844edf39bb6",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/app/page_client-reference-manifest.js": {
+    "mtime": 1793789916.3297868,
+    "seen": 1793790188.520564,
+    "ast_hash": "3cb42c045f0a085509b9bc2dca02b18b",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/app/version.json/route.js": {
+    "mtime": 1793789305.0874407,
+    "seen": 1793790188.5205648,
+    "ast_hash": "c21d30346645baf55dc32ac0b0c49994",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/app/version.json/route_client-reference-manifest.js": {
+    "mtime": 1793789916.3338015,
+    "seen": 1793790188.520566,
+    "ast_hash": "180980d82b0369b06abd262feb13eedd",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/edge-instrumentation.js": {
+    "mtime": 1793789248.0052867,
+    "seen": 1793790188.5205667,
+    "ast_hash": "713705d32824eee14beb3509100850d2",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/edge-runtime-webpack.js": {
+    "mtime": 1793789248.0042775,
+    "seen": 1793790188.5205681,
+    "ast_hash": "e72c95daa93fe3f22e445643c0397e4e",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/instrumentation.js": {
+    "mtime": 1793789914.1968176,
+    "seen": 1793790188.5205688,
+    "ast_hash": "f87a2031a881151ec2d9f66b85dd338e",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/interception-route-rewrite-manifest.js": {
+    "mtime": 1793789248.0027688,
+    "seen": 1793790188.52057,
+    "ast_hash": "2deb9feee2c80698c754f18a02766889",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/middleware-build-manifest.js": {
+    "mtime": 1793789916.3238025,
+    "seen": 1793790188.5205715,
+    "ast_hash": "4dc6647f58dedfc99e331e8429e885a0",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/middleware-manifest.json": {
+    "mtime": 1793789248.0027688,
+    "seen": 1793790188.5205724,
+    "ast_hash": "d89ce660c0232c1ee738307e0ab31929",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/middleware-react-loadable-manifest.js": {
+    "mtime": 1793789916.3238025,
+    "seen": 1793790188.5205736,
+    "ast_hash": "4e62f0e3acfd76a12c445077572a2211",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/next-font-manifest.js": {
+    "mtime": 1793789916.3238025,
+    "seen": 1793790188.5205755,
+    "ast_hash": "f7097bf7c93c1cbb4c118491ca6d2b04",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/next-font-manifest.json": {
+    "mtime": 1793789916.3238025,
+    "seen": 1793790188.520577,
+    "ast_hash": "d51420cd4aa5d37d6719849cf36d0d6f",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/pages-manifest.json": {
+    "mtime": 1793789914.230018,
+    "seen": 1793790188.5205784,
+    "ast_hash": "99914b932bd37a50b983c5e7c90ae93b",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/server-reference-manifest.js": {
+    "mtime": 1793789914.230018,
+    "seen": 1793790188.520579,
+    "ast_hash": "85f1dc4d97acb4772e6cfbe57b54e554",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/server-reference-manifest.json": {
+    "mtime": 1793789914.230018,
+    "seen": 1793790188.52058,
+    "ast_hash": "552a7c69e4e8a1c22eb79bd276a5a848",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/static/webpack/633457081244afec._.hot-update.json": {
+    "mtime": 1793789248.0072877,
+    "seen": 1793790188.5205815,
+    "ast_hash": "777077caf8fd96cfb711faacdcbf6a47",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@babel+runtime@7.29.7.js": {
+    "mtime": 1793789262.7322245,
+    "seen": 1793790188.5205827,
+    "ast_hash": "995c13c51ddda6467de3139b2e8dab5a",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@floating-ui+core@1.7.5.js": {
+    "mtime": 1793789262.9513962,
+    "seen": 1793790188.5205834,
+    "ast_hash": "a46b879061c73162c249b93fae168ed9",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@floating-ui+dom@1.7.6.js": {
+    "mtime": 1793789262.9500754,
+    "seen": 1793790188.5205848,
+    "ast_hash": "1984a9a0e4e5a17cb884d0e45bf75f95",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@floating-ui+react-dom@2.1.8_react-dom@19.2.7_react@19.2.7__react@19.2.7.js": {
+    "mtime": 1793789262.9467852,
+    "seen": 1793790188.5205858,
+    "ast_hash": "3d4b4075ebb1b2c9fae903f018a62d55",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@floating-ui+utils@0.2.11.js": {
+    "mtime": 1793789262.83988,
+    "seen": 1793790188.5205865,
+    "ast_hash": "7b7e3f0918e7660d23dc2e6c390c3e38",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@hookform+resolvers@3.10.0_react-hook-form@7.79.0_react@19.2.7_.js": {
+    "mtime": 1793789418.8603258,
+    "seen": 1793790188.5205877,
+    "ast_hash": "b435f5fee023717a6fde8b8438dbb334",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@opentelemetry+api-logs@0.205.0.js": {
+    "mtime": 1793789245.9020312,
+    "seen": 1793790188.520589,
+    "ast_hash": "f7c701e6650194f6e50811cd1e6af384",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@opentelemetry+api-logs@0.219.0.js": {
+    "mtime": 1793789245.8950293,
+    "seen": 1793790188.52059,
+    "ast_hash": "bea0b55842dafef22349450ac0800092",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@opentelemetry+api@1.9.1.js": {
+    "mtime": 1793789262.4140797,
+    "seen": 1793790188.5205913,
+    "ast_hash": "04e0ad544f82a0f325081c3bc8a494cd",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@opentelemetry+core@2.1.0_@opentelemetry+api@1.9.1.js": {
+    "mtime": 1793789245.8960288,
+    "seen": 1793790188.5205922,
+    "ast_hash": "0507342f0779335928eee18dca6fe2fb",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@opentelemetry+core@2.8.0_@opentelemetry+api@1.9.1.js": {
+    "mtime": 1793789245.8960288,
+    "seen": 1793790188.5205934,
+    "ast_hash": "e62ed96ebe4b4e40195cfa908f71e0c0",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@opentelemetry+exporter-logs-otlp-http@0.205.0_@opentelemetry+api@1.9.1.js": {
+    "mtime": 1793789245.8960288,
+    "seen": 1793790188.5205941,
+    "ast_hash": "4fe45c7cf810f91188f98e3896590108",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@opentelemetry+exporter-trace-otlp-http@0.205.0_@opentelemetry+api@1.9.1.js": {
+    "mtime": 1793789245.8970304,
+    "seen": 1793790188.5205953,
+    "ast_hash": "c20590cfd7694cb9ff48672cf970b583",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@opentelemetry+otlp-exporter-base@0.205.0_@opentelemetry+api@1.9.1.js": {
+    "mtime": 1793789245.8950293,
+    "seen": 1793790188.5205967,
+    "ast_hash": "3f5f72bc2ba50d90c018813cf9cdaabf",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@opentelemetry+otlp-transformer@0.205.0_@opentelemetry+api@1.9.1.js": {
+    "mtime": 1793789245.8960288,
+    "seen": 1793790188.5205977,
+    "ast_hash": "d0e789e965ce3a171112b097119edb45",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@opentelemetry+sdk-trace-base@2.8.0_@opentelemetry+api@1.9.1.js": {
+    "mtime": 1793789245.8960288,
+    "seen": 1793790188.5205994,
+    "ast_hash": "59dcea0ed37565eeb0f8ae9fd36a811c",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@opentelemetry+semantic-conventions@1.41.1.js": {
+    "mtime": 1793789245.9182732,
+    "seen": 1793790188.5206003,
+    "ast_hash": "0ef4f48d0472d23e0374107b106621db",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+number@1.1.2.js": {
+    "mtime": 1793789262.9467852,
+    "seen": 1793790188.5206017,
+    "ast_hash": "70f44feacb2c6f529ace52175262611a",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+primitive@1.1.4.js": {
+    "mtime": 1793789262.945788,
+    "seen": 1793790188.5206032,
+    "ast_hash": "4c69f61e6d8bef83c67fd5b29807109f",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-arrow@1.1.9_@types+react-dom@19.2.3_@types+react@19.2.17__@types+react@19.2.1_sdee65rcmjld5rquesi7jkxnye.js": {
+    "mtime": 1793789262.9467852,
+    "seen": 1793790188.5206041,
+    "ast_hash": "aa45dd46b0d877282cf3ed16561af36b",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-avatar@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.17__@types+react@19.2_fulugdobeyacci3jljyht6yaje.js": {
+    "mtime": 1793789262.943588,
+    "seen": 1793790188.520605,
+    "ast_hash": "f25b5ba88a1160218ab78cdf486942f3",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-checkbox@1.3.4_@types+react-dom@19.2.3_@types+react@19.2.17__@types+react@19._hvndoqwun774bfkebmllwk2or4.js": {
+    "mtime": 1793789262.943588,
+    "seen": 1793790188.5206068,
+    "ast_hash": "9c19892005210f55dc2cf24e7b562cdc",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-collection@1.1.9_@types+react-dom@19.2.3_@types+react@19.2.17__@types+react@1_pbshapv7qdrmypehwanmbqv5yi.js": {
+    "mtime": 1793789262.943588,
+    "seen": 1793790188.5206075,
+    "ast_hash": "29ac5ff07a4a623c03f64aee07ba2784",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-compose-refs@1.1.3_@types+react@19.2.17_react@19.2.7.js": {
+    "mtime": 1793789262.942588,
+    "seen": 1793790188.5206094,
+    "ast_hash": "eb0fa9cffc7c5e521fa2f130318d3cc6",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-context@1.1.4_@types+react@19.2.17_react@19.2.7.js": {
+    "mtime": 1793789262.942588,
+    "seen": 1793790188.5206108,
+    "ast_hash": "1488eeca0606bb4090e724113a945721",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-dialog@1.1.16_@types+react-dom@19.2.3_@types+react@19.2.17__@types+react@19.2_nzjxmkeqqiwrb6fvouar6nu4l4.js": {
+    "mtime": 1793789262.9405882,
+    "seen": 1793790188.5206115,
+    "ast_hash": "ad8712432fb801a81d58ad976f87a54a",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-direction@1.1.2_@types+react@19.2.17_react@19.2.7.js": {
+    "mtime": 1793789262.939575,
+    "seen": 1793790188.5206127,
+    "ast_hash": "73bbaa38b3cff80490e7d1a2f150b5fe",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-dismissable-layer@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.17__@types_cscsel44o5b5aovuiy3fuwpehe.js": {
+    "mtime": 1793789262.939575,
+    "seen": 1793790188.5206137,
+    "ast_hash": "025aeac307b12d022d33d302a356ba74",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-dropdown-menu@2.1.17_@types+react-dom@19.2.3_@types+react@19.2.17__@types+rea_6vys3rgjmvbjskgrpuyp4mq4wa.js": {
+    "mtime": 1793789262.93685,
+    "seen": 1793790188.5206146,
+    "ast_hash": "94313b2d7f2e411674383d9748000ab8",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-focus-guards@1.1.4_@types+react@19.2.17_react@19.2.7.js": {
+    "mtime": 1793789262.93685,
+    "seen": 1793790188.520616,
+    "ast_hash": "7967d9f12e5e5968284f7647443e43b9",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-focus-scope@1.1.9_@types+react-dom@19.2.3_@types+react@19.2.17__@types+react@_jpxizlodjuullv34kncqrzz2au.js": {
+    "mtime": 1793789262.93685,
+    "seen": 1793790188.520617,
+    "ast_hash": "9878d85eb24dcc8b74912e6aeae40b78",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-hover-card@1.1.16_@types+react-dom@19.2.3_@types+react@19.2.17__@types+react@_vgmpyjxdbzgprf4ttbrddehiqe.js": {
+    "mtime": 1793789262.9336588,
+    "seen": 1793790188.520618,
+    "ast_hash": "303c4798b8cef2dacac8df6a019f6902",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-id@1.1.2_@types+react@19.2.17_react@19.2.7.js": {
+    "mtime": 1793789262.9336588,
+    "seen": 1793790188.5206187,
+    "ast_hash": "3cc1d7d6f57474e495b24e828ee3dbde",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-label@2.1.9_@types+react-dom@19.2.3_@types+react@19.2.17__@types+react@19.2.1_ag6jumbfxs7ccledv4o7lfgnza.js": {
+    "mtime": 1793789262.9336588,
+    "seen": 1793790188.5206199,
+    "ast_hash": "07136bdcbf660fd315c92fe0c2135fa9",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-menu@2.1.17_@types+react-dom@19.2.3_@types+react@19.2.17__@types+react@19.2.1_6rbqezpqjeskbtv3zgfdhpmqjq.js": {
+    "mtime": 1793789262.9326415,
+    "seen": 1793790188.5206213,
+    "ast_hash": "2cc5b3718a3fc3c04920d20948c27e32",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-popover@1.1.16_@types+react-dom@19.2.3_@types+react@19.2.17__@types+react@19._fpc2qbkrwqhav7cdkbfe6cfdpm.js": {
+    "mtime": 1793789262.9316418,
+    "seen": 1793790188.5206223,
+    "ast_hash": "2181efa73a679455d80649633e47fe6c",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-popper@1.3.0_@types+react-dom@19.2.3_@types+react@19.2.17__@types+react@19.2._ljkllyohwcclyicmmsp6got33a.js": {
+    "mtime": 1793789262.9316418,
+    "seen": 1793790188.5206237,
+    "ast_hash": "95483fd695cfa3c2c86c0f4c9b3f7a7e",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-portal@1.1.11_@types+react-dom@19.2.3_@types+react@19.2.17__@types+react@19.2_57ufwdjys2lmmtieg35qorfccy.js": {
+    "mtime": 1793789262.9306405,
+    "seen": 1793790188.5206246,
+    "ast_hash": "b01171aebc1a9d6c702c45c6141c9612",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-presence@1.1.6_@types+react-dom@19.2.3_@types+react@19.2.17__@types+react@19._3lz4hceqa2bds2o763duvei4oy.js": {
+    "mtime": 1793789262.9306405,
+    "seen": 1793790188.5206258,
+    "ast_hash": "2c4f77bbeaf3ffdd65e57184f9fd0f06",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-primitive@2.1.5_@types+react-dom@19.2.3_@types+react@19.2.17__@types+react@19_z7kxzb457pzkoa44nmf7mzg6pa.js": {
+    "mtime": 1793789262.9306405,
+    "seen": 1793790188.520627,
+    "ast_hash": "be9b1072de7f8230b51585c9cd3903af",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-progress@1.1.9_@types+react-dom@19.2.3_@types+react@19.2.17__@types+react@19._v6bjbzhft6la42upnfjonaxx5m.js": {
+    "mtime": 1793789262.9276423,
+    "seen": 1793790188.520628,
+    "ast_hash": "14006e89a7a4fbc55f6c30cfb1d5724b",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-roving-focus@1.1.12_@types+react-dom@19.2.3_@types+react@19.2.17__@types+reac_7eozsorpoqdl5qtm36q5pudfai.js": {
+    "mtime": 1793789262.9255683,
+    "seen": 1793790188.520629,
+    "ast_hash": "1b36750531a941295f5b5be09d34129b",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-select@2.3.0_@types+react-dom@19.2.3_@types+react@19.2.17__@types+react@19.2._5jksds3tk7ezttnjvo4qjxjt4q.js": {
+    "mtime": 1793789262.9255683,
+    "seen": 1793790188.5206304,
+    "ast_hash": "1ee3f8c56166c79ac7b2bcc3f4be87ec",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-separator@1.1.9_@types+react-dom@19.2.3_@types+react@19.2.17__@types+react@19_i65phg7z5oevz673u3ahlevsnm.js": {
+    "mtime": 1793789262.923518,
+    "seen": 1793790188.5206313,
+    "ast_hash": "d05ac50678d7d0b79fb756e77930cede",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-slot@1.2.5_@types+react@19.2.17_react@19.2.7.js": {
+    "mtime": 1793789262.923518,
+    "seen": 1793790188.5206323,
+    "ast_hash": "24c16432346475436ef65695b28f837b",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-switch@1.3.0_@types+react-dom@19.2.3_@types+react@19.2.17__@types+react@19.2._jqwfrxp2ocoddelf4sncpurdry.js": {
+    "mtime": 1793789262.923518,
+    "seen": 1793790188.5206337,
+    "ast_hash": "de2f1ab1d8e3e0ac4ab079492c6c83a7",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-tabs@1.1.14_@types+react-dom@19.2.3_@types+react@19.2.17__@types+react@19.2.1_proqo5qq73qnrpit3akem72hke.js": {
+    "mtime": 1793789262.9209976,
+    "seen": 1793790188.5206344,
+    "ast_hash": "e3a8303a74cc5c6efc0347eddb2752a0",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-tooltip@1.2.9_@types+react-dom@19.2.3_@types+react@19.2.17__@types+react@19.2_pwfcdvctmu3n3jqhpwhws2sxim.js": {
+    "mtime": 1793789418.8452034,
+    "seen": 1793790188.5206356,
+    "ast_hash": "489243b68dd4e21ff71a1659b2bddb09",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-use-callback-ref@1.1.2_@types+react@19.2.17_react@19.2.7.js": {
+    "mtime": 1793789262.9161747,
+    "seen": 1793790188.520637,
+    "ast_hash": "714faddb5354e08484fdbf42e9417b69",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-use-controllable-state@1.2.3_@types+react@19.2.17_react@19.2.7.js": {
+    "mtime": 1793789262.9129276,
+    "seen": 1793790188.5206382,
+    "ast_hash": "db24f0fdb282b347b9a8385f25f319b0",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-use-effect-event@0.0.3_@types+react@19.2.17_react@19.2.7.js": {
+    "mtime": 1793789262.9129276,
+    "seen": 1793790188.5206392,
+    "ast_hash": "491c9bb5ffdbf7fbebf324b690224dec",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-use-escape-keydown@1.1.2_@types+react@19.2.17_react@19.2.7.js": {
+    "mtime": 1793789262.9129276,
+    "seen": 1793790188.52064,
+    "ast_hash": "dd270a58c505d627b8bd1154ba3cf370",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-use-is-hydrated@0.1.1_@types+react@19.2.17_react@19.2.7.js": {
+    "mtime": 1793789262.9119296,
+    "seen": 1793790188.520641,
+    "ast_hash": "b10f652a8abbd66fde5bc4952faf6b00",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-use-layout-effect@1.1.2_@types+react@19.2.17_react@19.2.7.js": {
+    "mtime": 1793789262.9119296,
+    "seen": 1793790188.520642,
+    "ast_hash": "1938c2bc38495d4818cbe9eb97ce4c48",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-use-previous@1.1.2_@types+react@19.2.17_react@19.2.7.js": {
+    "mtime": 1793789262.9119296,
+    "seen": 1793790188.520643,
+    "ast_hash": "ce334456134fbc26ad078fde0d40ab0a",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-use-size@1.1.2_@types+react@19.2.17_react@19.2.7.js": {
+    "mtime": 1793789262.9102385,
+    "seen": 1793790188.5206442,
+    "ast_hash": "7987d95be11babb270022c7d3b0de039",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@radix-ui+react-visually-hidden@1.2.5_@types+react-dom@19.2.3_@types+react@19.2.17__@types+re_qxrsryxbgfvebecqwyghm23avy.js": {
+    "mtime": 1793789262.9102385,
+    "seen": 1793790188.5206451,
+    "ast_hash": "7c9ccac707175be6da185cc45202c06f",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@supabase+auth-js@2.108.1.js": {
+    "mtime": 1793789262.64414,
+    "seen": 1793790188.5206463,
+    "ast_hash": "0f726ae9a5a9ebea12d30387d4d98c3c",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@supabase+functions-js@2.108.1.js": {
+    "mtime": 1793789262.7322245,
+    "seen": 1793790188.5206475,
+    "ast_hash": "ec5aa43c5fa5efe688dcf23013e05c0a",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@supabase+phoenix@0.4.2.js": {
+    "mtime": 1793789262.83988,
+    "seen": 1793790188.5206485,
+    "ast_hash": "4ed50d2739483850e393a33bd46d3afa",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@supabase+postgrest-js@2.108.1.js": {
+    "mtime": 1793789262.8388796,
+    "seen": 1793790188.5206494,
+    "ast_hash": "ed5e999ebd472591a3014825896ff69a",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@supabase+realtime-js@2.108.1.js": {
+    "mtime": 1793789262.6431422,
+    "seen": 1793790188.5206504,
+    "ast_hash": "a0bc1796df568feb63f9f28151a8666c",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@supabase+ssr@0.7.0_@supabase+supabase-js@2.108.1.js": {
+    "mtime": 1793789262.7120333,
+    "seen": 1793790188.5206513,
+    "ast_hash": "8728aba63f937a566c19c7d7b75130a8",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@supabase+storage-js@2.108.1.js": {
+    "mtime": 1793789262.8388796,
+    "seen": 1793790188.5206523,
+    "ast_hash": "df52ff837294f832de839423e648fdf9",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@supabase+supabase-js@2.108.1.js": {
+    "mtime": 1793789262.8305275,
+    "seen": 1793790188.5206532,
+    "ast_hash": "5111b986704c6e6f7373bee91f2c563f",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@swc+helpers@0.5.15.js": {
+    "mtime": 1793789262.8132775,
+    "seen": 1793790188.5206544,
+    "ast_hash": "dcc6978bcb0abf18d2bbc3cc942e2471",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@tanstack+query-core@5.101.0.js": {
+    "mtime": 1793789262.71554,
+    "seen": 1793790188.5206552,
+    "ast_hash": "f9c7f5410d8f4a3102072fedcb36456d",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@tanstack+query-devtools@5.101.0.js": {
+    "mtime": 1793789262.601135,
+    "seen": 1793790188.5206559,
+    "ast_hash": "7c569487b58523a922039aa8d2bc4c81",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@tanstack+react-query-devtools@5.101.0_@tanstack+react-query@5.101.0_react@19.2.7__react@19.2.7.js": {
+    "mtime": 1793789262.823805,
+    "seen": 1793790188.5206568,
+    "ast_hash": "5ab807a085f709965ef1823061f0027a",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@tanstack+react-query@5.101.0_react@19.2.7.js": {
+    "mtime": 1793789262.7296906,
+    "seen": 1793790188.520658,
+    "ast_hash": "37f4b906706f758d9c167c380b325c7a",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/@vercel+otel@2.1.3_@opentelemetry+api-logs@0.219.0_@opentelemetry+api@1.9.1_@opentelemetry+in_kc6moqp7ft2sr6qtjetz3ppgv4.js": {
+    "mtime": 1793789245.8950293,
+    "seen": 1793790188.5206587,
+    "ast_hash": "3df6769db47fb9bd9f28fccb06ab03a9",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/aria-hidden@1.2.6.js": {
+    "mtime": 1793789262.958588,
+    "seen": 1793790188.5206597,
+    "ast_hash": "f73ac538c0f94c23da88eb1a1deb9b06",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/class-variance-authority@0.7.1.js": {
+    "mtime": 1793789262.9092376,
+    "seen": 1793790188.5206604,
+    "ast_hash": "59a538c204c747917ee4fd910e3990a2",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/clsx@2.1.1.js": {
+    "mtime": 1793789418.856448,
+    "seen": 1793790188.5206614,
+    "ast_hash": "22e1672d3133028a00004f204fcc2a02",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/cookie@1.1.1.js": {
+    "mtime": 1793789262.8914356,
+    "seen": 1793790188.520662,
+    "ast_hash": "66d6c02d93b5b1417bcfeb709db0e3d0",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/d3-array@3.2.4.js": {
+    "mtime": 1793789262.7165473,
+    "seen": 1793790188.5206633,
+    "ast_hash": "8f2ad1cb4090c1ab814fe1c7fc006b2b",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/d3-color@3.1.0.js": {
+    "mtime": 1793789262.8305275,
+    "seen": 1793790188.5206642,
+    "ast_hash": "c3643c10eaffc22f7e997c32e7e5f6d3",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/d3-format@3.1.2.js": {
+    "mtime": 1793789262.724313,
+    "seen": 1793790188.5206656,
+    "ast_hash": "08692dd0261442d2589e0ad387dc2adf",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/d3-interpolate@3.0.1.js": {
+    "mtime": 1793789262.724313,
+    "seen": 1793790188.5206666,
+    "ast_hash": "7687ef700303f3475617d716929b67f4",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/d3-path@3.1.0.js": {
+    "mtime": 1793789262.9072647,
+    "seen": 1793790188.5206683,
+    "ast_hash": "327bc0e54a309c7fdc458c6eee3b662b",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/d3-scale@4.0.2.js": {
+    "mtime": 1793789262.6637466,
+    "seen": 1793790188.520669,
+    "ast_hash": "d79a28a676b50445269c68cf5778d0b7",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/d3-shape@3.2.0.js": {
+    "mtime": 1793789262.6251822,
+    "seen": 1793790188.5206697,
+    "ast_hash": "8dcdd652398d32e5196a0e6b003e0f11",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/d3-time-format@4.1.0.js": {
+    "mtime": 1793789262.8258016,
+    "seen": 1793790188.5206707,
+    "ast_hash": "14e675f17270358db9db790b36ff7af9",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/d3-time@3.1.0.js": {
+    "mtime": 1793789262.724313,
+    "seen": 1793790188.5206716,
+    "ast_hash": "7b3d0595c94a9c37c217752126c1f32e",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/decimal.js-light@2.5.1.js": {
+    "mtime": 1793789262.9057603,
+    "seen": 1793790188.5206726,
+    "ast_hash": "5fe46bd8821154584694e21d5c4f5d72",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/eventemitter3@4.0.7.js": {
+    "mtime": 1793789262.958588,
+    "seen": 1793790188.5206733,
+    "ast_hash": "c7d1220e842539140c231e0c3ceb9d64",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/fast-equals@5.4.0.js": {
+    "mtime": 1793789262.9057603,
+    "seen": 1793790188.5206742,
+    "ast_hash": "62c4b7d31efd32a3fe80fc6fb72c3bdd",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/framer-motion@11.18.2_@emotion+is-prop-valid@0.8.8_react-dom@19.2.7_react@19.2.7__react@19.2.7.js": {
+    "mtime": 1793789262.6267033,
+    "seen": 1793790188.5206754,
+    "ast_hash": "75bf6424a7f58b56da84562e4c60f616",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/get-nonce@1.0.1.js": {
+    "mtime": 1793789262.958588,
+    "seen": 1793790188.5206761,
+    "ast_hash": "781c6844abc0b043dd32e4db44e5a9b3",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/hls.js@1.6.16.js": {
+    "mtime": 1793789262.8954992,
+    "seen": 1793790188.5206773,
+    "ast_hash": "beca0710a5edabe08c07bca0220be03b",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/iceberg-js@0.8.1.js": {
+    "mtime": 1793789262.8258016,
+    "seen": 1793790188.5206783,
+    "ast_hash": "2bce195cebb70fa27b4050c488245bcf",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/internmap@2.0.3.js": {
+    "mtime": 1793789262.893485,
+    "seen": 1793790188.520679,
+    "ast_hash": "dd9616afcd51ca269b49ebd008594112",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/langwatch@0.20.0_@opentelemetry+api@1.9.1_@opentelemetry+context-async-hooks@2.8.0_@opentelem_axup27x7rvebvmsewzsumggnci.js": {
+    "mtime": 1793789245.8960288,
+    "seen": 1793790188.5206797,
+    "ast_hash": "e169b0b2d73ffdcda52b6d86f39fc3b6",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/lodash@4.18.1.js": {
+    "mtime": 1793789262.6202796,
+    "seen": 1793790188.5206804,
+    "ast_hash": "f2b6c4d69c5c9ff47224fa5722e5e011",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/lucide-react@0.468.0_react@19.2.7.js": {
+    "mtime": 1793789914.2087905,
+    "seen": 1793790188.5206811,
+    "ast_hash": "ffd7a767b02bde7fc2913ea1d0dc049e",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/motion-dom@11.18.1.js": {
+    "mtime": 1793789262.639621,
+    "seen": 1793790188.5206823,
+    "ast_hash": "e80dfb9f8f9c3c87a5d76c68fd685a5b",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/motion-utils@11.18.1.js": {
+    "mtime": 1793789262.7312133,
+    "seen": 1793790188.520683,
+    "ast_hash": "cbf14a6a31db5de0538788c6ec1b48d0",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/next-themes@0.4.6_react-dom@19.2.7_react@19.2.7__react@19.2.7.js": {
+    "mtime": 1793789262.892436,
+    "seen": 1793790188.520684,
+    "ast_hash": "f78c64cb343ebad43d13a70724c60402",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/next@15.5.7_@babel+core@7.29.7_@opentelemetry+api@1.9.1_@playwright+test@1.60.0_react-dom@19._ribdgixse2h2hd4dtgts7buzom.js": {
+    "mtime": 1793789914.2062845,
+    "seen": 1793790188.5206847,
+    "ast_hash": "57a36e6e96ef3f1919431a17e6b0598c",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/object-assign@4.1.1.js": {
+    "mtime": 1793789262.9565876,
+    "seen": 1793790188.520686,
+    "ast_hash": "fefa0ff0433954c71a3d4bce9b0e13c8",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/prop-types@15.8.1.js": {
+    "mtime": 1793789262.8112779,
+    "seen": 1793790188.5206869,
+    "ast_hash": "7139c6510121be82fd05ce952cb9470a",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/react-hook-form@7.79.0_react@19.2.7.js": {
+    "mtime": 1793789262.8914356,
+    "seen": 1793790188.520688,
+    "ast_hash": "b8485e2c6244299023d562b2e07388e0",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/react-is@16.13.1.js": {
+    "mtime": 1793789262.863652,
+    "seen": 1793790188.520689,
+    "ast_hash": "793919a613a01e47cc6b4414dddf72cd",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/react-is@18.3.1.js": {
+    "mtime": 1793789262.8418806,
+    "seen": 1793790188.52069,
+    "ast_hash": "dfa2e26072a4d333e1c428a558b6d8cd",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/react-remove-scroll-bar@2.3.8_@types+react@19.2.17_react@19.2.7.js": {
+    "mtime": 1793789262.8228016,
+    "seen": 1793790188.520691,
+    "ast_hash": "84b8ba6027c8f21eca2b8b7b4c437990",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/react-remove-scroll@2.7.2_@types+react@19.2.17_react@19.2.7.js": {
+    "mtime": 1793789262.7312133,
+    "seen": 1793790188.5206916,
+    "ast_hash": "f3dda046794ec5a24edeedf6c3a72016",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/react-smooth@4.0.4_react-dom@19.2.7_react@19.2.7__react@19.2.7.js": {
+    "mtime": 1793789262.724313,
+    "seen": 1793790188.520693,
+    "ast_hash": "1c4dd095abfed21809d2b9f9ffbf9bb9",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/react-style-singleton@2.2.3_@types+react@19.2.17_react@19.2.7.js": {
+    "mtime": 1793789262.81979,
+    "seen": 1793790188.520694,
+    "ast_hash": "dd972aa2bd06bbc3016d15bd42bb6131",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/react-transition-group@4.4.5_react-dom@19.2.7_react@19.2.7__react@19.2.7.js": {
+    "mtime": 1793789262.7296906,
+    "seen": 1793790188.520696,
+    "ast_hash": "d5e28cff0a71fe1f030a2535f2423df8",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/recharts-scale@0.4.5.js": {
+    "mtime": 1793789262.8182793,
+    "seen": 1793790188.5206969,
+    "ast_hash": "1d7185570a23ca409bcc7ea71151e93e",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/recharts@2.15.4_react-dom@19.2.7_react@19.2.7__react@19.2.7.js": {
+    "mtime": 1793789262.6267033,
+    "seen": 1793790188.5206978,
+    "ast_hash": "0a4786861f8200d0c89824b6731fe49f",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/tailwind-merge@2.6.1.js": {
+    "mtime": 1793789418.8254554,
+    "seen": 1793790188.5206985,
+    "ast_hash": "4b7fef55f991456e253b9e68ec4df76d",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/tiny-invariant@1.3.3.js": {
+    "mtime": 1793789262.8914356,
+    "seen": 1793790188.5206995,
+    "ast_hash": "ec92dcdf44e619fa60776fe8c8c621f9",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/tslib@2.8.1.js": {
+    "mtime": 1793789262.8258016,
+    "seen": 1793790188.5207005,
+    "ast_hash": "54ac2611997ecd29b6b88baca5c7ba0f",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/use-callback-ref@1.3.3_@types+react@19.2.17_react@19.2.7.js": {
+    "mtime": 1793789262.823805,
+    "seen": 1793790188.520701,
+    "ast_hash": "a9e4993a2c8de9d30f541278645d1c51",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/use-sidecar@1.1.3_@types+react@19.2.17_react@19.2.7.js": {
+    "mtime": 1793789262.8418806,
+    "seen": 1793790188.5207021,
+    "ast_hash": "d45f489b721892aec418b0779bbbea49",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/victory-vendor@36.9.2.js": {
+    "mtime": 1793789262.8408785,
+    "seen": 1793790188.5207033,
+    "ast_hash": "8381115477815ab7052c0380d20d0e51",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/zod@3.25.76.js": {
+    "mtime": 1793789311.343137,
+    "seen": 1793790188.520704,
+    "ast_hash": "cad98ca7ff3d6bf6c69725b62ebabfa0",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/vendor-chunks/zod@4.4.3.js": {
+    "mtime": 1793789245.8960288,
+    "seen": 1793790188.520705,
+    "ast_hash": "79d4d12b896e429c1b12d3af011f849b",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/server/webpack-runtime.js": {
+    "mtime": 1793789914.1968176,
+    "seen": 1793790188.5207057,
+    "ast_hash": "6280c22fb499a899c8a73138b9eddac5",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/_app-pages-browser_node_modules_pnpm_hls_js_1_6_16_node_modules_hls_js_dist_hls_mjs.js": {
+    "mtime": 1793789271.6619115,
+    "seen": 1793790188.520707,
+    "ast_hash": "ea5807633a6a9af782824054dcb8327a",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/_app-pages-browser_node_modules_pnpm_next_15_5_7__babel_core_7_29_7__opentelemetry_api_1_9_1_-2ef37b.js": {
+    "mtime": 1793789271.659912,
+    "seen": 1793790188.5207078,
+    "ast_hash": "a17d6fcae455e26db12c70da61a83bf3",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/_app-pages-browser_node_modules_pnpm_tanstack_query-devtools_5_101_0_node_modules_tanstack_qu-3875d3.js": {
+    "mtime": 1793789271.6619115,
+    "seen": 1793790188.5207088,
+    "ast_hash": "709d9adc0bbe01829fecaac6ba5fa856",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/_app-pages-browser_node_modules_pnpm_tanstack_query-devtools_5_101_0_node_modules_tanstack_qu-5c9983.js": {
+    "mtime": 1793789271.6929157,
+    "seen": 1793790188.52071,
+    "ast_hash": "46e415ac78d3828ca953178b0939c7f3",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/app-pages-internals.js": {
+    "mtime": 1793789271.6589093,
+    "seen": 1793790188.5207107,
+    "ast_hash": "fad7cde2a223739820ebf12f101c60d6",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/app/(app)/(admin)/admin/directory/loading.js": {
+    "mtime": 1793789419.7577977,
+    "seen": 1793790188.5207114,
+    "ast_hash": "04a864aedc6eb673abea118baf2ff1fb",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/app/(app)/(admin)/admin/directory/page.js": {
+    "mtime": 1793789419.7678752,
+    "seen": 1793790188.5207121,
+    "ast_hash": "61886ba9dbefc31c8daa8edfa8d14c7e",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/app/(app)/(admin)/admin/war-room/page.js": {
+    "mtime": 1793789383.6117654,
+    "seen": 1793790188.5207136,
+    "ast_hash": "25958577352c83aa234be65f0e9e9788",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/app/(app)/(admin)/error.js": {
+    "mtime": 1793789383.571504,
+    "seen": 1793790188.5207145,
+    "ast_hash": "6ae381a9bf7f43a9bdc0c604578dc77c",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/app/(app)/(admin)/layout.js": {
+    "mtime": 1793789331.7013626,
+    "seen": 1793790188.5207152,
+    "ast_hash": "82bda938cd145af061c0112b265975fa",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/app/(app)/(employee)/error.js": {
+    "mtime": 1793789383.4879813,
+    "seen": 1793790188.5207164,
+    "ast_hash": "2b72fc2ef7161014c1e12c1c06f57d58",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/app/(app)/(employee)/notifications/page.js": {
+    "mtime": 1793789383.6009703,
+    "seen": 1793790188.5207176,
+    "ast_hash": "13682d2639e790c71d77b97917a9930f",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/app/(app)/(employee)/projects/[id]/page.js": {
+    "mtime": 1793789383.7903676,
+    "seen": 1793790188.5207186,
+    "ast_hash": "20cf144c115230075e82b5e6037eb524",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/app/(app)/(employee)/projects/invitations/page.js": {
+    "mtime": 1793789703.4340084,
+    "seen": 1793790188.5207193,
+    "ast_hash": "51ab1d291dab84cdb466172e28d8eb89",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/app/(app)/(employee)/projects/new/page.js": {
+    "mtime": 1793789383.563987,
+    "seen": 1793790188.5207205,
+    "ast_hash": "27fe0861941700dffa94229a1e369de5",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/app/(app)/(employee)/work-tracker/page.js": {
+    "mtime": 1793789383.567988,
+    "seen": 1793790188.5207212,
+    "ast_hash": "0aa451932cf9f5f287fb17e797105b8c",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/app/(app)/layout.js": {
+    "mtime": 1793789383.53698,
+    "seen": 1793790188.5207222,
+    "ast_hash": "63972bdd40b5ad97f0eea189ee7c6347",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/app/(auth)/layout.js": {
+    "mtime": 1793789290.4305031,
+    "seen": 1793790188.520723,
+    "ast_hash": "2e531c147082dbba00a58df04b954769",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/app/(auth)/login/page.js": {
+    "mtime": 1793789383.7853649,
+    "seen": 1793790188.5207243,
+    "ast_hash": "2289659795cd9c29bb98aa00fffb2aad",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/app/global-error.js": {
+    "mtime": 1793789271.659912,
+    "seen": 1793790188.520725,
+    "ast_hash": "9bef156e154fa72fb9488b7a13aa4e9d",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/app/layout.js": {
+    "mtime": 1793789916.3284311,
+    "seen": 1793790188.520726,
+    "ast_hash": "8c39e2930fe90e45ae6d9c9b5d21f20e",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/app/page.js": {
+    "mtime": 1793789288.5404997,
+    "seen": 1793790188.5207272,
+    "ast_hash": "2abf6d3ab33ee2f5fa2ec9a5febd14aa",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/app/version.json/route.js": {
+    "mtime": 1793789305.3686273,
+    "seen": 1793790188.520728,
+    "ast_hash": "8364efb739ec3e831720187cc43864a3",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/main-app.js": {
+    "mtime": 1793789271.6629057,
+    "seen": 1793790188.520729,
+    "ast_hash": "dbbd89d78e3d74ca3cc2e3430e7ec3dc",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/polyfills.js": {
+    "mtime": 1793789241.0109959,
+    "seen": 1793790188.5207298,
+    "ast_hash": "846118c33b2c0e922d7b3a7676f81f6f",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/chunks/webpack.js": {
+    "mtime": 1793789916.321803,
+    "seen": 1793790188.5207307,
+    "ast_hash": "d918a0aca6bdf11ba70b69739899adad",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/development/_buildManifest.js": {
+    "mtime": 1793789916.3238025,
+    "seen": 1793790188.5207317,
+    "ast_hash": "97f1258b3dd30d37ba33a4c4ed741eed",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/development/_ssgManifest.js": {
+    "mtime": 1793789916.3238025,
+    "seen": 1793790188.5207326,
+    "ast_hash": "abee47769bf307639ace4945f9cfd4ff",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/156af1d5a2712bc6.webpack.hot-update.json": {
+    "mtime": 1793789331.7003398,
+    "seen": 1793790188.5207334,
+    "ast_hash": "b6662f151c2ad42831b98053a318d32e",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/28d29cd7f680250b.webpack.hot-update.json": {
+    "mtime": 1793789311.7491488,
+    "seen": 1793790188.5207345,
+    "ast_hash": "b6662f151c2ad42831b98053a318d32e",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/2deac3e904b492a5.webpack.hot-update.json": {
+    "mtime": 1793789288.539495,
+    "seen": 1793790188.5207355,
+    "ast_hash": "81a5bb6b8b785fd9c5a8314d6b094e36",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/3f1b013f9e52ce1c.webpack.hot-update.json": {
+    "mtime": 1793789290.4294915,
+    "seen": 1793790188.5207362,
+    "ast_hash": "b6662f151c2ad42831b98053a318d32e",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/58c4134c197cbd6f.webpack.hot-update.json": {
+    "mtime": 1793789916.3238025,
+    "seen": 1793790188.5207372,
+    "ast_hash": "81a5bb6b8b785fd9c5a8314d6b094e36",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/633457081244afec._.hot-update.json": {
+    "mtime": 1793789271.6919124,
+    "seen": 1793790188.5207384,
+    "ast_hash": "777077caf8fd96cfb711faacdcbf6a47",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/6c0f5e1a351066dd.webpack.hot-update.json": {
+    "mtime": 1793789341.6005113,
+    "seen": 1793790188.5207393,
+    "ast_hash": "b6662f151c2ad42831b98053a318d32e",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/73765b15eac128a8.webpack.hot-update.json": {
+    "mtime": 1793789337.2026117,
+    "seen": 1793790188.5207403,
+    "ast_hash": "b6662f151c2ad42831b98053a318d32e",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/853c5e96d6313b5b.webpack.hot-update.json": {
+    "mtime": 1793789703.4210074,
+    "seen": 1793790188.5207412,
+    "ast_hash": "95c1895b1c3e1bdbd90d1bd6e961ba69",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/8bdc82b0db4ec4f3.webpack.hot-update.json": {
+    "mtime": 1793789383.7159603,
+    "seen": 1793790188.520742,
+    "ast_hash": "8f4b36856945c83dddddc4673f23d317",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/9b04ce31913220ee.webpack.hot-update.json": {
+    "mtime": 1793789305.3686273,
+    "seen": 1793790188.5207431,
+    "ast_hash": "b6662f151c2ad42831b98053a318d32e",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/app/(app)/(admin)/admin/war-room/page.8bdc82b0db4ec4f3.hot-update.js": {
+    "mtime": 1793789383.7149577,
+    "seen": 1793790188.520744,
+    "ast_hash": "2fad51a69bbe7c72d4e888f234efee25",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/app/(app)/(admin)/error.8bdc82b0db4ec4f3.hot-update.js": {
+    "mtime": 1793789383.710634,
+    "seen": 1793790188.5207453,
+    "ast_hash": "ca843c741512cd8adf7441f796e0d169",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/app/(app)/(employee)/error.8bdc82b0db4ec4f3.hot-update.js": {
+    "mtime": 1793789383.6786363,
+    "seen": 1793790188.520746,
+    "ast_hash": "2a187d7c76a2cdbe75d7f9b12529f566",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/app/(app)/(employee)/notifications/page.8bdc82b0db4ec4f3.hot-update.js": {
+    "mtime": 1793789383.710634,
+    "seen": 1793790188.520747,
+    "ast_hash": "fb18bb9155cfafd894c4aab1882d05cd",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/app/(app)/(employee)/projects/[id]/page.8bdc82b0db4ec4f3.hot-update.js": {
+    "mtime": 1793789383.7149577,
+    "seen": 1793790188.5207477,
+    "ast_hash": "7261e368f132c3403bedfb5388e2455b",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/app/(app)/(employee)/projects/invitations/page.853c5e96d6313b5b.hot-update.js": {
+    "mtime": 1793789703.4210074,
+    "seen": 1793790188.520749,
+    "ast_hash": "998ac8899069628b308d6f31098aa3f1",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/app/(app)/(employee)/projects/invitations/page.8bdc82b0db4ec4f3.hot-update.js": {
+    "mtime": 1793789383.710634,
+    "seen": 1793790188.52075,
+    "ast_hash": "48ed2446b74c863d6a505d19c632755c",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/app/(app)/(employee)/projects/new/page.8bdc82b0db4ec4f3.hot-update.js": {
+    "mtime": 1793789383.7139587,
+    "seen": 1793790188.5207508,
+    "ast_hash": "784e3d377ff687459ddd8ef5fa93a04b",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/app/(app)/(employee)/work-tracker/page.8bdc82b0db4ec4f3.hot-update.js": {
+    "mtime": 1793789383.7096357,
+    "seen": 1793790188.5207522,
+    "ast_hash": "a6116c7431aadf0e2653c41048693af2",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/app/(app)/layout.8bdc82b0db4ec4f3.hot-update.js": {
+    "mtime": 1793789383.6686356,
+    "seen": 1793790188.5207531,
+    "ast_hash": "316316396ec194ed2306d3f30bbf1583",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/app/(auth)/login/page.8bdc82b0db4ec4f3.hot-update.js": {
+    "mtime": 1793789383.7149577,
+    "seen": 1793790188.5207539,
+    "ast_hash": "c5179185fb03e64a65f5806d951f1648",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/app/layout.2deac3e904b492a5.hot-update.js": {
+    "mtime": 1793789288.539495,
+    "seen": 1793790188.520755,
+    "ast_hash": "f9256302052268f7a056e592e1ffbbe0",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/app/layout.58c4134c197cbd6f.hot-update.js": {
+    "mtime": 1793789916.3238025,
+    "seen": 1793790188.520756,
+    "ast_hash": "8f4b2fab5ed83c57c19cdfe1dc97845c",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/app/layout.853c5e96d6313b5b.hot-update.js": {
+    "mtime": 1793789703.4210074,
+    "seen": 1793790188.5207565,
+    "ast_hash": "1df9f9682caae9aa581e1e910577684b",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/app/layout.8bdc82b0db4ec4f3.hot-update.js": {
+    "mtime": 1793789383.6676342,
+    "seen": 1793790188.5207574,
+    "ast_hash": "1bae56c2e516f613607e15dfd1f527d6",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/b68c045ffde64527.webpack.hot-update.json": {
+    "mtime": 1793789325.4632938,
+    "seen": 1793790188.5207584,
+    "ast_hash": "b6662f151c2ad42831b98053a318d32e",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/bd5600b81d003936.webpack.hot-update.json": {
+    "mtime": 1793789419.749284,
+    "seen": 1793790188.5207593,
+    "ast_hash": "b6662f151c2ad42831b98053a318d32e",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/webpack.156af1d5a2712bc6.hot-update.js": {
+    "mtime": 1793789331.7003398,
+    "seen": 1793790188.5207603,
+    "ast_hash": "19ad01d59043920f5cf552d9137225e3",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/webpack.28d29cd7f680250b.hot-update.js": {
+    "mtime": 1793789311.7491488,
+    "seen": 1793790188.520761,
+    "ast_hash": "74e8fd36456d16181d06ac380ae53326",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/webpack.2deac3e904b492a5.hot-update.js": {
+    "mtime": 1793789288.5404997,
+    "seen": 1793790188.520762,
+    "ast_hash": "252d4e2b67e9215e2e5ce41544322990",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/webpack.3f1b013f9e52ce1c.hot-update.js": {
+    "mtime": 1793789290.4294915,
+    "seen": 1793790188.5207627,
+    "ast_hash": "98e6e77cbb54ebc382d7c8ff343e8b89",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/webpack.58c4134c197cbd6f.hot-update.js": {
+    "mtime": 1793789916.3238025,
+    "seen": 1793790188.5207636,
+    "ast_hash": "b99ef4323cf7a02a1b99fdaff48f4194",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/webpack.6c0f5e1a351066dd.hot-update.js": {
+    "mtime": 1793789341.6022606,
+    "seen": 1793790188.5207644,
+    "ast_hash": "e035adef7f1d60289e50668bb1537955",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/webpack.73765b15eac128a8.hot-update.js": {
+    "mtime": 1793789337.2026117,
+    "seen": 1793790188.5207655,
+    "ast_hash": "e59558079c64545e2f22141eb664252e",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/webpack.853c5e96d6313b5b.hot-update.js": {
+    "mtime": 1793789703.4210074,
+    "seen": 1793790188.5207663,
+    "ast_hash": "a42a3064a23daeb9151f0195e6ae5a23",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/webpack.8bdc82b0db4ec4f3.hot-update.js": {
+    "mtime": 1793789383.710634,
+    "seen": 1793790188.520767,
+    "ast_hash": "fc8822dd888da6e57e49f3e2db550134",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/webpack.9b04ce31913220ee.hot-update.js": {
+    "mtime": 1793789305.369627,
+    "seen": 1793790188.5207675,
+    "ast_hash": "f7ef188c7ffc3687a78960068b201079",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/webpack.b68c045ffde64527.hot-update.js": {
+    "mtime": 1793789325.4642954,
+    "seen": 1793790188.5207684,
+    "ast_hash": "6e9ad5960b640987f31ebf74b8668ec8",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/static/webpack/webpack.bd5600b81d003936.hot-update.js": {
+    "mtime": 1793789419.749284,
+    "seen": 1793790188.5207694,
+    "ast_hash": "55bc13e07264a1a9ff635b23c37dbcc0",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/types/app/(app)/(admin)/admin/directory/page.ts": {
+    "mtime": 1793789914.230018,
+    "seen": 1793790188.52077,
+    "ast_hash": "5c0699daff3ff331d2be781ab807c5c2",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/types/app/(app)/(admin)/admin/war-room/page.ts": {
+    "mtime": 1793789807.703457,
+    "seen": 1793790188.5207708,
+    "ast_hash": "e73f51ba1cfd98f8ac18ebd07a319bc7",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/types/app/(app)/(admin)/layout.ts": {
+    "mtime": 1793789914.2310228,
+    "seen": 1793790188.5207715,
+    "ast_hash": "43d62cad98a996dfcf0d0ff4e90914b2",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/types/app/(app)/(employee)/notifications/page.ts": {
+    "mtime": 1793789914.230018,
+    "seen": 1793790188.5207727,
+    "ast_hash": "a30963b41a96ba2452e265e722911342",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/types/app/(app)/(employee)/projects/[id]/page.ts": {
+    "mtime": 1793789807.7014558,
+    "seen": 1793790188.5207734,
+    "ast_hash": "92ec5fdee96c95ce14cd7eb13c0320ab",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/types/app/(app)/(employee)/projects/invitations/page.ts": {
+    "mtime": 1793789807.7014558,
+    "seen": 1793790188.5207748,
+    "ast_hash": "1fabd439ee4cf19e5f358285e92d67f3",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/types/app/(app)/(employee)/projects/new/page.ts": {
+    "mtime": 1793789914.230018,
+    "seen": 1793790188.520776,
+    "ast_hash": "d44bfa83372aaf618b64d20629a7caf2",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/types/app/(app)/(employee)/work-tracker/page.ts": {
+    "mtime": 1793789807.7014558,
+    "seen": 1793790188.520777,
+    "ast_hash": "91a15f2eaf28b6cea4147d553ffd6286",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/types/app/(app)/layout.ts": {
+    "mtime": 1793789914.2310228,
+    "seen": 1793790188.5207777,
+    "ast_hash": "7faeb9b71f913cffbe6a85257860423c",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/types/app/(auth)/layout.ts": {
+    "mtime": 1793789807.703457,
+    "seen": 1793790188.5207784,
+    "ast_hash": "1ed47a1bb347458b6dd195be41332bfc",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/types/app/(auth)/login/page.ts": {
+    "mtime": 1793789807.7014558,
+    "seen": 1793790188.5207796,
+    "ast_hash": "9e9c111c2fa8c98ad003cfe60dea1d02",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/types/app/layout.ts": {
+    "mtime": 1793789914.2310228,
+    "seen": 1793790188.5207803,
+    "ast_hash": "0c0f7243e72d04593dbd09c72b1540d5",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/types/app/page.ts": {
+    "mtime": 1793789807.7014558,
+    "seen": 1793790188.520781,
+    "ast_hash": "17e4def3cc57391fc8a5b5256aacb682",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/types/app/version.json/route.ts": {
+    "mtime": 1793789807.7014558,
+    "seen": 1793790188.5207818,
+    "ast_hash": "f6b2836a097adbbfecbf7abb2546d168",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/types/cache-life.d.ts": {
+    "mtime": 1793789914.2310228,
+    "seen": 1793790188.5207827,
+    "ast_hash": "338b7d65881c83c1ccd19867bc2462b0",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/types/package.json": {
+    "mtime": 1793789914.230018,
+    "seen": 1793790188.5207834,
+    "ast_hash": "b305354b5d3207dc798e87449005a1de",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/types/routes.d.ts": {
+    "mtime": 1793789700.1689613,
+    "seen": 1793790188.5207844,
+    "ast_hash": "31b79d7dc4b9bb4484396eb171501842",
+    "semantic_hash": ""
+  },
+  "apps/web/.next-copilot-co-leads/types/validator.ts": {
+    "mtime": 1793789700.1860116,
+    "seen": 1793790188.520785,
+    "ast_hash": "119060d951b6ce3a51be39886fc81ea3",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/(app)/(employee)/projects/invitations/page.tsx": {
+    "mtime": 1793789699.6093414,
+    "seen": 1793790188.5210128,
+    "ast_hash": "526143c5433279e94c98d2106c927765",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/api/projects/[id]/invitations/route.ts": {
+    "mtime": 1793788620.5029435,
+    "seen": 1793790188.5213203,
+    "ast_hash": "ea412fd49b263a05e42c8cd1d461e914",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/api/projects/invitations/[id]/route.ts": {
+    "mtime": 1793788620.4728317,
+    "seen": 1793790188.52133,
+    "ast_hash": "f9a412e9d5f0e0c686b158b8a2dd96ac",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/api/projects/invitations/route.ts": {
+    "mtime": 1793788620.450194,
+    "seen": 1793790188.5213313,
+    "ast_hash": "bc522b0969b2364fa06308c367fcedd2",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/api/projects/lead-candidates/route.ts": {
+    "mtime": 1793788858.3623114,
+    "seen": 1793790188.5213323,
+    "ast_hash": "aa1fa67c4701564dfadfe88383cec2e8",
+    "semantic_hash": ""
+  },
+  "apps/web/src/components/finance/FinanceDeleteButton.tsx": {
+    "mtime": 1793789199.1202233,
+    "seen": 1793790188.5215669,
+    "ast_hash": "298b8d584b7f4aeb25ec67f9f699cbc0",
+    "semantic_hash": ""
+  },
+  "apps/web/src/lib/projects/member-invitations.ts": {
+    "mtime": 1793788589.4627614,
+    "seen": 1793790188.5219119,
+    "ast_hash": "97b9f0cbcf3cbb0ebb84f5108220cd53",
+    "semantic_hash": ""
+  },
+  "e2e/project-co-leads.spec.ts": {
+    "mtime": 1793789762.2592483,
+    "seen": 1793790188.522158,
+    "ast_hash": "66753c628a934ac8e6630d4e4c1ae28a",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261104000003_project_co_leads.sql": {
+    "mtime": 1793789490.013806,
+    "seen": 1793790188.5228224,
+    "ast_hash": "be79cfb41efa5d55a044033a824f2679",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20261104000004_project_member_invitations.sql": {
+    "mtime": 1793788782.2248368,
+    "seen": 1793790188.5228233,
+    "ast_hash": "bfa55b069fc19518cc129791bb34ddf2",
+    "semantic_hash": ""
+  },
+  "tests/api/admin-projects-overview-route.test.ts": {
+    "mtime": 1793787211.499476,
+    "seen": 1793790188.5229185,
+    "ast_hash": "99cbd2799542bbe176bd243a58e5cf0c",
+    "semantic_hash": ""
+  },
+  "tests/api/finance-delete-routes.test.ts": {
+    "mtime": 1793789199.1202233,
+    "seen": 1793790188.522945,
+    "ast_hash": "2b21a87e7d490583cad57cd04aa0f0a9",
+    "semantic_hash": ""
+  },
+  "tests/api/project-lead-candidates-route.test.ts": {
+    "mtime": 1793788969.783079,
+    "seen": 1793790188.5229669,
+    "ast_hash": "1bbe1187d4a9b376e28680d97e0d1b68",
+    "semantic_hash": ""
+  },
+  "tests/api/project-member-invitations-route.test.ts": {
+    "mtime": 1793789039.074744,
+    "seen": 1793790188.5229678,
+    "ast_hash": "d39fbf4acaa4e46646194a05cee9dae5",
+    "semantic_hash": ""
+  },
+  "tests/hooks/useProjectLeadership.test.tsx": {
+    "mtime": 1793789050.0610423,
+    "seen": 1793790188.523038,
+    "ast_hash": "6e2d008fdf2cba41e32e8adcadc7dc5d",
+    "semantic_hash": ""
+  },
+  "tests/sql/project-co-leads-local.sql": {
+    "mtime": 1793787520.544493,
+    "seen": 1793790188.5231204,
+    "ast_hash": "57efee9521869b3b7517701e52cbde8a",
+    "semantic_hash": ""
+  },
+  "tests/sql/project-member-invitations-local.sql": {
+    "mtime": 1793789535.072865,
+    "seen": 1793790188.5231214,
+    "ast_hash": "e809ce87b21a2c15fc21b56bb69ec359",
+    "semantic_hash": ""
+  },
+  "docs/apps/web/api/projects.md": {
+    "mtime": 1793789466.0422406,
+    "seen": 1793790188.5232213,
+    "ast_hash": "a740116634a4a3a9e3d34bc3592a0781",
     "semantic_hash": ""
   }
 }
