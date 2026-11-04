@@ -120,6 +120,8 @@ describe('Finance properties API', () => {
         tenantName: 'Tenant',
         occupancy: 'occupied',
         weeklyRentAud: 700,
+        rentCadence: 'weekly',
+        rentAmountAud: 700,
         dueDay: 5,
       })
     );
@@ -158,17 +160,22 @@ describe('Finance properties API', () => {
     const property = await POST(
       request({
         kind: 'property',
+        propertyCode: 'p001',
         name: 'New',
         propertyType: 'Residential',
+        agentName: null,
+        receivingAccountLabel: null,
         tenantName: null,
         occupancy: 'occupied',
         weeklyRentAud: 350,
+        rentCadence: 'weekly',
+        rentAmountAud: 350,
         dueDay: 15,
       })
     );
     expect(property.status).toBe(201);
     expect(insert).toHaveBeenCalledWith(
-      expect.objectContaining({ name: 'New', created_by: 'user' })
+      expect.objectContaining({ name: 'New', property_code: 'P001', created_by: 'user' })
     );
     const rent = await POST(
       request({

@@ -15,6 +15,25 @@ vi.mock('@/components/finance/FinanceReportControls', () => ({
   FinanceReportControls: ({ month }: { month: string }) => <span>Report pack {month}</span>,
 }));
 vi.mock('@/components/finance/FinanceExpenseExport', () => ({ FinanceExpenseExport: () => null }));
+vi.mock('@/components/finance/FinanceExpenseCorrection', () => ({
+  FinanceExpenseCorrection: () => null,
+}));
+vi.mock('@/components/data-display/UrlPaginationBar', () => ({ UrlPaginationBar: () => null }));
+vi.mock('@/components/finance/FinanceExpenseFilters', () => ({
+  FinanceExpenseFilters: ({
+    month,
+    category,
+    search,
+  }: {
+    month: string;
+    category: string;
+    search: string;
+  }) => (
+    <span>
+      Filters {month} {category} {search}
+    </span>
+  ),
+}));
 vi.mock('@/components/finance/FinancePropertiesPanel', () => ({
   FinancePropertiesPanel: ({ month }: { month: string }) => <span>Live properties {month}</span>,
 }));
@@ -52,7 +71,7 @@ describe('Finance redesign pages', () => {
       await FinancePropertiesPage({ searchParams: Promise.resolve({ month: '2026-06' }) })
     );
     expect(html).toContain('Live properties 2026-06');
-    expect(html).toContain('Property Development');
+    expect(html).toContain('>Properties</h1>');
     expect(html).toContain('Live rent collection and maintenance register');
     expect(html).not.toContain('Phase 2');
   });
@@ -184,10 +203,14 @@ describe('Finance redesign pages', () => {
     const from = vi.fn((table: string) =>
       builder(table === 'finance_categories' ? categories : entries)
     );
+    const rpc = vi.fn(async () => ({
+      data: { count: 1, convertedAud: 0, totalsByCurrency: [{ currency: 'USD', amount: 100, entry_count: 1 }] },
+      error: null,
+    }));
     vi.mocked(getFinanceContext).mockResolvedValue({
       ok: true,
       capabilities: { isLeadership: true },
-      admin: { from },
+      admin: { from, rpc },
     } as never);
     const html = renderToStaticMarkup(
       await FinanceExpenses({
@@ -199,8 +222,9 @@ describe('Finance redesign pages', () => {
         }),
       })
     );
-    expect(html).toContain('Expense categories');
+    expect(html).toMatch(/Filters (<!-- -->)?2026-06(<!-- -->)? (<!-- -->)?travel(<!-- -->)? (<!-- -->)?Train/);
     expect(html).toContain('tab=personal_card&amp;month=2026-06&amp;category=travel&amp;q=Train');
+    expect(html).toContain('1 expenses');
     expect(html).toContain('AUD conversion pending');
     expect(html).toContain('pending');
     expect(html).toContain('unmatched');

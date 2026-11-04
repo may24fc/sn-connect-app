@@ -20,10 +20,15 @@ describe('Finance property figures', () => {
       {
         id: 'a',
         name: 'A',
+        property_code: 'P001',
         property_type: 'Residential',
+        agent_name: null,
+        receiving_account_label: null,
         tenant_name: null,
         occupancy: 'occupied',
         weekly_rent_aud: 300,
+        rent_cadence: 'weekly',
+        rent_amount_aud: 300,
         due_day: 10,
         created_by: 'u',
         created_at: '',
@@ -31,10 +36,15 @@ describe('Finance property figures', () => {
       {
         id: 'b',
         name: 'B',
+        property_code: 'P002',
         property_type: 'Commercial',
+        agent_name: null,
+        receiving_account_label: null,
         tenant_name: null,
         occupancy: 'vacant',
         weekly_rent_aud: 500,
+        rent_cadence: 'weekly',
+        rent_amount_aud: 500,
         due_day: 12,
         created_by: 'u',
         created_at: '',
@@ -82,8 +92,17 @@ describe('Finance property figures', () => {
     ],
     statusEvents: [],
   };
-  it('derives monthly equivalent from annual weekly rent, excluding vacant properties', () => {
+  it('derives the monthly default from weekly or fortnightly rent, excluding vacant properties', () => {
     expect(monthlyRent(300)).toBe(1300);
+    const fortnightly = propertySummary(
+      {
+        ...register,
+        properties: [{ ...register.properties[0]!, rent_cadence: 'biweekly', rent_amount_aud: 600 }],
+      },
+      '2026-06',
+      '2026-06-10'
+    );
+    expect(fortnightly.due).toBe(1300);
     const summary = propertySummary(register, '2026-06', '2026-06-10');
     expect(summary).toMatchObject({
       due: 1300,

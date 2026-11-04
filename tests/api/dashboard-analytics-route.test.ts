@@ -4,8 +4,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@/lib/supabase/server', () => ({
   createSupabaseServerClient: vi.fn(),
 }));
+vi.mock('@/lib/auth/active-role', () => ({ getActiveUserRole: vi.fn() }));
 
 import { GET } from '@/app/api/dashboard/analytics/route';
+import { getActiveUserRole } from '@/lib/auth/active-role';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 type ExpenseRow = {
@@ -63,6 +65,7 @@ function createUsersRoleQuery(role: string | null) {
 describe('/api/dashboard/analytics GET route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(getActiveUserRole).mockResolvedValue('admin');
   });
 
   it('returns 401 when unauthenticated', async () => {
@@ -80,15 +83,17 @@ describe('/api/dashboard/analytics GET route', () => {
   });
 
   it('returns 403 for non-admin roles', async () => {
+    vi.mocked(getActiveUserRole).mockResolvedValue('employee');
     vi.mocked(createSupabaseServerClient).mockResolvedValue({
       auth: {
         getUser: vi.fn(async () => ({
           data: {
-            user: { id: 'user-1', app_metadata: { db_role: 'viewer' } },
+            user: { id: 'user-1', app_metadata: { db_role: 'employee' } },
           },
           error: null,
         })),
       },
+      rpc: vi.fn(async () => ({ data: false, error: null })),
       from: vi.fn(),
     } as never);
 
