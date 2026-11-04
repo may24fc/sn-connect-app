@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@hr-portal/ui';
+import { FinanceDeleteButton } from '@/components/finance/FinanceDeleteButton';
 import { FinanceSnapshotDetail, type FinanceSnapshotRecord } from '@/components/finance/FinanceSnapshotDetail';
 import { formatFinanceDate, formatFinanceDateTime } from '@/lib/format';
 type Snapshot = { id: string; status: string; exception_count: number; created_at: string };
@@ -15,6 +16,7 @@ type ReportData = {
       amount: number;
     }>;
     paymentStatusCounts?: { unknown: number; unpaid: number; confirmed: number };
+    audEstimates?: { currentMonthAud: number; currentMonthEntries: number };
     subscriptionsAsOfSnapshot?: Array<{ id: string; vendor_name: string; active: boolean }>;
     wiseImportRowsForMonth?: Array<{ result: string; resolved_at: string | null }>;
   };
@@ -102,7 +104,12 @@ export function FinanceReportControls({ month }: { month: string }) {
       <div className="divide-y text-sm">
         <div className="py-2">
           <b>Recorded expenses</b>
-          <p className="text-xs text-muted-foreground">Category comparison at left</p>
+          <p className="text-xs text-muted-foreground">
+            Category comparison at left
+            {data?.report.audEstimates?.currentMonthEntries
+              ? ` · includes A$${data.report.audEstimates.currentMonthAud.toFixed(2)} estimated at daily rates (${data.report.audEstimates.currentMonthEntries}); saved snapshots keep this label`
+              : ''}
+          </p>
         </div>
         <div className="py-2">
           <b>Reconciliation</b>
@@ -195,6 +202,22 @@ export function FinanceReportControls({ month }: { month: string }) {
                 >
                   Download {item.status} snapshot CSV
                 </a>
+                {item.status === 'draft' ? (
+                  <>
+                    {' · '}
+                    <FinanceDeleteButton
+                      endpoint={`/api/finance/reports?snapshot=${item.id}`}
+                      label="Delete draft"
+                      title="Delete this draft snapshot?"
+                      description={`The draft saved ${formatFinanceDateTime(item.created_at)} will be removed. The live report and other snapshots are not affected.`}
+                      disabled={busy}
+                      onDeleted={async () => {
+                        if (selectedSnapshot?.id === item.id) setSelectedSnapshot(null);
+                        await load();
+                      }}
+                    />
+                  </>
+                ) : null}
               </li>
             ))}
           </ul>

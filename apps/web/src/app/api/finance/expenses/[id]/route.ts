@@ -124,3 +124,55 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   logActivity(context.admin, { userId: context.user.id, action: 'finance_expense_receipt_attach', tableName: 'expense_entries', recordId: id, metadata: { previousDocumentId: current.data.receipt_document_id, documentId: document.data.id } });
   return NextResponse.json({ data: updated.data });
 }
+
+/**
+ * Soft-deletes an expense for Finance reviewers. Matched pairs are refused because matching
+ * updates both records and may open a variance sign-off.
+ */
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const context = await getFinanceContext();
+  if (!context.ok) return NextResponse.json({ error: context.error }, { status: context.status });
+  if (!canReviewFinance(context.capabilities))
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const { id } = await params;
+  if (!z.string().uuid().safeParse(id).success)
+    return NextResponse.json({ error: 'Invalid expense ID' }, { status: 400 });
+  const db = context.admin as any;
+  const current = await db
+    .from('expense_entries')
+    .select('id,vendor_name,total_amount,currency,match_status,processing_status')
+    .eq('id', id)
+    .is('deleted_at', null)
+    .maybeSingle();
+  if (current.error || !current.data)
+    return NextResponse.json({ error: 'Expense not found' }, { status: 404 });
+  if (current.data.match_status !== 'unmatched')
+    return NextResponse.json(
+      { error: 'This expense is matched to another record and cannot be deleted' },
+      { status: 409 }
+    );
+  const deleted = await db
+    .from('expense_entries')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('match_status', 'unmatched')
+    .is('deleted_at', null)
+    .select('id')
+    .maybeSingle();
+  if (deleted.error) return NextResponse.json({ error: 'Could not delete expense' }, { status: 500 });
+  if (!deleted.data)
+    return NextResponse.json({ error: 'Expense changed; refresh and try again' }, { status: 409 });
+  logActivity(context.admin, {
+    userId: context.user.id,
+    action: 'finance_expense_delete',
+    tableName: 'expense_entries',
+    recordId: id,
+    metadata: {
+      vendorName: current.data.vendor_name,
+      totalAmount: current.data.total_amount,
+      currency: current.data.currency,
+      processingStatus: current.data.processing_status,
+    },
+  });
+  return NextResponse.json({ data: { id } });
+}

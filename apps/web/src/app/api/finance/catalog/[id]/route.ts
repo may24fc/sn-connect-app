@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import { canReviewFinance, getFinanceContext } from '@/lib/finance/auth';
 import { convertSubscriptionToAud } from '@/lib/finance/subscription-fx';
 import { NextResponse, type NextRequest } from 'next/server';
@@ -58,4 +59,29 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const { data, error } = await db.from('finance_subscriptions').update(patch).eq('id', id).select().maybeSingle();
   if (error || !data) return NextResponse.json({ error: 'Subscription not found or update failed' }, { status: 404 });
   return NextResponse.json({ data });
+}
+
+// Linked expenses keep their history; the foreign key clears their subscription link.
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const context = await getFinanceContext();
+  if (!context.ok) return NextResponse.json({ error: context.error }, { status: context.status });
+  if (!canReviewFinance(context.capabilities)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const { id } = await params;
+  if (!z.string().uuid().safeParse(id).success) return NextResponse.json({ error: 'Invalid subscription ID' }, { status: 400 });
+  const { data, error } = await (context.admin as any)
+    .from('finance_subscriptions')
+    .delete()
+    .eq('id', id)
+    .select('id,vendor_name')
+    .maybeSingle();
+  if (error) return NextResponse.json({ error: 'Could not delete subscription' }, { status: 500 });
+  if (!data) return NextResponse.json({ error: 'Subscription not found' }, { status: 404 });
+  logActivity(context.admin, {
+    userId: context.user.id,
+    action: 'finance_subscription_delete',
+    tableName: 'finance_subscriptions',
+    recordId: id,
+    metadata: { vendorName: data.vendor_name },
+  });
+  return NextResponse.json({ data: { id } });
 }

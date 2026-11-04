@@ -1,6 +1,7 @@
 import { UrlPaginationBar } from '@/components/data-display/UrlPaginationBar';
 import { FinanceApproverSettings } from '@/components/finance/FinanceApproverSettings';
 import { FinanceCatalogPanel } from '@/components/finance/FinanceCatalogPanel';
+import { FinanceDeleteButton } from '@/components/finance/FinanceDeleteButton';
 import { FinanceExpenseExport } from '@/components/finance/FinanceExpenseExport';
 import { FinanceExpenseCorrection } from '@/components/finance/FinanceExpenseCorrection';
 import { FinanceExpenseFilters } from '@/components/finance/FinanceExpenseFilters';
@@ -358,17 +359,28 @@ export default async function FinanceExpenses({
                     </td>
                     <td className="p-3">{row.receipt_document_id ? 'Attached' : 'Awaiting'}</td>
                     <td className="p-3 text-right">
-                      <FinanceExpenseCorrection
-                        id={row.id}
-                        categoryCode={row.category_code}
-                        paymentSource={row.payment_source}
-                        paymentStatus={row.payment_status}
-                        currency={row.currency}
-                        totalAmount={Number(row.total_amount)}
-                        totalAmountAud={row.total_amount_aud === null ? null : Number(row.total_amount_aud)}
-                        audBasis={row.aud_amount_basis}
-                        rateDate={row.fx_rates_fetched_at?.slice(0, 10) ?? null}
-                      />
+                      <div className="flex items-center justify-end gap-3">
+                        <FinanceExpenseCorrection
+                          id={row.id}
+                          categoryCode={row.category_code}
+                          paymentSource={row.payment_source}
+                          paymentStatus={row.payment_status}
+                          currency={row.currency}
+                          totalAmount={Number(row.total_amount)}
+                          totalAmountAud={
+                            row.total_amount_aud === null ? null : Number(row.total_amount_aud)
+                          }
+                          audBasis={row.aud_amount_basis}
+                          rateDate={row.fx_rates_fetched_at?.slice(0, 10) ?? null}
+                        />
+                        {row.match_status === 'unmatched' ? (
+                          <FinanceDeleteButton
+                            endpoint={`/api/finance/expenses/${row.id}`}
+                            title="Delete this expense?"
+                            description={`${row.vendor_name} · ${money(Number(row.total_amount), row.currency)} on ${formatFinanceDate(row.transaction_date)} will be removed from the ledger, totals, and reports.`}
+                          />
+                        ) : null}
+                      </div>
                     </td>
                   </tr>
                 ))}

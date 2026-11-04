@@ -3,6 +3,8 @@ import type { PropertyRegister } from '@/lib/finance/properties';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+
 const property = {
   id: '123e4567-e89b-42d3-a456-426614174000',
   name: 'Test property',
@@ -78,7 +80,7 @@ describe('Finance Properties corrections', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Confirm correction' }));
     await waitFor(() =>
-      expect(screen.getByText(/Voided 2026-06-12: Duplicate entry/)).toBeInTheDocument()
+      expect(screen.getByText(/Voided \d{1,2} Jun\w* 2026: Duplicate entry/)).toBeInTheDocument()
     );
     expect(screen.getByRole('region', { name: 'Property highlights' })).not.toHaveTextContent(
       '$100.00'
@@ -114,9 +116,9 @@ describe('Finance Properties corrections', () => {
     render(<FinancePropertiesPanel month="2026-06" />);
     fireEvent.click(await screen.findByRole('tab', { name: 'Maintenance' }));
     fireEvent.click(screen.getByRole('button', { name: 'Update' }));
-    fireEvent.change(screen.getByRole('combobox', { name: 'New recorded status' }), {
-      target: { value: 'paid' },
-    });
+    const statusSelect = document.querySelector<HTMLSelectElement>('select[name="status"]');
+    if (!statusSelect) throw new Error('Status select not rendered');
+    fireEvent.change(statusSelect, { target: { value: 'paid' } });
     fireEvent.click(screen.getByRole('button', { name: 'Confirm correction' }));
     await waitFor(() => expect(screen.getByText('Status history')).toBeInTheDocument());
     expect(screen.getByText(/scheduled → paid/)).toBeInTheDocument();

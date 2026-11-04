@@ -1,5 +1,6 @@
 'use client';
 
+import { FinanceDeleteButton } from '@/components/finance/FinanceDeleteButton';
 import {
   type MaintenanceJob,
   type PropertyRegister,
@@ -97,6 +98,11 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
 
   const summary = propertySummary(register, month, today);
   const names = new Map(register.properties.map((property) => [property.id, property.name]));
+  async function afterDelete(message: string) {
+    setError(null);
+    await load().catch(() => setError('Deleted, but the register could not refresh'));
+    setNotice(message);
+  }
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!formKind || saving) return;
@@ -878,6 +884,15 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                       >
                         Edit details
                       </Button>
+                      <span className="ml-auto self-center">
+                        <FinanceDeleteButton
+                          endpoint={`/api/finance/properties?kind=property&id=${property.id}`}
+                          label="Delete property"
+                          title={`Delete ${property.name}?`}
+                          description="Removes the property with its term history and expected-rent overrides. Rent payments and maintenance jobs in any month must be deleted first."
+                          onDeleted={() => afterDelete('Property deleted')}
+                        />
+                      </span>
                     </div>
                   </article>
                 )
@@ -1035,6 +1050,14 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                               </ol>
                             </details>
                           )}
+                          <div className="mt-1">
+                            <FinanceDeleteButton
+                              endpoint={`/api/finance/properties?kind=maintenance&id=${job.id}`}
+                              title="Delete this maintenance job?"
+                              description={`${job.description} (${money(Number(job.cost_aud))}) and its status history will be removed.`}
+                              onDeleted={() => afterDelete('Maintenance job deleted')}
+                            />
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1102,6 +1125,14 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                                   Void mistaken entry
                                 </Button>
                               )}
+                              <span className="ml-3">
+                                <FinanceDeleteButton
+                                  endpoint={`/api/finance/properties?kind=rent&id=${payment.id}`}
+                                  title="Delete this rent payment?"
+                                  description={`${money(Number(payment.amount_aud))} received ${formatFinanceDate(payment.received_on)} will be removed completely. Use Void instead to keep an audit trail.`}
+                                  onDeleted={() => afterDelete('Rent payment deleted')}
+                                />
+                              </span>
                             </td>
                           </tr>
                         ))}

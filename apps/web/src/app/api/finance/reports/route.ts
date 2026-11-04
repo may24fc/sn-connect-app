@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import { buildMonthlyExpenseReport } from '@/lib/expenses/monthly-report';
 import { canReviewFinance, getFinanceContext } from '@/lib/finance/auth';
 import { buildFinanceReportPackSupplement } from '@/lib/finance/report-pack';
@@ -71,4 +72,36 @@ export async function POST(request: NextRequest) {
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 409 });
   return NextResponse.json({ data: { id: data, status: parsed.data.status } }, { status: 201 });
+}
+
+/** DELETE /api/finance/reports?snapshot=<uuid> removes a draft; final snapshots are retained. */
+export async function DELETE(request: NextRequest) {
+  const context = await getFinanceContext();
+  if (!context.ok) return NextResponse.json({ error: context.error }, { status: context.status });
+  if (!canReviewFinance(context.capabilities))
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const snapshotId = z.string().uuid().safeParse(request.nextUrl.searchParams.get('snapshot'));
+  if (!snapshotId.success)
+    return NextResponse.json({ error: 'Invalid snapshot ID' }, { status: 400 });
+  const db = context.admin as any;
+  const { data, error } = await db
+    .from('finance_report_snapshots')
+    .delete()
+    .eq('id', snapshotId.data)
+    .eq('status', 'draft')
+    .select('id,report_month');
+  if (error) return NextResponse.json({ error: 'Could not delete snapshot' }, { status: 500 });
+  if (!data?.length)
+    return NextResponse.json(
+      { error: 'Only draft snapshots can be deleted; final snapshots are retained' },
+      { status: 409 }
+    );
+  logActivity(context.admin, {
+    userId: context.user.id,
+    action: 'finance_report_snapshot_delete',
+    tableName: 'finance_report_snapshots',
+    recordId: snapshotId.data,
+    metadata: { reportMonth: data[0].report_month },
+  });
+  return NextResponse.json({ data: { id: snapshotId.data } });
 }

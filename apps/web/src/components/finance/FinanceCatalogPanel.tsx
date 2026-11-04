@@ -1,5 +1,6 @@
 'use client';
 
+import { FinanceDeleteButton } from '@/components/finance/FinanceDeleteButton';
 import { subscriptionChecks } from '@/lib/finance/subscription-checks';
 import { formatFinanceDate } from '@/lib/format';
 import { useCallback, useEffect, useState } from 'react';
@@ -202,6 +203,7 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
                   'Last charged',
                   'Next renewal',
                   'Check',
+                  'Actions',
                 ].map((label) => (
                   <th className="border-b p-3" key={label}>
                     {label}
@@ -274,6 +276,14 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
                         {check}
                       </p>
                     ))}
+                  </td>
+                  <td className="border-b p-3">
+                    <FinanceDeleteButton
+                      endpoint={`/api/finance/catalog/${item.id}`}
+                      title={`Delete ${item.vendor_name}?`}
+                      description="The subscription is removed from the register and monthly totals. Expenses already linked to it stay in the ledger."
+                      onDeleted={load}
+                    />
                   </td>
                 </tr>
               ))}

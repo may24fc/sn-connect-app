@@ -414,3 +414,71 @@ export async function POST(request: NextRequest) {
   });
   return NextResponse.json({ data }, { status: 201 });
 }
+
+const deleteSchema = z.object({
+  kind: z.enum(['property', 'rent', 'maintenance']),
+  id: z.string().uuid(),
+});
+const deleteTables = {
+  property: 'finance_properties',
+  rent: 'finance_property_rent_payments',
+  maintenance: 'finance_property_maintenance',
+} as const;
+
+const isForeignKeyViolation = (error: unknown) =>
+  typeof error === 'object' && error !== null && (error as { code?: string }).code === '23503';
+
+/** DELETE /api/finance/properties?kind=property|rent|maintenance&id=<uuid> */
+export async function DELETE(request: NextRequest) {
+  const context = await getFinanceContext();
+  if (!context.ok) return NextResponse.json({ error: context.error }, { status: context.status });
+  if (!canReviewFinance(context.capabilities))
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const parsed = deleteSchema.safeParse({
+    kind: request.nextUrl.searchParams.get('kind'),
+    id: request.nextUrl.searchParams.get('id'),
+  });
+  if (!parsed.success)
+    return NextResponse.json({ error: 'Invalid property record' }, { status: 400 });
+  const { kind, id } = parsed.data;
+  const db = propertyDb(context.admin);
+  if (kind === 'property') {
+    // Terms and expected-rent overrides cascade; recorded rent and maintenance must be removed first.
+    const [rent, maintenance] = await Promise.all([
+      db.from('finance_property_rent_payments').select('id', { count: 'exact' }).eq('property_id', id).limit(1),
+      db.from('finance_property_maintenance').select('id', { count: 'exact' }).eq('property_id', id).limit(1),
+    ]);
+    if (rent.error || maintenance.error)
+      return NextResponse.json({ error: 'Could not check property history' }, { status: 500 });
+    if ((rent.count ?? 0) > 0 || (maintenance.count ?? 0) > 0)
+      return NextResponse.json(
+        {
+          error: `This property still has ${rent.count ?? 0} rent payment(s) and ${maintenance.count ?? 0} maintenance job(s) across all months. Delete those first.`,
+        },
+        { status: 409 }
+      );
+  }
+  if (kind === 'maintenance') {
+    const events = await db
+      .from('finance_property_maintenance_status_events')
+      .delete()
+      .eq('maintenance_id', id);
+    if (events.error)
+      return NextResponse.json({ error: 'Could not delete maintenance job' }, { status: 500 });
+  }
+  const { data, error } = await db.from(deleteTables[kind] as 'finance_properties').delete().eq('id', id).select('id');
+  if (isForeignKeyViolation(error))
+    return NextResponse.json(
+      { error: 'This property still has rent or maintenance records. Delete those first.' },
+      { status: 409 }
+    );
+  if (error) return NextResponse.json({ error: 'Could not delete record' }, { status: 500 });
+  if (!data?.length) return NextResponse.json({ error: 'Record not found' }, { status: 404 });
+  logActivity(context.admin, {
+    userId: context.user.id,
+    action: `finance_${kind}_delete`,
+    tableName: deleteTables[kind],
+    recordId: id,
+  });
+  return NextResponse.json({ data: { id, kind } });
+}

@@ -1,4 +1,4 @@
-import { GET, POST } from '@/app/api/finance/properties/route';
+import { DELETE, GET, POST } from '@/app/api/finance/properties/route';
 import { getFinanceContext } from '@/lib/finance/auth';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -233,5 +233,50 @@ describe('Finance properties API', () => {
     expect(response.status).toBe(200);
     expect((await response.json()).data.statusEvents).toHaveLength(1);
     expect(from).toHaveBeenCalledWith('finance_property_maintenance_status_events');
+  });
+
+  describe('DELETE', () => {
+    const id = '123e4567-e89b-42d3-a456-426614174000';
+    const remove = (kind: string, recordId = id) =>
+      DELETE(
+        new NextRequest(`http://localhost/api/finance/properties?kind=${kind}&id=${recordId}`, {
+          method: 'DELETE',
+        })
+      );
+
+    it('requires Finance access and a valid record reference', async () => {
+      expect((await remove('rent', 'not-a-uuid')).status).toBe(400);
+      expect((await remove('terms')).status).toBe(400);
+      vi.mocked(getFinanceContext).mockResolvedValue({
+        ok: true,
+        user: { id: 'user' },
+        capabilities: { isLeadership: false, isAccounting: false },
+        admin: { from },
+      } as never);
+      expect((await remove('rent')).status).toBe(403);
+      expect(from).not.toHaveBeenCalled();
+    });
+
+    it('refuses to delete a property that still has rent or maintenance history', async () => {
+      tables.set('finance_property_rent_payments', { data: [{ id: 'rent' }], count: 2, error: null });
+      const response = await remove('property');
+      expect(response.status).toBe(409);
+      expect((await response.json()).error).toContain('2 rent payment(s)');
+      expect(from).not.toHaveBeenCalledWith('finance_properties');
+    });
+
+    it('deletes a property without history, a rent payment, and a maintenance job with its events', async () => {
+      tables.set('finance_properties', { data: [{ id }], count: 1, error: null });
+      expect((await remove('property')).status).toBe(200);
+      tables.set('finance_property_rent_payments', { data: [{ id }], count: 1, error: null });
+      expect((await remove('rent')).status).toBe(200);
+      tables.set('finance_property_maintenance', { data: [{ id }], count: 1, error: null });
+      expect((await remove('maintenance')).status).toBe(200);
+      expect(from).toHaveBeenCalledWith('finance_property_maintenance_status_events');
+    });
+
+    it('returns 404 when the record no longer exists', async () => {
+      expect((await remove('rent')).status).toBe(404);
+    });
   });
 });

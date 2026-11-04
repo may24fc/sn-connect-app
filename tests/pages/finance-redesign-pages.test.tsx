@@ -18,6 +18,9 @@ vi.mock('@/components/finance/FinanceExpenseExport', () => ({ FinanceExpenseExpo
 vi.mock('@/components/finance/FinanceExpenseCorrection', () => ({
   FinanceExpenseCorrection: () => null,
 }));
+vi.mock('@/components/finance/FinanceDeleteButton', () => ({
+  FinanceDeleteButton: ({ endpoint }: { endpoint: string }) => <span>Delete {endpoint}</span>,
+}));
 vi.mock('@/components/data-display/UrlPaginationBar', () => ({ UrlPaginationBar: () => null }));
 vi.mock('@/components/finance/FinanceExpenseFilters', () => ({
   FinanceExpenseFilters: ({
@@ -228,5 +231,6 @@ describe('Finance redesign pages', () => {
     expect(html).toContain('AUD conversion pending');
     expect(html).toContain('pending');
     expect(html).toContain('unmatched');
+    expect(html).toContain('/api/finance/expenses/e1');
   });
 });
