@@ -16,6 +16,10 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Input,
   Label,
   Skeleton,
@@ -23,6 +27,7 @@ import {
   ToggleGroup,
   useToast,
 } from '@hr-portal/ui';
+import { ChevronDown, Download, Send } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { type FivePercentReflectionRecord } from './fivePercentReflectionDetailConfig';
@@ -319,18 +324,61 @@ export function FivePercentReflectionForm() {
     };
   }, [addToast, monthKey, reset]);
 
-  const [isExporting, setIsExporting] = useState(false);
+  const [exportingTarget, setExportingTarget] = useState<'download' | 'telegram' | null>(null);
+  const isExporting = exportingTarget !== null;
 
-  const onExportPdf = async () => {
-    setIsExporting(true);
+  const readExportError = async (response: Response): Promise<string> => {
+    const payload: unknown = await response.json().catch(() => null);
+    if (payload && typeof payload === 'object' && 'error' in payload && typeof payload.error === 'string') {
+      return payload.error;
+    }
+    return 'Failed to export PDF';
+  };
+
+  const onDownloadPdf = async () => {
+    setExportingTarget('download');
+    try {
+      const response = await fetch(
+        `/api/performance/five-percent-reflections/export-pdf?monthKey=${monthKey}`,
+        { method: 'GET', credentials: 'include' }
+      );
+      if (!response.ok) {
+        throw new Error(await readExportError(response));
+      }
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = `5-percent-reflection-${monthKey}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+      addToast({
+        title: 'PDF downloaded',
+        description: 'Your 5% reflection PDF has been saved to your device.',
+        variant: 'success',
+      });
+    } catch (error) {
+      addToast({
+        title: 'Download failed',
+        description: error instanceof Error ? error.message : 'Please try again.',
+        variant: 'error',
+      });
+    } finally {
+      setExportingTarget(null);
+    }
+  };
+
+  const onSendPdfToTelegram = async () => {
+    setExportingTarget('telegram');
     try {
       const response = await fetch(
         `/api/performance/five-percent-reflections/export-pdf?monthKey=${monthKey}`,
         { method: 'POST', credentials: 'include' }
       );
-      const payload = await response.json();
       if (!response.ok) {
-        throw new Error(payload.error ?? 'Failed to export PDF');
+        throw new Error(await readExportError(response));
       }
       addToast({
         title: 'PDF sent to Telegram',
@@ -344,7 +392,7 @@ export function FivePercentReflectionForm() {
         variant: 'error',
       });
     } finally {
-      setIsExporting(false);
+      setExportingTarget(null);
     }
   };
 
@@ -600,14 +648,28 @@ Allow yourself to be vulnerable and share what genuinely came up for you. Everyt
 
         <div className="flex items-center justify-end gap-3">
           {submittedRecord ? (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onExportPdf}
-              disabled={isExporting || isSubmitting}
-            >
-              {isExporting ? 'Sending PDF…' : 'Export PDF'}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button type="button" variant="outline" disabled={isExporting || isSubmitting}>
+                  {exportingTarget === 'download'
+                    ? 'Preparing PDF…'
+                    : exportingTarget === 'telegram'
+                      ? 'Sending PDF…'
+                      : 'Export PDF'}
+                  <ChevronDown className="ml-2 h-4 w-4" aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={onDownloadPdf}>
+                  <Download className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Download to device
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={onSendPdfToTelegram}>
+                  <Send className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Send to Telegram
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : null}
           <Button type="submit" disabled={isSubmitting || isExporting}>
             {isSubmitting
