@@ -1,6 +1,6 @@
 'use client';
 
-import { FinanceDeleteButton } from '@/components/finance/FinanceDeleteButton';
+import { FinanceRowActions } from '@/components/finance/FinanceRowActions';
 import { subscriptionChecks } from '@/lib/finance/subscription-checks';
 import { formatFinanceDate } from '@/lib/format';
 import { useCallback, useEffect, useState } from 'react';
@@ -205,7 +205,7 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
                   'Check',
                   'Actions',
                 ].map((label) => (
-                  <th className="border-b p-3" key={label}>
+                  <th className={`border-b p-3${label === 'Actions' ? ' text-right' : ''}`} key={label}>
                     {label}
                   </th>
                 ))}
@@ -277,12 +277,17 @@ export function FinanceCatalogPanel({ month }: { month: string }) {
                       </p>
                     ))}
                   </td>
-                  <td className="border-b p-3">
-                    <FinanceDeleteButton
-                      endpoint={`/api/finance/catalog/${item.id}`}
-                      title={`Delete ${item.vendor_name}?`}
-                      description="The subscription is removed from the register and monthly totals. Expenses already linked to it stay in the ledger."
-                      onDeleted={load}
+                  <td className="border-b p-3 text-right">
+                    <FinanceRowActions
+                      label={`Actions for ${item.vendor_name}`}
+                      deleteAction={{
+                        label: 'Delete subscription',
+                        endpoint: `/api/finance/catalog/${item.id}`,
+                        title: `Delete ${item.vendor_name}?`,
+                        description:
+                          'The subscription is removed from the register and monthly totals. Expenses already linked to it stay in the ledger.',
+                        onDeleted: load,
+                      }}
                     />
                   </td>
                 </tr>

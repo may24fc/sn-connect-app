@@ -16,10 +16,8 @@ vi.mock('@/components/finance/FinanceReportControls', () => ({
 }));
 vi.mock('@/components/finance/FinanceExpenseExport', () => ({ FinanceExpenseExport: () => null }));
 vi.mock('@/components/finance/FinanceExpenseCorrection', () => ({
-  FinanceExpenseCorrection: () => null,
-}));
-vi.mock('@/components/finance/FinanceDeleteButton', () => ({
-  FinanceDeleteButton: ({ endpoint }: { endpoint: string }) => <span>Delete {endpoint}</span>,
+  FinanceExpenseCorrection: ({ deleteAction }: { deleteAction?: { endpoint: string } | null }) =>
+    deleteAction ? <span>Delete {deleteAction.endpoint}</span> : null,
 }));
 vi.mock('@/components/data-display/UrlPaginationBar', () => ({ UrlPaginationBar: () => null }));
 vi.mock('@/components/finance/FinanceExpenseFilters', () => ({

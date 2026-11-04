@@ -235,7 +235,11 @@ test('foreign-currency expenses show a labelled estimate that Finance can replac
     await expect(page.getByText(/estimated at daily rates/)).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath('fx-estimate-ledger.png') });
 
-    await row.getByRole('button', { name: 'Edit details' }).click();
+    const openRowMenu = async () => {
+      await row.getByRole('button', { name: /^Actions for / }).click();
+      await page.getByRole('menuitem', { name: 'Edit details' }).click();
+    };
+    await openRowMenu();
     const dialog = page.getByRole('dialog', { name: 'Edit expense details' });
     await expect(dialog.getByText(/Estimated .* at the daily rate/)).toBeVisible();
     await dialog.getByLabel('Actual AUD from card or bank statement').fill('45.12');
@@ -245,7 +249,7 @@ test('foreign-currency expenses show a labelled estimate that Finance can replac
     await expect(row).toContainText('$45.12');
     await page.screenshot({ path: testInfo.outputPath('fx-actual-ledger.png') });
 
-    await row.getByRole('button', { name: 'Edit details' }).click();
+    await openRowMenu();
     await dialog.getByLabel('Remove the actual amount and use the daily estimate').check();
     await dialog.getByRole('button', { name: 'Save details' }).click();
     await expect(dialog).toHaveCount(0, { timeout: 60_000 });

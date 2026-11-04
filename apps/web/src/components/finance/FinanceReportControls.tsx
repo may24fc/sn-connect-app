@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@hr-portal/ui';
-import { FinanceDeleteButton } from '@/components/finance/FinanceDeleteButton';
+import { Download, Eye } from 'lucide-react';
+import { FinanceRowActions } from '@/components/finance/FinanceRowActions';
 import { FinanceSnapshotDetail, type FinanceSnapshotRecord } from '@/components/finance/FinanceSnapshotDetail';
 import { formatFinanceDate, formatFinanceDateTime } from '@/lib/format';
 type Snapshot = { id: string; status: string; exception_count: number; created_at: string };
@@ -185,39 +186,44 @@ export function FinanceReportControls({ month }: { month: string }) {
         ) : data.snapshots.length ? (
           <ul className="mt-2 space-y-2">
             {data.snapshots.map((item) => (
-              <li key={item.id} className="rounded-lg border p-2">
-                {item.status === 'final' ? 'Final' : 'Draft'} ·{' '}
-                {formatFinanceDateTime(item.created_at)} · {item.exception_count} exceptions ·{' '}
-                <Button variant="link"
-                  type="button"
+              <li
+                key={item.id}
+                className="flex items-center justify-between gap-2 rounded-lg border py-2 pl-3 pr-2"
+              >
+                <span>
+                  {item.status === 'final' ? 'Final' : 'Draft'} ·{' '}
+                  {formatFinanceDateTime(item.created_at)} · {item.exception_count} exceptions
+                </span>
+                <FinanceRowActions
+                  label={`Actions for ${item.status} snapshot saved ${formatFinanceDateTime(item.created_at)}`}
                   disabled={busy}
-                  onClick={() => void viewSnapshot(item.id)}
-                >
-                  View saved snapshot
-                </Button>
-                {' · '}
-                <a
-                  className="font-medium text-[#16505f] underline"
-                  href={`/api/finance/reports/export?month=${month}&snapshot=${item.id}`}
-                >
-                  Download {item.status} snapshot CSV
-                </a>
-                {item.status === 'draft' ? (
-                  <>
-                    {' · '}
-                    <FinanceDeleteButton
-                      endpoint={`/api/finance/reports?snapshot=${item.id}`}
-                      label="Delete draft"
-                      title="Delete this draft snapshot?"
-                      description={`The draft saved ${formatFinanceDateTime(item.created_at)} will be removed. The live report and other snapshots are not affected.`}
-                      disabled={busy}
-                      onDeleted={async () => {
-                        if (selectedSnapshot?.id === item.id) setSelectedSnapshot(null);
-                        await load();
-                      }}
-                    />
-                  </>
-                ) : null}
+                  actions={[
+                    {
+                      label: 'View snapshot',
+                      icon: Eye,
+                      onSelect: () => void viewSnapshot(item.id),
+                    },
+                    {
+                      label: 'Download CSV',
+                      icon: Download,
+                      href: `/api/finance/reports/export?month=${month}&snapshot=${item.id}`,
+                    },
+                  ]}
+                  deleteAction={
+                    item.status === 'draft'
+                      ? {
+                          label: 'Delete draft',
+                          endpoint: `/api/finance/reports?snapshot=${item.id}`,
+                          title: 'Delete this draft snapshot?',
+                          description: `The draft saved ${formatFinanceDateTime(item.created_at)} will be removed. The live report and other snapshots are not affected.`,
+                          onDeleted: async () => {
+                            if (selectedSnapshot?.id === item.id) setSelectedSnapshot(null);
+                            await load();
+                          },
+                        }
+                      : null
+                  }
+                />
               </li>
             ))}
           </ul>

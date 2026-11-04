@@ -1,5 +1,6 @@
 'use client';
 
+import { type FinanceDeleteAction, FinanceRowActions } from '@/components/finance/FinanceRowActions';
 import { FINANCE_CATEGORIES } from '@/lib/finance/categories';
 import {
   Button,
@@ -17,6 +18,7 @@ import {
   SelectValue,
 } from '@hr-portal/ui';
 import { formatFinanceDate } from '@/lib/format';
+import { Pencil } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useId, useState } from 'react';
 
@@ -33,6 +35,8 @@ export function FinanceExpenseCorrection({
   totalAmountAud = null,
   audBasis = null,
   rateDate = null,
+  actionsLabel = 'Expense actions',
+  deleteAction = null,
 }: {
   id: string;
   categoryCode: string | null;
@@ -43,6 +47,9 @@ export function FinanceExpenseCorrection({
   totalAmountAud?: number | null;
   audBasis?: string | null;
   rateDate?: string | null;
+  actionsLabel?: string;
+  /** Present only when the expense may be deleted (unmatched). */
+  deleteAction?: FinanceDeleteAction | null;
 }) {
   const router = useRouter();
   const fieldId = useId();
@@ -127,9 +134,11 @@ export function FinanceExpenseCorrection({
 
   return (
     <>
-      <Button variant="link" size="sm" className="mt-1" type="button" onClick={openEditor}>
-        Edit details
-      </Button>
+      <FinanceRowActions
+        label={actionsLabel}
+        actions={[{ label: 'Edit details', icon: Pencil, onSelect: openEditor }]}
+        deleteAction={deleteAction}
+      />
       <Dialog open={open} onOpenChange={(next) => (busy ? undefined : setOpen(next))}>
         <DialogContent className="w-[calc(100vw-2rem)] max-w-md">
           <DialogHeader>

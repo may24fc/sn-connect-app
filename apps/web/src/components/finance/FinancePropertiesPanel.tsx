@@ -1,6 +1,6 @@
 'use client';
 
-import { FinanceDeleteButton } from '@/components/finance/FinanceDeleteButton';
+import { FinanceDeleteButton, FinanceRowActions } from '@/components/finance/FinanceRowActions';
 import {
   type MaintenanceJob,
   type PropertyRegister,
@@ -8,6 +8,7 @@ import {
   propertySummary,
 } from '@/lib/finance/properties';
 import { formatFinanceDate } from '@/lib/format';
+import { Ban, RefreshCw } from 'lucide-react';
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import {
   Button,
@@ -884,13 +885,16 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                       >
                         Edit details
                       </Button>
-                      <span className="ml-auto self-center">
+                      <span className="ml-auto">
                         <FinanceDeleteButton
-                          endpoint={`/api/finance/properties?kind=property&id=${property.id}`}
-                          label="Delete property"
-                          title={`Delete ${property.name}?`}
-                          description="Removes the property with its term history and expected-rent overrides. Rent payments and maintenance jobs in any month must be deleted first."
-                          onDeleted={() => afterDelete('Property deleted')}
+                          action={{
+                            label: 'Delete property',
+                            endpoint: `/api/finance/properties?kind=property&id=${property.id}`,
+                            title: `Delete ${property.name}?`,
+                            description:
+                              'Removes the property with its term history and expected-rent overrides. Rent payments and maintenance jobs in any month must be deleted first.',
+                            onDeleted: () => afterDelete('Property deleted'),
+                          }}
                         />
                       </span>
                     </div>
@@ -1000,8 +1004,12 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                         'Cost recorded',
                         'Invoice reference',
                         'Status',
+                        'Actions',
                       ].map((label) => (
-                        <th key={label} className="px-5 py-3">
+                        <th
+                          key={label}
+                          className={`px-5 py-3${label === 'Actions' ? ' text-right' : ''}`}
+                        >
                           {label}
                         </th>
                       ))}
@@ -1020,18 +1028,6 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                         <td className="px-5 py-3">{job.invoice_reference || 'Not recorded'}</td>
                         <td className="px-5 py-3">
                           <span className="capitalize">{job.status.replace('_', ' ')}</span>
-                          <Button variant="link" className="ml-2"
-                            type="button"
-                            onClick={() =>
-                              setCorrection({
-                                kind: 'maintenance_status',
-                                id: job.id,
-                                expectedStatus: job.status,
-                              })
-                            }
-                          >
-                            Update
-                          </Button>
                           {register.statusEvents.some(
                             (event) => event.maintenance_id === job.id
                           ) && (
@@ -1050,14 +1046,30 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                               </ol>
                             </details>
                           )}
-                          <div className="mt-1">
-                            <FinanceDeleteButton
-                              endpoint={`/api/finance/properties?kind=maintenance&id=${job.id}`}
-                              title="Delete this maintenance job?"
-                              description={`${job.description} (${money(Number(job.cost_aud))}) and its status history will be removed.`}
-                              onDeleted={() => afterDelete('Maintenance job deleted')}
-                            />
-                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          <FinanceRowActions
+                            label={`Actions for ${job.description}`}
+                            actions={[
+                              {
+                                label: 'Update status',
+                                icon: RefreshCw,
+                                onSelect: () =>
+                                  setCorrection({
+                                    kind: 'maintenance_status',
+                                    id: job.id,
+                                    expectedStatus: job.status,
+                                  }),
+                              },
+                            ]}
+                            deleteAction={{
+                              label: 'Delete job',
+                              endpoint: `/api/finance/properties?kind=maintenance&id=${job.id}`,
+                              title: 'Delete this maintenance job?',
+                              description: `${job.description} (${money(Number(job.cost_aud))}) and its status history will be removed.`,
+                              onDeleted: () => afterDelete('Maintenance job deleted'),
+                            }}
+                          />
                         </td>
                       </tr>
                     ))}
@@ -1073,7 +1085,7 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                           register.maintenance.reduce((sum, job) => sum + Number(job.cost_aud), 0)
                         )}
                       </td>
-                      <td colSpan={2} className="px-5 py-3 text-xs font-normal text-muted-foreground">
+                      <td colSpan={3} className="px-5 py-3 text-xs font-normal text-muted-foreground">
                         {register.maintenance.filter((job) => !job.invoice_reference).length} without
                         invoice reference
                       </td>
@@ -1094,9 +1106,12 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                     <table className="w-full min-w-[650px] text-left text-sm">
                       <thead className={`${tableHeaderClassName} ${tableHeadTextClassName}`}>
                         <tr>
-                          {['Property', 'Received on', 'Amount', 'Reference', 'Correction'].map(
+                          {['Property', 'Received on', 'Amount', 'Reference', 'Correction', 'Actions'].map(
                             (label) => (
-                              <th key={label} className="px-5 py-3">
+                              <th
+                                key={label}
+                                className={`px-5 py-3${label === 'Actions' ? ' text-right' : ''}`}
+                              >
                                 {label}
                               </th>
                             )
@@ -1113,26 +1128,33 @@ export function FinancePropertiesPanel({ month }: { month: string }) {
                             <td className="px-5 py-3">{money(Number(payment.amount_aud))}</td>
                             <td className="px-5 py-3">{payment.reference || '—'}</td>
                             <td className="px-5 py-3">
-                              {payment.voided_at ? (
-                                `Voided ${formatFinanceDate(payment.voided_at)}: ${payment.void_reason}`
-                              ) : (
-                                <Button variant="link"
-                                  type="button"
-                                  onClick={() =>
-                                    setCorrection({ kind: 'rent_void', id: payment.id })
-                                  }
-                                >
-                                  Void mistaken entry
-                                </Button>
-                              )}
-                              <span className="ml-3">
-                                <FinanceDeleteButton
-                                  endpoint={`/api/finance/properties?kind=rent&id=${payment.id}`}
-                                  title="Delete this rent payment?"
-                                  description={`${money(Number(payment.amount_aud))} received ${formatFinanceDate(payment.received_on)} will be removed completely. Use Void instead to keep an audit trail.`}
-                                  onDeleted={() => afterDelete('Rent payment deleted')}
-                                />
-                              </span>
+                              {payment.voided_at
+                                ? `Voided ${formatFinanceDate(payment.voided_at)}: ${payment.void_reason}`
+                                : '—'}
+                            </td>
+                            <td className="px-5 py-3 text-right">
+                              <FinanceRowActions
+                                label={`Actions for rent received ${formatFinanceDate(payment.received_on)}`}
+                                actions={
+                                  payment.voided_at
+                                    ? []
+                                    : [
+                                        {
+                                          label: 'Void mistaken entry',
+                                          icon: Ban,
+                                          onSelect: () =>
+                                            setCorrection({ kind: 'rent_void', id: payment.id }),
+                                        },
+                                      ]
+                                }
+                                deleteAction={{
+                                  label: 'Delete payment',
+                                  endpoint: `/api/finance/properties?kind=rent&id=${payment.id}`,
+                                  title: 'Delete this rent payment?',
+                                  description: `${money(Number(payment.amount_aud))} received ${formatFinanceDate(payment.received_on)} will be removed completely. Use Void instead to keep an audit trail.`,
+                                  onDeleted: () => afterDelete('Rent payment deleted'),
+                                }}
+                              />
                             </td>
                           </tr>
                         ))}

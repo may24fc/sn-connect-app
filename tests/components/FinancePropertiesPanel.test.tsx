@@ -55,6 +55,12 @@ const json = (data: unknown) =>
 describe('Finance Properties corrections', () => {
   afterEach(() => vi.unstubAllGlobals());
 
+  // Radix menus open from the keyboard in jsdom; pointer events are not fully emulated.
+  async function openRowMenu(name: RegExp) {
+    fireEvent.keyDown(await screen.findByRole('button', { name }), { key: 'Enter' });
+    await screen.findByRole('menu');
+  }
+
   it('updates totals only after the server confirms a payment void, retaining its audit reason', async () => {
     const corrected = {
       ...register,
@@ -67,11 +73,12 @@ describe('Finance Properties corrections', () => {
       .mockResolvedValueOnce(json(corrected));
     vi.stubGlobal('fetch', fetchMock);
     render(<FinancePropertiesPanel month="2026-06" />);
-    expect(await screen.findByText('Void mistaken entry')).toBeInTheDocument();
+    await screen.findByRole('button', { name: /Actions for rent received/ });
     expect(screen.getByRole('region', { name: 'Property highlights' })).toHaveTextContent(
       '$100.00'
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Void mistaken entry' }));
+    await openRowMenu(/Actions for rent received/);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Void mistaken entry' }));
     fireEvent.change(screen.getByRole('textbox', { name: /Reason for correction/ }), {
       target: { value: 'Duplicate entry' },
     });
@@ -115,7 +122,8 @@ describe('Finance Properties corrections', () => {
     vi.stubGlobal('fetch', fetchMock);
     render(<FinancePropertiesPanel month="2026-06" />);
     fireEvent.click(await screen.findByRole('tab', { name: 'Maintenance' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Update' }));
+    await openRowMenu(/Actions for /);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Update status' }));
     const statusSelect = document.querySelector<HTMLSelectElement>('select[name="status"]');
     if (!statusSelect) throw new Error('Status select not rendered');
     fireEvent.change(statusSelect, { target: { value: 'paid' } });
