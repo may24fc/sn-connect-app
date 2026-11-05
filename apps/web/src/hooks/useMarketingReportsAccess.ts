@@ -16,8 +16,10 @@ type MarketingReportsAccessReason =
   | 'non-marketing'
   | null;
 
-function isMarketingDepartment(department: string | null | undefined): boolean {
-  return typeof department === 'string' && department.trim().toLowerCase().includes('marketing');
+export function isSfoReportsDepartment(department: string | null | undefined): boolean {
+  if (typeof department !== 'string') return false;
+  const normalizedDepartment = department.trim().toLowerCase();
+  return normalizedDepartment.includes('marketing') || normalizedDepartment.includes('accounting');
 }
 
 export function useMarketingReportsAccess(): {
@@ -96,7 +98,7 @@ export function useMarketingReportsAccess(): {
     };
   }
 
-  const canAccess = isMarketingDepartment(employeeDepartment);
+  const canAccess = isSfoReportsDepartment(employeeDepartment);
 
   return {
     user,

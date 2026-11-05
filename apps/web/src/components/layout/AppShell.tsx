@@ -297,6 +297,7 @@ function AppShellInner({
           showPaTaskAccess={Boolean(paTaskAccess.data?.canAccess)}
           showCrmAccess={Boolean(crmAccess.data?.canAccess)}
           showMarketingAdSpendAccess={Boolean(marketingAdSpendAccess.data?.canAccess)}
+          showSfoPerformanceAccess={expensesAccess.capabilities.isAccounting}
           showRevenueForecastAccess={Boolean(revenueForecastAccess.data?.canAccess)}
           showExpenseDeskAccess={expensesAccess.capabilities.canViewDeskGlobal}
           showFinancePropertiesAccess={expensesAccess.capabilities.isAccounting}
@@ -319,6 +320,7 @@ function AppShellInner({
             showPaTaskAccess={Boolean(paTaskAccess.data?.canAccess)}
             showCrmAccess={Boolean(crmAccess.data?.canAccess)}
             showMarketingAdSpendAccess={Boolean(marketingAdSpendAccess.data?.canAccess)}
+            showSfoPerformanceAccess={expensesAccess.capabilities.isAccounting}
             showRevenueForecastAccess={Boolean(revenueForecastAccess.data?.canAccess)}
             showExpenseDeskAccess={expensesAccess.capabilities.canViewDeskGlobal}
             showFinancePropertiesAccess={expensesAccess.capabilities.isAccounting}

@@ -29,6 +29,7 @@ describe('Sidebar workspaces', () => {
         onNavigate={vi.fn()}
         showMarketingReports
         showMarketingAdSpendAccess
+        showSfoPerformanceAccess
         showCrmAccess
         showRevenueForecastAccess
       />
@@ -37,6 +38,7 @@ describe('Sidebar workspaces', () => {
     expect(screen.getByLabelText('Current workspace: Seafood Factory Outlet')).not.toBeNull();
     expect(screen.getByText('Marketing Reports')).not.toBeNull();
     expect(screen.getByText('Ad Spend')).not.toBeNull();
+    expect(screen.getByText('SFO Performance')).not.toBeNull();
     expect(screen.getByText('CRM Tracker')).not.toBeNull();
     expect(screen.getByText('Revenue Forecast')).not.toBeNull();
     expect(screen.queryByText('Work Tracker')).toBeNull();

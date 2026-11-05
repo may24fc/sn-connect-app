@@ -67,7 +67,7 @@ for (const account of accounts) {
       '/property/properties',
       '/finance/staff-payments',
       '/finance/reports?month=2026-10&view=quarter',
-      ...(account.name === 'accounting' ? [] : ['/sfo/performance']),
+      '/sfo/performance',
     ];
     for (const route of routes) {
       await page.goto(route, { waitUntil: 'domcontentloaded', timeout: 60_000 });

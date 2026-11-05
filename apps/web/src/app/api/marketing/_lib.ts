@@ -1,5 +1,6 @@
 import { normalizeDbRoleClaim } from '@/lib/auth/role';
 import { logActivity } from '@/lib/audit';
+import { resolveAccountingSfoAccess } from '@/lib/sfo-access';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const MARKETING_ADMIN_ROLES = ['admin', 'super_admin'];
@@ -48,8 +49,11 @@ export async function getMarketingAuthedContext(): Promise<MarketingAuthedContex
       return { ok: false, status: 401, error: 'Unauthorized' };
     }
 
+    const supabaseAdmin = createSupabaseAdminClient();
     const workspaceAccessLevel =
-      role === 'workspace_user' ? await resolveSfoWorkspaceGrant(supabase, user.id) : null;
+      role === 'workspace_user'
+        ? await resolveSfoWorkspaceGrant(supabase, user.id)
+        : await resolveAccountingSfoAccess(supabaseAdmin, user.id);
     const hasAccessGrant =
       Boolean(workspaceAccessLevel) || (await resolveMarketingGrant(supabase, user.id));
 
@@ -60,7 +64,7 @@ export async function getMarketingAuthedContext(): Promise<MarketingAuthedContex
       hasAccessGrant,
       workspaceAccessLevel,
       supabase,
-      supabaseAdmin: createSupabaseAdminClient(),
+      supabaseAdmin,
     };
   } catch (error) {
     console.error('Failed to resolve marketing auth context:', error);
@@ -89,6 +93,13 @@ export function hasMarketingAccess(role: string | null, hasAccessGrant: boolean)
 
 export function isMarketingAdmin(role: string | null): boolean {
   return MARKETING_ADMIN_ROLES.includes(role ?? '');
+}
+
+export function canWriteMarketingWorkspace(
+  role: string | null,
+  workspaceAccessLevel: 'read' | 'write' | null
+): boolean {
+  return isMarketingAdmin(role) || workspaceAccessLevel === 'write';
 }
 
 export async function resolveMarketingGrant(

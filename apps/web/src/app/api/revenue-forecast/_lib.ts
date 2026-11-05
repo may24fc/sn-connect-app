@@ -1,4 +1,5 @@
 import { normalizeDbRoleClaim } from '@/lib/auth/role';
+import { resolveAccountingSfoAccess } from '@/lib/sfo-access';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { resolveUserDisplayName } from '@/lib/user-display';
 
@@ -107,7 +108,9 @@ export async function getRevenueForecastAuthedContext(): Promise<
       return { ok: false, status: 401, error: 'Unauthorized' };
     }
     const workspaceAccessLevel =
-      role === 'workspace_user' ? await resolveSfoWorkspaceGrant(supabase, user.id) : null;
+      role === 'workspace_user'
+        ? await resolveSfoWorkspaceGrant(supabase, user.id)
+        : await resolveAccountingSfoAccess(supabaseAdmin, user.id);
     const hasGrant = workspaceAccessLevel
       ? true
       : isRevenueForecastAdmin(role)

@@ -1,5 +1,6 @@
-import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { normalizeDbRoleClaim } from '@/lib/auth/role';
+import { resolveAccountingSfoAccess } from '@/lib/sfo-access';
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const CRM_TRACKER_VALUES = ['meta_leads', 'google_ads_leads', 'sn_tech_inquiries'] as const;
 export type CrmTrackerKey = (typeof CRM_TRACKER_VALUES)[number];
@@ -218,7 +219,9 @@ export async function getCrmAuthedContext(): Promise<
       return { ok: false, status: 401, error: 'Unauthorized' };
     }
     const workspaceAccessLevel =
-      role === 'workspace_user' ? await resolveSfoWorkspaceAccess(supabase, user.id) : null;
+      role === 'workspace_user'
+        ? await resolveSfoWorkspaceAccess(supabase, user.id)
+        : await resolveAccountingSfoAccess(supabaseAdmin, user.id);
     const grantedTrackers = canAccessCrm(role)
       ? []
       : workspaceAccessLevel

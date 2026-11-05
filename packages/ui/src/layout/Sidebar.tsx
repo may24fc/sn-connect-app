@@ -85,6 +85,7 @@ export interface SidebarProps {
   showPaTaskAccess?: boolean;
   showCrmAccess?: boolean;
   showMarketingAdSpendAccess?: boolean;
+  showSfoPerformanceAccess?: boolean;
   showRevenueForecastAccess?: boolean;
   showExpenseDeskAccess?: boolean;
   showFinancePropertiesAccess?: boolean;
@@ -551,6 +552,7 @@ export function Sidebar({
   showPaTaskAccess = false,
   showCrmAccess = false,
   showMarketingAdSpendAccess = false,
+  showSfoPerformanceAccess = false,
   showRevenueForecastAccess = false,
   showExpenseDeskAccess = true,
   showFinancePropertiesAccess = false,
@@ -611,6 +613,13 @@ export function Sidebar({
     isSelfServiceRole(variant) && showAtsAccess
       ? [...filteredNavItems, ...employeeAtsNavItems]
       : filteredNavItems;
+
+  if (isSelfServiceRole(variant) && showSfoPerformanceAccess) {
+    navItems = [
+      ...navItems,
+      { label: 'SFO Performance', href: '/sfo/performance', icon: TrendingUp },
+    ];
+  }
 
   if (
     isSelfServiceRole(variant) ? showPaTaskAccess : variant === 'admin' || variant === 'super_admin'

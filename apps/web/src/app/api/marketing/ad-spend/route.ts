@@ -4,6 +4,7 @@ import { logActivity } from '@/lib/audit';
 import {
   ensureDefaultCampaignForPlatform,
   ensureDefaultMarketingPlatforms,
+  canWriteMarketingWorkspace,
   formatMarketingCurrency,
   getMarketingAuthedContext,
   hasMarketingAccess,
@@ -128,10 +129,10 @@ export async function GET(request: NextRequest) {
     }
     const admin = auth.supabaseAdmin;
     const platforms = await ensureDefaultMarketingPlatforms(admin, auth.user.id);
-    const isAdmin = ['admin', 'super_admin'].includes(auth.role ?? '');
+    const canWriteWorkspace = canWriteMarketingWorkspace(auth.role, auth.workspaceAccessLevel);
 
     let allowedPlatformIds: string[] = platforms.map((platform) => platform.id);
-    if (!isAdmin) {
+    if (!canWriteWorkspace) {
       const { data: grantRows, error: grantError } = await admin
         .from('marketing_access_grants')
         .select('platform_id')
@@ -279,7 +280,7 @@ export async function POST(request: NextRequest) {
     }
 
     const payload = parsed.data;
-    const isAdmin = ['admin', 'super_admin'].includes(auth.role ?? '');
+    const canWriteWorkspace = canWriteMarketingWorkspace(auth.role, auth.workspaceAccessLevel);
 
     const admin = auth.supabaseAdmin;
     const platforms = await ensureDefaultMarketingPlatforms(admin, auth.user.id);
@@ -289,7 +290,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Platform not found' }, { status: 404 });
     }
 
-    if (!isAdmin) {
+    if (!canWriteWorkspace) {
       const { data: grantRow, error: grantError } = await admin
         .from('marketing_access_grants')
         .select('id')
