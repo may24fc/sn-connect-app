@@ -9723,7 +9723,7 @@ export type Database = {
           created_at: string
           source_message_id: number
           ticket_id: string
-          topic_id: number
+          topic_id: number | null
         }
         Insert: {
           chat_id: number
@@ -9731,7 +9731,7 @@ export type Database = {
           created_at?: string
           source_message_id: number
           ticket_id: string
-          topic_id: number
+          topic_id?: number | null
         }
         Update: {
           chat_id?: number
@@ -9739,7 +9739,7 @@ export type Database = {
           created_at?: string
           source_message_id?: number
           ticket_id?: string
-          topic_id?: number
+          topic_id?: number | null
         }
         Relationships: [
           {

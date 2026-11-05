@@ -42,6 +42,12 @@ The v1 design prioritizes delivery reliability, privacy, and auditable decisions
 - Solution: an owner-only, server-confirmed mutation runs a single database transaction that deletes the normalized link, disables Telegram delivery, clears legacy chat fields and pending tokens, and records a privacy-safe audit event. Admins cannot disconnect another user's identity through this endpoint.
 - Validation: migration `20261102000001` applied to local Supabase; a rollback-only database transaction confirmed link removal, delivery disablement, pending-token clearing, unrelated preference preservation, and audit creation. Route tests passed 4/4; desktop and mobile Playwright flows passed 2/2 and screenshots were inspected. Schema lint reported only the pre-existing `get_knowledge_source_versions` error.
 
+### Implemented - Default General topic persistence
+
+- Problem/evidence: Telegram omits `message_thread_id` for the forum's default General topic, while `ticket_telegram_origins.topic_id` required a value. The live webhook classified General & Ideas correctly but the database transaction failed at origin insertion.
+- Solution: allow `ticket_telegram_origins.topic_id` to be null, using null only for the default General topic while retaining numeric IDs for separately created topics. Duplicate protection continues to use the forum chat ID and source message ID.
+- Validation: migration `20261105000001` applied locally; a rollback-only call to `create_ticket_from_telegram` created a feature-request ticket, stored a null topic ID, and queued a pending Created event before rollback.
+
 ## Visual Guide
 
 ```mermaid
@@ -57,6 +63,8 @@ flowchart LR
 ```
 
 ## Change Log
+
+- 2026-11-05: Corrected default General topic persistence after live smoke testing exposed the obsolete non-null topic constraint. No latency improvement is claimed.
 
 - 2026-11-02: Added and locally database-validated the atomic, owner-only Telegram disconnect flow to remove account-transfer friction without weakening one-to-one identity uniqueness. No latency improvement is claimed.
 

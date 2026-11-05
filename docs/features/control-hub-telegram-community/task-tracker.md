@@ -2,7 +2,7 @@
 
 ## Current Status
 
-The dedicated community-bot application, webhook, and self-service Telegram disconnect flow are live. A Telegram identity can now be released from its current Control Hub account and linked to another without weakening the one-to-one mapping. Super-admin linking, forum routing IDs, smoke testing, and the pilot remain.
+The dedicated community-bot application, webhook, and self-service Telegram disconnect flow are live. Live smoke testing exposed a General & Ideas database constraint mismatch: Telegram omits the default topic ID, but the origin table required one. The nullable-topic migration is implemented and validated locally; production deployment remains pending. Forum smoke testing and the pilot remain.
 
 See also [Optimization Record](optimization.md).
 
@@ -28,6 +28,7 @@ See also [Optimization Record](optimization.md).
 - [x] Support the renamed default General forum topic - 2026-11-02; the community webhook now treats Telegram's absent `message_thread_id` as General & Ideas only when `TELEGRAM_GENERAL_IDEAS_TOPIC_ID` is unset and sends the required database topic parameter explicitly as `null`; deployment and environment documentation updated; focused Telegram tests passed 5/5 and portal typecheck passed.
 
 ### In Progress
+- [ ] Deploy the default-General origin migration - migration `20261105000001` drops the obsolete `ticket_telegram_origins.topic_id` NOT NULL constraint. Local rollback-only execution of `create_ticket_from_telegram` passed and confirmed the ticket, null origin topic, and pending Created outbox event. Production is unchanged pending explicit deployment approval.
 - [ ] Complete live Telegram Forum routing - link the super-admin through the existing bot, capture the shared forum chat ID and four topic IDs, configure routing, and run smoke tests.
 
 ### Deferred
@@ -41,6 +42,7 @@ See also [Optimization Record](optimization.md).
 None.
 
 ## Session History
+- 2026-11-05: Live `/ticket` in General & Ideas reached the webhook but returned a creation failure. Root cause was the `ticket_telegram_origins.topic_id NOT NULL` constraint, which contradicted Telegram's omission of `message_thread_id` for the renamed default General topic. Added migration `20261105000001`, applied it locally, regenerated the nullable database type, and passed a rollback-only end-to-end database transaction. Production was not changed.
 - 2026-11-02: Confirmed `/topicid` returns `none` only for General & Ideas because it is the renamed default General topic. Updated routing to accept the absent thread ID as `feature_request` traffic while keeping numeric matching for separately created topics. The General topic environment variable must be deleted rather than assigned `none`.
 - 2026-11-02: Deployed self-service Telegram disconnect in commit `024d42f8`. The first migration workflow attempt stopped before production access because GitHub rate-limited Supabase CLI release resolution; a safe rerun succeeded. Both Vercel projects completed successfully, and the live owner-only DELETE route returned the expected unauthenticated HTTP 401. The employee account can now disconnect in Settings before the same Telegram identity is linked to the super-admin account.
 - 2026-11-02: Docker became available and migration `20261102000001` was applied locally. A rollback-only transaction verified that disconnecting disables Telegram, removes the normalized identity link, clears pending link data, preserves the Gmail preference, and creates an audit event. Production rollout was explicitly approved and is in progress.
