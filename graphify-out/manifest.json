@@ -486,9 +486,9 @@
     "semantic_hash": "21cc2670d72c2c5aff5e5a56040e55c8"
   },
   "apps/web/src/app/api/crm/_lib.ts": {
-    "mtime": 1793239505.0153086,
-    "seen": 1793240352.331726,
-    "ast_hash": "8cc927325b44ad07fd962bf386581582",
+    "mtime": 1793857568.9144614,
+    "seen": 1793858041.8030877,
+    "ast_hash": "d2c4eb40558c5519e1f40a05dd51d6a9",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/crm/access-grants/route.ts": {
@@ -858,9 +858,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/marketing/_lib.ts": {
-    "mtime": 1793239581.7579095,
-    "seen": 1793240352.3318155,
-    "ast_hash": "5d968d805a4824c3a6b6808390279f47",
+    "mtime": 1793858119.0490274,
+    "seen": 1793858428.7151968,
+    "ast_hash": "b593634ce7c2bd87a18bcf9ddc02c60e",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/marketing/access-grants/route.ts": {
@@ -882,9 +882,9 @@
     "semantic_hash": "5052755a8a91a5900c2f6a815379551e"
   },
   "apps/web/src/app/api/marketing/ad-spend/route.ts": {
-    "mtime": 1791342056.7735279,
-    "seen": 1791343180.2620926,
-    "ast_hash": "9a6e9d73fe56896e0110e6c0c944701f",
+    "mtime": 1793858291.3769479,
+    "seen": 1793858428.7152028,
+    "ast_hash": "2e773b2caf66b6390a0f40940370fe5c",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/milestones/route.ts": {
@@ -1518,9 +1518,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/revenue-forecast/_lib.ts": {
-    "mtime": 1793239520.3117254,
-    "seen": 1793240352.3319364,
-    "ast_hash": "38598f12da1e72bacdffaad9321b0328",
+    "mtime": 1793857568.9131258,
+    "seen": 1793858041.8032868,
+    "ast_hash": "a5d84b6ad7be3b3363d237cbd156385c",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/revenue-forecast/access-grants/route.ts": {
@@ -2658,10 +2658,10 @@
     "semantic_hash": "3569755966b86db22b89cae7915e7d03"
   },
   "apps/web/src/hooks/useMarketingReportsAccess.ts": {
-    "mtime": 1788257422.5073383,
-    "seen": 1789664611.8288772,
-    "ast_hash": "34fd23fc0b597485c1461a3ec9bbe2bd",
-    "semantic_hash": "34fd23fc0b597485c1461a3ec9bbe2bd"
+    "mtime": 1793857593.2614048,
+    "seen": 1793858041.8035686,
+    "ast_hash": "c1e9018944a13149206c4800e5eb8174",
+    "semantic_hash": ""
   },
   "apps/web/src/hooks/useMilestones.ts": {
     "mtime": 1788257422.5083394,
@@ -3174,8 +3174,8 @@
     "semantic_hash": "7a0dc3198c754c2a24e5a4a5466f950f"
   },
   "apps/web/src/lib/generated/application-update-summary.generated.ts": {
-    "mtime": 1793790877.8579984,
-    "seen": 1793791251.937046,
+    "mtime": 1793858194.4936588,
+    "seen": 1793858428.7156808,
     "ast_hash": "7322821048c7b2c5f9f9ddca7c61261a",
     "semantic_hash": "7322821048c7b2c5f9f9ddca7c61261a"
   },
@@ -5706,9 +5706,9 @@
     "semantic_hash": ""
   },
   "packages/ui/src/layout/Sidebar.tsx": {
-    "mtime": 1793239623.6864667,
-    "seen": 1793240352.3328383,
-    "ast_hash": "d8104ab9abd4d12bd19691fe7ff1a489",
+    "mtime": 1793857593.262825,
+    "seen": 1793858041.8041513,
+    "ast_hash": "6f3ca8b3c6770f06adf78c631e14b6cf",
     "semantic_hash": ""
   },
   "packages/ui/src/primitives/avatar.tsx": {
@@ -9774,9 +9774,9 @@
     "semantic_hash": ""
   },
   "packages/ui/src/layout/Sidebar.test.tsx": {
-    "mtime": 1792064576.4320095,
-    "seen": 1792065710.9622838,
-    "ast_hash": "a29367643758334bfd03a11fe4a85832",
+    "mtime": 1793857593.265296,
+    "seen": 1793858041.8041506,
+    "ast_hash": "c21ef29c76a0dc8f858ed939aac71bd8",
     "semantic_hash": ""
   },
   "apps/web/src/app/fonts.ts": {
@@ -11502,9 +11502,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/layout/AppShell.tsx": {
-    "mtime": 1793760404.5021772,
-    "seen": 1793786203.6816814,
-    "ast_hash": "30d1b37bf7b3f900d9b0e48779238fc5",
+    "mtime": 1793857593.2642899,
+    "seen": 1793858041.803452,
+    "ast_hash": "92882d0e9d22068a94709bc6e5b7d72c",
     "semantic_hash": ""
   },
   "packages/ui/src/primitives/app-link.tsx": {
@@ -12216,15 +12216,15 @@
     "semantic_hash": ""
   },
   "docs/features/finance-redesign/task-tracker.md": {
-    "mtime": 1793789843.3343513,
-    "seen": 1793790188.5233076,
-    "ast_hash": "654d72e94dbe455cfff44336bb169e68",
+    "mtime": 1793794382.8116384,
+    "seen": 1793858041.805184,
+    "ast_hash": "9867523d955281693be2d24be4a55cab",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/finance/expenses/page.tsx": {
-    "mtime": 1793788939.9167068,
-    "seen": 1793790188.5210419,
-    "ast_hash": "d5db7e986261b6b7b3b6cceceef35210",
+    "mtime": 1793793008.5466998,
+    "seen": 1793858041.8029907,
+    "ast_hash": "eff82e028de53085b603c87e95e4a744",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/finance/reports/page.tsx": {
@@ -12294,15 +12294,15 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/finance/FinanceCatalogPanel.tsx": {
-    "mtime": 1793788949.8582973,
-    "seen": 1793790188.5215657,
-    "ast_hash": "2288ed8afb6e4b5b527052b72fec33f9",
+    "mtime": 1793793028.5996783,
+    "seen": 1793858041.8034348,
+    "ast_hash": "a36c7fa73a212bf5c41aa52227484e42",
     "semantic_hash": ""
   },
   "apps/web/src/components/finance/FinanceReportControls.tsx": {
-    "mtime": 1793788991.554037,
-    "seen": 1793790188.521578,
-    "ast_hash": "9835afe85501d3c05e23d9a422aef643",
+    "mtime": 1793793158.7097092,
+    "seen": 1793858041.8034437,
+    "ast_hash": "6a7e12346795db1ac6d6f9e90960c8ca",
     "semantic_hash": ""
   },
   "apps/web/src/components/finance/FinanceWiseBatches.tsx": {
@@ -12450,9 +12450,9 @@
     "semantic_hash": ""
   },
   "tests/pages/finance-redesign-pages.test.tsx": {
-    "mtime": 1793789097.4642222,
-    "seen": 1793790188.5230906,
-    "ast_hash": "11415cf15ae81927ab9ad70a7abbc11d",
+    "mtime": 1793793175.0767617,
+    "seen": 1793858041.8047945,
+    "ast_hash": "ca297983f3339da823ae59688548db20",
     "semantic_hash": ""
   },
   "apps/web/src/app/(app)/finance/properties/page.tsx": {
@@ -12468,9 +12468,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/finance/FinancePropertiesPanel.tsx": {
-    "mtime": 1793788978.1868904,
-    "seen": 1793790188.521577,
-    "ast_hash": "c2278af67ed842a753924746c9d17d53",
+    "mtime": 1793793112.9623628,
+    "seen": 1793858041.803443,
+    "ast_hash": "185c32e2e322db72bf7df884e987c4bc",
     "semantic_hash": ""
   },
   "apps/web/src/lib/finance/properties.ts": {
@@ -12564,9 +12564,9 @@
     "semantic_hash": ""
   },
   "tests/components/FinancePropertiesPanel.test.tsx": {
-    "mtime": 1793789319.9358196,
-    "seen": 1793790188.523007,
-    "ast_hash": "f30c688ac4b214ddd20e7c7361f3b617",
+    "mtime": 1793793331.8295283,
+    "seen": 1793858041.8046968,
+    "ast_hash": "dde36f977a21677e2d10843fef83bc37",
     "semantic_hash": ""
   },
   "tests/components/finance-properties-navigation.test.tsx": {
@@ -12636,9 +12636,9 @@
     "semantic_hash": ""
   },
   "docs/features/sfo-performance/task-tracker.md": {
-    "mtime": 1792067456.649682,
-    "seen": 1792114392.0556145,
-    "ast_hash": "e8b34755ef4b11b8bb0cc63a1ae16240",
+    "mtime": 1793858347.8102047,
+    "seen": 1793858428.717179,
+    "ast_hash": "83372bde3a535f218a220289e8a4e66a",
     "semantic_hash": ""
   },
   "apps/web/src/components/data-display/MetricsPeriodSelect.tsx": {
@@ -12798,9 +12798,9 @@
     "semantic_hash": ""
   },
   "e2e/finance-redesign.spec.ts": {
-    "mtime": 1793785383.2471845,
-    "seen": 1793786203.6821928,
-    "ast_hash": "c26e94f9c37ce99218dee0dc0b212625",
+    "mtime": 1793857821.863862,
+    "seen": 1793858041.8039327,
+    "ast_hash": "7be7b6ffddffe31fc4c11d67b6e1e763",
     "semantic_hash": ""
   },
   "tests/lib/dry-audit-regressions.test.ts": {
@@ -13248,9 +13248,9 @@
     "semantic_hash": ""
   },
   "e2e/sfo-workspace-navigation.spec.ts": {
-    "mtime": 1792067375.9458642,
-    "seen": 1792114392.0546792,
-    "ast_hash": "f5a92be1a165624dad6103830c4994df",
+    "mtime": 1793858155.5591466,
+    "seen": 1793858428.7159941,
+    "ast_hash": "16d7b4a58990b003c7bc072e0c5093b1",
     "semantic_hash": ""
   },
   "scripts/accounts/report-account-classification.mjs": {
@@ -13896,9 +13896,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/finance/FinanceExpenseCorrection.tsx": {
-    "mtime": 1793784867.4162142,
-    "seen": 1793786203.6816669,
-    "ast_hash": "c52d7999ea039ddc767c76fdf1c409a7",
+    "mtime": 1793792985.788808,
+    "seen": 1793858041.8034377,
+    "ast_hash": "a7732cc6c272446008c94c95a3ff93e2",
     "semantic_hash": ""
   },
   "apps/web/src/components/finance/FinanceUnifiedReviewQueue.tsx": {
@@ -14339,12 +14339,6 @@
     "ast_hash": "aa1fa67c4701564dfadfe88383cec2e8",
     "semantic_hash": ""
   },
-  "apps/web/src/components/finance/FinanceDeleteButton.tsx": {
-    "mtime": 1793789199.1202233,
-    "seen": 1793790188.5215669,
-    "ast_hash": "298b8d584b7f4aeb25ec67f9f699cbc0",
-    "semantic_hash": ""
-  },
   "apps/web/src/lib/projects/member-invitations.ts": {
     "mtime": 1793788589.4627614,
     "seen": 1793790188.5219119,
@@ -14415,6 +14409,30 @@
     "mtime": 1793791179.6532001,
     "seen": 1793791251.9387777,
     "ast_hash": "c6be4fed0a9452cdad2f96ff6e85e066",
+    "semantic_hash": ""
+  },
+  "apps/web/src/components/finance/FinanceRowActions.tsx": {
+    "mtime": 1793793331.8900993,
+    "seen": 1793858041.8034456,
+    "ast_hash": "7c36512a52f97b4cc9b6dd4520d6c0d2",
+    "semantic_hash": ""
+  },
+  "apps/web/src/lib/sfo-access.ts": {
+    "mtime": 1793857568.9106514,
+    "seen": 1793858041.8037555,
+    "ast_hash": "9917a8a552187bfbd1e47a98340ab1e9",
+    "semantic_hash": ""
+  },
+  "tests/hooks/useMarketingReportsAccess.test.ts": {
+    "mtime": 1793857593.2678385,
+    "seen": 1793858041.8047237,
+    "ast_hash": "74f5e7e4f7a8db104e38a18f615a6d25",
+    "semantic_hash": ""
+  },
+  "tests/lib/sfo-access.test.ts": {
+    "mtime": 1793858119.05222,
+    "seen": 1793858428.7168262,
+    "ast_hash": "a0fdf8d17946136bac5f8da15a5b4003",
     "semantic_hash": ""
   }
 }
