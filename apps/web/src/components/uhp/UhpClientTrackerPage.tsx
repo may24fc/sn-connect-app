@@ -2,7 +2,12 @@
 
 import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
 import { DateRangeFilter, type DateRangeValue } from '@/components/data-display/DateRangeFilter';
-import { FilterSearchInput } from '@/components/data-display/FilterControls';
+import {
+  ClearFiltersButton,
+  FILTER_ALL_VALUE,
+  FilterSearchInput,
+  FilterSelect,
+} from '@/components/data-display/FilterControls';
 import { MetricsPeriodSelect } from '@/components/data-display/MetricsPeriodSelect';
 import { TrackerPagination } from '@/components/data-display/TrackerPagination';
 import { usePeriodRequestGuard } from '@/hooks/usePeriodRequestGuard';
@@ -134,6 +139,11 @@ const PERIOD_OPTIONS = [
 
 const CLIENTS_PER_PAGE = 10;
 const TABLE_COLUMNS = 13;
+const OUTREACH_RESULT_OPTIONS = [
+  { value: 'replied', label: 'Replied' },
+  { value: 'declined', label: 'Declined' },
+  { value: 'we-form', label: 'Filled WE Form' },
+];
 
 function defaultCustomMetricsRange(now = new Date()): CustomMetricsRange {
   return {
@@ -207,6 +217,7 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
   const { begin: beginMetricsRequest, isCurrent: isCurrentMetricsRequest } =
     usePeriodRequestGuard(metricsSelectionKey);
   const [search, setSearch] = useState('');
+  const [outreachResultFilter, setOutreachResultFilter] = useState(FILTER_ALL_VALUE);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [metricsLoading, setMetricsLoading] = useState(true);
@@ -225,7 +236,12 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
   const loadClients = useCallback(async () => {
     setLoading(true);
     try {
-      const clientsResponse = await fetch(`/api/uhp/clients?search=${encodeURIComponent(search)}`, {
+      const params = new URLSearchParams();
+      if (search.trim()) params.set('search', search.trim());
+      if (outreachResultFilter !== FILTER_ALL_VALUE) {
+        params.set('outreachResult', outreachResultFilter);
+      }
+      const clientsResponse = await fetch(`/api/uhp/clients?${params.toString()}`, {
         cache: 'no-store',
       });
       const clientsPayload = await clientsResponse.json();
@@ -243,7 +259,7 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
     } finally {
       setLoading(false);
     }
-  }, [addToast, search]);
+  }, [addToast, outreachResultFilter, search]);
 
   // Metrics refresh independently from the client list. This makes period changes immediate,
   // while mutation reconciliation can run in the background without hiding optimistic values.
@@ -741,7 +757,7 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
 
       <Card>
         <CardContent className="p-0">
-          <div className="flex items-center gap-3 border-b p-4">
+          <div className="flex flex-wrap items-center gap-3 border-b p-4">
             <FilterSearchInput
               placeholder="Search name, email, or phone"
               value={search}
@@ -750,6 +766,25 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
                 setCurrentPage(1);
               }}
               className="sm:w-80"
+            />
+            <FilterSelect
+              label="Outreach result"
+              value={outreachResultFilter}
+              onValueChange={(value) => {
+                setOutreachResultFilter(value);
+                setCurrentPage(1);
+              }}
+              options={OUTREACH_RESULT_OPTIONS}
+            />
+            <ClearFiltersButton
+              count={
+                Number(Boolean(search.trim())) + Number(outreachResultFilter !== FILTER_ALL_VALUE)
+              }
+              onClear={() => {
+                setSearch('');
+                setOutreachResultFilter(FILTER_ALL_VALUE);
+                setCurrentPage(1);
+              }}
             />
             <Button
               variant="outline"

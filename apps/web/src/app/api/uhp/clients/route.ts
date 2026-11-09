@@ -57,6 +57,7 @@ export async function GET(request: NextRequest) {
   const status = params.get('status');
   const type = params.get('type');
   const owner = params.get('owner')?.trim();
+  const outreachResult = params.get('outreachResult');
   let query = auth.context.admin
     .from('uhp_clients')
     .select('*')
@@ -74,6 +75,9 @@ export async function GET(request: NextRequest) {
     query = query.eq('client_type', type);
   }
   if (owner) query = query.ilike('lead_owner', owner);
+  if (outreachResult === 'replied') query = query.eq('replied', true);
+  if (outreachResult === 'declined') query = query.eq('interest_state', 'declined');
+  if (outreachResult === 'we-form') query = query.eq('we_form', true);
   // Sources come from every client, not just this page or search, so a source added on
   // one client is offered in the dropdown for all of them.
   const [{ data, error }, sourcesResult] = await Promise.all([
