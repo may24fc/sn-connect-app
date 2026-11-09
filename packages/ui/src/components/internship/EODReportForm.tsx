@@ -369,7 +369,7 @@ export function EODReportForm({
   );
 
   const [date, setDate] = React.useState(initialDate);
-  const [hoursLogged, setHoursLogged] = React.useState(defaultValues?.hoursLogged ?? 8);
+  const [hoursLogged, setHoursLogged] = React.useState(defaultValues?.hoursLogged ?? 4);
   const [projectEntries, setProjectEntries] = React.useState<Array<ProjectFocusEntry>>(initialProjectEntries);
   const [blockers, setBlockers] = React.useState<string[]>(initialBlockers);
   const [nextSteps, setNextSteps] = React.useState<string[]>(initialNextSteps);
@@ -539,7 +539,7 @@ export function EODReportForm({
 
   const handleClear = (): void => {
     setDate(initialDate);
-    setHoursLogged(defaultValues?.hoursLogged ?? 8);
+    setHoursLogged(defaultValues?.hoursLogged ?? 4);
     setProjectEntries(initialProjectEntries);
     setBlockers(initialBlockers);
     setNextSteps(initialNextSteps);
