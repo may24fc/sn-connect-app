@@ -15,6 +15,7 @@ The v1 design prioritizes delivery reliability, privacy, and auditable decisions
 - [Telegram link endpoint](../../../apps/web/src/app/api/users/[id]/notification-preferences/telegram-link/route.ts) - owner-only connect and disconnect operations.
 - [Telegram disconnect transaction](../../../supabase/migrations/20261102000001_disconnect_telegram_account.sql) - atomic link cleanup, delivery disablement, token invalidation, and audit evidence.
 - [Settings workspace](../../../apps/web/src/components/settings/SettingsPage.tsx) - confirmed self-service disconnect and connection status.
+- [Recognition browser coverage](../../../e2e/recognition.spec.ts) - employee nomination and HR weekly/monthly monitoring at desktop and mobile widths.
 
 ## Reliability and Workflow Entries
 
@@ -54,6 +55,13 @@ The v1 design prioritizes delivery reliability, privacy, and auditable decisions
 - Solution: resolve the current Manila week's Monday before ensuring the recognition period. Monday remains the boundary for creating a new period and the scheduled publication workflow; HR can review the current period on every day.
 - Validation: recognition period tests passed 7/7, including Monday, Tuesday, and Sunday resolution; portal typecheck passed; the admin desktop Playwright scenario passed and its screenshot was inspected. The full recognition spec was not green because the separate employee-nomination scenario still uses `selectOption` against the newer custom combobox.
 
+### Implemented - HR recognition monitoring workspace
+
+- Problem/evidence: the Evidence Pool grew with the page, monthly awards were only discoverable when they replaced the weekly period, history was not openable, and approved drafts remained editable beside the publication action. Unsaved displayed text could therefore differ from the server-approved content sent to Telegram.
+- Solution: add persistent Weekly Wins, Monthly Awards, and History navigation; API-backed period selection; an HR summary strip; desktop-bounded evidence scrolling with search and source/category/status filters; fixed monthly category slots; evidence aggregation; publication metadata; an exact Telegram preview; and openable history. Approved drafts are now locked until HR explicitly reopens them, while all recognition mutations remain server-confirmed.
+- Reference basis: Bonusly's admin activity workflow uses date/user/type filtering and reusable views, while Lattice review administration makes cycle status and progress explicit. The implementation adapts those monitoring patterns without adding usage rankings or automated employee scores.
+- Validation: portal typecheck passed; recognition period tests passed 7/7; focused Playwright passed 3/3 for employee mobile nomination, HR approved-weekly desktop review, and HR monthly desktop/mobile monitoring. The monthly scenario verified an internally scrollable long evidence pool on desktop, no mobile horizontal overflow, filters, fixed category slots, and zero unexpected console errors. All four generated screenshots were inspected. No latency improvement is claimed.
+
 ## Visual Guide
 
 ```mermaid
@@ -70,6 +78,7 @@ flowchart LR
 
 ## Change Log
 
+- 2026-11-10: Implemented the HR recognition monitoring redesign and corrected the approved-draft/publication trust boundary. No latency improvement is claimed.
 - 2026-11-10: Removed the accidental Monday-only access restriction from the Recognition Review workspace while retaining Monday generation and publication scheduling. No latency improvement is claimed.
 
 - 2026-11-05: Corrected default General topic persistence after live smoke testing exposed the obsolete non-null topic constraint. No latency improvement is claimed.

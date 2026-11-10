@@ -2,7 +2,7 @@
 
 ## Current Status
 
-The dedicated community-bot application, webhook, self-service Telegram disconnect flow, default-General ticket-origin fix, and daily Recognition Review access are live. The workspace resolves the current Manila recognition week on every day, while Monday remains the period-generation and scheduled-publication day. The remaining forum pilot checks are in progress.
+The dedicated community-bot application, webhook, self-service Telegram disconnect flow, default-General ticket-origin fix, and daily Recognition Review access are live. An HR monitoring redesign is implemented and validated locally: persistent weekly/monthly/history views, bounded evidence review, filters, monthly category slots, Telegram preview, period navigation, and locked approved drafts. Production deployment and the remaining forum pilot checks are in progress.
 
 See also [Optimization Record](optimization.md).
 
@@ -30,6 +30,7 @@ See also [Optimization Record](optimization.md).
 - [x] Deploy daily Recognition Review access - 2026-11-10; pushed commit `72942343`; the Control Hub Vercel deployment succeeded. The admin API now resolves any Manila date to the current week's Monday instead of rejecting non-Mondays; focused period tests passed 7/7, portal typecheck passed, and the admin desktop Playwright scenario passed with its screenshot inspected. The unrelated employee nomination scenario exposed a stale test interaction for the custom combobox and remains follow-up test maintenance.
 
 ### In Progress
+- [ ] Deploy the HR recognition monitoring workspace - weekly/monthly/history navigation, openable historical periods, review summaries, evidence search/filtering and desktop max-height scrolling, fixed monthly category slots, evidence aggregation, Telegram preview, publication metadata, and approved-draft locking are implemented locally. Portal typecheck and recognition period tests passed; focused Playwright passed 3/3 across employee mobile, HR weekly desktop, and HR monthly desktop/mobile, with screenshots inspected and no console errors.
 - [ ] Complete live Telegram Forum routing - link the super-admin through the existing bot, capture the shared forum chat ID and four topic IDs, configure routing, and run smoke tests.
 
 ### Deferred
@@ -43,6 +44,7 @@ See also [Optimization Record](optimization.md).
 None.
 
 ## Session History
+- 2026-11-10: Implemented the HR-centered Recognition Review redesign. The API can load a specific recognition period; the UI now provides persistent Weekly Wins, Monthly Awards, and History views, period selection, monitoring counts, bounded/filterable evidence, fixed monthly category slots, Telegram preview, openable history, evidence aggregation, supporting-evidence links, and publication metadata. Approved drafts are locked until explicitly reopened, preventing unsaved local text from differing from the server-approved Telegram content. Portal typecheck and recognition period tests passed; focused Playwright passed 3/3 at desktop and mobile widths with screenshots inspected and no console errors. Production deployment remains pending.
 - 2026-11-10: Diagnosed the `/admin/recognition` HTTP 500 on Tuesday as an incorrect assumption that the workspace could only resolve periods on Monday. Changed workspace period resolution to use the current Manila week's Monday on every day; kept the strict Monday-only period constructor and scheduled publication behavior. Focused tests passed 7/7, portal typecheck passed, and the admin Recognition Review browser scenario passed with a clean inspected screenshot. Deployed commit `72942343`; the Control Hub Vercel deployment succeeded.
 - 2026-11-05: Deployed `e59f13ca`. The production migration and both Vercel deployments succeeded; General & Ideas can now persist a ticket origin with a null topic ID. The next action is to repeat the live `/ticket` smoke test and verify the source confirmation, Control Hub ticket, and Ticket Progress Feed post.
 - 2026-11-05: Live `/ticket` in General & Ideas reached the webhook but returned a creation failure. Root cause was the `ticket_telegram_origins.topic_id NOT NULL` constraint, which contradicted Telegram's omission of `message_thread_id` for the renamed default General topic. Added migration `20261105000001`, applied it locally, regenerated the nullable database type, and passed a rollback-only end-to-end database transaction. Production was not changed.

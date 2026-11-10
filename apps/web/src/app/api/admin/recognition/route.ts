@@ -25,10 +25,23 @@ const updateSchema = z.object({
     .default([]),
 });
 
-async function snapshot() {
+async function snapshot(periodId?: string) {
   const admin = await requireRecognitionUser(true);
   if (!admin.ok) return admin;
-  const period = await ensureRecognitionPeriod();
+  let period: Awaited<ReturnType<typeof ensureRecognitionPeriod>>;
+  if (periodId) {
+    const { data, error } = await admin.admin
+      .from('recognition_periods')
+      .select('*')
+      .eq('id', periodId)
+      .maybeSingle();
+    if (error)
+      return { ok: false as const, status: 500, error: 'Failed to load recognition period' };
+    if (!data) return { ok: false as const, status: 404, error: 'Recognition period not found' };
+    period = data;
+  } else {
+    period = await ensureRecognitionPeriod();
+  }
   const [{ data: selections }, evidence, { data: periods }, { data: employees }] =
     await Promise.all([
       admin.admin
@@ -80,8 +93,11 @@ async function snapshot() {
   };
 }
 
-export async function GET() {
-  const result = await snapshot();
+export async function GET(request: Request) {
+  const requestedPeriodId = new URL(request.url).searchParams.get('periodId');
+  if (requestedPeriodId && !z.string().uuid().safeParse(requestedPeriodId).success)
+    return NextResponse.json({ error: 'Invalid recognition period' }, { status: 400 });
+  const result = await snapshot(requestedPeriodId ?? undefined);
   if (!result.ok || !('data' in result))
     return NextResponse.json({ error: result.error }, { status: result.status });
   return NextResponse.json(result.data);

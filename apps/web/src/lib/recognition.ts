@@ -213,6 +213,7 @@ export async function getRecognitionEvidence(period: { period_start: string; per
       source: 'Projects',
       userId: row.completed_by,
       category: 'impact_delivery',
+      occurredAt: row.completed_at,
       summary: `Completed approved project milestone “${row.title}” (${row.complexity_tier ?? 'standard'} complexity).`,
     });
   for (const row of pa.data ?? [])
@@ -222,6 +223,7 @@ export async function getRecognitionEvidence(period: { period_start: string; per
         source: 'PA',
         userId: row.assigned_to,
         category: 'impact_delivery',
+        occurredAt: row.updated_at,
         summary: `Completed PA deliverable “${row.title}”. HR should verify the supporting context.`,
       });
   for (const row of uhp.data ?? [])
@@ -230,6 +232,7 @@ export async function getRecognitionEvidence(period: { period_start: string; per
       source: 'UHP',
       userId: row.created_by,
       category: 'impact_delivery',
+      occurredAt: row.occurred_at,
       summary: `Completed a verified UHP ${String(row.activity_type).toLowerCase()} outcome. Client details are intentionally hidden.`,
     });
   for (const row of okrs.data ?? []) {
@@ -244,6 +247,7 @@ export async function getRecognitionEvidence(period: { period_start: string; per
         source: 'Performance',
         userId: employee?.user_id,
         category: 'accountability_timeliness',
+        occurredAt: row.submitted_at,
         summary:
           'Submitted the applicable OKRs by the configured deadline. Response content remains private.',
       });
@@ -260,6 +264,7 @@ export async function getRecognitionEvidence(period: { period_start: string; per
         source: 'Performance',
         userId: employee?.user_id,
         category: 'accountability_timeliness',
+        occurredAt: row.submitted_at,
         summary:
           'Submitted the applicable KPIs by the configured deadline. Response content remains private.',
       });
@@ -280,6 +285,7 @@ export async function getRecognitionEvidence(period: { period_start: string; per
           source: 'Performance',
           userId: row.user_id,
           category: 'accountability_timeliness',
+          occurredAt: row.submitted_at,
           summary: `Submitted the applicable ${label} by its deadline. Response content remains private.`,
         });
     }
@@ -310,6 +316,7 @@ export async function getRecognitionEvidence(period: { period_start: string; per
       source: 'Nomination',
       userId: row.nominee_user_id,
       category: row.category,
+      occurredAt: row.created_at,
       summary: row.result_summary,
       evidenceUrl: row.evidence_url,
       nominationStatus: row.status,
