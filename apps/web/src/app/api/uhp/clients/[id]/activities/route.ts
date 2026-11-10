@@ -35,7 +35,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (input.prospectOutcome) {
     await auth.context.admin
       .from('uhp_clients')
-      .update({ interest_state: input.prospectOutcome, updated_by: auth.context.userId })
+      .update({
+        interest_state: input.prospectOutcome,
+        interest_state_at: input.occurredAt ?? new Date().toISOString(),
+        updated_by: auth.context.userId,
+      })
       .eq('id', id);
   }
   void logActivity(auth.context.admin, {

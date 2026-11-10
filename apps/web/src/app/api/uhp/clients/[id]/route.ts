@@ -75,7 +75,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const { id } = await params;
   const { data: existing } = await auth.context.admin
     .from('uhp_clients')
-    .select('status, interest_state, replied, called')
+    .select('status, interest_state, replied, called, we_form')
     .eq('id', id)
     .is('deleted_at', null)
     .maybeSingle();
@@ -103,6 +103,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
   if (input.called !== undefined && input.called !== existing.called) {
     updates.called_at = input.called ? new Date().toISOString() : null;
+  }
+  if (input.interestState !== undefined && input.interestState !== existing.interest_state) {
+    updates.interest_state_at = input.interestState === 'unknown' ? null : new Date().toISOString();
+  }
+  if (input.weForm !== undefined && input.weForm !== existing.we_form) {
+    updates.we_form_at = input.weForm ? new Date().toISOString() : null;
   }
   const { data, error } = await auth.context.admin
     .from('uhp_clients')

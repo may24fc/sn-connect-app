@@ -33,6 +33,7 @@ import {
   validateUhpScreenshot,
 } from '@/lib/uhp-screenshots';
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -139,11 +140,7 @@ const PERIOD_OPTIONS = [
 
 const CLIENTS_PER_PAGE = 10;
 const TABLE_COLUMNS = 13;
-const OUTREACH_RESULT_OPTIONS = [
-  { value: 'replied', label: 'Replied' },
-  { value: 'declined', label: 'Declined' },
-  { value: 'we-form', label: 'Filled WE Form' },
-];
+const emptyOutreachResultCounts = { replied: 0, declined: 0, weForm: 0 };
 
 function defaultCustomMetricsRange(now = new Date()): CustomMetricsRange {
   return {
@@ -218,6 +215,11 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
     usePeriodRequestGuard(metricsSelectionKey);
   const [search, setSearch] = useState('');
   const [outreachResultFilter, setOutreachResultFilter] = useState(FILTER_ALL_VALUE);
+  const [outreachResultCounts, setOutreachResultCounts] = useState(emptyOutreachResultCounts);
+  const [clientFilterRange, setClientFilterRange] = useState<CustomMetricsRange>({
+    from: '',
+    to: '',
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [metricsLoading, setMetricsLoading] = useState(true);
@@ -241,6 +243,15 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
       if (outreachResultFilter !== FILTER_ALL_VALUE) {
         params.set('outreachResult', outreachResultFilter);
       }
+      if (clientFilterRange.from && clientFilterRange.to) {
+        const bounds = calendarDateRangeBounds(
+          clientFilterRange.from,
+          clientFilterRange.to,
+          'viewer'
+        );
+        params.set('from', bounds.from);
+        params.set('to', new Date(Date.parse(bounds.until) - 1).toISOString());
+      }
       const clientsResponse = await fetch(`/api/uhp/clients?${params.toString()}`, {
         cache: 'no-store',
       });
@@ -249,6 +260,7 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
         throw new Error(clientsPayload.error ?? 'Failed to load outreach tracker');
       }
       setClients(clientsPayload.data);
+      setOutreachResultCounts(clientsPayload.filterCounts ?? emptyOutreachResultCounts);
       if (Array.isArray(clientsPayload.sources)) setSourceOptions(clientsPayload.sources);
     } catch (error) {
       addToast({
@@ -259,7 +271,7 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
     } finally {
       setLoading(false);
     }
-  }, [addToast, outreachResultFilter, search]);
+  }, [addToast, clientFilterRange, outreachResultFilter, search]);
 
   // Metrics refresh independently from the client list. This makes period changes immediate,
   // while mutation reconciliation can run in the background without hiding optimistic values.
@@ -538,6 +550,11 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
     ['Wellness evaluations', metrics.wellnessEvaluationsScheduled],
     ['Calls scheduled', metrics.callsScheduled],
   ];
+  const outreachResultOptions = [
+    { value: 'replied', label: `Replied (${outreachResultCounts.replied})` },
+    { value: 'declined', label: `Declined (${outreachResultCounts.declined})` },
+    { value: 'we-form', label: `Filled WE Form (${outreachResultCounts.weForm})` },
+  ];
 
   return (
     <div className="space-y-6 p-4 sm:p-6 lg:p-8">
@@ -774,15 +791,23 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
                 setOutreachResultFilter(value);
                 setCurrentPage(1);
               }}
-              options={OUTREACH_RESULT_OPTIONS}
+              options={outreachResultOptions}
             />
+            <div className="flex flex-wrap gap-2" aria-live="polite">
+              <Badge variant="outline">Replied: {outreachResultCounts.replied}</Badge>
+              <Badge variant="outline">Declined: {outreachResultCounts.declined}</Badge>
+              <Badge variant="outline">WE Form: {outreachResultCounts.weForm}</Badge>
+            </div>
             <ClearFiltersButton
               count={
-                Number(Boolean(search.trim())) + Number(outreachResultFilter !== FILTER_ALL_VALUE)
+                Number(Boolean(search.trim())) +
+                Number(outreachResultFilter !== FILTER_ALL_VALUE) +
+                Number(Boolean(clientFilterRange.from && clientFilterRange.to))
               }
               onClear={() => {
                 setSearch('');
                 setOutreachResultFilter(FILTER_ALL_VALUE);
+                setClientFilterRange({ from: '', to: '' });
                 setCurrentPage(1);
               }}
             />
@@ -794,6 +819,19 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
             >
               <RefreshCw className="h-4 w-4" />
             </Button>
+          </div>
+          <div className="border-b p-4 pt-0">
+            <DateRangeFilter
+              idPrefix="uhp-client-filter"
+              value={clientFilterRange}
+              onApply={(value) => {
+                setClientFilterRange(value);
+                setCurrentPage(1);
+              }}
+              disabled={loading}
+              maxDate={format(new Date(), 'yyyy-MM-dd')}
+              helperText="Filters each result by when it was recorded. Start and end dates are included."
+            />
           </div>
           {/* Columns keep their natural width and the table scrolls sideways instead of squeezing. */}
           <div className="overflow-x-auto">

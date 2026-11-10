@@ -10310,6 +10310,7 @@ export type Database = {
           id: string
           instagram_url: string | null
           interest_state: string
+          interest_state_at: string | null
           job_title: string | null
           lead_owner: string | null
           legacy_metadata: Json
@@ -10329,6 +10330,7 @@ export type Database = {
           updated_by: string | null
           we_call: boolean
           we_form: boolean
+          we_form_at: string | null
           website: string | null
         }
         Insert: {
@@ -10346,6 +10348,7 @@ export type Database = {
           id?: string
           instagram_url?: string | null
           interest_state?: string
+          interest_state_at?: string | null
           job_title?: string | null
           lead_owner?: string | null
           legacy_metadata?: Json
@@ -10365,6 +10368,7 @@ export type Database = {
           updated_by?: string | null
           we_call?: boolean
           we_form?: boolean
+          we_form_at?: string | null
           website?: string | null
         }
         Update: {
@@ -10382,6 +10386,7 @@ export type Database = {
           id?: string
           instagram_url?: string | null
           interest_state?: string
+          interest_state_at?: string | null
           job_title?: string | null
           lead_owner?: string | null
           legacy_metadata?: Json
@@ -10401,6 +10406,7 @@ export type Database = {
           updated_by?: string | null
           we_call?: boolean
           we_form?: boolean
+          we_form_at?: string | null
           website?: string | null
         }
         Relationships: [

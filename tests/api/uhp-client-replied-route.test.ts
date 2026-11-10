@@ -120,6 +120,21 @@ describe('PATCH /api/uhp/clients/[id] manual reply timestamp', () => {
     const { update } = setup(false);
 
     expect((await call({ weForm: true, weCall: false })).status).toBe(200);
-    expect(update).toHaveBeenCalledWith(expect.objectContaining({ we_form: true, we_call: false }));
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        we_form: true,
+        we_form_at: expect.any(String),
+        we_call: false,
+      })
+    );
+  });
+
+  it('timestamps the current interest result', async () => {
+    const { update } = setup(false);
+
+    expect((await call({ interestState: 'declined' })).status).toBe(200);
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({ interest_state: 'declined', interest_state_at: expect.any(String) })
+    );
   });
 });
