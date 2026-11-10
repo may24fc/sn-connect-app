@@ -2,7 +2,7 @@
 
 ## Current Status
 
-The dedicated community-bot application, webhook, self-service Telegram disconnect flow, and default-General ticket-origin fix are live. The Recognition Review workspace now resolves the current Manila recognition week on every day, while Monday remains the period-generation and scheduled-publication day. Production deployment of this daily-review fix and the remaining forum pilot checks are in progress.
+The dedicated community-bot application, webhook, self-service Telegram disconnect flow, default-General ticket-origin fix, and daily Recognition Review access are live. The workspace resolves the current Manila recognition week on every day, while Monday remains the period-generation and scheduled-publication day. The remaining forum pilot checks are in progress.
 
 See also [Optimization Record](optimization.md).
 
@@ -27,9 +27,9 @@ See also [Optimization Record](optimization.md).
 - [x] Deploy self-service Telegram disconnect - 2026-11-02; pushed scoped commit `024d42f8` to `main`; production Supabase migration succeeded after retrying a transient GitHub release-rate-limit failure; both native Vercel deployments succeeded; live unauthenticated DELETE probe changed from HTTP 405 before promotion to the expected HTTP 401 after promotion.
 - [x] Support the renamed default General forum topic - 2026-11-02; the community webhook now treats Telegram's absent `message_thread_id` as General & Ideas only when `TELEGRAM_GENERAL_IDEAS_TOPIC_ID` is unset and sends the required database topic parameter explicitly as `null`; deployment and environment documentation updated; focused Telegram tests passed 5/5 and portal typecheck passed.
 - [x] Deploy the default-General origin migration - 2026-11-05; pushed commit `e59f13ca`; production migration `20261105000001` succeeded; both Vercel deployments succeeded. Local rollback-only execution had already confirmed the ticket, null origin topic, and pending Created outbox event.
+- [x] Deploy daily Recognition Review access - 2026-11-10; pushed commit `72942343`; the Control Hub Vercel deployment succeeded. The admin API now resolves any Manila date to the current week's Monday instead of rejecting non-Mondays; focused period tests passed 7/7, portal typecheck passed, and the admin desktop Playwright scenario passed with its screenshot inspected. The unrelated employee nomination scenario exposed a stale test interaction for the custom combobox and remains follow-up test maintenance.
 
 ### In Progress
-- [ ] Deploy daily Recognition Review access - the admin API now resolves any Manila date to the current week's Monday instead of rejecting non-Mondays; focused period tests passed 7/7, portal typecheck passed, and the admin desktop Playwright scenario passed with its screenshot inspected. The unrelated employee nomination scenario exposed a stale test interaction for the custom combobox and remains follow-up test maintenance.
 - [ ] Complete live Telegram Forum routing - link the super-admin through the existing bot, capture the shared forum chat ID and four topic IDs, configure routing, and run smoke tests.
 
 ### Deferred
@@ -43,7 +43,7 @@ See also [Optimization Record](optimization.md).
 None.
 
 ## Session History
-- 2026-11-10: Diagnosed the `/admin/recognition` HTTP 500 on Tuesday as an incorrect assumption that the workspace could only resolve periods on Monday. Changed workspace period resolution to use the current Manila week's Monday on every day; kept the strict Monday-only period constructor and scheduled publication behavior. Focused tests passed 7/7, portal typecheck passed, and the admin Recognition Review browser scenario passed with a clean inspected screenshot. Production deployment remains in progress.
+- 2026-11-10: Diagnosed the `/admin/recognition` HTTP 500 on Tuesday as an incorrect assumption that the workspace could only resolve periods on Monday. Changed workspace period resolution to use the current Manila week's Monday on every day; kept the strict Monday-only period constructor and scheduled publication behavior. Focused tests passed 7/7, portal typecheck passed, and the admin Recognition Review browser scenario passed with a clean inspected screenshot. Deployed commit `72942343`; the Control Hub Vercel deployment succeeded.
 - 2026-11-05: Deployed `e59f13ca`. The production migration and both Vercel deployments succeeded; General & Ideas can now persist a ticket origin with a null topic ID. The next action is to repeat the live `/ticket` smoke test and verify the source confirmation, Control Hub ticket, and Ticket Progress Feed post.
 - 2026-11-05: Live `/ticket` in General & Ideas reached the webhook but returned a creation failure. Root cause was the `ticket_telegram_origins.topic_id NOT NULL` constraint, which contradicted Telegram's omission of `message_thread_id` for the renamed default General topic. Added migration `20261105000001`, applied it locally, regenerated the nullable database type, and passed a rollback-only end-to-end database transaction. Production was not changed.
 - 2026-11-02: Confirmed `/topicid` returns `none` only for General & Ideas because it is the renamed default General topic. Updated routing to accept the absent thread ID as `feature_request` traffic while keeping numeric matching for separately created topics. The General topic environment variable must be deleted rather than assigned `none`.
