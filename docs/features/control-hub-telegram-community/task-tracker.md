@@ -2,7 +2,7 @@
 
 ## Current Status
 
-The dedicated community-bot application, webhook, self-service Telegram disconnect flow, default-General ticket-origin fix, daily Recognition Review access, and HR monitoring redesign are live. The workspace provides persistent weekly/monthly/history views, bounded evidence review, filters, monthly category slots, Telegram preview, period navigation, and locked approved drafts. The remaining forum pilot checks are in progress.
+The dedicated community-bot application, webhook, self-service Telegram disconnect flow, default-General ticket-origin fix, daily Recognition Review access, and HR monitoring redesign are live. A locally validated UI consistency refactor now uses the shared Control Hub tabs, selects, search filters, tables, buttons, badges, and textareas throughout Recognition Review; production deployment and the remaining forum pilot checks are in progress.
 
 See also [Optimization Record](optimization.md).
 
@@ -31,6 +31,7 @@ See also [Optimization Record](optimization.md).
 - [x] Deploy the HR recognition monitoring workspace - 2026-11-10; pushed commit `30e17954`; the production web build, Control Hub Vercel deployment, and public-site Vercel deployment succeeded. Portal typecheck and recognition period tests passed; focused Playwright passed 3/3 across employee mobile, HR weekly desktop, and HR monthly desktop/mobile, with screenshots inspected and no console errors.
 
 ### In Progress
+- [ ] Deploy the Recognition Review shared-primitives refactor - replaced native/local form controls with existing `@hr-portal/ui` and shared filter components; portal typecheck passed and focused Playwright passed 3/3 across employee mobile, HR weekly desktop, and HR monthly desktop/mobile, with screenshots inspected and no console errors.
 - [ ] Complete live Telegram Forum routing - link the super-admin through the existing bot, capture the shared forum chat ID and four topic IDs, configure routing, and run smoke tests.
 
 ### Deferred
@@ -44,6 +45,7 @@ See also [Optimization Record](optimization.md).
 None.
 
 ## Session History
+- 2026-11-10: Refactored Recognition Review to reuse the existing Control Hub design system instead of native/local primitives: Radix selects and tabs, shared filter search/clear controls, table primitives, buttons, badges, and character-count textareas. Portal typecheck passed; focused Playwright passed 3/3 at desktop and mobile widths with screenshots inspected and no console errors. Production deployment remains pending.
 - 2026-11-10: Implemented and deployed the HR-centered Recognition Review redesign in commit `30e17954`. The API can load a specific recognition period; the UI now provides persistent Weekly Wins, Monthly Awards, and History views, period selection, monitoring counts, bounded/filterable evidence, fixed monthly category slots, Telegram preview, openable history, evidence aggregation, supporting-evidence links, and publication metadata. Approved drafts are locked until explicitly reopened, preventing unsaved local text from differing from the server-approved Telegram content. The production web build, portal typecheck, recognition period tests, focused Playwright 3/3, and both Vercel deployments succeeded.
 - 2026-11-10: Diagnosed the `/admin/recognition` HTTP 500 on Tuesday as an incorrect assumption that the workspace could only resolve periods on Monday. Changed workspace period resolution to use the current Manila week's Monday on every day; kept the strict Monday-only period constructor and scheduled publication behavior. Focused tests passed 7/7, portal typecheck passed, and the admin Recognition Review browser scenario passed with a clean inspected screenshot. Deployed commit `72942343`; the Control Hub Vercel deployment succeeded.
 - 2026-11-05: Deployed `e59f13ca`. The production migration and both Vercel deployments succeeded; General & Ideas can now persist a ticket origin with a null topic ID. The next action is to repeat the live `/ticket` smoke test and verify the source confirmation, Control Hub ticket, and Ticket Progress Feed post.

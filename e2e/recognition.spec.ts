@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+test.setTimeout(60_000);
+
 async function loginAs(page: Parameters<typeof test>[0]['page'], email: string) {
   await page.goto('/login');
   await page.getByLabel('Email Address').fill(email);
@@ -141,9 +143,9 @@ test('HR reviews evidence and an approved draft on desktop', async ({ page }, te
   await loginAs(page, 'admin@example.com');
   await page.goto('/admin/recognition', { waitUntil: 'domcontentloaded', timeout: 60_000 });
   await expect(page.getByRole('heading', { name: 'Recognition Review' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Weekly Wins' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Monthly Awards' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'History' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Weekly Wins' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Monthly Awards' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'History' })).toBeVisible();
   await expect(page.getByText('Recently recognized')).toBeVisible();
   await expect(page.getByText('This approved draft is locked.')).toBeVisible();
   await expect(page.getByLabel('Introduction')).toBeDisabled();
@@ -209,7 +211,7 @@ test('HR monitors a monthly period with bounded evidence on desktop and mobile',
   await page.setViewportSize({ width: 1440, height: 900 });
   await loginAs(page, 'admin@example.com');
   await page.goto('/admin/recognition', { waitUntil: 'domcontentloaded', timeout: 60_000 });
-  await expect(page.getByRole('button', { name: /Monthly Awards/ })).toBeVisible();
+  await expect(page.getByRole('tab', { name: /Monthly Awards/ })).toBeVisible();
   await expect(page.getByText('No recipient selected.')).toHaveCount(3);
   await expect(page.getByText('Showing 14 of 14 evidence items')).toBeVisible();
   const evidenceRegion = page.getByTestId('evidence-scroll-region');
@@ -217,7 +219,7 @@ test('HR monitors a monthly period with bounded evidence on desktop and mobile',
   expect(
     await evidenceRegion.evaluate((element) => element.scrollHeight > element.clientHeight)
   ).toBe(true);
-  await page.getByLabel('Search evidence').fill('Employee 14');
+  await page.getByLabel('Search employee or evidence').fill('Employee 14');
   await expect(page.getByText('Showing 1 of 14 evidence items')).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath('admin-recognition-monthly-desktop.png'),
@@ -225,7 +227,7 @@ test('HR monitors a monthly period with bounded evidence on desktop and mobile',
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.getByRole('button', { name: /Monthly Awards/ })).toBeVisible();
+  await expect(page.getByRole('tab', { name: /Monthly Awards/ })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true
   );

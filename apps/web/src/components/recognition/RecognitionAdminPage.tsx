@@ -1,6 +1,30 @@
 'use client';
 
-import { PageTitle, tableHeadTextClassName, tableHeaderClassName } from '@hr-portal/ui';
+import {
+  ClearFiltersButton,
+  FilterSearchInput,
+  FilterSelect,
+} from '@/components/data-display/FilterControls';
+import {
+  Badge,
+  Button,
+  PageTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  Textarea,
+} from '@hr-portal/ui';
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 
 type PeriodType = 'weekly' | 'monthly';
@@ -369,33 +393,37 @@ export function RecognitionAdminPage() {
           </p>
         </div>
         {displayedPeriodMatchesView && (
-          <span
+          <Badge
+            variant="outline"
             className={`rounded-full border px-3 py-1 text-sm font-medium capitalize ${statusTone(workspace.period.status)}`}
           >
             {workspace.period.status}
-          </span>
+          </Badge>
         )}
       </header>
 
-      <nav className="flex overflow-x-auto border-b" aria-label="Recognition views">
-        {(['weekly', 'monthly', 'history'] as Array<WorkspaceView>).map((item) => (
-          <button
-            key={item}
-            type="button"
-            onClick={() => changeView(item)}
-            className={`whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium capitalize ${
-              view === item
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {item === 'weekly' ? 'Weekly Wins' : item === 'monthly' ? 'Monthly Awards' : 'History'}
-            {item === 'monthly' && monthlyMissing > 0 && workspace.period.period_type === 'monthly'
-              ? ` · ${monthlyMissing} missing`
-              : ''}
-          </button>
-        ))}
-      </nav>
+      <Tabs value={view} onValueChange={(value) => changeView(value as WorkspaceView)}>
+        <TabsList className="h-auto w-full justify-start gap-5 overflow-x-auto rounded-none border-b bg-transparent p-0 text-muted-foreground">
+          {(['weekly', 'monthly', 'history'] as Array<WorkspaceView>).map((item) => (
+            <TabsTrigger
+              key={item}
+              value={item}
+              className="whitespace-nowrap rounded-none border-b-2 border-transparent px-3 py-3 capitalize data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"
+            >
+              {item === 'weekly'
+                ? 'Weekly Wins'
+                : item === 'monthly'
+                  ? 'Monthly Awards'
+                  : 'History'}
+              {item === 'monthly' &&
+              monthlyMissing > 0 &&
+              workspace.period.period_type === 'monthly'
+                ? ` · ${monthlyMissing} missing`
+                : ''}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       {error && (
         <div
@@ -504,39 +532,40 @@ function HistoryTable({
           Open any period to review its recipients, evidence, approval, and publication state.
         </p>
       </div>
-      <div className="overflow-x-auto rounded-xl border">
-        <table className="w-full text-left text-sm">
-          <thead className={`${tableHeaderClassName} ${tableHeadTextClassName}`}>
-            <tr>
-              <th className="px-4 py-3">Type</th>
-              <th className="px-4 py-3">Period</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Published</th>
-              <th className="px-4 py-3 text-right">Action</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className="rounded-xl border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Type</TableHead>
+              <TableHead>Period</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Published</TableHead>
+              <TableHead className="text-right">Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {periods.map((period) => (
-              <tr key={period.id} className="border-t">
-                <td className="px-4 py-3 capitalize">{period.period_type}</td>
-                <td className="px-4 py-3">
+              <TableRow key={period.id}>
+                <TableCell className="capitalize">{period.period_type}</TableCell>
+                <TableCell>
                   {formatDate(period.period_start)} – {formatDate(period.period_end)}
-                </td>
-                <td className="px-4 py-3 capitalize">{period.status}</td>
-                <td className="px-4 py-3">{formatDateTime(period.published_at) ?? '—'}</td>
-                <td className="px-4 py-3 text-right">
-                  <button
+                </TableCell>
+                <TableCell className="capitalize">{period.status}</TableCell>
+                <TableCell>{formatDateTime(period.published_at) ?? '—'}</TableCell>
+                <TableCell className="text-right">
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => onOpen(period.id, period.period_type)}
-                    className="rounded-md border px-3 py-1.5 font-medium hover:bg-muted"
                   >
                     Open
-                  </button>
-                </td>
-              </tr>
+                  </Button>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </section>
   );
@@ -565,18 +594,18 @@ function PeriodSummary({
         <label htmlFor="recognition-period" className="text-xs font-medium text-muted-foreground">
           Review period
         </label>
-        <select
-          id="recognition-period"
-          value={workspace.period.id}
-          onChange={(event) => onOpen(event.target.value, view)}
-          className="mt-1 h-10 w-full rounded-md border bg-background px-3 text-sm"
-        >
-          {activePeriods.map((period) => (
-            <option key={period.id} value={period.id}>
-              {formatDate(period.period_start)} – {formatDate(period.period_end)}
-            </option>
-          ))}
-        </select>
+        <Select value={workspace.period.id} onValueChange={(value) => onOpen(value, view)}>
+          <SelectTrigger id="recognition-period" className="mt-1 bg-background">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {activePeriods.map((period) => (
+              <SelectItem key={period.id} value={period.id}>
+                {formatDate(period.period_start)} – {formatDate(period.period_end)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <SummaryValue label="Evidence" value={workspace.evidence.length} />
       <SummaryValue label="Pending nominations" value={pendingNominations} />
@@ -649,6 +678,11 @@ function EvidencePool({
   onAdd: (item: Evidence) => void;
   onReviewNomination: (id: string, status: 'approved' | 'rejected') => void;
 }) {
+  const activeFilterCount =
+    Number(Boolean(search)) +
+    Number(sourceFilter !== 'all') +
+    Number(categoryFilter !== 'all') +
+    Number(evidenceFilter !== 'all');
   return (
     <section className="min-w-0 space-y-3">
       <div>
@@ -658,41 +692,47 @@ function EvidencePool({
         </p>
       </div>
       <div className="rounded-xl border bg-muted/20">
-        <div className="grid gap-2 border-b bg-card p-3 sm:grid-cols-2 xl:grid-cols-4">
-          <input
-            type="search"
+        <div className="flex flex-wrap items-center gap-2 border-b bg-card p-3">
+          <FilterSearchInput
             value={search}
-            onChange={(event) => onSearch(event.target.value)}
+            onChange={onSearch}
             placeholder="Search employee or evidence"
-            aria-label="Search evidence"
-            className="h-10 w-full rounded-md border bg-background px-3 text-sm sm:col-span-2 xl:col-span-1"
+            className="min-w-[220px] flex-1 sm:w-auto"
           />
-          <FilterSelect label="Evidence source" value={sourceFilter} onChange={onSourceFilter}>
-            <option value="all">All sources</option>
-            {sources.map((source) => (
-              <option key={source} value={source}>
-                {source}
-              </option>
-            ))}
-          </FilterSelect>
           <FilterSelect
-            label="Evidence category"
+            label="Source"
+            value={sourceFilter}
+            onValueChange={onSourceFilter}
+            options={sources.map((source) => ({ value: source, label: source }))}
+          />
+          <FilterSelect
+            label="Category"
             value={categoryFilter}
-            onChange={onCategoryFilter}
-          >
-            <option value="all">All categories</option>
-            {categoryOrder.map((category) => (
-              <option key={category} value={category}>
-                {workspace.categories[category]}
-              </option>
-            ))}
-          </FilterSelect>
-          <FilterSelect label="Evidence status" value={evidenceFilter} onChange={onEvidenceFilter}>
-            <option value="all">All evidence</option>
-            <option value="available">Available</option>
-            <option value="selected">Added to draft</option>
-            <option value="pending">Pending nominations</option>
-          </FilterSelect>
+            onValueChange={onCategoryFilter}
+            options={categoryOrder.map((category) => ({
+              value: category,
+              label: workspace.categories[category] ?? category,
+            }))}
+          />
+          <FilterSelect
+            label="Status"
+            value={evidenceFilter}
+            onValueChange={onEvidenceFilter}
+            options={[
+              { value: 'available', label: 'Available' },
+              { value: 'selected', label: 'Added to draft' },
+              { value: 'pending', label: 'Pending nominations' },
+            ]}
+          />
+          <ClearFiltersButton
+            count={activeFilterCount}
+            onClear={() => {
+              onSearch('');
+              onSourceFilter('all');
+              onCategoryFilter('all');
+              onEvidenceFilter('all');
+            }}
+          />
         </div>
         <div className="border-b px-3 py-2 text-xs text-muted-foreground">
           Showing {evidence.length} of {workspace.evidence.length} evidence items
@@ -719,15 +759,9 @@ function EvidencePool({
                     <Pill>{workspace.categories[item.category] ?? item.category}</Pill>
                     {item.nominationStatus && <Pill>{item.nominationStatus}</Pill>}
                     {item.recentlyRecognized && (
-                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-900">
-                        Recently recognized
-                      </span>
+                      <Badge variant="warning">Recently recognized</Badge>
                     )}
-                    {isSelected && (
-                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-900">
-                        Added to draft
-                      </span>
-                    )}
+                    {isSelected && <Badge variant="success">Added to draft</Badge>}
                   </div>
                   <p className="mt-2 text-sm text-muted-foreground">{item.summary}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
@@ -746,36 +780,39 @@ function EvidencePool({
                   <div className="mt-3 flex flex-wrap gap-2">
                     {item.source === 'Nomination' && item.nominationStatus === 'pending' && (
                       <>
-                        <button
+                        <Button
                           type="button"
+                          variant="outline"
+                          size="sm"
                           disabled={!!busy || locked}
                           onClick={() => onReviewNomination(item.id, 'approved')}
-                          className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-50"
                         >
                           Approve evidence
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           type="button"
+                          variant="destructive"
+                          size="sm"
                           disabled={!!busy || locked}
                           onClick={() => onReviewNomination(item.id, 'rejected')}
-                          className="rounded-md border border-red-300 px-3 py-1.5 text-sm text-red-700 disabled:opacity-50"
                         >
                           Reject evidence
-                        </button>
+                        </Button>
                       </>
                     )}
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="sm"
                       disabled={locked || isSelected || item.nominationStatus === 'pending'}
                       onClick={() => onAdd(item)}
-                      className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-50"
                     >
                       {isSelected
                         ? 'Added to draft'
                         : willReplace
                           ? 'Replace category recipient'
                           : 'Add to draft'}
-                    </button>
+                    </Button>
                   </div>
                 </article>
               );
@@ -791,31 +828,12 @@ function EvidencePool({
   );
 }
 
-function FilterSelect({
-  label,
-  value,
-  onChange,
-  children,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  children: ReactNode;
-}) {
-  return (
-    <select
-      aria-label={label}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      className="h-10 rounded-md border bg-background px-3 text-sm"
-    >
-      {children}
-    </select>
-  );
-}
-
 function Pill({ children }: { children: ReactNode }) {
-  return <span className="rounded-full bg-muted px-2 py-0.5 text-xs capitalize">{children}</span>;
+  return (
+    <Badge variant="secondary" className="capitalize">
+      {children}
+    </Badge>
+  );
 }
 
 function DraftPanel({
@@ -865,14 +883,16 @@ function DraftPanel({
           This approved draft is locked. Reopen it before making changes.
         </div>
       )}
-      <label className="block text-sm font-medium">
+      <label htmlFor="recognition-introduction" className="block text-sm font-medium">
         Introduction
-        <textarea
+        <Textarea
+          id="recognition-introduction"
           disabled={locked}
           rows={3}
+          maxLength={1000}
           value={intro}
           onChange={(event) => onIntro(event.target.value)}
-          className="mt-1 w-full rounded-md border bg-background px-3 py-2 disabled:opacity-60"
+          className="mt-1 min-h-24"
         />
       </label>
       <div className="space-y-3">
@@ -907,8 +927,10 @@ function DraftPanel({
                   </p>
                 </div>
                 {!locked && (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="xs"
                     onClick={() =>
                       onSelections(
                         selections.filter((_, itemIndex) => itemIndex !== selectionIndex)
@@ -917,12 +939,13 @@ function DraftPanel({
                     className="text-xs text-red-600"
                   >
                     Remove
-                  </button>
+                  </Button>
                 )}
               </div>
-              <textarea
+              <Textarea
                 disabled={locked}
                 rows={4}
+                maxLength={1000}
                 value={selection.publicReason}
                 onChange={(event) =>
                   onSelections(
@@ -933,7 +956,7 @@ function DraftPanel({
                     )
                   )
                 }
-                className="mt-2 w-full rounded-md border bg-background px-2 py-2 text-sm disabled:opacity-60"
+                className="mt-2"
               />
             </div>
           );
@@ -955,50 +978,43 @@ function DraftPanel({
       <div className="flex flex-wrap gap-2 border-t pt-4">
         {!locked && (
           <>
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               disabled={!!busy || !dirty}
               onClick={() => onSave('save')}
-              className="rounded-md border px-3 py-2 text-sm disabled:opacity-50"
             >
               Save draft
-            </button>
-            <button
-              type="button"
-              disabled={!!busy}
-              onClick={() => onSave('approve')}
-              className="rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground disabled:opacity-50"
-            >
+            </Button>
+            <Button type="button" size="sm" disabled={!!busy} onClick={() => onSave('approve')}>
               Approve
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="destructive"
+              size="sm"
               disabled={!!busy}
               onClick={() => onSave('reject')}
-              className="rounded-md border border-red-300 px-3 py-2 text-sm text-red-700 disabled:opacity-50"
             >
               Reject
-            </button>
+            </Button>
           </>
         )}
         {workspace.period.status === 'approved' && (
           <>
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               disabled={!!busy}
               onClick={() => onSave('save')}
-              className="rounded-md border px-3 py-2 text-sm disabled:opacity-50"
             >
               Reopen draft
-            </button>
-            <button
-              type="button"
-              disabled={!!busy}
-              onClick={onPublish}
-              className="rounded-md bg-emerald-700 px-3 py-2 text-sm text-white disabled:opacity-50"
-            >
+            </Button>
+            <Button type="button" variant="success" size="sm" disabled={!!busy} onClick={onPublish}>
               Publish to Community Highlights
-            </button>
+            </Button>
           </>
         )}
       </div>
