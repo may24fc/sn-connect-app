@@ -52,6 +52,11 @@ export function recognitionPeriodForMonday(monday: string) {
   };
 }
 
+export function recognitionMondayForDate(date: string) {
+  const day = utcDate(date).getUTCDay();
+  return addDays(date, -((day + 6) % 7));
+}
+
 export async function requireRecognitionUser(adminOnly = false) {
   const supabase = await createSupabaseServerClient();
   const {
@@ -76,7 +81,7 @@ export async function requireRecognitionUser(adminOnly = false) {
 }
 
 export async function ensureRecognitionPeriod(now = new Date()) {
-  const monday = manilaDate(now);
+  const monday = recognitionMondayForDate(manilaDate(now));
   const period = recognitionPeriodForMonday(monday);
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin

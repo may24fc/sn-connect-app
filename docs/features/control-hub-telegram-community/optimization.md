@@ -48,6 +48,12 @@ The v1 design prioritizes delivery reliability, privacy, and auditable decisions
 - Solution: allow `ticket_telegram_origins.topic_id` to be null, using null only for the default General topic while retaining numeric IDs for separately created topics. Duplicate protection continues to use the forum chat ID and source message ID.
 - Validation: migration `20261105000001` applied locally; a rollback-only call to `create_ticket_from_telegram` created a feature-request ticket, stored a null topic ID, and queued a pending Created event before rollback.
 
+### Implemented - Daily recognition review period resolution
+
+- Problem/evidence: the admin recognition endpoint passed the current Manila date into a Monday-only period constructor, so the Recognition Review workspace returned HTTP 500 from Tuesday through Sunday.
+- Solution: resolve the current Manila week's Monday before ensuring the recognition period. Monday remains the boundary for creating a new period and the scheduled publication workflow; HR can review the current period on every day.
+- Validation: recognition period tests passed 7/7, including Monday, Tuesday, and Sunday resolution; portal typecheck passed; the admin desktop Playwright scenario passed and its screenshot was inspected. The full recognition spec was not green because the separate employee-nomination scenario still uses `selectOption` against the newer custom combobox.
+
 ## Visual Guide
 
 ```mermaid
@@ -63,6 +69,8 @@ flowchart LR
 ```
 
 ## Change Log
+
+- 2026-11-10: Removed the accidental Monday-only access restriction from the Recognition Review workspace while retaining Monday generation and publication scheduling. No latency improvement is claimed.
 
 - 2026-11-05: Corrected default General topic persistence after live smoke testing exposed the obsolete non-null topic constraint. No latency improvement is claimed.
 
