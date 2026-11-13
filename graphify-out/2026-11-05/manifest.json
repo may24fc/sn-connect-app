@@ -858,9 +858,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/marketing/_lib.ts": {
-    "mtime": 1793857568.9131258,
-    "seen": 1793858041.8031676,
-    "ast_hash": "56645c9503263d37f7eb81949114ed17",
+    "mtime": 1793858119.0490274,
+    "seen": 1793858428.7151968,
+    "ast_hash": "b593634ce7c2bd87a18bcf9ddc02c60e",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/marketing/access-grants/route.ts": {
@@ -882,9 +882,9 @@
     "semantic_hash": "5052755a8a91a5900c2f6a815379551e"
   },
   "apps/web/src/app/api/marketing/ad-spend/route.ts": {
-    "mtime": 1791342056.7735279,
-    "seen": 1791343180.2620926,
-    "ast_hash": "9a6e9d73fe56896e0110e6c0c944701f",
+    "mtime": 1793858291.3769479,
+    "seen": 1793858428.7152028,
+    "ast_hash": "2e773b2caf66b6390a0f40940370fe5c",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/milestones/route.ts": {
@@ -3174,8 +3174,8 @@
     "semantic_hash": "7a0dc3198c754c2a24e5a4a5466f950f"
   },
   "apps/web/src/lib/generated/application-update-summary.generated.ts": {
-    "mtime": 1793857782.9161818,
-    "seen": 1793858041.8036695,
+    "mtime": 1793858194.4936588,
+    "seen": 1793858428.7156808,
     "ast_hash": "7322821048c7b2c5f9f9ddca7c61261a",
     "semantic_hash": "7322821048c7b2c5f9f9ddca7c61261a"
   },
@@ -12636,9 +12636,9 @@
     "semantic_hash": ""
   },
   "docs/features/sfo-performance/task-tracker.md": {
-    "mtime": 1793857941.6662776,
-    "seen": 1793858041.8051991,
-    "ast_hash": "e1b49592fb01b9b893d480353c877519",
+    "mtime": 1793858347.8102047,
+    "seen": 1793858428.717179,
+    "ast_hash": "83372bde3a535f218a220289e8a4e66a",
     "semantic_hash": ""
   },
   "apps/web/src/components/data-display/MetricsPeriodSelect.tsx": {
@@ -13248,9 +13248,9 @@
     "semantic_hash": ""
   },
   "e2e/sfo-workspace-navigation.spec.ts": {
-    "mtime": 1793857821.8651614,
-    "seen": 1793858041.8039505,
-    "ast_hash": "78499235d54826da4325c053fbacd49a",
+    "mtime": 1793858155.5591466,
+    "seen": 1793858428.7159941,
+    "ast_hash": "16d7b4a58990b003c7bc072e0c5093b1",
     "semantic_hash": ""
   },
   "scripts/accounts/report-account-classification.mjs": {
@@ -14430,9 +14430,9 @@
     "semantic_hash": ""
   },
   "tests/lib/sfo-access.test.ts": {
-    "mtime": 1793857593.26682,
-    "seen": 1793858041.8047767,
-    "ast_hash": "5232affa7ade6c97eefa62f0b4f034cc",
+    "mtime": 1793858119.05222,
+    "seen": 1793858428.7168262,
+    "ast_hash": "a0fdf8d17946136bac5f8da15a5b4003",
     "semantic_hash": ""
   }
 }
