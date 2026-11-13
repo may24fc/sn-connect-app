@@ -1,6 +1,6 @@
-import { stageFormDataFiles } from '@/lib/storage/stage-form-data';
 import { STALE_TIMES } from '@/lib/query-client';
 import { type ProjectFilters, queryKeys } from '@/lib/query-keys';
+import { stageFormDataFiles } from '@/lib/storage/stage-form-data';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export type ProjectStatus = 'planning' | 'active' | 'on_hold' | 'completed' | 'archived';
@@ -226,6 +226,7 @@ export interface CreateProjectInput {
   description?: string | null;
   leadUserId: string;
   coLeadUserIds?: Array<string>;
+  contributorUserIds?: Array<string>;
   supervisorId?: string | null;
   startDate: string;
   targetEndDate: string;
@@ -239,11 +240,14 @@ export function useCreateProject() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateProjectInput) =>
-      jsonFetch<{ data: ProjectRecord; pendingInvitationCount: number; pendingPrimary: boolean }>('/api/projects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-      }),
+      jsonFetch<{ data: ProjectRecord; pendingInvitationCount: number; pendingPrimary: boolean }>(
+        '/api/projects',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(input),
+        }
+      ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.workTracker.all });
@@ -266,7 +270,8 @@ export interface ProjectLeadCandidate {
 export function useProjectLeadCandidates(userId: string | null | undefined, enabled = true) {
   return useQuery({
     queryKey: queryKeys.projects.leadCandidates(userId ?? ''),
-    queryFn: () => jsonFetch<{ data: Array<ProjectLeadCandidate> }>('/api/projects/lead-candidates'),
+    queryFn: () =>
+      jsonFetch<{ data: Array<ProjectLeadCandidate> }>('/api/projects/lead-candidates'),
     enabled: enabled && !!userId,
     staleTime: STALE_TIMES.dynamic,
   });
@@ -305,7 +310,9 @@ export function usePendingProjectInvitations(projectId: string, enabled = true) 
   return useQuery({
     queryKey: queryKeys.projects.projectInvitations(projectId),
     queryFn: () =>
-      jsonFetch<{ data: Array<PendingProjectInvitation> }>(`/api/projects/${projectId}/invitations`),
+      jsonFetch<{ data: Array<PendingProjectInvitation> }>(
+        `/api/projects/${projectId}/invitations`
+      ),
     enabled: enabled && !!projectId,
     staleTime: STALE_TIMES.dynamic,
   });
@@ -314,7 +321,10 @@ export function usePendingProjectInvitations(projectId: string, enabled = true) 
 export function useRespondProjectInvitation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ invitationId, action }: { invitationId: string; action: 'accept' | 'decline' }) =>
+    mutationFn: ({
+      invitationId,
+      action,
+    }: { invitationId: string; action: 'accept' | 'decline' }) =>
       jsonFetch<{
         ok: true;
         status: 'accepted' | 'declined';
@@ -562,10 +572,9 @@ export function useCompleteMilestone() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: { milestoneId: string; projectId: string }) =>
-      jsonFetch<{ data: MilestoneRecord }>(
-        `/api/projects/milestones/${input.milestoneId}/submit`,
-        { method: 'POST' }
-      ),
+      jsonFetch<{ data: MilestoneRecord }>(`/api/projects/milestones/${input.milestoneId}/submit`, {
+        method: 'POST',
+      }),
     onSuccess: (_data, vars) => {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.projects.milestones(vars.projectId),
@@ -844,11 +853,14 @@ export function useAddProjectContributor() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ projectId, userId, role = 'contributor' }: AddProjectContributorInput) =>
-      jsonFetch<{ ok: true; outcome: 'assigned' | 'invited' }>(`/api/projects/${projectId}/contributors`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, role }),
-      }),
+      jsonFetch<{ ok: true; outcome: 'assigned' | 'invited' }>(
+        `/api/projects/${projectId}/contributors`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, role }),
+        }
+      ),
     onSuccess: (_data, vars) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });

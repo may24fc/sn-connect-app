@@ -93,26 +93,34 @@ export function ManageContributorsDialog({
   const eligibleLeadIds = new Set((leadCandidatesData?.data ?? []).map((person) => person.id));
   if (user?.id) eligibleLeadIds.add(user.id);
   const existingIds = new Set(contributors.map((contributor) => contributor.user_id));
-  const pendingInvitees = new Set((invitationsData?.data ?? []).map((invitation) => invitation.invitee_id));
+  const pendingInvitees = new Set(
+    (invitationsData?.data ?? []).map((invitation) => invitation.invitee_id)
+  );
   const leadCandidates = [
     ...(user
-      ? [{
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          department: null,
-          position: null,
-          avatarUrl: user.avatarUrl ?? null,
-          requiresInvitation: false,
-        }]
+      ? [
+          {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            department: null,
+            position: null,
+            avatarUrl: user.avatarUrl ?? null,
+            requiresInvitation: false,
+          },
+        ]
       : []),
     ...(leadCandidatesData?.data ?? []).filter((person) => person.id !== user?.id),
   ]
     .filter((person) => !existingIds.has(person.id))
     .filter((person) => {
       const term = search.trim().toLowerCase();
-      return !term || person.name.toLowerCase().includes(term) || person.email?.toLowerCase().includes(term);
+      return (
+        !term ||
+        person.name.toLowerCase().includes(term) ||
+        person.email?.toLowerCase().includes(term)
+      );
     })
     .map((person) => ({
       user_id: person.id,
@@ -135,9 +143,12 @@ export function ManageContributorsDialog({
     try {
       const result = await addContributor.mutateAsync({ projectId, userId, role: selectedRole });
       addToast({
-        title: result.outcome === 'invited'
-          ? 'Invitation sent'
-          : selectedRole === 'lead' ? 'Project lead added' : 'Contributor updated',
+        title:
+          result.outcome === 'invited'
+            ? 'Invitation sent'
+            : selectedRole === 'lead'
+              ? 'Project lead added'
+              : 'Contributor updated',
         ...(result.outcome === 'invited'
           ? { description: 'They will join in the requested role only after accepting.' }
           : {}),
@@ -248,27 +259,37 @@ export function ManageContributorsDialog({
                         <div className="flex min-w-0 flex-col">
                           <p className="truncate text-sm">{name}</p>
                           <PersonMeta
-                            parts={[isPrimaryLead ? 'Primary project lead' : isLead ? 'Project lead' : 'Contributor']}
+                            parts={[
+                              isPrimaryLead
+                                ? 'Primary project lead'
+                                : isLead
+                                  ? 'Project lead'
+                                  : 'Contributor',
+                            ]}
                           />
                         </div>
                       </div>
                       <div className="ml-auto flex shrink-0 items-center gap-1">
-                        {isLead ? <Badge variant="outline">Lead</Badge> : null}
+                        {isLead ? <Badge variant="outline">Project lead</Badge> : null}
                         {!isPrimaryLead && (isLead || eligibleLeadIds.has(contributor.user_id)) ? (
                           <Button
                             variant="ghost"
                             size="sm"
-                            disabled={isBusy || addContributor.isPending || (!isLead && invitationPending)}
-                            aria-label={`${isLead ? 'Remove lead access from' : leadCandidate?.requiresInvitation ? 'Invite as project lead' : 'Make project lead'} ${name}`}
+                            disabled={
+                              isBusy || addContributor.isPending || (!isLead && invitationPending)
+                            }
+                            aria-label={`${isLead ? 'Remove project lead access from' : leadCandidate?.requiresInvitation ? 'Invite as project lead' : 'Make project lead'} ${name}`}
                             onClick={() =>
                               void handleAdd(contributor.user_id, isLead ? 'contributor' : 'lead')
                             }
                           >
                             {isLead
-                              ? 'Remove lead access'
+                              ? 'Remove project lead access'
                               : invitationPending
                                 ? 'Invitation pending'
-                                : leadCandidate?.requiresInvitation ? 'Invite as lead' : 'Make lead'}
+                                : leadCandidate?.requiresInvitation
+                                  ? 'Invite as project lead'
+                                  : 'Make project lead'}
                           </Button>
                         ) : null}
                         {!isPrimaryLead ? (
@@ -303,29 +324,47 @@ export function ManageContributorsDialog({
             {invitationsLoading ? (
               <Skeleton className="h-12 w-full" />
             ) : invitationsError ? (
-              <div role="alert" className="flex flex-wrap items-center gap-2 text-sm text-destructive">
+              <div
+                role="alert"
+                className="flex flex-wrap items-center gap-2 text-sm text-destructive"
+              >
                 Could not load pending invitations.
-                <Button variant="outline" size="sm" onClick={() => void refetchInvitations()}>Retry</Button>
+                <Button variant="outline" size="sm" onClick={() => void refetchInvitations()}>
+                  Retry
+                </Button>
               </div>
             ) : !invitationsData?.data.length ? (
               <p className="text-sm text-muted-foreground">No pending invitations.</p>
             ) : (
               <div className="divide-y rounded-lg border px-3">
                 {invitationsData.data.map((invitation) => (
-                  <div key={invitation.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
+                  <div
+                    key={invitation.id}
+                    className="flex flex-wrap items-center justify-between gap-2 py-3"
+                  >
                     <div className="min-w-0">
                       <p className="break-words text-sm font-medium">{invitation.invitee_name}</p>
-                      <PersonMeta parts={[
-                        invitation.make_primary ? 'Proposed primary lead' : invitation.role === 'lead' ? 'Project lead' : 'Contributor',
-                        'Awaiting response',
-                      ]} />
+                      <PersonMeta
+                        parts={[
+                          invitation.make_primary
+                            ? 'Proposed primary lead'
+                            : invitation.role === 'lead'
+                              ? 'Project lead'
+                              : 'Contributor',
+                          'Awaiting response',
+                        ]}
+                      />
                     </div>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      disabled={pendingUserId === invitation.invitee_id || cancelInvitation.isPending}
-                      onClick={() => void handleCancelInvitation(invitation.id, invitation.invitee_id)}
+                      disabled={
+                        pendingUserId === invitation.invitee_id || cancelInvitation.isPending
+                      }
+                      onClick={() =>
+                        void handleCancelInvitation(invitation.id, invitation.invitee_id)
+                      }
                     >
                       Cancel invitation
                     </Button>
@@ -448,7 +487,11 @@ export function ManageContributorsDialog({
                         ) : (
                           <Plus className="mr-1.5 h-3.5 w-3.5" />
                         )}
-                        {invitationPending ? 'Pending' : entry.requires_invitation ? 'Invite' : 'Add'}
+                        {invitationPending
+                          ? 'Pending'
+                          : entry.requires_invitation
+                            ? 'Invite'
+                            : 'Add'}
                       </Button>
                     </div>
                   );

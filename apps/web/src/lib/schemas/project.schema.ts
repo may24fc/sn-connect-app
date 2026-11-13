@@ -67,11 +67,12 @@ export const checklistItemStatusSchema = z.enum(['todo', 'done']);
 export const projectContributorRoleSchema = z.enum(['lead', 'contributor']);
 
 // ----- Project -----
-export const projectCreateSchema = z.object({
+const projectCreateBaseSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(200),
   description: z.string().trim().max(5000).optional().nullable(),
   leadUserId: z.string().uuid('Lead user is required'),
   coLeadUserIds: z.array(z.string().uuid()).default([]),
+  contributorUserIds: z.array(z.string().uuid()).default([]),
   supervisorId: z.string().uuid().optional().nullable(),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'startDate must be YYYY-MM-DD'),
   targetEndDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'targetEndDate must be YYYY-MM-DD'),
@@ -81,7 +82,20 @@ export const projectCreateSchema = z.object({
   isCompletedAlready: z.boolean().default(false),
 });
 
-export const projectUpdateSchema = projectCreateSchema.omit({ coLeadUserIds: true }).partial();
+export const projectCreateSchema = projectCreateBaseSchema.superRefine((input, context) => {
+  const leadIds = new Set([input.leadUserId, ...input.coLeadUserIds]);
+  if (input.contributorUserIds.some((userId) => leadIds.has(userId))) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['contributorUserIds'],
+      message: 'A person cannot be both a project lead and a contributor',
+    });
+  }
+});
+
+export const projectUpdateSchema = projectCreateBaseSchema
+  .omit({ coLeadUserIds: true, contributorUserIds: true })
+  .partial();
 
 // ----- Milestone -----
 export const milestoneCreateSchema = z.object({

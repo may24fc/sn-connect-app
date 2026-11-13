@@ -354,6 +354,8 @@ export const queryKeys = {
     all: ['work-tracker'] as const,
     view: (scope: 'mine' | 'team', days: 7 | 30 | 90) =>
       [...queryKeys.workTracker.all, scope, days] as const,
+    requests: (scope: 'mine' | 'review') =>
+      [...queryKeys.workTracker.all, 'requests', scope] as const,
   },
 
   // Reports

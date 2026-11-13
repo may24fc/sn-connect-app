@@ -1,10 +1,13 @@
 'use client';
 
+import { FilterSearchInput } from '@/components/data-display/FilterControls';
 import { TrackerPagination } from '@/components/data-display/TrackerPagination';
 import { TaskKanbanBoard, type TaskStatusDB } from '@/components/tasks';
+import { CrossDepartmentWorkRequests } from '@/components/work-tracker/CrossDepartmentWorkRequests';
 import { WorkTrackerSectionNav } from '@/components/work-tracker/WorkTrackerSectionNav';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreateTask } from '@/hooks/useCreateTask';
+import { useCrossDepartmentWorkRequests } from '@/hooks/useCrossDepartmentWorkRequests';
 import { useProjectMilestones } from '@/hooks/useProjects';
 import { useTaskAssignees } from '@/hooks/useTaskAssignees';
 import { useTasks } from '@/hooks/useTasks';
@@ -33,6 +36,7 @@ import {
   HealthPill,
   Input,
   Label,
+  PageTitle,
   PersonMeta,
   Progress,
   Select,
@@ -44,9 +48,8 @@ import {
   Textarea,
   UserAvatar,
   formatPersonRole,
-  tableHeaderClassName,
   tableHeadTextClassName,
-  PageTitle,
+  tableHeaderClassName,
 } from '@hr-portal/ui';
 import {
   AlertTriangle,
@@ -61,11 +64,10 @@ import {
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import { FilterSearchInput } from '@/components/data-display/FilterControls';
 
 const TRACKER_PAGE_SIZE = 10;
 
-type WorkTrackerView = 'team' | 'roadmap' | 'execution';
+type WorkTrackerView = 'team' | 'roadmap' | 'execution' | 'requests';
 
 function formatLabel(value: string): string {
   return value.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -128,7 +130,9 @@ export default function WorkTrackerPage() {
   const searchParams = useSearchParams();
   const requestedView = searchParams.get('view');
   const view: WorkTrackerView =
-    requestedView === 'roadmap' || requestedView === 'execution' ? requestedView : 'team';
+    requestedView === 'roadmap' || requestedView === 'execution' || requestedView === 'requests'
+      ? requestedView
+      : 'team';
   const isGlobalManager = user?.role === 'admin' || user?.role === 'super_admin';
   const scope: WorkTrackerScope =
     (isGlobalManager && searchParams.get('scope') !== 'mine') ||
@@ -169,6 +173,7 @@ export default function WorkTrackerPage() {
     );
   const canViewTeam = isGlobalManager || data?.canViewTeam === true;
   const canEditTasks = scope === 'mine' || data?.canAssignTasks === true;
+  const { data: reviewRequests } = useCrossDepartmentWorkRequests('review', canViewTeam);
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -190,7 +195,16 @@ export default function WorkTrackerPage() {
       </header>
 
       <WorkTrackerSectionNav
-        current={view === 'roadmap' ? 'projects' : view === 'execution' ? 'tasks' : 'overview'}
+        current={
+          view === 'roadmap'
+            ? 'projects'
+            : view === 'execution'
+              ? 'tasks'
+              : view === 'requests'
+                ? 'requests'
+                : 'overview'
+        }
+        pendingRequestCount={reviewRequests?.pendingCount ?? 0}
       />
 
       {view === 'team' ? (
@@ -404,6 +418,11 @@ export default function WorkTrackerPage() {
           initialSearch={searchParams.get('search') ?? ''}
           projectOptions={data?.projects ?? []}
           returnTo={returnTo}
+        />
+      ) : null}
+      {view === 'requests' ? (
+        <CrossDepartmentWorkRequests
+          initialScope={searchParams.get('requestScope') === 'review' ? 'review' : 'mine'}
         />
       ) : null}
     </div>
@@ -1116,10 +1135,10 @@ function ExecutionView({
           placeholder="Search tasks..."
           value={search}
           onChange={(value) => {
-              setSearch(value);
-              setCurrentPage(1);
-              replaceExecutionUrl(projectId, assigneeId, value);
-            }}
+            setSearch(value);
+            setCurrentPage(1);
+            replaceExecutionUrl(projectId, assigneeId, value);
+          }}
           maxLength={200}
         />
         <Select

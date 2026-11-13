@@ -14,9 +14,9 @@ import {
   CardContent,
   Input,
   Label,
+  PageTitle,
   TaskAssigneeSelect,
   useToast,
-  PageTitle,
 } from '@hr-portal/ui';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -48,6 +48,7 @@ export default function NewProjectPage() {
   const [targetEndDate, setTargetEndDate] = useState('');
   const [isCompletedAlready, setIsCompletedAlready] = useState(false);
   const [selectedLeadIds, setSelectedLeadIds] = useState<Array<string> | null>(null);
+  const [selectedContributorIds, setSelectedContributorIds] = useState<Array<string>>([]);
   const projectLeadIds = selectedLeadIds ?? (user?.id ? [user.id] : []);
   const leadOptions = user
     ? [
@@ -64,12 +65,22 @@ export default function NewProjectPage() {
         ...(leadCandidates?.data ?? []).filter((candidate) => candidate.id !== user.id),
       ]
     : [];
+  const projectLeadOptions = leadOptions.filter(
+    (candidate) => !selectedContributorIds.includes(candidate.id)
+  );
+  const contributorOptions = leadOptions.filter(
+    (candidate) => !projectLeadIds.includes(candidate.id)
+  );
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!user?.id) return;
     if (!name.trim() || !startDate || !targetEndDate) {
-      addToast({ title: 'Missing fields', description: 'Name, start, and target end are required.', variant: 'warning' });
+      addToast({
+        title: 'Missing fields',
+        description: 'Name, start, and target end are required.',
+        variant: 'warning',
+      });
       return;
     }
     const [primaryLeadId, ...coLeadUserIds] = projectLeadIds;
@@ -88,6 +99,7 @@ export default function NewProjectPage() {
         description: composedDescription || null,
         leadUserId: primaryLeadId,
         coLeadUserIds,
+        contributorUserIds: selectedContributorIds,
         startDate,
         targetEndDate,
         status: isCompletedAlready ? 'completed' : 'active',
@@ -102,9 +114,7 @@ export default function NewProjectPage() {
             : name.trim(),
         variant: 'success',
       });
-      router.push(
-        `/projects/${result.data.id}?returnTo=${encodeURIComponent(projectListPath)}`
-      );
+      router.push(`/projects/${result.data.id}?returnTo=${encodeURIComponent(projectListPath)}`);
     } catch (err) {
       addToast({
         title: 'Failed to create project',
@@ -117,19 +127,12 @@ export default function NewProjectPage() {
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <header className="flex items-center gap-3 border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={handleBack}
-          className="shrink-0"
-        >
+        <Button type="button" variant="ghost" onClick={handleBack} className="shrink-0">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to projects
         </Button>
         <div>
-          <PageTitle>
-            New Project
-          </PageTitle>
+          <PageTitle>New Project</PageTitle>
           <p className="mt-1 text-sm text-muted-foreground">
             Create a project, then break it into monthly milestones.
           </p>
@@ -143,7 +146,7 @@ export default function NewProjectPage() {
                 <Label htmlFor="name">Project name</Label>
                 <Input
                   id="name"
-            maxLength={200}
+                  maxLength={200}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Marketing Analytics Dashboard"
@@ -173,19 +176,21 @@ export default function NewProjectPage() {
                 </div>
               </div>
               <TaskAssigneeSelect
-                title="Project leads"
-                description="Leads manage the project. Contributors can participate without lead management access."
+                title="Project leadership"
+                description="Project leads can manage contributors, milestones, and project settings."
                 searchLabel="Search project leads"
-                searchPlaceholder={user?.role === 'admin' || user?.role === 'super_admin'
-                  ? 'Search by name or email...'
-                  : 'Search by name...'}
+                searchPlaceholder={
+                  user?.role === 'admin' || user?.role === 'super_admin'
+                    ? 'Search by name or email...'
+                    : 'Search by name...'
+                }
                 emptyMessage="No project leads found"
-                employees={leadOptions}
+                employees={projectLeadOptions}
                 selectedIds={projectLeadIds}
                 onSelectionChange={setSelectedLeadIds}
                 primaryId={projectLeadIds[0] ?? null}
                 getPersonNote={(personId) =>
-                  leadOptions.find((person) => person.id === personId)?.requiresInvitation
+                  projectLeadOptions.find((person) => person.id === personId)?.requiresInvitation
                     ? 'Invitation required'
                     : null
                 }
@@ -193,20 +198,54 @@ export default function NewProjectPage() {
                 disabled={createProject.isPending}
               />
               <p className="text-xs text-muted-foreground">
-                The first selected lead is the proposed primary. People outside departments you
-                lead receive an invitation and join only if they accept, including when you are
-                an administrator. If the proposed primary needs an invitation, you remain primary
-                until they accept. The current primary determines the initial department; accepting
-                an invitation does not automatically add another department.
+                The first selected lead is the proposed primary. People outside departments you lead
+                receive an invitation and join only if they accept, including when you are an
+                administrator. If the proposed primary needs an invitation, you remain primary until
+                they accept. The current primary determines the initial department; accepting an
+                invitation does not automatically add another department.
               </p>
               {leadsError ? (
-                <div role="alert" className="flex flex-wrap items-center gap-2 text-sm text-destructive">
+                <div
+                  role="alert"
+                  className="flex flex-wrap items-center gap-2 text-sm text-destructive"
+                >
                   Could not load eligible project leads.
-                  <Button type="button" variant="outline" size="sm" onClick={() => void refetchLeads()}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void refetchLeads()}
+                  >
                     Retry
                   </Button>
                 </div>
               ) : null}
+              <TaskAssigneeSelect
+                title="Project contributors"
+                description="Contributors can do project work without receiving project management access."
+                searchLabel="Search project contributors"
+                searchPlaceholder={
+                  user?.role === 'admin' || user?.role === 'super_admin'
+                    ? 'Search by name or email...'
+                    : 'Search by name...'
+                }
+                emptyMessage="No project contributors found"
+                employees={contributorOptions}
+                selectedIds={selectedContributorIds}
+                onSelectionChange={setSelectedContributorIds}
+                primaryId={null}
+                getPersonNote={(personId) =>
+                  contributorOptions.find((person) => person.id === personId)?.requiresInvitation
+                    ? 'Invitation required'
+                    : null
+                }
+                isLoading={leadsLoading}
+                disabled={createProject.isPending}
+              />
+              <p className="text-xs text-muted-foreground">
+                Contributors outside departments you lead receive an invitation. They join as
+                contributors when they accept and are never promoted to project lead automatically.
+              </p>
               <ProjectDescriptionFields
                 value={descriptionSections}
                 onChange={setDescriptionSections}

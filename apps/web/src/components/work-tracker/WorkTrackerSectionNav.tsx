@@ -1,18 +1,23 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { FolderKanban, LayoutDashboard, ListTodo } from 'lucide-react';
+import { FolderKanban, Handshake, LayoutDashboard, ListTodo } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
-type WorkTrackerSection = 'overview' | 'projects' | 'tasks';
+type WorkTrackerSection = 'overview' | 'projects' | 'tasks' | 'requests';
 
 interface WorkTrackerSectionNavProps {
   current: WorkTrackerSection;
   className?: string;
+  pendingRequestCount?: number;
 }
 
-export function WorkTrackerSectionNav({ current, className }: WorkTrackerSectionNavProps) {
+export function WorkTrackerSectionNav({
+  current,
+  className,
+  pendingRequestCount = 0,
+}: WorkTrackerSectionNavProps) {
   const searchParams = useSearchParams();
   const sections = [
     {
@@ -30,6 +35,11 @@ export function WorkTrackerSectionNav({ current, className }: WorkTrackerSection
       label: 'Execution Board',
       icon: ListTodo,
     },
+    {
+      id: 'requests' as const,
+      label: 'Department Requests',
+      icon: Handshake,
+    },
   ];
 
   return (
@@ -46,7 +56,13 @@ export function WorkTrackerSectionNav({ current, className }: WorkTrackerSection
         const params = new URLSearchParams(searchParams.toString());
         params.set(
           'view',
-          section.id === 'overview' ? 'team' : section.id === 'projects' ? 'roadmap' : 'execution'
+          section.id === 'overview'
+            ? 'team'
+            : section.id === 'projects'
+              ? 'roadmap'
+              : section.id === 'tasks'
+                ? 'execution'
+                : 'requests'
         );
 
         return (
@@ -63,6 +79,11 @@ export function WorkTrackerSectionNav({ current, className }: WorkTrackerSection
           >
             <Icon className="h-4 w-4" aria-hidden="true" />
             {section.label}
+            {section.id === 'requests' && pendingRequestCount > 0 ? (
+              <span className="rounded-full bg-primary px-1.5 text-[10px] leading-5 text-primary-foreground">
+                {pendingRequestCount > 99 ? '99+' : pendingRequestCount}
+              </span>
+            ) : null}
           </Link>
         );
       })}

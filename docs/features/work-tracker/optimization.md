@@ -22,6 +22,8 @@
 - [Project creation](../../../apps/web/src/app/(app)/(employee)/projects/new/page.tsx), [contributor management](../../../apps/web/src/components/projects/ManageContributorsDialog.tsx), and [invitation review](../../../apps/web/src/app/(app)/(employee)/projects/invitations/page.tsx): project-lead selection, pending states, and recipient decisions.
 - [Project membership RPCs](../../../supabase/migrations/20261104000004_project_member_invitations.sql) and [co-lead permissions](../../../supabase/migrations/20261104000003_project_co_leads.sql): atomic assignments, notifications, response locking, and RLS protections.
 - [Invitation API tests](../../../tests/api/project-member-invitations-route.test.ts), [local invitation SQL](../../../tests/sql/project-member-invitations-local.sql), [local co-lead SQL](../../../tests/sql/project-co-leads-local.sql), and [project browser journeys](../../../e2e/project-co-leads.spec.ts): consent, authorization, error recovery, and responsive workflows.
+- [Department request migration](../../../supabase/migrations/20261113000001_cross_department_work_requests.sql), [request API](../../../apps/web/src/app/api/work-requests/route.ts), and [decision API](../../../apps/web/src/app/api/work-requests/[id]/route.ts): auditable request state, authorization, notification, and atomic approval.
+- [Department request UI](../../../apps/web/src/components/work-tracker/CrossDepartmentWorkRequests.tsx), [request hooks](../../../apps/web/src/hooks/useCrossDepartmentWorkRequests.ts), and [browser journey](../../../e2e/cross-department-work-requests.spec.ts): requester/reviewer states, server-confirmed actions, and responsive verification.
 
 ## Visual Guide
 
@@ -278,3 +280,25 @@ tests target local only. Production migrations were applied separately after app
   regenerated types, reran local SQL/76 focused tests, and passed the full build.
   Real-API browser validation, concurrent-response testing, and application rollout
   verification remain open in the [task tracker](task-tracker.md).
+
+## Cross-Department Staffing Requests - 2026-11-13
+
+### Implemented - capacity approval before assignment
+
+- Problem/evidence: people could create their own work, but asking another department for help had no single auditable intake. Direct assignment bypassed the target lead’s workload context, while adding someone during project creation could make the role appear to be project leadership.
+- Delivered solution: add a Department Requests view with requester and reviewer inboxes. Any active user may submit a request to another department. A target-department lead can approve with a named assignee, request changes with guidance, or decline with a reason. Approved project work activates the department and adds the assignee as an ordinary contributor before creating the task. Project creation now exposes separate leadership and contributor pickers; the same person cannot be selected in both roles.
+- Reliability/security: create, revise, and decision mutations are server-confirmed. Database functions lock the request, reject self-review/repeated decisions, re-check lead authority and assignee department membership, and create task/membership/notifications in the same transaction. Requesters do not receive target-department candidate lists. Pending requests grant no task or project access.
+- Reference patterns: [Linear Triage](https://linear.app/docs/triage) uses an explicit intake state before work enters a team’s active workflow; [Asana approvals](https://help.asana.com/s/article/approvals) separates approve, request changes, and reject decisions; [Jira approvals](https://support.atlassian.com/jira-service-management-cloud/docs/what-are-approvals/) keeps approver decisions visible on the work item. The Control Hub implementation maps those patterns to department capacity and uses existing department-lead authority rather than copying another product’s permissions.
+- Validation: migration `20261113000001` applied to local Supabase and production project `tccdupkjmwwxcvpqnpeb`; both ledgers agree and the final linked dry run is clean. Generated database types were refreshed. The rollback-only SQL suite proved pending isolation, self-review and repeated-decision rejection, atomic task ownership, revoked authenticated function execution, and contributor-role preservation. Twelve focused Vitest tests, web/database typechecks, targeted Biome with warnings only, and the full web production build passed. The focused Playwright journey passed at 1440x900 and 390x844, exercised review and assignee selection, inspected both screenshots, and asserted no console errors or failed requests.
+
+```mermaid
+flowchart LR
+    A[Member submits department request] --> B[Pending: no task or access]
+    B --> C{Target department lead decides}
+    C -->|Request changes| D[Requester revises and resubmits]
+    D --> B
+    C -->|Decline| E[Closed with reason]
+    C -->|Approve and choose member| F[Activate project department if needed]
+    F --> G[Add ordinary contributor]
+    G --> H[Create assigned task and notify]
+```

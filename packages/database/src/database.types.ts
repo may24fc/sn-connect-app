@@ -1535,6 +1535,192 @@ export type Database = {
         }
         Relationships: []
       }
+      cross_department_work_requests: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          created_task_id: string | null
+          decided_at: string | null
+          decision_note: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          milestone_id: string | null
+          priority: Database["public"]["Enums"]["task_priority"]
+          project_id: string | null
+          requester_id: string
+          reviewed_by: string | null
+          source_department_id: string | null
+          status: string
+          suggested_assignee_id: string | null
+          target_department_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          created_task_id?: string | null
+          decided_at?: string | null
+          decision_note?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          milestone_id?: string | null
+          priority?: Database["public"]["Enums"]["task_priority"]
+          project_id?: string | null
+          requester_id: string
+          reviewed_by?: string | null
+          source_department_id?: string | null
+          status?: string
+          suggested_assignee_id?: string | null
+          target_department_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          created_task_id?: string | null
+          decided_at?: string | null
+          decision_note?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          milestone_id?: string | null
+          priority?: Database["public"]["Enums"]["task_priority"]
+          project_id?: string | null
+          requester_id?: string
+          reviewed_by?: string | null
+          source_department_id?: string | null
+          status?: string
+          suggested_assignee_id?: string | null
+          target_department_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cross_department_work_requests_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "cross_department_work_requests_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "cross_department_work_requests_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cross_department_work_requests_created_task_id_fkey"
+            columns: ["created_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cross_department_work_requests_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "project_milestones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cross_department_work_requests_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cross_department_work_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "cross_department_work_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "cross_department_work_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cross_department_work_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "cross_department_work_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "cross_department_work_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cross_department_work_requests_source_department_id_fkey"
+            columns: ["source_department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cross_department_work_requests_suggested_assignee_id_fkey"
+            columns: ["suggested_assignee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "cross_department_work_requests_suggested_assignee_id_fkey"
+            columns: ["suggested_assignee_id"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "cross_department_work_requests_suggested_assignee_id_fkey"
+            columns: ["suggested_assignee_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cross_department_work_requests_target_department_id_fkey"
+            columns: ["target_department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       department_leads: {
         Row: {
           appointed_at: string
@@ -12277,6 +12463,13 @@ export type Database = {
           retry_after_seconds: number
         }[]
       }
+      create_cross_department_work_request: {
+        Args: {
+          p_actor: string
+          p_input: Json
+        }
+        Returns: Json
+      }
       create_finance_report_snapshot: {
         Args: {
           target_month: string
@@ -12887,6 +13080,16 @@ export type Database = {
         }
         Returns: unknown
       }
+      respond_cross_department_work_request: {
+        Args: {
+          p_request_id: string
+          p_actor: string
+          p_action: string
+          p_assignee?: string
+          p_note?: string
+        }
+        Returns: Json
+      }
       respond_project_member_invitation: {
         Args: {
           p_invitation_id: string
@@ -12922,6 +13125,15 @@ export type Database = {
           updated_at: string
           url: string | null
         }
+      }
+      revise_cross_department_work_request: {
+        Args: {
+          p_request_id: string
+          p_actor: string
+          p_action: string
+          p_input?: Json
+        }
+        Returns: Json
       }
       set_project_primary_lead: {
         Args: {
