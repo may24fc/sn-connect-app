@@ -1020,6 +1020,7 @@ export type Database = {
           created_at: string
           delivery_address: string
           event_id: string
+          phone_number: string | null
           updated_at: string
           user_id: string
         }
@@ -1027,6 +1028,7 @@ export type Database = {
           created_at?: string
           delivery_address: string
           event_id: string
+          phone_number?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1034,6 +1036,7 @@ export type Database = {
           created_at?: string
           delivery_address?: string
           event_id?: string
+          phone_number?: string | null
           updated_at?: string
           user_id?: string
         }

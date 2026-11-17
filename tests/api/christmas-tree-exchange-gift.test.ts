@@ -102,7 +102,15 @@ describe('Christmas exchange gift draw', () => {
         ['admin-1', 'Admin User'],
         ['employee-1', 'Sample Employee'],
       ]),
-      addressByUserId: new Map([['employee-1', '123 Sample Street, Cebu City']]),
+      deliveryDetailsByUserId: new Map([
+        [
+          'employee-1',
+          {
+            deliveryAddress: '123 Sample Street, Cebu City',
+            phoneNumber: '+63 917 123 4567',
+          },
+        ],
+      ]),
     };
 
     const managerState = buildExchangeGiftState({ ...input, canManage: true });
@@ -119,6 +127,7 @@ describe('Christmas exchange gift draw', () => {
         recipientName: null,
         hasSelected: false,
         hasDeliveryAddress: true,
+        hasPhoneNumber: true,
       }),
     ]);
 
@@ -144,7 +153,15 @@ describe('Christmas exchange gift draw', () => {
       userId: 'employee-1',
       hasOrnament: true,
       nameByUserId: new Map([['employee-2', 'Recipient User']]),
-      addressByUserId: new Map([['employee-2', '456 Recipient Avenue, Davao City']]),
+      deliveryDetailsByUserId: new Map([
+        [
+          'employee-2',
+          {
+            deliveryAddress: '456 Recipient Avenue, Davao City',
+            phoneNumber: '+63 918 765 4321',
+          },
+        ],
+      ]),
       canManage: false,
     });
 
@@ -152,6 +169,7 @@ describe('Christmas exchange gift draw', () => {
       userId: 'employee-2',
       name: 'Recipient User',
       deliveryAddress: '456 Recipient Avenue, Davao City',
+      phoneNumber: '+63 918 765 4321',
     });
     expect(state.deliveryAddress).toBeNull();
   });
@@ -187,7 +205,8 @@ describe('Christmas exchange gift draw', () => {
     await saveChristmasExchangeGiftDeliveryAddress(
       client,
       'employee-1',
-      '789 Private Road, Manila'
+      '789 Private Road, Manila',
+      '+63 919 111 2233'
     );
 
     expect(upsert).toHaveBeenCalledWith(
@@ -195,6 +214,7 @@ describe('Christmas exchange gift draw', () => {
         event_id: 'event-1',
         user_id: 'employee-1',
         delivery_address: '789 Private Road, Manila',
+        phone_number: '+63 919 111 2233',
       },
       { onConflict: 'event_id,user_id' }
     );
@@ -202,7 +222,7 @@ describe('Christmas exchange gift draw', () => {
       client,
       expect.objectContaining({
         action: 'SAVE_CHRISTMAS_EXCHANGE_GIFT_DELIVERY_ADDRESS',
-        metadata: { eventId: 'event-1', hasDeliveryAddress: true },
+        metadata: { eventId: 'event-1', hasDeliveryAddress: true, hasPhoneNumber: true },
       })
     );
   });

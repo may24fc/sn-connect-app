@@ -19,6 +19,7 @@ import {
   CHRISTMAS_ORNAMENT_ASSETS,
   type ChristmasOrnamentPlacementInput,
   type ChristmasStrandGeometry,
+  christmasExchangeGiftAddressSchema,
   christmasStrandGeometrySchema,
 } from '@/lib/schemas/christmas-tree.schema';
 import {
@@ -55,6 +56,7 @@ import {
   MapPin,
   Maximize,
   Minimize,
+  Phone,
   Sparkles,
   Trash2,
   UsersRound,
@@ -408,9 +410,9 @@ export default function ChristmasTreePage() {
               : null
           }
         />
-        <section className="space-y-6">
+        <section className="flex flex-col gap-6">
           {data.permissions.canManage ? (
-            <div className="hidden xl:block">
+            <div className="order-1 hidden xl:block">
               <AdminDecorationControls
                 decoration={data.decoration}
                 manualDecorations={data.manualDecorations}
@@ -426,36 +428,44 @@ export default function ChristmasTreePage() {
               />
             </div>
           ) : null}
-          <ExchangeGiftDrawCard
-            exchangeGift={data.exchangeGift}
-            isAddressSaving={saveExchangeGiftAddress.isPending}
-            isPending={drawExchangeGiftPartner.isPending}
-            onDraw={() => drawExchangeGiftPartner.mutate()}
-            onSaveAddress={(deliveryAddress) => saveExchangeGiftAddress.mutate({ deliveryAddress })}
-          />
+          <div className="order-2">
+            <ExchangeGiftDrawCard
+              exchangeGift={data.exchangeGift}
+              isAddressSaving={saveExchangeGiftAddress.isPending}
+              isPending={drawExchangeGiftPartner.isPending}
+              onDraw={() => drawExchangeGiftPartner.mutate()}
+              onSaveAddress={(deliveryAddress, phoneNumber) =>
+                saveExchangeGiftAddress.mutate({ deliveryAddress, phoneNumber })
+              }
+            />
+          </div>
           {data.exchangeGift.adminRoster ? (
-            <AdminExchangeGiftRoster exchangeGift={data.exchangeGift} />
+            <div className="order-3">
+              <AdminExchangeGiftRoster exchangeGift={data.exchangeGift} />
+            </div>
           ) : null}
-          {!data.myOrnament ? (
-            <OrnamentPicker
-              isPending={placeOrnament.isPending}
-              onBeginDrag={(assetType, clientX, clientY) => {
-                setSelectedAssetType(assetType);
-                setNewBallDragStart({ clientX, clientY });
-                setIsDraggingNewBall(true);
-              }}
-              onSelect={setSelectedAssetType}
-              selectedAssetType={selectedAssetType}
-            />
-          ) : (
-            <WishPanel
-              data={data}
-              isDeleting={deleteWish.isPending}
-              isPending={upsertWish.isPending}
-              onDelete={deleteWish.mutate}
-              onSave={upsertWish.mutate}
-            />
-          )}
+          <div className="order-1 xl:order-4">
+            {!data.myOrnament ? (
+              <OrnamentPicker
+                isPending={placeOrnament.isPending}
+                onBeginDrag={(assetType, clientX, clientY) => {
+                  setSelectedAssetType(assetType);
+                  setNewBallDragStart({ clientX, clientY });
+                  setIsDraggingNewBall(true);
+                }}
+                onSelect={setSelectedAssetType}
+                selectedAssetType={selectedAssetType}
+              />
+            ) : (
+              <WishPanel
+                data={data}
+                isDeleting={deleteWish.isPending}
+                isPending={upsertWish.isPending}
+                onDelete={deleteWish.mutate}
+                onSave={upsertWish.mutate}
+              />
+            )}
+          </div>
         </section>
       </div>
 
@@ -521,6 +531,8 @@ function AdminExchangeGiftRoster({
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {participant.hasDeliveryAddress ? 'Address added' : 'Address not added yet'}
+                  {' · '}
+                  {participant.hasPhoneNumber ? 'Phone added' : 'Phone not added yet'}
                 </p>
               </div>
               <Badge className="shrink-0" variant={participant.hasSelected ? 'default' : 'outline'}>
@@ -545,15 +557,24 @@ function ExchangeGiftDrawCard({
   isAddressSaving: boolean;
   isPending: boolean;
   onDraw: () => void;
-  onSaveAddress: (deliveryAddress: string) => void;
+  onSaveAddress: (deliveryAddress: string, phoneNumber: string) => void;
 }) {
   const [deliveryAddress, setDeliveryAddress] = useState(exchangeGift.deliveryAddress ?? '');
+  const [phoneNumber, setPhoneNumber] = useState(exchangeGift.phoneNumber ?? '');
   const canDraw = exchangeGift.isEligible && exchangeGift.participantCount >= 2;
   const drawMessage = getExchangeGiftDrawMessage(exchangeGift);
+  const hasUnchangedDeliveryDetails =
+    deliveryAddress.trim() === exchangeGift.deliveryAddress &&
+    phoneNumber.trim() === exchangeGift.phoneNumber;
+  const hasValidDeliveryDetails = christmasExchangeGiftAddressSchema.safeParse({
+    deliveryAddress,
+    phoneNumber,
+  }).success;
 
   useEffect(() => {
     setDeliveryAddress(exchangeGift.deliveryAddress ?? '');
-  }, [exchangeGift.deliveryAddress]);
+    setPhoneNumber(exchangeGift.phoneNumber ?? '');
+  }, [exchangeGift.deliveryAddress, exchangeGift.phoneNumber]);
 
   return (
     <Card data-testid="exchange-gift-draw-card" className="overflow-hidden border-rose-200/80">
@@ -574,17 +595,23 @@ function ExchangeGiftDrawCard({
       </CardHeader>
       <CardContent className="space-y-4 pt-5">
         <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
-          <div className="flex items-center justify-between gap-3">
-            <label className="text-sm font-medium" htmlFor="exchange-gift-delivery-address">
-              Your delivery address
-            </label>
-            <Badge variant={exchangeGift.deliveryAddress ? 'secondary' : 'outline'}>
-              {exchangeGift.deliveryAddress ? 'Address added' : 'Not added yet'}
-            </Badge>
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Your delivery details</p>
+            <div className="flex flex-wrap gap-1.5">
+              <Badge variant={exchangeGift.deliveryAddress ? 'secondary' : 'outline'}>
+                {exchangeGift.deliveryAddress ? 'Address added' : 'Address not added'}
+              </Badge>
+              <Badge variant={exchangeGift.phoneNumber ? 'secondary' : 'outline'}>
+                {exchangeGift.phoneNumber ? 'Phone added' : 'Phone not added'}
+              </Badge>
+            </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            Only the teammate who draws your name will see this address.
+            Only the teammate who draws your name will see these details.
           </p>
+          <label className="text-xs font-medium" htmlFor="exchange-gift-delivery-address">
+            Delivery address
+          </label>
           <Textarea
             disabled={!exchangeGift.canSaveDeliveryAddress || isAddressSaving}
             id="exchange-gift-delivery-address"
@@ -594,20 +621,34 @@ function ExchangeGiftDrawCard({
             rows={3}
             value={deliveryAddress}
           />
+          <label className="text-xs font-medium" htmlFor="exchange-gift-phone-number">
+            Phone number
+          </label>
+          <Input
+            disabled={!exchangeGift.canSaveDeliveryAddress || isAddressSaving}
+            id="exchange-gift-phone-number"
+            inputMode="tel"
+            maxLength={30}
+            onChange={(event) => setPhoneNumber(event.target.value)}
+            placeholder="+63 917 123 4567"
+            type="tel"
+            value={phoneNumber}
+          />
+          <p className="text-xs text-muted-foreground">Include the country code.</p>
           <Button
             disabled={
               !exchangeGift.canSaveDeliveryAddress ||
               isAddressSaving ||
-              deliveryAddress.trim().length < 5 ||
-              deliveryAddress.trim() === exchangeGift.deliveryAddress
+              !hasValidDeliveryDetails ||
+              hasUnchangedDeliveryDetails
             }
-            onClick={() => onSaveAddress(deliveryAddress.trim())}
+            onClick={() => onSaveAddress(deliveryAddress.trim(), phoneNumber.trim())}
             size="sm"
             type="button"
             variant="outline"
           >
             <MapPin className="mr-2 h-4 w-4" />
-            {isAddressSaving ? 'Saving address...' : 'Save address'}
+            {isAddressSaving ? 'Saving details...' : 'Save delivery details'}
           </Button>
         </div>
         {exchangeGift.recipient ? (
@@ -637,6 +678,21 @@ function ExchangeGiftDrawCard({
                   Delivery address not added yet.
                 </p>
               )}
+              <div className="mt-3 border-t border-rose-200/80 pt-3 dark:border-rose-800/80">
+                <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <Phone className="h-3.5 w-3.5" /> Phone number
+                </p>
+                {exchangeGift.recipient.phoneNumber ? (
+                  <a
+                    className="mt-1 inline-block text-sm font-medium text-rose-700 underline-offset-2 hover:underline dark:text-rose-300"
+                    href={`tel:${exchangeGift.recipient.phoneNumber}`}
+                  >
+                    {exchangeGift.recipient.phoneNumber}
+                  </a>
+                ) : (
+                  <p className="mt-1 text-sm text-muted-foreground">Phone number not added yet.</p>
+                )}
+              </div>
             </div>
           </div>
         ) : (
@@ -1280,7 +1336,10 @@ function WishPanel({
   const myWishes =
     data.ornaments.find((ornament) => ornament.id === data.myOrnament?.id)?.wishes ?? [];
   return (
-    <Card className="overflow-hidden border-emerald-950/15 shadow-sm">
+    <Card
+      className="overflow-hidden border-emerald-950/15 shadow-sm"
+      data-testid="christmas-wish-panel"
+    >
       <CardHeader className="border-b border-emerald-950/10 bg-emerald-50/60 dark:bg-emerald-950/20">
         <CardTitle className="flex items-center gap-2">
           <span className="h-3 w-3 rounded-full bg-red-600 ring-2 ring-red-100" />

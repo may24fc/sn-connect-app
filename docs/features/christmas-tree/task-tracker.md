@@ -10,6 +10,9 @@ Optimization record: [optimization.md](./optimization.md)
 
 ### Done
 
+- [x] Keep the wish editor visible near the tree on mobile - 2026-11-17; reordered the responsive right rail so the Personal/Others/SN wish panel appears immediately after the tree on phone-sized screens, ahead of the taller Exchange Gift and admin sections, while preserving the existing desktop order. Web type-check passed, and the focused employee Playwright journey passed at 390px with an explicit panel-before-gift position assertion and an inspected screenshot at `test-results/christmas-tree-layout-*/mobile-wish-panel.png`.
+- [x] Add a private delivery phone number below the exchange-gift address - 2026-11-17; extended the private delivery record, validation, API snapshot, admin presence status, and revealed recipient card with an international phone number. Migration `20261117000002` was applied to local Supabase only. Focused API/schema tests passed 14/14, database and web type-checks passed, and focused Playwright passed for employee, admin, and super-admin desktop/mobile states with screenshots reviewed. Production migration remains intentionally unapplied pending explicit approval.
+
 - [x] Keep exchange-gift partners private until reveal and add delivery addresses - 2026-11-17; added a private per-event address table and RLS policies, a server-confirmed address endpoint/mutation, recipient-only address disclosure after the giver clicks Draw, address-presence status, realtime refresh for assignments/addresses, and admin tracking that hides unrevealed partner names. Migration `20261117000001` was applied to local and production Supabase and both histories match. Focused API/schema tests passed 12/12; database and web type-checks passed; focused Playwright passed 3/3 for employee, admin, and super-admin at 1440px desktop and 390px mobile with screenshots reviewed. The one production test reveal was reset from revealed to hidden while all 16 stored assignments were preserved.
 
 - [x] Let admin and super-admin track exchange-gift assignments and draw progress - 2026-11-17; changed the Christmas Tree server snapshot, page, focused API coverage, and Playwright coverage. Managers now receive a role-gated roster showing every participant, who they are buying for after assignment finalization, and whether they have selected/revealed their partner; employees receive no roster data. The manager's own draw card remains available. Focused API tests passed 14/14, web type-check passed, and focused Playwright passed 2/2 for admin and super-admin at 1440px desktop and 390px mobile with inspected tracking-card screenshots. No migration was needed.
@@ -35,6 +38,8 @@ Optimization record: [optimization.md](./optimization.md)
 
 ### Deferred
 
+- [ ] Apply migration `20261117000002_add_exchange_gift_delivery_phone.sql` to production - production deployment was not requested for this follow-up; resume after explicit production approval and a linked dry run showing only this migration.
+
 - [ ] Capture a before/after browser-load performance baseline for the third-party music embed - implementation began before a baseline was captured, and the repository sampler measures server routes rather than the cross-origin iframe load; resume from a separate pre-change worktree and compare a Playwright browser trace against the current implementation, then record resource timing p50/p95 in `optimization.md`.
 
 ### Skipped
@@ -42,6 +47,9 @@ Optimization record: [optimization.md](./optimization.md)
 ### Blocked
 
 ## Session History
+
+- 2026-11-17: Fixed the mobile discovery issue where the Exchange Gift card pushed the wish editor far below the tree. Responsive ordering now puts the tabbed wish editor directly after the tree on mobile and retains the desktop rail order. Web type-check and the focused employee Playwright journey passed; the 390px screenshot was inspected.
+- 2026-11-17: Added an international phone-number field directly below the delivery address. Phone values use the same owner/revealed-giver privacy boundary; admins see only whether a number was added. Applied and validated migration `20261117000002` locally, passed 14 focused tests and both type-checks, and browser-checked the employee/admin/super-admin desktop/mobile states. Production was not changed.
 
 - 2026-11-17: Corrected the admin tracking privacy boundary so partner names appear only after that giver reveals their assignment. Added editable delivery addresses with explicit saved/missing status; full address values remain visible only to the owner and their revealed giver, while admins see address-presence status only. Applied migration `20261117000001` to local and production, verified matching histories, and reset the sole production test reveal without changing any of the 16 assignments. Focused tests, type-checks, and desktop/mobile Playwright passed.
 

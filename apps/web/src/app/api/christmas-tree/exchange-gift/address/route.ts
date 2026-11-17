@@ -15,7 +15,10 @@ export async function PUT(request: NextRequest) {
     const parsed = christmasExchangeGiftAddressSchema.safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Enter a delivery address between 5 and 500 characters' },
+        {
+          error:
+            'Enter a delivery address and a valid phone number with country code, such as +63 917 123 4567',
+        },
         { status: 400 }
       );
     }
@@ -24,7 +27,8 @@ export async function PUT(request: NextRequest) {
     await saveChristmasExchangeGiftDeliveryAddress(
       adminClient,
       user.id,
-      parsed.data.deliveryAddress
+      parsed.data.deliveryAddress,
+      parsed.data.phoneNumber
     );
     return NextResponse.json({
       data: await buildChristmasTreeSnapshot(adminClient, user.id, role),

@@ -34,6 +34,7 @@ const pendingExchangeGift = {
   hasDrawn: false,
   recipient: null,
   deliveryAddress: null,
+  phoneNumber: null,
   canSaveDeliveryAddress: false,
   adminRoster: null,
 };
@@ -139,9 +140,11 @@ test.describe('Christmas Tree layout stability', () => {
   test('keeps the tree canvas stable when placement reveals the long wish panel', async ({
     page,
   }, testInfo) => {
+    test.setTimeout(60_000);
     let hasOrnament = false;
     let hasDrawnExchangeGift = false;
     let savedDeliveryAddress: string | null = null;
+    let savedPhoneNumber: string | null = null;
     const savedWishPayloads: Array<{
       category: 'personal' | 'for_others' | 'for_sn';
       itemNumber: number;
@@ -218,21 +221,31 @@ test.describe('Christmas Tree layout stability', () => {
                   isDrawFinalized: true,
                   hasDrawn: true,
                   deliveryAddress: savedDeliveryAddress,
+                  phoneNumber: savedPhoneNumber,
                   recipient: {
                     userId: 'emp-2',
                     name: 'Alex Rivera',
                     deliveryAddress: '456 Recipient Avenue, Davao City',
+                    phoneNumber: '+63 918 765 4321',
                   },
                 }
-              : { ...populatedSnapshot.exchangeGift, deliveryAddress: savedDeliveryAddress },
+              : {
+                  ...populatedSnapshot.exchangeGift,
+                  deliveryAddress: savedDeliveryAddress,
+                  phoneNumber: savedPhoneNumber,
+                },
             ornaments: populatedSnapshot.ornaments.map((ornament) => ({ ...ornament, wishes })),
           },
         }),
       });
     });
     await page.route('**/api/christmas-tree/exchange-gift/address', async (route) => {
-      const payload = route.request().postDataJSON() as { deliveryAddress: string };
+      const payload = route.request().postDataJSON() as {
+        deliveryAddress: string;
+        phoneNumber: string;
+      };
       savedDeliveryAddress = payload.deliveryAddress;
+      savedPhoneNumber = payload.phoneNumber;
       await route.fulfill({
         json: {
           data: {
@@ -240,6 +253,7 @@ test.describe('Christmas Tree layout stability', () => {
             exchangeGift: {
               ...populatedSnapshot.exchangeGift,
               deliveryAddress: savedDeliveryAddress,
+              phoneNumber: savedPhoneNumber,
             },
           },
         },
@@ -256,10 +270,12 @@ test.describe('Christmas Tree layout stability', () => {
               isDrawFinalized: true,
               hasDrawn: true,
               deliveryAddress: savedDeliveryAddress,
+              phoneNumber: savedPhoneNumber,
               recipient: {
                 userId: 'emp-2',
                 name: 'Alex Rivera',
                 deliveryAddress: '456 Recipient Avenue, Davao City',
+                phoneNumber: '+63 918 765 4321',
               },
             },
           },
@@ -315,15 +331,19 @@ test.describe('Christmas Tree layout stability', () => {
 
     await expect(page.getByText('Your Christmas Wishes')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Exchange Gift Draw' })).toBeVisible();
-    await expect(page.getByText('Not added yet')).toBeVisible();
-    await page.getByLabel('Your delivery address').fill('123 Sample Street, Cebu City, 6000');
-    await page.getByRole('button', { name: 'Save address' }).click();
+    await expect(page.getByText('Address not added')).toBeVisible();
+    await expect(page.getByText('Phone not added')).toBeVisible();
+    await page.getByLabel('Delivery address').fill('123 Sample Street, Cebu City, 6000');
+    await page.getByLabel('Phone number').fill('+63 917 123 4567');
+    await page.getByRole('button', { name: 'Save delivery details' }).click();
     await expect(page.getByText('Address added')).toBeVisible();
+    await expect(page.getByText('Phone added')).toBeVisible();
     await page.getByRole('button', { name: 'Draw my exchange gift partner' }).click();
     await expect(page.getByTestId('exchange-gift-recipient')).toContainText('Alex Rivera');
     await expect(page.getByTestId('exchange-gift-recipient')).toContainText(
       '456 Recipient Avenue, Davao City'
     );
+    await expect(page.getByTestId('exchange-gift-recipient')).toContainText('+63 918 765 4321');
     await page.getByTestId('exchange-gift-draw-card').screenshot({
       path: testInfo.outputPath('desktop-exchange-gift.png'),
     });
@@ -381,6 +401,14 @@ test.describe('Christmas Tree layout stability', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.getByText('Your Christmas Wishes')).toBeVisible();
     await expect(page.getByTestId('exchange-gift-recipient')).toContainText('Alex Rivera');
+    const mobileWishPanel = page.getByTestId('christmas-wish-panel');
+    const mobileWishBox = await mobileWishPanel.boundingBox();
+    const mobileGiftBox = await page.getByTestId('exchange-gift-draw-card').boundingBox();
+    if (!(mobileWishBox && mobileGiftBox)) throw new Error('Mobile cards were not measurable');
+    expect(mobileWishBox.y).toBeLessThan(mobileGiftBox.y);
+    await mobileWishPanel.screenshot({
+      path: testInfo.outputPath('mobile-wish-panel.png'),
+    });
     await page
       .getByTestId('exchange-gift-draw-card')
       .evaluate((element) => element.scrollIntoView({ block: 'center' }));
@@ -482,7 +510,12 @@ test.describe('Christmas Tree layout stability', () => {
           isDrawFinalized: hasSelectedExchangeGift,
           hasDrawn: hasSelectedExchangeGift,
           recipient: hasSelectedExchangeGift
-            ? { userId: 'employee-1', name: 'Sample Employee', deliveryAddress: null }
+            ? {
+                userId: 'employee-1',
+                name: 'Sample Employee',
+                deliveryAddress: null,
+                phoneNumber: null,
+              }
             : null,
           adminRoster: [
             {
@@ -492,6 +525,7 @@ test.describe('Christmas Tree layout stability', () => {
               recipientName: hasSelectedExchangeGift ? 'Sample Employee' : null,
               hasSelected: hasSelectedExchangeGift,
               hasDeliveryAddress: false,
+              hasPhoneNumber: false,
             },
             {
               userId: 'employee-1',
@@ -500,6 +534,7 @@ test.describe('Christmas Tree layout stability', () => {
               recipientName: null,
               hasSelected: false,
               hasDeliveryAddress: false,
+              hasPhoneNumber: false,
             },
           ],
         },
@@ -612,7 +647,12 @@ test.describe('Christmas Tree layout stability', () => {
           isDrawFinalized: hasSelectedExchangeGift,
           hasDrawn: hasSelectedExchangeGift,
           recipient: hasSelectedExchangeGift
-            ? { userId: 'employee-1', name: 'Sample Employee', deliveryAddress: null }
+            ? {
+                userId: 'employee-1',
+                name: 'Sample Employee',
+                deliveryAddress: null,
+                phoneNumber: null,
+              }
             : null,
           adminRoster: [
             {
@@ -622,6 +662,7 @@ test.describe('Christmas Tree layout stability', () => {
               recipientName: hasSelectedExchangeGift ? 'Sample Employee' : null,
               hasSelected: hasSelectedExchangeGift,
               hasDeliveryAddress: false,
+              hasPhoneNumber: false,
             },
             {
               userId: 'employee-1',
@@ -630,6 +671,7 @@ test.describe('Christmas Tree layout stability', () => {
               recipientName: null,
               hasSelected: false,
               hasDeliveryAddress: false,
+              hasPhoneNumber: false,
             },
           ],
         },

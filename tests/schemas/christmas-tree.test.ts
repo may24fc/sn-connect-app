@@ -1,4 +1,5 @@
 import {
+  christmasExchangeGiftAddressSchema,
   christmasOrnamentPlacementSchema,
   christmasWishUpsertSchema,
 } from '@/lib/schemas/christmas-tree.schema';
@@ -17,6 +18,29 @@ describe('christmas ornament placement schema', () => {
 
   it('rejects unapproved ornament designs', () => {
     expect(christmasOrnamentPlacementSchema.safeParse({ assetType: 'star' }).success).toBe(false);
+  });
+});
+
+describe('christmas exchange gift delivery details schema', () => {
+  it('accepts an address with an international phone number', () => {
+    expect(
+      christmasExchangeGiftAddressSchema.parse({
+        deliveryAddress: '123 Sample Street, Cebu City',
+        phoneNumber: '+63 917 123 4567',
+      })
+    ).toEqual({
+      deliveryAddress: '123 Sample Street, Cebu City',
+      phoneNumber: '+63 917 123 4567',
+    });
+  });
+
+  it('rejects a phone number without a country code', () => {
+    expect(
+      christmasExchangeGiftAddressSchema.safeParse({
+        deliveryAddress: '123 Sample Street, Cebu City',
+        phoneNumber: '0917 123 4567',
+      }).success
+    ).toBe(false);
   });
 });
 

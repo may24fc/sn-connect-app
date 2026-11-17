@@ -48,6 +48,7 @@ type ExchangeGiftAssignmentRow = {
 type ExchangeGiftAddressRow = {
   user_id: string;
   delivery_address: string;
+  phone_number: string | null;
 };
 
 const ORNAMENT_RADIUS_PCT = 5;
@@ -144,7 +145,7 @@ export async function buildChristmasTreeSnapshot(
       .eq('event_id', event.id),
     adminClient
       .from('christmas_exchange_gift_delivery_addresses')
-      .select('user_id, delivery_address')
+      .select('user_id, delivery_address, phone_number')
       .eq('event_id', event.id),
   ]);
 
@@ -159,10 +160,13 @@ export async function buildChristmasTreeSnapshot(
 
   const eventOrnaments = (ornaments ?? []) as Array<OrnamentRow>;
   const giftAssignments = (exchangeGiftAssignments ?? []) as Array<ExchangeGiftAssignmentRow>;
-  const giftAddressByUserId = new Map(
+  const giftDeliveryDetailsByUserId = new Map(
     ((exchangeGiftAddresses ?? []) as Array<ExchangeGiftAddressRow>).map((address) => [
       address.user_id,
-      address.delivery_address,
+      {
+        deliveryAddress: address.delivery_address,
+        phoneNumber: address.phone_number,
+      },
     ])
   );
   const ornamentIds = eventOrnaments.map((ornament) => ornament.id);
@@ -200,7 +204,7 @@ export async function buildChristmasTreeSnapshot(
     hasOrnament: Boolean(mine),
     nameByUserId,
     canManage,
-    addressByUserId: giftAddressByUserId,
+    deliveryDetailsByUserId: giftDeliveryDetailsByUserId,
   });
   return {
     event: {
@@ -254,7 +258,7 @@ export function buildExchangeGiftState({
   hasOrnament,
   nameByUserId,
   canManage,
-  addressByUserId,
+  deliveryDetailsByUserId,
 }: {
   assignments: Array<ExchangeGiftAssignmentRow>;
   participantUserIds: Array<string>;
@@ -262,7 +266,7 @@ export function buildExchangeGiftState({
   hasOrnament: boolean;
   nameByUserId: Map<string, string>;
   canManage: boolean;
-  addressByUserId: Map<string, string>;
+  deliveryDetailsByUserId: Map<string, { deliveryAddress: string; phoneNumber: string | null }>;
 }) {
   const mine = assignments.find((assignment) => assignment.giver_user_id === userId);
   const isDrawFinalized = assignments.length > 0;
@@ -270,7 +274,9 @@ export function buildExchangeGiftState({
     ? {
         userId: mine.recipient_user_id,
         name: nameByUserId.get(mine.recipient_user_id) ?? 'Team member',
-        deliveryAddress: addressByUserId.get(mine.recipient_user_id) ?? null,
+        deliveryAddress:
+          deliveryDetailsByUserId.get(mine.recipient_user_id)?.deliveryAddress ?? null,
+        phoneNumber: deliveryDetailsByUserId.get(mine.recipient_user_id)?.phoneNumber ?? null,
       }
     : null;
   const assignmentByGiver = new Map(
@@ -291,7 +297,8 @@ export function buildExchangeGiftState({
               ? (nameByUserId.get(assignment.recipient_user_id) ?? 'Team member')
               : null,
             hasSelected: Boolean(assignment?.revealed_at),
-            hasDeliveryAddress: addressByUserId.has(participantUserId),
+            hasDeliveryAddress: deliveryDetailsByUserId.has(participantUserId),
+            hasPhoneNumber: Boolean(deliveryDetailsByUserId.get(participantUserId)?.phoneNumber),
           };
         })
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -304,7 +311,8 @@ export function buildExchangeGiftState({
     isEligible: Boolean(mine || (!isDrawFinalized && hasOrnament)),
     hasDrawn: Boolean(mine?.revealed_at),
     recipient,
-    deliveryAddress: addressByUserId.get(userId) ?? null,
+    deliveryAddress: deliveryDetailsByUserId.get(userId)?.deliveryAddress ?? null,
+    phoneNumber: deliveryDetailsByUserId.get(userId)?.phoneNumber ?? null,
     canSaveDeliveryAddress: hasOrnament,
     adminRoster,
   };
@@ -313,7 +321,8 @@ export function buildExchangeGiftState({
 export async function saveChristmasExchangeGiftDeliveryAddress(
   adminClient: ChristmasTreeAdminClient,
   userId: string,
-  deliveryAddress: string
+  deliveryAddress: string,
+  phoneNumber: string
 ) {
   const event = await getActiveChristmasEvent(adminClient);
   if (!event) throw new Error('No active Christmas Tree event is configured');
@@ -338,6 +347,7 @@ export async function saveChristmasExchangeGiftDeliveryAddress(
       event_id: event.id,
       user_id: userId,
       delivery_address: deliveryAddress,
+      phone_number: phoneNumber,
     },
     { onConflict: 'event_id,user_id' }
   );
@@ -348,7 +358,7 @@ export async function saveChristmasExchangeGiftDeliveryAddress(
     action: 'SAVE_CHRISTMAS_EXCHANGE_GIFT_DELIVERY_ADDRESS',
     tableName: 'christmas_tree_events',
     recordId: event.id,
-    metadata: { eventId: event.id, hasDeliveryAddress: true },
+    metadata: { eventId: event.id, hasDeliveryAddress: true, hasPhoneNumber: true },
   });
 }
 

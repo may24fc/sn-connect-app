@@ -53,6 +53,12 @@ export const christmasDecorationEnableSchema = z.object({
 
 export const christmasExchangeGiftAddressSchema = z.object({
   deliveryAddress: z.string().trim().min(5).max(500),
+  phoneNumber: z
+    .string()
+    .trim()
+    .min(7)
+    .max(30)
+    .regex(/^\+[0-9 ()-]+$/, 'Include the country code, for example +63 917 123 4567'),
 });
 
 export const christmasDecorationRemoveSchema = z.union([

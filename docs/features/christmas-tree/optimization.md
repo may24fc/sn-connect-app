@@ -41,13 +41,21 @@ Christmas wish persistence respects the soft-delete uniqueness model, all wish c
 - **Code paths:** `apps/web/src/app/api/christmas-tree/_lib.ts`, `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `tests/api/christmas-tree-exchange-gift.test.ts`, `e2e/christmas-tree-layout.spec.ts`.
 - **Validation:** Focused API tests passed 14/14 and verify that managers receive the mapping while employees receive `adminRoster: null`. Web type-check passed. Focused Playwright passed 2/2 for admin and super-admin, exercised the draw action, updated progress from 0/2 to 1/2, and inspected the tracking card at 1440px desktop and 390px mobile.
 
-### Private reveal and delivery-address boundary
+### Private reveal and delivery-details boundary
 
 - **Status:** Implemented
 - **Problem/evidence:** The admin roster used reveal state only for its status badge, so it displayed every generated partner as soon as the first participant initialized the draw. Delivery details also had no private, event-scoped storage or disclosure rule.
-- **Solution:** Mask admin recipient names until each giver's `revealed_at` is set. Store delivery addresses in a separate event/user table with row-level policies for the owner and the giver whose assignment has been revealed. Server snapshots expose the full value only to its owner and revealed giver; admins receive only a boolean address-presence status. Address saves and draws stay server-confirmed, and realtime changes refresh the snapshot without placing address PII in audit metadata.
-- **Code paths:** `supabase/migrations/20261117000001_add_christmas_exchange_gift_delivery_addresses.sql`, `apps/web/src/app/api/christmas-tree/_lib.ts`, `apps/web/src/app/api/christmas-tree/exchange-gift/address/route.ts`, `apps/web/src/hooks/useChristmasTree.ts`, `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `tests/api/christmas-tree-exchange-gift.test.ts`, `e2e/christmas-tree-layout.spec.ts`.
-- **Validation:** Migration histories match locally and in production. Focused API/schema tests passed 12/12; database and web type-checks passed; focused Playwright passed 3/3 across employee, admin, and super-admin desktop/mobile states. Production inspection found 16 assignments and one test reveal; the reveal was reset to null and verification found zero revealed rows while retaining all assignments.
+- **Solution:** Mask admin recipient names until each giver's `revealed_at` is set. Store delivery addresses and international phone numbers in a separate event/user table with row-level policies for the owner and the giver whose assignment has been revealed. Server snapshots expose full delivery details only to the owner and revealed giver; admins receive only boolean address/phone presence statuses. Delivery-detail saves and draws stay server-confirmed, and realtime changes refresh the snapshot without placing PII in audit metadata.
+- **Code paths:** `supabase/migrations/20261117000001_add_christmas_exchange_gift_delivery_addresses.sql`, `supabase/migrations/20261117000002_add_exchange_gift_delivery_phone.sql`, `apps/web/src/app/api/christmas-tree/_lib.ts`, `apps/web/src/app/api/christmas-tree/exchange-gift/address/route.ts`, `apps/web/src/hooks/useChristmasTree.ts`, `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `tests/api/christmas-tree-exchange-gift.test.ts`, `tests/schemas/christmas-tree.test.ts`, `e2e/christmas-tree-layout.spec.ts`.
+- **Validation:** The address migration is present locally and in production; the phone migration is applied locally only and remains pending explicit production approval. Focused API/schema tests passed 14/14; database and web type-checks passed; focused Playwright passed across employee, admin, and super-admin desktop/mobile states. Production inspection found 16 assignments and one test reveal; the reveal was reset to null and verification found zero revealed rows while retaining all assignments.
+
+### Mobile wish-editor priority
+
+- **Status:** Implemented
+- **Problem/evidence:** On a phone, the single-column right rail rendered the tall Exchange Gift card before the wish editor. Users could open their ornament and see only already-saved wishes, then had to scroll far below the tree and gift form to find the inputs for adding or editing wishes.
+- **Solution:** Apply responsive flex ordering to place the Personal/Others/SN wish panel first in the post-tree mobile content. Keep the established desktop rail order at the `xl` breakpoint so the desktop composition does not shift.
+- **Code paths:** `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `e2e/christmas-tree-layout.spec.ts`.
+- **Validation:** Web type-check passed. The focused employee Playwright journey passed at desktop and 390px mobile width, asserts that the mobile wish panel is above the Exchange Gift card, and captured `mobile-wish-panel.png`; the screenshot was inspected for visibility, clipping, and horizontal overflow.
 
 ### Immediate strand release response
 
@@ -165,6 +173,10 @@ flowchart LR
 ```
 
 ## Change Log
+
+- 2026-11-17: Moved the tabbed wish editor directly below the tree on mobile, retained desktop ordering, and added a focused responsive position assertion and screenshot.
+
+- 2026-11-17: Added a private international phone number below the delivery address, applied migration `20261117000002` locally, and verified owner/revealed-giver disclosure plus admin presence-only status. Production remains pending explicit approval.
 
 - 2026-11-17: Hid unrevealed partner names from admin tracking, added private delivery-address storage and disclosure, applied migration `20261117000001` locally and in production, and reset the single production test reveal without rerolling assignments.
 
