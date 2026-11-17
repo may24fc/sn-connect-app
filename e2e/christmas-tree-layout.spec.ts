@@ -26,10 +26,20 @@ const decoration = {
   star_unlocked: false,
 };
 
+const pendingExchangeGift = {
+  budgetPhp: 500,
+  participantCount: 2,
+  isDrawFinalized: false,
+  isEligible: false,
+  hasDrawn: false,
+  recipient: null,
+};
+
 const emptySnapshot = {
   event: baseEvent,
   decoration,
   strands: [],
+  exchangeGift: pendingExchangeGift,
   permissions: { canManage: false },
   myOrnament: null,
   ornaments: [],
@@ -39,6 +49,7 @@ const populatedSnapshot = {
   event: baseEvent,
   decoration,
   strands: [],
+  exchangeGift: { ...pendingExchangeGift, isEligible: true },
   permissions: { canManage: false },
   myOrnament: {
     id: 'ornament-1',
@@ -126,6 +137,7 @@ test.describe('Christmas Tree layout stability', () => {
     page,
   }, testInfo) => {
     let hasOrnament = false;
+    let hasDrawnExchangeGift = false;
     const savedWishPayloads: Array<{
       category: 'personal' | 'for_others' | 'for_sn';
       itemNumber: number;
@@ -196,9 +208,33 @@ test.describe('Christmas Tree layout stability', () => {
         body: JSON.stringify({
           data: {
             ...populatedSnapshot,
+            exchangeGift: hasDrawnExchangeGift
+              ? {
+                  ...populatedSnapshot.exchangeGift,
+                  isDrawFinalized: true,
+                  hasDrawn: true,
+                  recipient: { userId: 'emp-2', name: 'Alex Rivera' },
+                }
+              : populatedSnapshot.exchangeGift,
             ornaments: populatedSnapshot.ornaments.map((ornament) => ({ ...ornament, wishes })),
           },
         }),
+      });
+    });
+    await page.route('**/api/christmas-tree/exchange-gift', async (route) => {
+      hasDrawnExchangeGift = true;
+      await route.fulfill({
+        json: {
+          data: {
+            ...populatedSnapshot,
+            exchangeGift: {
+              ...populatedSnapshot.exchangeGift,
+              isDrawFinalized: true,
+              hasDrawn: true,
+              recipient: { userId: 'emp-2', name: 'Alex Rivera' },
+            },
+          },
+        },
       });
     });
 
@@ -249,6 +285,12 @@ test.describe('Christmas Tree layout stability', () => {
     await dropZone.click({ position: { x: dropBox.width * 0.5, y: dropBox.height * 0.45 } });
 
     await expect(page.getByText('Your Christmas Wishes')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Exchange Gift Draw' })).toBeVisible();
+    await page.getByRole('button', { name: 'Draw my exchange gift partner' }).click();
+    await expect(page.getByTestId('exchange-gift-recipient')).toContainText('Alex Rivera');
+    await page.getByTestId('exchange-gift-draw-card').screenshot({
+      path: testInfo.outputPath('desktop-exchange-gift.png'),
+    });
     await expect(page.getByRole('tab', { name: 'Personal' })).toHaveAttribute(
       'aria-selected',
       'true'
@@ -302,6 +344,13 @@ test.describe('Christmas Tree layout stability', () => {
 
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.getByText('Your Christmas Wishes')).toBeVisible();
+    await expect(page.getByTestId('exchange-gift-recipient')).toContainText('Alex Rivera');
+    await page
+      .getByTestId('exchange-gift-draw-card')
+      .evaluate((element) => element.scrollIntoView({ block: 'center' }));
+    await page.getByTestId('exchange-gift-draw-card').screenshot({
+      path: testInfo.outputPath('mobile-exchange-gift.png'),
+    });
     const hasHorizontalOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth
     );
@@ -407,6 +456,7 @@ test.describe('Christmas Tree layout stability', () => {
         decoration: currentDecoration,
         manualDecorations,
         strands: [...strands],
+        exchangeGift: pendingExchangeGift,
         permissions: { canManage: true },
         myOrnament: null,
         ornaments,
@@ -633,6 +683,7 @@ test.describe('Christmas Tree layout stability', () => {
       event: baseEvent,
       decoration: { ...decoration, garland_unlocked: true },
       strands: [{ ...strand, geometry: { ...strand.geometry } }],
+      exchangeGift: pendingExchangeGift,
       permissions: { canManage: true },
       myOrnament: null,
       ornaments: [],

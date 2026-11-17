@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Christmas wish persistence respects the soft-delete uniqueness model, all wish categories are available through a compact tabbed editor, and the soundtrack has an explicit user control with a remembered opt-out. Admins can place multiple independent Garland and Lights strands directly on the tree; saved strands now remain visibly at their dropped position while a move is saved. Browser autoplay policy and the cost of loading a third-party player remain external constraints.
+Christmas wish persistence respects the soft-delete uniqueness model, all wish categories are available through a compact tabbed editor, and the soundtrack has an explicit user control with a remembered opt-out. Admins can place multiple independent Garland and Lights strands directly on the tree; saved strands now remain visibly at their dropped position while a move is saved. The ₱500 exchange-gift draw atomically creates one private, stable, no-self assignment per current Christmas ball owner without duplicate recipients. Browser autoplay policy and the cost of loading a third-party player remain external constraints.
 
 ## Relevant Code Map
 
@@ -14,12 +14,24 @@ Christmas wish persistence respects the soft-delete uniqueness model, all wish c
 - [Christmas Tree Playwright coverage](../../../e2e/christmas-tree-layout.spec.ts) - enable/disable, persistence, responsive, and error-state coverage.
 - [Christmas Tree API tests](../../../tests/api/christmas-tree-wish-write.test.ts) - first-save and edit persistence coverage.
 - [Admin API tests](../../../tests/api/christmas-tree-admin-controls.test.ts) - strand create/update and admin authorization coverage.
+- [Exchange gift API](../../../apps/web/src/app/api/christmas-tree/exchange-gift/route.ts) - authenticated, server-confirmed reveal endpoint.
+- [Exchange gift migration](../../../supabase/migrations/20261116000001_add_christmas_exchange_gift_draw.sql) - assignment constraints, private RLS, serialized initialization, and derangement generation.
+- [Exchange gift API tests](../../../tests/api/christmas-tree-exchange-gift.test.ts) - RPC delegation, conflict, and audit coverage.
+- [Exchange gift SQL test](../../../tests/sql/christmas-exchange-gift-local.sql) - no-self/no-duplicate invariants, stable repeat reveal, and finalized-roster behavior.
 - [Strand migration](../../../supabase/migrations/20261022000002_add_christmas_tree_strand_geometry.sql) - independent rows per Garland or Lights strand.
 - [Always-available wish migration](../../../supabase/migrations/20261021000001_remove_christmas_wish_windows.sql) - removes month-based write and visibility restrictions while retaining event safeguards.
 - [Christmas Tree schema tests](../../../tests/schemas/christmas-tree.test.ts) - link policy and wish payload validation.
 - [Task tracker](./task-tracker.md) - delivery status and validation history.
 
 ## Optimizations
+
+### Race-safe exchange-gift assignment
+
+- **Status:** Implemented
+- **Problem/evidence:** Independent random picks can select the same recipient twice, leave the last participant with themselves, or create competing rosters when two people click at the same time. A browser-generated result would also be easy to reroll and could expose other users' assignments.
+- **Solution:** The first reveal calls a service-role-only PostgreSQL function that takes a transaction advisory lock scoped to the event. Inside that transaction it snapshots active Christmas ball owners, shuffles them once, and applies a non-zero cyclic rotation. This produces a complete derangement: every giver and recipient appears exactly once and nobody draws themselves. Unique `(event_id, giver_user_id)` and `(event_id, recipient_user_id)` constraints provide a second database-level guarantee. The roster locks on first reveal; later calls reveal the caller's stored result without rerolling it. The client mutation remains server-confirmed because randomness and concurrent authorization cannot be predicted safely.
+- **Code paths:** `supabase/migrations/20261116000001_add_christmas_exchange_gift_draw.sql`, `apps/web/src/app/api/christmas-tree/exchange-gift/route.ts`, `apps/web/src/app/api/christmas-tree/_lib.ts`, `apps/web/src/hooks/useChristmasTree.ts`, `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `tests/sql/christmas-exchange-gift-local.sql`, `tests/api/christmas-tree-exchange-gift.test.ts`, `e2e/christmas-tree-layout.spec.ts`.
+- **Validation:** Migration `20261116000001` applied to local Supabase and appears in local migration history. The rollback SQL fixture produced three unique recipients for three givers, found no self-match, preserved the same result on repeat reveal, and rejected a late participant after finalization. Fifteen focused API tests, database and web type-checks, and the focused Chromium desktop/mobile reveal journey passed. Desktop and mobile screenshots were inspected; no feature request failures, console errors, or horizontal overflow occurred. On 2026-11-17, explicit approval was received to apply the same migration to production project `tccdupkjmwwxcvpqnpeb`; linked history matched local, the follow-up dry run was clean, and the full monorepo build passed.
 
 ### Immediate strand release response
 
@@ -98,6 +110,20 @@ The measured improvement is the local visual response after release, not server 
 
 ```mermaid
 flowchart LR
+    A[User clicks Draw] --> B[Authenticated server endpoint]
+    B --> C[Event-scoped transaction advisory lock]
+    C --> D{Assignments already exist?}
+    D -->|No| E[Snapshot active ball owners]
+    E --> F[Shuffle once and rotate roster]
+    F --> G[Insert unique giver and recipient rows]
+    D -->|Yes| H[Keep stored assignment]
+    G --> I[Reveal only caller's recipient]
+    H --> I
+    I --> J[Server-confirmed private result card]
+```
+
+```mermaid
+flowchart LR
     A[Admin drags across branches] --> B[Preview curved strand]
     B --> C[Server validates and saves a new row]
     C --> D[Tree snapshot and realtime refresh]
@@ -123,6 +149,9 @@ flowchart LR
 ```
 
 ## Change Log
+
+- 2026-11-17: With explicit approval, applied exchange-gift migration `20261116000001` to production project `tccdupkjmwwxcvpqnpeb`, verified matching migration history and a clean follow-up dry run, and passed the full monorepo build.
+- 2026-11-16: Added the ₱500 exchange-gift draw with a serialized database-generated derangement, unique giver/recipient constraints, private repeatable reveals, finalized-roster handling, and local SQL/API/browser validation.
 
 - 2026-10-22: Removed the snap-back after a saved strand is released. Added optimistic geometry with rollback and ordered per-strand saves, then measured 30 browser drags before and after and read-only local GET controls. The final visual p50/p95 changed from 295.3/307.3 ms to 28.4/41.5 ms; no API speedup is claimed.
 

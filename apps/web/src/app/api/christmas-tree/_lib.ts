@@ -39,6 +39,12 @@ type WishRow = {
   submitted_at: string;
 };
 
+type ExchangeGiftAssignmentRow = {
+  giver_user_id: string;
+  recipient_user_id: string;
+  revealed_at: string | null;
+};
+
 const ORNAMENT_RADIUS_PCT = 5;
 export async function getChristmasTreeAuth() {
   const supabase = await createSupabaseServerClient();
@@ -113,6 +119,7 @@ export async function buildChristmasTreeSnapshot(
     { data: ornaments, error: ornamentsError },
     { data: state, error: stateError },
     { data: strands, error: strandsError },
+    { data: exchangeGiftAssignments, error: exchangeGiftError },
   ] = await Promise.all([
     adminClient
       .from('christmas_ornaments')
@@ -125,9 +132,13 @@ export async function buildChristmasTreeSnapshot(
       .select('id, kind, start_x, start_y, end_x, end_y')
       .eq('event_id', event.id)
       .order('created_at', { ascending: true }),
+    adminClient
+      .from('christmas_exchange_gift_assignments')
+      .select('giver_user_id, recipient_user_id, revealed_at')
+      .eq('event_id', event.id),
   ]);
 
-  if (ornamentsError || stateError || strandsError)
+  if (ornamentsError || stateError || strandsError || exchangeGiftError)
     throw new Error('Failed to load Christmas Tree data');
 
   const eventOrnaments = (ornaments ?? []) as Array<OrnamentRow>;
@@ -151,6 +162,13 @@ export async function buildChristmasTreeSnapshot(
   );
 
   const mine = eventOrnaments.find((ornament) => ornament.user_id === userId) ?? null;
+  const exchangeGift = buildExchangeGiftState({
+    assignments: (exchangeGiftAssignments ?? []) as Array<ExchangeGiftAssignmentRow>,
+    participantCount: eventOrnaments.length,
+    userId,
+    hasOrnament: Boolean(mine),
+    nameByUserId,
+  });
   return {
     event: {
       id: event.id,
@@ -181,6 +199,7 @@ export async function buildChristmasTreeSnapshot(
       },
     })),
     permissions: { canManage: canManageChristmasTree(role) },
+    exchangeGift,
     myOrnament: mine,
     ornaments: eventOrnaments.map((ornament) => ({
       id: ornament.id,
@@ -193,6 +212,66 @@ export async function buildChristmasTreeSnapshot(
       ),
     })),
   };
+}
+
+function buildExchangeGiftState({
+  assignments,
+  participantCount,
+  userId,
+  hasOrnament,
+  nameByUserId,
+}: {
+  assignments: Array<ExchangeGiftAssignmentRow>;
+  participantCount: number;
+  userId: string;
+  hasOrnament: boolean;
+  nameByUserId: Map<string, string>;
+}) {
+  const mine = assignments.find((assignment) => assignment.giver_user_id === userId);
+  const isDrawFinalized = assignments.length > 0;
+  const recipient = mine?.revealed_at
+    ? {
+        userId: mine.recipient_user_id,
+        name: nameByUserId.get(mine.recipient_user_id) ?? 'Team member',
+      }
+    : null;
+
+  return {
+    budgetPhp: 500,
+    participantCount: isDrawFinalized ? assignments.length : participantCount,
+    isDrawFinalized,
+    isEligible: Boolean(mine || (!isDrawFinalized && hasOrnament)),
+    hasDrawn: Boolean(mine?.revealed_at),
+    recipient,
+  };
+}
+
+export async function drawChristmasExchangeGiftPartner(
+  adminClient: ChristmasTreeAdminClient,
+  userId: string
+) {
+  const event = await getActiveChristmasEvent(adminClient);
+  if (!event) throw new Error('No active Christmas Tree event is configured');
+
+  const { error } = await adminClient.rpc('draw_christmas_exchange_gift_partner', {
+    p_event_id: event.id,
+    p_giver_user_id: userId,
+  });
+
+  if (error) {
+    throw new ChristmasTreeRequestError(
+      error.message || 'Failed to draw an exchange gift partner',
+      409
+    );
+  }
+
+  logActivity(adminClient, {
+    userId,
+    action: 'REVEAL_CHRISTMAS_EXCHANGE_GIFT_PARTNER',
+    tableName: 'christmas_tree_events',
+    recordId: event.id,
+    metadata: { eventId: event.id },
+  });
 }
 
 export async function placeChristmasOrnament(

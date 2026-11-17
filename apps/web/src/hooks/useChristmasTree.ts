@@ -41,6 +41,17 @@ export function useChristmasTree() {
   });
 }
 
+export function useDrawChristmasExchangeGiftPartner() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      fetchJson<ChristmasTreeSnapshot>('/api/christmas-tree/exchange-gift', {
+        method: 'POST',
+      }),
+    onSuccess: (data) => cacheLocalMutationSnapshot(queryClient, data),
+  });
+}
+
 export function usePlaceChristmasOrnament() {
   const queryClient = useQueryClient();
   return useMutation({

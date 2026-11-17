@@ -935,6 +935,86 @@ export type Database = {
           },
         ]
       }
+      christmas_exchange_gift_assignments: {
+        Row: {
+          created_at: string
+          event_id: string
+          giver_user_id: string
+          id: string
+          recipient_user_id: string
+          revealed_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          giver_user_id: string
+          id?: string
+          recipient_user_id: string
+          revealed_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          giver_user_id?: string
+          id?: string
+          recipient_user_id?: string
+          revealed_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "christmas_exchange_gift_assignments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "christmas_tree_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "christmas_exchange_gift_assignments_giver_user_id_fkey"
+            columns: ["giver_user_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "christmas_exchange_gift_assignments_giver_user_id_fkey"
+            columns: ["giver_user_id"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "christmas_exchange_gift_assignments_giver_user_id_fkey"
+            columns: ["giver_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "christmas_exchange_gift_assignments_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "christmas_exchange_gift_assignments_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "individual_performance_summary"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "christmas_exchange_gift_assignments_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       christmas_ornaments: {
         Row: {
           asset_type: Database["public"]["Enums"]["christmas_ornament_asset"]
@@ -12350,7 +12430,7 @@ export type Database = {
         Args: {
           p_project_id: string
           p_actor: string
-          p_target: string
+          p_target: string | null
           p_role: Database["public"]["Enums"]["project_contributor_role"]
         }
         Returns: Json
@@ -12566,6 +12646,13 @@ export type Database = {
           p_user_id: string
         }
         Returns: Json
+      }
+      draw_christmas_exchange_gift_partner: {
+        Args: {
+          p_event_id: string
+          p_giver_user_id: string
+        }
+        Returns: undefined
       }
       finance_expense_filtered_totals: {
         Args: {
@@ -13147,7 +13234,7 @@ export type Database = {
         Args: {
           p_project_id: string
           p_actor: string
-          p_target: string | null
+          p_target: string
         }
         Returns: Json
       }

@@ -6,6 +6,7 @@ import {
   useChristmasTree,
   useDeleteChristmasOrnament,
   useDeleteChristmasWish,
+  useDrawChristmasExchangeGiftPartner,
   useEnableChristmasDecoration,
   useMoveChristmasOrnament,
   usePlaceChristmasOrnament,
@@ -170,6 +171,7 @@ export default function ChristmasTreePage() {
   const saveStrand = useSaveChristmasStrand();
   const upsertWish = useUpsertChristmasWish();
   const deleteWish = useDeleteChristmasWish();
+  const drawExchangeGiftPartner = useDrawChristmasExchangeGiftPartner();
   const [selectedOrnament, setSelectedOrnament] = useState<Ornament | null>(null);
   const [selectedAssetType, setSelectedAssetType] = useState<OrnamentAsset | null>(null);
   const [isDraggingNewBall, setIsDraggingNewBall] = useState(false);
@@ -204,7 +206,8 @@ export default function ChristmasTreePage() {
     deleteWish.error?.message ??
     enableDecoration.error?.message ??
     removeDecoration.error?.message ??
-    saveStrand.error?.message;
+    saveStrand.error?.message ??
+    drawExchangeGiftPartner.error?.message;
   const deleteOrnamentError = deleteOrnament.error?.message ?? adminDeleteOrnament.error?.message;
   const isSelectedUsersOrnament = selectedOrnament?.id === data.myOrnament?.id;
   const handleRemoveOrnament = () => {
@@ -417,6 +420,11 @@ export default function ChristmasTreePage() {
               />
             </div>
           ) : null}
+          <ExchangeGiftDrawCard
+            exchangeGift={data.exchangeGift}
+            isPending={drawExchangeGiftPartner.isPending}
+            onDraw={() => drawExchangeGiftPartner.mutate()}
+          />
           {!data.myOrnament ? (
             <OrnamentPicker
               isPending={placeOrnament.isPending}
@@ -450,6 +458,88 @@ export default function ChristmasTreePage() {
       />
     </div>
   );
+}
+
+function ExchangeGiftDrawCard({
+  exchangeGift,
+  isPending,
+  onDraw,
+}: {
+  exchangeGift: ChristmasTreeSnapshot['exchangeGift'];
+  isPending: boolean;
+  onDraw: () => void;
+}) {
+  const canDraw = exchangeGift.isEligible && exchangeGift.participantCount >= 2;
+  const drawMessage = getExchangeGiftDrawMessage(exchangeGift);
+
+  return (
+    <Card data-testid="exchange-gift-draw-card" className="overflow-hidden border-rose-200/80">
+      <CardHeader className="bg-gradient-to-br from-rose-50 via-white to-amber-50 dark:from-rose-950/30 dark:via-background dark:to-amber-950/20">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Gift className="h-5 w-5 text-rose-600" /> Exchange Gift Draw
+            </CardTitle>
+            <CardDescription className="mt-1.5">
+              Draw the teammate you’ll buy a Christmas gift for.
+            </CardDescription>
+          </div>
+          <Badge className="shrink-0 whitespace-nowrap" variant="secondary">
+            ₱{exchangeGift.budgetPhp} budget
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4 pt-5">
+        {exchangeGift.recipient ? (
+          <div
+            className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-5 text-center dark:border-rose-900 dark:bg-rose-950/30"
+            data-testid="exchange-gift-recipient"
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-rose-700 dark:text-rose-300">
+              You’re buying for
+            </p>
+            <p className="mt-2 text-2xl font-semibold text-zinc-950 dark:text-zinc-50">
+              {exchangeGift.recipient.name}
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Keep it a surprise. Your assignment stays the same when you return.
+            </p>
+          </div>
+        ) : (
+          <>
+            <p className="text-sm text-muted-foreground">{drawMessage}</p>
+            <Button
+              className="w-full"
+              disabled={!canDraw || isPending}
+              onClick={onDraw}
+              type="button"
+            >
+              <Gift /> {isPending ? 'Drawing your partner…' : 'Draw my exchange gift partner'}
+            </Button>
+            {canDraw ? (
+              <p className="text-center text-xs text-muted-foreground">
+                The first draw locks the current participant list so assignments cannot duplicate or
+                change.
+              </p>
+            ) : null}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function getExchangeGiftDrawMessage(exchangeGift: ChristmasTreeSnapshot['exchangeGift']) {
+  if (exchangeGift.isDrawFinalized && !exchangeGift.isEligible) {
+    return 'The draw has already been finalized, and your Christmas ball was not in its participant list.';
+  }
+  if (!exchangeGift.isEligible) {
+    return 'Place your Christmas ball first to join the exchange gift draw.';
+  }
+  if (exchangeGift.participantCount < 2) {
+    return 'Waiting for at least one more teammate to place a Christmas ball.';
+  }
+  return `${exchangeGift.participantCount} teammates are ready. Your result is private and final.`;
 }
 
 function ChristmasMusicControl({
