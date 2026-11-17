@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildExchangeGiftState,
   drawChristmasExchangeGiftPartner,
+  saveChristmasExchangeGiftDeliveryAddress,
 } from '../../apps/web/src/app/api/christmas-tree/_lib';
 
 vi.mock('@/lib/audit', () => ({ logActivity: vi.fn() }));
@@ -101,6 +102,7 @@ describe('Christmas exchange gift draw', () => {
         ['admin-1', 'Admin User'],
         ['employee-1', 'Sample Employee'],
       ]),
+      addressByUserId: new Map([['employee-1', '123 Sample Street, Cebu City']]),
     };
 
     const managerState = buildExchangeGiftState({ ...input, canManage: true });
@@ -109,11 +111,14 @@ describe('Christmas exchange gift draw', () => {
         name: 'Admin User',
         recipientName: 'Sample Employee',
         hasSelected: true,
+        hasDeliveryAddress: false,
       }),
       expect.objectContaining({
         name: 'Sample Employee',
-        recipientName: 'Admin User',
+        recipientUserId: null,
+        recipientName: null,
         hasSelected: false,
+        hasDeliveryAddress: true,
       }),
     ]);
 
@@ -124,5 +129,81 @@ describe('Christmas exchange gift draw', () => {
     });
     expect(employeeState.adminRoster).toBeNull();
     expect(employeeState.recipient).toBeNull();
+  });
+
+  it('reveals the assigned recipient address only after the caller has drawn', () => {
+    const state = buildExchangeGiftState({
+      assignments: [
+        {
+          giver_user_id: 'employee-1',
+          recipient_user_id: 'employee-2',
+          revealed_at: '2026-11-17T00:00:00Z',
+        },
+      ],
+      participantUserIds: ['employee-1', 'employee-2'],
+      userId: 'employee-1',
+      hasOrnament: true,
+      nameByUserId: new Map([['employee-2', 'Recipient User']]),
+      addressByUserId: new Map([['employee-2', '456 Recipient Avenue, Davao City']]),
+      canManage: false,
+    });
+
+    expect(state.recipient).toEqual({
+      userId: 'employee-2',
+      name: 'Recipient User',
+      deliveryAddress: '456 Recipient Avenue, Davao City',
+    });
+    expect(state.deliveryAddress).toBeNull();
+  });
+
+  it('saves an address only for a current Christmas ball owner and audits without address PII', async () => {
+    const eventQuery = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      is: vi.fn(),
+      maybeSingle: vi.fn(async () => ({ data: activeEvent, error: null })),
+    };
+    eventQuery.select.mockReturnValue(eventQuery);
+    eventQuery.eq.mockReturnValue(eventQuery);
+    eventQuery.is.mockReturnValue(eventQuery);
+    const ornamentQuery = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      is: vi.fn(),
+      maybeSingle: vi.fn(async () => ({ data: { id: 'ornament-1' }, error: null })),
+    };
+    ornamentQuery.select.mockReturnValue(ornamentQuery);
+    ornamentQuery.eq.mockReturnValue(ornamentQuery);
+    ornamentQuery.is.mockReturnValue(ornamentQuery);
+    const upsert = vi.fn(async () => ({ error: null }));
+    const client = {
+      from: vi.fn((table: string) => {
+        if (table === 'christmas_tree_events') return eventQuery;
+        if (table === 'christmas_ornaments') return ornamentQuery;
+        return { upsert };
+      }),
+    } as never;
+
+    await saveChristmasExchangeGiftDeliveryAddress(
+      client,
+      'employee-1',
+      '789 Private Road, Manila'
+    );
+
+    expect(upsert).toHaveBeenCalledWith(
+      {
+        event_id: 'event-1',
+        user_id: 'employee-1',
+        delivery_address: '789 Private Road, Manila',
+      },
+      { onConflict: 'event_id,user_id' }
+    );
+    expect(logActivity).toHaveBeenCalledWith(
+      client,
+      expect.objectContaining({
+        action: 'SAVE_CHRISTMAS_EXCHANGE_GIFT_DELIVERY_ADDRESS',
+        metadata: { eventId: 'event-1', hasDeliveryAddress: true },
+      })
+    );
   });
 });

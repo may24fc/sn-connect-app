@@ -4,6 +4,7 @@ import { queryKeys } from '@/lib/query-keys';
 import type {
   ChristmasDecorationEnableInput,
   ChristmasDecorationRemoveInput,
+  ChristmasExchangeGiftAddressInput,
   ChristmasOrnamentMoveInput,
   ChristmasOrnamentPlacementInput,
   ChristmasStrandGeometry,
@@ -47,6 +48,19 @@ export function useDrawChristmasExchangeGiftPartner() {
     mutationFn: () =>
       fetchJson<ChristmasTreeSnapshot>('/api/christmas-tree/exchange-gift', {
         method: 'POST',
+      }),
+    onSuccess: (data) => cacheLocalMutationSnapshot(queryClient, data),
+  });
+}
+
+export function useSaveChristmasExchangeGiftAddress() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: ChristmasExchangeGiftAddressInput) =>
+      fetchJson<ChristmasTreeSnapshot>('/api/christmas-tree/exchange-gift/address', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       }),
     onSuccess: (data) => cacheLocalMutationSnapshot(queryClient, data),
   });
@@ -468,6 +482,16 @@ export function useChristmasTreeRealtime(
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'christmas_tree_events' },
+        invalidate
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'christmas_exchange_gift_delivery_addresses' },
+        invalidate
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'christmas_exchange_gift_assignments' },
         invalidate
       )
       .subscribe((nextStatus: REALTIME_SUBSCRIBE_STATES) => {

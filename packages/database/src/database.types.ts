@@ -1015,6 +1015,45 @@ export type Database = {
           },
         ]
       }
+      christmas_exchange_gift_delivery_addresses: {
+        Row: {
+          created_at: string
+          delivery_address: string
+          event_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_address: string
+          event_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delivery_address?: string
+          event_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "christmas_exchange_gift_delivery_addresses_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "christmas_tree_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "christmas_exchange_gift_delivery_addresses_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       christmas_ornaments: {
         Row: {
           asset_type: Database["public"]["Enums"]["christmas_ornament_asset"]

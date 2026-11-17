@@ -45,6 +45,11 @@ type ExchangeGiftAssignmentRow = {
   revealed_at: string | null;
 };
 
+type ExchangeGiftAddressRow = {
+  user_id: string;
+  delivery_address: string;
+};
+
 const ORNAMENT_RADIUS_PCT = 5;
 export async function getChristmasTreeAuth() {
   const supabase = await createSupabaseServerClient();
@@ -120,6 +125,7 @@ export async function buildChristmasTreeSnapshot(
     { data: state, error: stateError },
     { data: strands, error: strandsError },
     { data: exchangeGiftAssignments, error: exchangeGiftError },
+    { data: exchangeGiftAddresses, error: exchangeGiftAddressesError },
   ] = await Promise.all([
     adminClient
       .from('christmas_ornaments')
@@ -136,13 +142,29 @@ export async function buildChristmasTreeSnapshot(
       .from('christmas_exchange_gift_assignments')
       .select('giver_user_id, recipient_user_id, revealed_at')
       .eq('event_id', event.id),
+    adminClient
+      .from('christmas_exchange_gift_delivery_addresses')
+      .select('user_id, delivery_address')
+      .eq('event_id', event.id),
   ]);
 
-  if (ornamentsError || stateError || strandsError || exchangeGiftError)
+  if (
+    ornamentsError ||
+    stateError ||
+    strandsError ||
+    exchangeGiftError ||
+    exchangeGiftAddressesError
+  )
     throw new Error('Failed to load Christmas Tree data');
 
   const eventOrnaments = (ornaments ?? []) as Array<OrnamentRow>;
   const giftAssignments = (exchangeGiftAssignments ?? []) as Array<ExchangeGiftAssignmentRow>;
+  const giftAddressByUserId = new Map(
+    ((exchangeGiftAddresses ?? []) as Array<ExchangeGiftAddressRow>).map((address) => [
+      address.user_id,
+      address.delivery_address,
+    ])
+  );
   const ornamentIds = eventOrnaments.map((ornament) => ornament.id);
   const wishesRequest = ornamentIds.length
     ? adminClient
@@ -178,6 +200,7 @@ export async function buildChristmasTreeSnapshot(
     hasOrnament: Boolean(mine),
     nameByUserId,
     canManage,
+    addressByUserId: giftAddressByUserId,
   });
   return {
     event: {
@@ -231,6 +254,7 @@ export function buildExchangeGiftState({
   hasOrnament,
   nameByUserId,
   canManage,
+  addressByUserId,
 }: {
   assignments: Array<ExchangeGiftAssignmentRow>;
   participantUserIds: Array<string>;
@@ -238,6 +262,7 @@ export function buildExchangeGiftState({
   hasOrnament: boolean;
   nameByUserId: Map<string, string>;
   canManage: boolean;
+  addressByUserId: Map<string, string>;
 }) {
   const mine = assignments.find((assignment) => assignment.giver_user_id === userId);
   const isDrawFinalized = assignments.length > 0;
@@ -245,6 +270,7 @@ export function buildExchangeGiftState({
     ? {
         userId: mine.recipient_user_id,
         name: nameByUserId.get(mine.recipient_user_id) ?? 'Team member',
+        deliveryAddress: addressByUserId.get(mine.recipient_user_id) ?? null,
       }
     : null;
   const assignmentByGiver = new Map(
@@ -260,11 +286,12 @@ export function buildExchangeGiftState({
           return {
             userId: participantUserId,
             name: nameByUserId.get(participantUserId) ?? 'Team member',
-            recipientUserId: assignment?.recipient_user_id ?? null,
-            recipientName: assignment
+            recipientUserId: assignment?.revealed_at ? assignment.recipient_user_id : null,
+            recipientName: assignment?.revealed_at
               ? (nameByUserId.get(assignment.recipient_user_id) ?? 'Team member')
               : null,
             hasSelected: Boolean(assignment?.revealed_at),
+            hasDeliveryAddress: addressByUserId.has(participantUserId),
           };
         })
         .sort((left, right) => left.name.localeCompare(right.name))
@@ -277,8 +304,52 @@ export function buildExchangeGiftState({
     isEligible: Boolean(mine || (!isDrawFinalized && hasOrnament)),
     hasDrawn: Boolean(mine?.revealed_at),
     recipient,
+    deliveryAddress: addressByUserId.get(userId) ?? null,
+    canSaveDeliveryAddress: hasOrnament,
     adminRoster,
   };
+}
+
+export async function saveChristmasExchangeGiftDeliveryAddress(
+  adminClient: ChristmasTreeAdminClient,
+  userId: string,
+  deliveryAddress: string
+) {
+  const event = await getActiveChristmasEvent(adminClient);
+  if (!event) throw new Error('No active Christmas Tree event is configured');
+
+  const { data: ornament, error: ornamentError } = await adminClient
+    .from('christmas_ornaments')
+    .select('id')
+    .eq('event_id', event.id)
+    .eq('user_id', userId)
+    .is('deleted_at', null)
+    .maybeSingle();
+  if (ornamentError) throw new Error('Failed to verify Christmas Tree participation');
+  if (!ornament) {
+    throw new ChristmasTreeRequestError(
+      'Place your Christmas ball before adding a delivery address',
+      409
+    );
+  }
+
+  const { error } = await adminClient.from('christmas_exchange_gift_delivery_addresses').upsert(
+    {
+      event_id: event.id,
+      user_id: userId,
+      delivery_address: deliveryAddress,
+    },
+    { onConflict: 'event_id,user_id' }
+  );
+  if (error) throw new Error('Failed to save the delivery address');
+
+  logActivity(adminClient, {
+    userId,
+    action: 'SAVE_CHRISTMAS_EXCHANGE_GIFT_DELIVERY_ADDRESS',
+    tableName: 'christmas_tree_events',
+    recordId: event.id,
+    metadata: { eventId: event.id, hasDeliveryAddress: true },
+  });
 }
 
 export async function drawChristmasExchangeGiftPartner(

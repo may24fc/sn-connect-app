@@ -33,6 +33,8 @@ const pendingExchangeGift = {
   isEligible: false,
   hasDrawn: false,
   recipient: null,
+  deliveryAddress: null,
+  canSaveDeliveryAddress: false,
   adminRoster: null,
 };
 
@@ -50,7 +52,7 @@ const populatedSnapshot = {
   event: baseEvent,
   decoration,
   strands: [],
-  exchangeGift: { ...pendingExchangeGift, isEligible: true },
+  exchangeGift: { ...pendingExchangeGift, isEligible: true, canSaveDeliveryAddress: true },
   permissions: { canManage: false },
   myOrnament: {
     id: 'ornament-1',
@@ -139,6 +141,7 @@ test.describe('Christmas Tree layout stability', () => {
   }, testInfo) => {
     let hasOrnament = false;
     let hasDrawnExchangeGift = false;
+    let savedDeliveryAddress: string | null = null;
     const savedWishPayloads: Array<{
       category: 'personal' | 'for_others' | 'for_sn';
       itemNumber: number;
@@ -214,12 +217,32 @@ test.describe('Christmas Tree layout stability', () => {
                   ...populatedSnapshot.exchangeGift,
                   isDrawFinalized: true,
                   hasDrawn: true,
-                  recipient: { userId: 'emp-2', name: 'Alex Rivera' },
+                  deliveryAddress: savedDeliveryAddress,
+                  recipient: {
+                    userId: 'emp-2',
+                    name: 'Alex Rivera',
+                    deliveryAddress: '456 Recipient Avenue, Davao City',
+                  },
                 }
-              : populatedSnapshot.exchangeGift,
+              : { ...populatedSnapshot.exchangeGift, deliveryAddress: savedDeliveryAddress },
             ornaments: populatedSnapshot.ornaments.map((ornament) => ({ ...ornament, wishes })),
           },
         }),
+      });
+    });
+    await page.route('**/api/christmas-tree/exchange-gift/address', async (route) => {
+      const payload = route.request().postDataJSON() as { deliveryAddress: string };
+      savedDeliveryAddress = payload.deliveryAddress;
+      await route.fulfill({
+        json: {
+          data: {
+            ...populatedSnapshot,
+            exchangeGift: {
+              ...populatedSnapshot.exchangeGift,
+              deliveryAddress: savedDeliveryAddress,
+            },
+          },
+        },
       });
     });
     await page.route('**/api/christmas-tree/exchange-gift', async (route) => {
@@ -232,7 +255,12 @@ test.describe('Christmas Tree layout stability', () => {
               ...populatedSnapshot.exchangeGift,
               isDrawFinalized: true,
               hasDrawn: true,
-              recipient: { userId: 'emp-2', name: 'Alex Rivera' },
+              deliveryAddress: savedDeliveryAddress,
+              recipient: {
+                userId: 'emp-2',
+                name: 'Alex Rivera',
+                deliveryAddress: '456 Recipient Avenue, Davao City',
+              },
             },
           },
         },
@@ -287,8 +315,15 @@ test.describe('Christmas Tree layout stability', () => {
 
     await expect(page.getByText('Your Christmas Wishes')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Exchange Gift Draw' })).toBeVisible();
+    await expect(page.getByText('Not added yet')).toBeVisible();
+    await page.getByLabel('Your delivery address').fill('123 Sample Street, Cebu City, 6000');
+    await page.getByRole('button', { name: 'Save address' }).click();
+    await expect(page.getByText('Address added')).toBeVisible();
     await page.getByRole('button', { name: 'Draw my exchange gift partner' }).click();
     await expect(page.getByTestId('exchange-gift-recipient')).toContainText('Alex Rivera');
+    await expect(page.getByTestId('exchange-gift-recipient')).toContainText(
+      '456 Recipient Avenue, Davao City'
+    );
     await page.getByTestId('exchange-gift-draw-card').screenshot({
       path: testInfo.outputPath('desktop-exchange-gift.png'),
     });
@@ -443,10 +478,11 @@ test.describe('Christmas Tree layout stability', () => {
         exchangeGift: {
           ...pendingExchangeGift,
           isEligible: true,
+          canSaveDeliveryAddress: true,
           isDrawFinalized: hasSelectedExchangeGift,
           hasDrawn: hasSelectedExchangeGift,
           recipient: hasSelectedExchangeGift
-            ? { userId: 'employee-1', name: 'Sample Employee' }
+            ? { userId: 'employee-1', name: 'Sample Employee', deliveryAddress: null }
             : null,
           adminRoster: [
             {
@@ -455,13 +491,15 @@ test.describe('Christmas Tree layout stability', () => {
               recipientUserId: hasSelectedExchangeGift ? 'employee-1' : null,
               recipientName: hasSelectedExchangeGift ? 'Sample Employee' : null,
               hasSelected: hasSelectedExchangeGift,
+              hasDeliveryAddress: false,
             },
             {
               userId: 'employee-1',
               name: 'Sample Employee',
               recipientUserId: hasSelectedExchangeGift ? managerUserId : null,
-              recipientName: hasSelectedExchangeGift ? managerName : null,
+              recipientName: null,
               hasSelected: false,
+              hasDeliveryAddress: false,
             },
           ],
         },
@@ -570,10 +608,11 @@ test.describe('Christmas Tree layout stability', () => {
         exchangeGift: {
           ...pendingExchangeGift,
           isEligible: true,
+          canSaveDeliveryAddress: true,
           isDrawFinalized: hasSelectedExchangeGift,
           hasDrawn: hasSelectedExchangeGift,
           recipient: hasSelectedExchangeGift
-            ? { userId: 'employee-1', name: 'Sample Employee' }
+            ? { userId: 'employee-1', name: 'Sample Employee', deliveryAddress: null }
             : null,
           adminRoster: [
             {
@@ -582,13 +621,15 @@ test.describe('Christmas Tree layout stability', () => {
               recipientUserId: hasSelectedExchangeGift ? 'employee-1' : null,
               recipientName: hasSelectedExchangeGift ? 'Sample Employee' : null,
               hasSelected: hasSelectedExchangeGift,
+              hasDeliveryAddress: false,
             },
             {
               userId: 'employee-1',
               name: 'Sample Employee',
               recipientUserId: hasSelectedExchangeGift ? managerUserId : null,
-              recipientName: hasSelectedExchangeGift ? managerName : null,
+              recipientName: null,
               hasSelected: false,
+              hasDeliveryAddress: false,
             },
           ],
         },

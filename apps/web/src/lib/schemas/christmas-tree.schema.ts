@@ -51,6 +51,10 @@ export const christmasDecorationEnableSchema = z.object({
   decoration: z.enum(['garland', 'lights', 'star']),
 });
 
+export const christmasExchangeGiftAddressSchema = z.object({
+  deliveryAddress: z.string().trim().min(5).max(500),
+});
+
 export const christmasDecorationRemoveSchema = z.union([
   z.object({ decoration: z.literal('star') }),
   z.object({ strandId: z.string().uuid() }),
@@ -130,6 +134,7 @@ export type ChristmasOrnamentPlacementInput = z.infer<typeof christmasOrnamentPl
 export type ChristmasOrnamentMoveInput = z.infer<typeof christmasOrnamentMoveSchema>;
 export type ChristmasOrnamentDeleteInput = z.infer<typeof christmasOrnamentDeleteSchema>;
 export type ChristmasDecorationEnableInput = z.infer<typeof christmasDecorationEnableSchema>;
+export type ChristmasExchangeGiftAddressInput = z.infer<typeof christmasExchangeGiftAddressSchema>;
 export type ChristmasStrandGeometry = z.infer<typeof christmasStrandGeometrySchema>;
 export type ChristmasStrandSaveInput = z.infer<typeof christmasStrandSaveSchema>;
 export type ChristmasWishUpsertInput = z.infer<typeof christmasWishUpsertSchema>;

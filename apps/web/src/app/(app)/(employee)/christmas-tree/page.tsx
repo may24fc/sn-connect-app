@@ -11,6 +11,7 @@ import {
   useMoveChristmasOrnament,
   usePlaceChristmasOrnament,
   useRemoveChristmasDecoration,
+  useSaveChristmasExchangeGiftAddress,
   useSaveChristmasStrand,
   useUpsertChristmasWish,
 } from '@/hooks/useChristmasTree';
@@ -51,6 +52,7 @@ import {
   ExternalLink,
   Gift,
   LockKeyhole,
+  MapPin,
   Maximize,
   Minimize,
   Sparkles,
@@ -174,6 +176,7 @@ export default function ChristmasTreePage() {
   const upsertWish = useUpsertChristmasWish();
   const deleteWish = useDeleteChristmasWish();
   const drawExchangeGiftPartner = useDrawChristmasExchangeGiftPartner();
+  const saveExchangeGiftAddress = useSaveChristmasExchangeGiftAddress();
   const [selectedOrnament, setSelectedOrnament] = useState<Ornament | null>(null);
   const [selectedAssetType, setSelectedAssetType] = useState<OrnamentAsset | null>(null);
   const [isDraggingNewBall, setIsDraggingNewBall] = useState(false);
@@ -209,6 +212,7 @@ export default function ChristmasTreePage() {
     enableDecoration.error?.message ??
     removeDecoration.error?.message ??
     saveStrand.error?.message ??
+    saveExchangeGiftAddress.error?.message ??
     drawExchangeGiftPartner.error?.message;
   const deleteOrnamentError = deleteOrnament.error?.message ?? adminDeleteOrnament.error?.message;
   const isSelectedUsersOrnament = selectedOrnament?.id === data.myOrnament?.id;
@@ -424,8 +428,10 @@ export default function ChristmasTreePage() {
           ) : null}
           <ExchangeGiftDrawCard
             exchangeGift={data.exchangeGift}
+            isAddressSaving={saveExchangeGiftAddress.isPending}
             isPending={drawExchangeGiftPartner.isPending}
             onDraw={() => drawExchangeGiftPartner.mutate()}
+            onSaveAddress={(deliveryAddress) => saveExchangeGiftAddress.mutate({ deliveryAddress })}
           />
           {data.exchangeGift.adminRoster ? (
             <AdminExchangeGiftRoster exchangeGift={data.exchangeGift} />
@@ -507,9 +513,15 @@ function AdminExchangeGiftRoster({
                   <span className="shrink-0">Buying for</span>
                   <ArrowRight className="h-3 w-3 shrink-0" />
                   <span className="truncate">
-                    {participant.recipientName ?? 'Waiting for the first draw'}
+                    {participant.recipientName ??
+                      (exchangeGift.isDrawFinalized
+                        ? 'Hidden until selected'
+                        : 'Waiting for the first draw')}
                   </span>
                 </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {participant.hasDeliveryAddress ? 'Address added' : 'Address not added yet'}
+                </p>
               </div>
               <Badge className="shrink-0" variant={participant.hasSelected ? 'default' : 'outline'}>
                 {participant.hasSelected ? 'Selected' : 'Not selected yet'}
@@ -524,15 +536,24 @@ function AdminExchangeGiftRoster({
 
 function ExchangeGiftDrawCard({
   exchangeGift,
+  isAddressSaving,
   isPending,
   onDraw,
+  onSaveAddress,
 }: {
   exchangeGift: ChristmasTreeSnapshot['exchangeGift'];
+  isAddressSaving: boolean;
   isPending: boolean;
   onDraw: () => void;
+  onSaveAddress: (deliveryAddress: string) => void;
 }) {
+  const [deliveryAddress, setDeliveryAddress] = useState(exchangeGift.deliveryAddress ?? '');
   const canDraw = exchangeGift.isEligible && exchangeGift.participantCount >= 2;
   const drawMessage = getExchangeGiftDrawMessage(exchangeGift);
+
+  useEffect(() => {
+    setDeliveryAddress(exchangeGift.deliveryAddress ?? '');
+  }, [exchangeGift.deliveryAddress]);
 
   return (
     <Card data-testid="exchange-gift-draw-card" className="overflow-hidden border-rose-200/80">
@@ -552,6 +573,43 @@ function ExchangeGiftDrawCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-4 pt-5">
+        <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <label className="text-sm font-medium" htmlFor="exchange-gift-delivery-address">
+              Your delivery address
+            </label>
+            <Badge variant={exchangeGift.deliveryAddress ? 'secondary' : 'outline'}>
+              {exchangeGift.deliveryAddress ? 'Address added' : 'Not added yet'}
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Only the teammate who draws your name will see this address.
+          </p>
+          <Textarea
+            disabled={!exchangeGift.canSaveDeliveryAddress || isAddressSaving}
+            id="exchange-gift-delivery-address"
+            maxLength={500}
+            onChange={(event) => setDeliveryAddress(event.target.value)}
+            placeholder="House/unit, street, city, province, postal code"
+            rows={3}
+            value={deliveryAddress}
+          />
+          <Button
+            disabled={
+              !exchangeGift.canSaveDeliveryAddress ||
+              isAddressSaving ||
+              deliveryAddress.trim().length < 5 ||
+              deliveryAddress.trim() === exchangeGift.deliveryAddress
+            }
+            onClick={() => onSaveAddress(deliveryAddress.trim())}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            <MapPin className="mr-2 h-4 w-4" />
+            {isAddressSaving ? 'Saving address...' : 'Save address'}
+          </Button>
+        </div>
         {exchangeGift.recipient ? (
           <div
             className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-5 text-center dark:border-rose-900 dark:bg-rose-950/30"
@@ -566,6 +624,20 @@ function ExchangeGiftDrawCard({
             <p className="mt-2 text-xs text-muted-foreground">
               Keep it a surprise. Your assignment stays the same when you return.
             </p>
+            <div className="mt-3 rounded-md border border-rose-200/80 bg-background/70 p-3 text-left dark:border-rose-800/80">
+              <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <MapPin className="h-3.5 w-3.5" /> Delivery address
+              </p>
+              {exchangeGift.recipient.deliveryAddress ? (
+                <address className="mt-1 whitespace-pre-wrap text-sm not-italic">
+                  {exchangeGift.recipient.deliveryAddress}
+                </address>
+              ) : (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Delivery address not added yet.
+                </p>
+              )}
+            </div>
           </div>
         ) : (
           <>
