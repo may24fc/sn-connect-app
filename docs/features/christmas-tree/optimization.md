@@ -33,6 +33,14 @@ Christmas wish persistence respects the soft-delete uniqueness model, all wish c
 - **Code paths:** `supabase/migrations/20261116000001_add_christmas_exchange_gift_draw.sql`, `apps/web/src/app/api/christmas-tree/exchange-gift/route.ts`, `apps/web/src/app/api/christmas-tree/_lib.ts`, `apps/web/src/hooks/useChristmasTree.ts`, `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `tests/sql/christmas-exchange-gift-local.sql`, `tests/api/christmas-tree-exchange-gift.test.ts`, `e2e/christmas-tree-layout.spec.ts`.
 - **Validation:** Migration `20261116000001` applied to local Supabase and appears in local migration history. The rollback SQL fixture produced three unique recipients for three givers, found no self-match, preserved the same result on repeat reveal, and rejected a late participant after finalization. Fifteen focused API tests, database and web type-checks, and the focused Chromium desktop/mobile reveal journey passed. Desktop and mobile screenshots were inspected; no feature request failures, console errors, or horizontal overflow occurred. On 2026-11-17, explicit approval was received to apply the same migration to production project `tccdupkjmwwxcvpqnpeb`; linked history matched local, the follow-up dry run was clean, and the full monorepo build passed.
 
+### Role-gated exchange-gift tracking
+
+- **Status:** Implemented
+- **Problem/evidence:** HR administrators could draw their own partner but could not see whether the full roster had received assignments or who had already selected their result. Returning the complete mapping to every client would break the employee privacy boundary.
+- **Solution:** Build the tracking roster in the authenticated server snapshot only when the caller has an active admin or super-admin role. The roster shows giver, assigned recipient, and reveal status; ordinary employee snapshots explicitly return no roster. The manager's personal draw remains the same server-confirmed action.
+- **Code paths:** `apps/web/src/app/api/christmas-tree/_lib.ts`, `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `tests/api/christmas-tree-exchange-gift.test.ts`, `e2e/christmas-tree-layout.spec.ts`.
+- **Validation:** Focused API tests passed 14/14 and verify that managers receive the mapping while employees receive `adminRoster: null`. Web type-check passed. Focused Playwright passed 2/2 for admin and super-admin, exercised the draw action, updated progress from 0/2 to 1/2, and inspected the tracking card at 1440px desktop and 390px mobile.
+
 ### Immediate strand release response
 
 - **Status:** Implemented
@@ -149,6 +157,8 @@ flowchart LR
 ```
 
 ## Change Log
+
+- 2026-11-17: Added an admin/super-admin-only exchange-gift roster with recipient mapping and selection progress while preserving the manager's own draw action; verified that employee snapshots do not expose the roster.
 
 - 2026-11-17: With explicit approval, applied exchange-gift migration `20261116000001` to production project `tccdupkjmwwxcvpqnpeb`, verified matching migration history and a clean follow-up dry run, and passed the full monorepo build.
 - 2026-11-16: Added the ₱500 exchange-gift draw with a serialized database-generated derangement, unique giver/recipient constraints, private repeatable reveals, finalized-roster handling, and local SQL/API/browser validation.

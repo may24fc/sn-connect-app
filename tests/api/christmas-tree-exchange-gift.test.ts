@@ -1,6 +1,9 @@
 import { logActivity } from '@/lib/audit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { drawChristmasExchangeGiftPartner } from '../../apps/web/src/app/api/christmas-tree/_lib';
+import {
+  buildExchangeGiftState,
+  drawChristmasExchangeGiftPartner,
+} from '../../apps/web/src/app/api/christmas-tree/_lib';
 
 vi.mock('@/lib/audit', () => ({ logActivity: vi.fn() }));
 
@@ -74,5 +77,52 @@ describe('Christmas exchange gift draw', () => {
       message: 'The exchange gift draw is already set and you were not in its participant list',
     });
     expect(logActivity).not.toHaveBeenCalled();
+  });
+
+  it('includes the complete assignment roster only for Christmas Tree managers', () => {
+    const assignments = [
+      {
+        giver_user_id: 'admin-1',
+        recipient_user_id: 'employee-1',
+        revealed_at: '2026-11-17T00:00:00Z',
+      },
+      {
+        giver_user_id: 'employee-1',
+        recipient_user_id: 'admin-1',
+        revealed_at: null,
+      },
+    ];
+    const input = {
+      assignments,
+      participantUserIds: ['admin-1', 'employee-1'],
+      userId: 'admin-1',
+      hasOrnament: true,
+      nameByUserId: new Map([
+        ['admin-1', 'Admin User'],
+        ['employee-1', 'Sample Employee'],
+      ]),
+    };
+
+    const managerState = buildExchangeGiftState({ ...input, canManage: true });
+    expect(managerState.adminRoster).toEqual([
+      expect.objectContaining({
+        name: 'Admin User',
+        recipientName: 'Sample Employee',
+        hasSelected: true,
+      }),
+      expect.objectContaining({
+        name: 'Sample Employee',
+        recipientName: 'Admin User',
+        hasSelected: false,
+      }),
+    ]);
+
+    const employeeState = buildExchangeGiftState({
+      ...input,
+      userId: 'employee-1',
+      canManage: false,
+    });
+    expect(employeeState.adminRoster).toBeNull();
+    expect(employeeState.recipient).toBeNull();
   });
 });

@@ -47,6 +47,7 @@ import {
   cn,
 } from '@hr-portal/ui';
 import {
+  ArrowRight,
   ExternalLink,
   Gift,
   LockKeyhole,
@@ -54,6 +55,7 @@ import {
   Minimize,
   Sparkles,
   Trash2,
+  UsersRound,
   Volume2,
   VolumeX,
 } from 'lucide-react';
@@ -425,6 +427,9 @@ export default function ChristmasTreePage() {
             isPending={drawExchangeGiftPartner.isPending}
             onDraw={() => drawExchangeGiftPartner.mutate()}
           />
+          {data.exchangeGift.adminRoster ? (
+            <AdminExchangeGiftRoster exchangeGift={data.exchangeGift} />
+          ) : null}
           {!data.myOrnament ? (
             <OrnamentPicker
               isPending={placeOrnament.isPending}
@@ -457,6 +462,63 @@ export default function ChristmasTreePage() {
         onRemove={handleRemoveOrnament}
       />
     </div>
+  );
+}
+
+function AdminExchangeGiftRoster({
+  exchangeGift,
+}: {
+  exchangeGift: ChristmasTreeSnapshot['exchangeGift'];
+}) {
+  const roster = exchangeGift.adminRoster ?? [];
+  const selectedCount = roster.filter((participant) => participant.hasSelected).length;
+
+  return (
+    <Card data-testid="exchange-gift-admin-roster">
+      <CardHeader>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <UsersRound className="h-5 w-5 text-emerald-700 dark:text-emerald-300" />
+              Exchange gift tracking
+            </CardTitle>
+            <CardDescription className="mt-1.5">
+              Admin-only view of participants, recipients, and draw progress.
+            </CardDescription>
+          </div>
+          <Badge className="shrink-0 whitespace-nowrap" variant="secondary">
+            {selectedCount} of {roster.length} selected
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {roster.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No Christmas ball participants yet.</p>
+        ) : (
+          roster.map((participant) => (
+            <div
+              className="flex items-center justify-between gap-3 rounded-lg border bg-muted/25 px-3 py-2.5"
+              data-testid={`exchange-gift-roster-${participant.userId}`}
+              key={participant.userId}
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{participant.name}</p>
+                <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className="shrink-0">Buying for</span>
+                  <ArrowRight className="h-3 w-3 shrink-0" />
+                  <span className="truncate">
+                    {participant.recipientName ?? 'Waiting for the first draw'}
+                  </span>
+                </div>
+              </div>
+              <Badge className="shrink-0" variant={participant.hasSelected ? 'default' : 'outline'}>
+                {participant.hasSelected ? 'Selected' : 'Not selected yet'}
+              </Badge>
+            </div>
+          ))
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

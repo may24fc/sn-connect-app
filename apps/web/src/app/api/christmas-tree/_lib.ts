@@ -142,6 +142,7 @@ export async function buildChristmasTreeSnapshot(
     throw new Error('Failed to load Christmas Tree data');
 
   const eventOrnaments = (ornaments ?? []) as Array<OrnamentRow>;
+  const giftAssignments = (exchangeGiftAssignments ?? []) as Array<ExchangeGiftAssignmentRow>;
   const ornamentIds = eventOrnaments.map((ornament) => ornament.id);
   const wishesRequest = ornamentIds.length
     ? adminClient
@@ -151,7 +152,14 @@ export async function buildChristmasTreeSnapshot(
         .is('deleted_at', null)
     : Promise.resolve({ data: [] as Array<WishRow>, error: null });
   const [nameByUserId, { data: wishes, error: wishesError }] = await Promise.all([
-    getOrnamentOwnerNames(adminClient, eventOrnaments),
+    getOrnamentOwnerNames(
+      adminClient,
+      eventOrnaments,
+      giftAssignments.flatMap((assignment) => [
+        assignment.giver_user_id,
+        assignment.recipient_user_id,
+      ])
+    ),
     wishesRequest,
   ]);
   if (wishesError) throw new Error('Failed to load Christmas Tree wishes');
@@ -162,12 +170,14 @@ export async function buildChristmasTreeSnapshot(
   );
 
   const mine = eventOrnaments.find((ornament) => ornament.user_id === userId) ?? null;
+  const canManage = canManageChristmasTree(role);
   const exchangeGift = buildExchangeGiftState({
-    assignments: (exchangeGiftAssignments ?? []) as Array<ExchangeGiftAssignmentRow>,
-    participantCount: eventOrnaments.length,
+    assignments: giftAssignments,
+    participantUserIds: eventOrnaments.map((ornament) => ornament.user_id),
     userId,
     hasOrnament: Boolean(mine),
     nameByUserId,
+    canManage,
   });
   return {
     event: {
@@ -198,7 +208,7 @@ export async function buildChristmasTreeSnapshot(
         endY: Number(strand.end_y),
       },
     })),
-    permissions: { canManage: canManageChristmasTree(role) },
+    permissions: { canManage },
     exchangeGift,
     myOrnament: mine,
     ornaments: eventOrnaments.map((ornament) => ({
@@ -214,18 +224,20 @@ export async function buildChristmasTreeSnapshot(
   };
 }
 
-function buildExchangeGiftState({
+export function buildExchangeGiftState({
   assignments,
-  participantCount,
+  participantUserIds,
   userId,
   hasOrnament,
   nameByUserId,
+  canManage,
 }: {
   assignments: Array<ExchangeGiftAssignmentRow>;
-  participantCount: number;
+  participantUserIds: Array<string>;
   userId: string;
   hasOrnament: boolean;
   nameByUserId: Map<string, string>;
+  canManage: boolean;
 }) {
   const mine = assignments.find((assignment) => assignment.giver_user_id === userId);
   const isDrawFinalized = assignments.length > 0;
@@ -235,14 +247,37 @@ function buildExchangeGiftState({
         name: nameByUserId.get(mine.recipient_user_id) ?? 'Team member',
       }
     : null;
+  const assignmentByGiver = new Map(
+    assignments.map((assignment) => [assignment.giver_user_id, assignment])
+  );
+  const rosterUserIds = isDrawFinalized
+    ? assignments.map((assignment) => assignment.giver_user_id)
+    : participantUserIds;
+  const adminRoster = canManage
+    ? rosterUserIds
+        .map((participantUserId) => {
+          const assignment = assignmentByGiver.get(participantUserId);
+          return {
+            userId: participantUserId,
+            name: nameByUserId.get(participantUserId) ?? 'Team member',
+            recipientUserId: assignment?.recipient_user_id ?? null,
+            recipientName: assignment
+              ? (nameByUserId.get(assignment.recipient_user_id) ?? 'Team member')
+              : null,
+            hasSelected: Boolean(assignment?.revealed_at),
+          };
+        })
+        .sort((left, right) => left.name.localeCompare(right.name))
+    : null;
 
   return {
     budgetPhp: 500,
-    participantCount: isDrawFinalized ? assignments.length : participantCount,
+    participantCount: isDrawFinalized ? assignments.length : participantUserIds.length,
     isDrawFinalized,
     isEligible: Boolean(mine || (!isDrawFinalized && hasOrnament)),
     hasDrawn: Boolean(mine?.revealed_at),
     recipient,
+    adminRoster,
   };
 }
 
@@ -757,9 +792,12 @@ export class ChristmasTreeRequestError extends Error {
 
 async function getOrnamentOwnerNames(
   adminClient: ChristmasTreeAdminClient,
-  ornaments: Array<OrnamentRow>
+  ornaments: Array<OrnamentRow>,
+  additionalUserIds: Array<string> = []
 ): Promise<Map<string, string>> {
-  const userIds = [...new Set(ornaments.map((ornament) => ornament.user_id))];
+  const userIds = [
+    ...new Set([...ornaments.map((ornament) => ornament.user_id), ...additionalUserIds]),
+  ];
   if (userIds.length === 0) return new Map();
 
   const { data: employees, error } = await adminClient

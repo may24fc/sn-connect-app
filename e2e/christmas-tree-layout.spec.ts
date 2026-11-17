@@ -33,6 +33,7 @@ const pendingExchangeGift = {
   isEligible: false,
   hasDrawn: false,
   recipient: null,
+  adminRoster: null,
 };
 
 const emptySnapshot = {
@@ -428,12 +429,114 @@ test.describe('Christmas Tree layout stability', () => {
   });
 
   for (const role of ['admin', 'super_admin'] as const) {
+    test(`${role} can track exchange gift selections and still draw`, async ({
+      page,
+    }, testInfo) => {
+      const managerName = role === 'admin' ? 'Admin User' : 'Super Admin';
+      const managerUserId = `${role}-1`;
+      let hasSelectedExchangeGift = false;
+      const snapshot = () => ({
+        event: baseEvent,
+        decoration,
+        manualDecorations: { garland: false, lights: false, star: false },
+        strands: [],
+        exchangeGift: {
+          ...pendingExchangeGift,
+          isEligible: true,
+          isDrawFinalized: hasSelectedExchangeGift,
+          hasDrawn: hasSelectedExchangeGift,
+          recipient: hasSelectedExchangeGift
+            ? { userId: 'employee-1', name: 'Sample Employee' }
+            : null,
+          adminRoster: [
+            {
+              userId: managerUserId,
+              name: managerName,
+              recipientUserId: hasSelectedExchangeGift ? 'employee-1' : null,
+              recipientName: hasSelectedExchangeGift ? 'Sample Employee' : null,
+              hasSelected: hasSelectedExchangeGift,
+            },
+            {
+              userId: 'employee-1',
+              name: 'Sample Employee',
+              recipientUserId: hasSelectedExchangeGift ? managerUserId : null,
+              recipientName: hasSelectedExchangeGift ? managerName : null,
+              hasSelected: false,
+            },
+          ],
+        },
+        permissions: { canManage: true },
+        myOrnament: {
+          id: '11111111-1111-4111-8111-111111111119',
+          user_id: managerUserId,
+          asset_type: 'red',
+          position_x: 62,
+          position_y: 62,
+        },
+        ornaments: [
+          {
+            id: '11111111-1111-4111-8111-111111111111',
+            ownerName: 'Sample Employee',
+            assetType: 'blue',
+            positionX: 52,
+            positionY: 46,
+            wishes: [],
+          },
+          {
+            id: '11111111-1111-4111-8111-111111111119',
+            ownerName: managerName,
+            assetType: 'red',
+            positionX: 62,
+            positionY: 62,
+            wishes: [],
+          },
+        ],
+      });
+
+      await useMockManager(page, role);
+      await page.route('**/api/christmas-tree/current', async (route) => {
+        await route.fulfill({ json: { data: snapshot() } });
+      });
+      await page.route('**/api/christmas-tree/exchange-gift', async (route) => {
+        hasSelectedExchangeGift = true;
+        await route.fulfill({ json: { data: snapshot() } });
+      });
+
+      await page.setViewportSize({ width: 1440, height: 1000 });
+      await page.goto('/christmas-tree');
+      await expect(page.getByRole('heading', { name: 'Exchange gift tracking' })).toBeVisible();
+      await expect(page.getByText('0 of 2 selected')).toBeVisible();
+      await page.getByRole('button', { name: 'Draw my exchange gift partner' }).click();
+      await expect(page.getByTestId('exchange-gift-recipient')).toContainText('Sample Employee');
+      await expect(page.getByText('1 of 2 selected')).toBeVisible();
+      await expect(page.getByTestId(`exchange-gift-roster-${managerUserId}`)).toContainText(
+        'Selected'
+      );
+      await expect(page.getByTestId('exchange-gift-roster-employee-1')).toContainText(
+        'Not selected yet'
+      );
+      await page.getByTestId('exchange-gift-admin-roster').screenshot({
+        path: testInfo.outputPath(`${role}-desktop-exchange-tracking.png`),
+      });
+
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page
+        .getByTestId('exchange-gift-admin-roster')
+        .evaluate((element) => element.scrollIntoView({ block: 'center' }));
+      await page.getByTestId('exchange-gift-admin-roster').screenshot({
+        path: testInfo.outputPath(`${role}-mobile-exchange-tracking.png`),
+      });
+    });
+
     test(`${role} can add decorations and remove another user's ball`, async ({
       page,
     }, testInfo) => {
       test.setTimeout(180_000);
       const consoleErrors: Array<string> = [];
       const failedRequests: Array<string> = [];
+      const managerName = role === 'admin' ? 'Admin User' : 'Super Admin';
+      const managerUserId = `${role}-1`;
+      let hasSelectedExchangeGift = false;
       let ornaments = [
         {
           id: '11111111-1111-4111-8111-111111111111',
@@ -441,6 +544,14 @@ test.describe('Christmas Tree layout stability', () => {
           assetType: 'blue',
           positionX: 52,
           positionY: 46,
+          wishes: [],
+        },
+        {
+          id: '11111111-1111-4111-8111-111111111119',
+          ownerName: managerName,
+          assetType: 'red',
+          positionX: 62,
+          positionY: 62,
           wishes: [],
         },
       ];
@@ -456,9 +567,39 @@ test.describe('Christmas Tree layout stability', () => {
         decoration: currentDecoration,
         manualDecorations,
         strands: [...strands],
-        exchangeGift: pendingExchangeGift,
+        exchangeGift: {
+          ...pendingExchangeGift,
+          isEligible: true,
+          isDrawFinalized: hasSelectedExchangeGift,
+          hasDrawn: hasSelectedExchangeGift,
+          recipient: hasSelectedExchangeGift
+            ? { userId: 'employee-1', name: 'Sample Employee' }
+            : null,
+          adminRoster: [
+            {
+              userId: managerUserId,
+              name: managerName,
+              recipientUserId: hasSelectedExchangeGift ? 'employee-1' : null,
+              recipientName: hasSelectedExchangeGift ? 'Sample Employee' : null,
+              hasSelected: hasSelectedExchangeGift,
+            },
+            {
+              userId: 'employee-1',
+              name: 'Sample Employee',
+              recipientUserId: hasSelectedExchangeGift ? managerUserId : null,
+              recipientName: hasSelectedExchangeGift ? managerName : null,
+              hasSelected: false,
+            },
+          ],
+        },
         permissions: { canManage: true },
-        myOrnament: null,
+        myOrnament: {
+          id: '11111111-1111-4111-8111-111111111119',
+          user_id: managerUserId,
+          asset_type: 'red',
+          position_x: 62,
+          position_y: 62,
+        },
         ornaments,
       });
 
@@ -468,6 +609,10 @@ test.describe('Christmas Tree layout stability', () => {
       page.on('requestfailed', (request) => failedRequests.push(request.url()));
       await useMockManager(page, role);
       await page.route('**/api/christmas-tree/current', async (route) => {
+        await route.fulfill({ json: { data: snapshot() } });
+      });
+      await page.route('**/api/christmas-tree/exchange-gift', async (route) => {
+        hasSelectedExchangeGift = true;
         await route.fulfill({ json: { data: snapshot() } });
       });
       await page.route('**/api/christmas-tree/decorations', async (route) => {
@@ -515,13 +660,26 @@ test.describe('Christmas Tree layout stability', () => {
         expect(route.request().postDataJSON()).toEqual({
           ornamentId: '11111111-1111-4111-8111-111111111111',
         });
-        ornaments = [];
+        ornaments = ornaments.filter(
+          (ornament) => ornament.id !== '11111111-1111-4111-8111-111111111111'
+        );
         await route.fulfill({ json: { data: snapshot() } });
       });
 
       await page.setViewportSize({ width: 1440, height: 1000 });
       await page.goto('/christmas-tree');
       await expect(page.getByRole('heading', { name: 'Tree decorations' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Exchange gift tracking' })).toBeVisible();
+      await expect(page.getByText('0 of 2 selected')).toBeVisible();
+      await page.getByRole('button', { name: 'Draw my exchange gift partner' }).click();
+      await expect(page.getByTestId('exchange-gift-recipient')).toContainText('Sample Employee');
+      await expect(page.getByText('1 of 2 selected')).toBeVisible();
+      await expect(page.getByTestId(`exchange-gift-roster-${managerUserId}`)).toContainText(
+        'Selected'
+      );
+      await expect(page.getByTestId('exchange-gift-roster-employee-1')).toContainText(
+        'Not selected yet'
+      );
 
       for (const control of [
         { kind: 'garland' as const, button: 'Add Garland', y: 0.5 },
