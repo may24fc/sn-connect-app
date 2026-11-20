@@ -47,7 +47,7 @@ Christmas wish persistence respects the soft-delete uniqueness model, all wish c
 - **Problem/evidence:** The admin roster used reveal state only for its status badge, so it displayed every generated partner as soon as the first participant initialized the draw. Delivery details also had no private, event-scoped storage or disclosure rule.
 - **Solution:** Mask admin recipient names until each giver's `revealed_at` is set. Store delivery addresses and international phone numbers in a separate event/user table with row-level policies for the owner and the giver whose assignment has been revealed. Server snapshots expose full delivery details only to the owner and revealed giver; admins receive only boolean address/phone presence statuses. Delivery-detail saves and draws stay server-confirmed, and realtime changes refresh the snapshot without placing PII in audit metadata.
 - **Code paths:** `supabase/migrations/20261117000001_add_christmas_exchange_gift_delivery_addresses.sql`, `supabase/migrations/20261117000002_add_exchange_gift_delivery_phone.sql`, `apps/web/src/app/api/christmas-tree/_lib.ts`, `apps/web/src/app/api/christmas-tree/exchange-gift/address/route.ts`, `apps/web/src/hooks/useChristmasTree.ts`, `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `tests/api/christmas-tree-exchange-gift.test.ts`, `tests/schemas/christmas-tree.test.ts`, `e2e/christmas-tree-layout.spec.ts`.
-- **Validation:** The address migration is present locally and in production; the phone migration is applied locally only and remains pending explicit production approval. Focused API/schema tests passed 14/14; database and web type-checks passed; focused Playwright passed across employee, admin, and super-admin desktop/mobile states. Production inspection found 16 assignments and one test reveal; the reveal was reset to null and verification found zero revealed rows while retaining all assignments.
+- **Validation:** The address and phone migrations are present locally and in production. On 2026-11-18, the approved production check found `20261117000002` already in the remote ledger; the dry run and push both reported the database up to date, and the final linked list matched local history. Focused API/schema tests passed 14/14; database and web type-checks passed; focused Playwright passed across employee, admin, and super-admin desktop/mobile states. Production inspection found 16 assignments and one test reveal; the reveal was reset to null and verification found zero revealed rows while retaining all assignments.
 
 ### Mobile wish-editor priority
 
@@ -56,6 +56,14 @@ Christmas wish persistence respects the soft-delete uniqueness model, all wish c
 - **Solution:** Apply responsive flex ordering to place the Personal/Others/SN wish panel first in the post-tree mobile content. Keep the established desktop rail order at the `xl` breakpoint so the desktop composition does not shift.
 - **Code paths:** `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `e2e/christmas-tree-layout.spec.ts`.
 - **Validation:** Web type-check passed. The focused employee Playwright journey passed at desktop and 390px mobile width, asserts that the mobile wish panel is above the Exchange Gift card, and captured `mobile-wish-panel.png`; the screenshot was inspected for visibility, clipping, and horizontal overflow.
+
+### Wish continuity across ball replacement
+
+- **Status:** Implemented
+- **Problem/evidence:** Production audit data showed that removing a ball and immediately placing another created a new ornament row. Existing wishes stayed active on the soft-deleted ornament, while the snapshot correctly loaded only the new active ornament and therefore displayed no wishes.
+- **Solution:** When a user without an active ball places one, restore their most recently removed ornament in one guarded update and apply the newly chosen style and position. Because the same ornament id becomes active again, its wishes remain attached without ownership changes or copying. Initial placement still inserts a new ornament. The placement stays optimistic for the ball and reconciles the server-returned preserved wishes.
+- **Code paths:** `apps/web/src/app/api/christmas-tree/_lib.ts`, `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `tests/api/christmas-tree-ornament-placement.test.ts`, `e2e/christmas-tree-layout.spec.ts`, `docs/apps/web/architecture/optimistic-ui.md`.
+- **Validation:** Ariana Ricardo's production recovery restored three Personal wishes and their links to her current ball with an audit record and post-write content/link comparison. Focused API tests passed 4/4, web type-check passed, and focused Playwright passed the desktop/mobile remove-and-replace journey. The 390px screenshot was inspected and had no horizontal overflow. Production deployment of the preventive code fix has not been verified.
 
 ### Immediate strand release response
 
@@ -174,9 +182,13 @@ flowchart LR
 
 ## Change Log
 
+- 2026-11-18: Recovered Ariana Ricardo's three preserved production wishes onto her current ball and added restore-on-replacement behavior so future users retain wishes when placing a ball again.
+
+- 2026-11-18: Verified the approved phone migration in production. It was already present in the linked ledger, so the production push executed no SQL; linked history and the follow-up dry run were clean.
+
 - 2026-11-17: Moved the tabbed wish editor directly below the tree on mobile, retained desktop ordering, and added a focused responsive position assertion and screenshot.
 
-- 2026-11-17: Added a private international phone number below the delivery address, applied migration `20261117000002` locally, and verified owner/revealed-giver disclosure plus admin presence-only status. Production remains pending explicit approval.
+- 2026-11-17: Added a private international phone number below the delivery address, applied migration `20261117000002` locally, and verified owner/revealed-giver disclosure plus admin presence-only status. Production was pending approval at the end of that session and was later verified on 2026-11-18.
 
 - 2026-11-17: Hid unrevealed partner names from admin tracking, added private delivery-address storage and disclosure, applied migration `20261117000001` locally and in production, and reset the single production test reveal without rerolling assignments.
 

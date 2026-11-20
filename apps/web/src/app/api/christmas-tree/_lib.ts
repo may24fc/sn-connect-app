@@ -390,6 +390,46 @@ export async function drawChristmasExchangeGiftPartner(
   });
 }
 
+async function restoreRemovedChristmasOrnament(
+  adminClient: ChristmasTreeAdminClient,
+  userId: string,
+  eventId: string,
+  assetType: string,
+  positionX: number,
+  positionY: number
+): Promise<string | null> {
+  const { data: removedOrnament, error: removedOrnamentError } = await adminClient
+    .from('christmas_ornaments')
+    .select('id')
+    .eq('event_id', eventId)
+    .eq('user_id', userId)
+    .not('deleted_at', 'is', null)
+    .order('deleted_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (removedOrnamentError) throw new Error('Failed to check removed Christmas balls');
+  if (!removedOrnament) return null;
+
+  const { data: restoredOrnament, error: restoreError } = await adminClient
+    .from('christmas_ornaments')
+    .update({
+      asset_type: assetType,
+      position_x: positionX,
+      position_y: positionY,
+      deleted_at: null,
+    })
+    .eq('id', removedOrnament.id)
+    .not('deleted_at', 'is', null)
+    .select('id')
+    .maybeSingle();
+  if (restoreError) {
+    if (restoreError.code === '23505')
+      throw new ChristmasTreeRequestError('You already have an ornament on this tree', 409);
+    throw new Error('Failed to restore Christmas ball');
+  }
+  return restoredOrnament?.id ?? null;
+}
+
 export async function placeChristmasOrnament(
   adminClient: ChristmasTreeAdminClient,
   userId: string,
@@ -435,6 +475,31 @@ export async function placeChristmasOrnament(
       'Choose an open spot away from another Christmas ball',
       409
     );
+  }
+
+  const restoredOrnamentId = await restoreRemovedChristmasOrnament(
+    adminClient,
+    userId,
+    event.id,
+    assetType,
+    positionX,
+    positionY
+  );
+  if (restoredOrnamentId) {
+    logActivity(adminClient, {
+      userId,
+      action: 'RESTORE_CHRISTMAS_ORNAMENT',
+      tableName: 'christmas_ornaments',
+      recordId: restoredOrnamentId,
+      metadata: {
+        eventId: event.id,
+        assetType,
+        positionX,
+        positionY,
+        preservedWishes: true,
+      },
+    });
+    return;
   }
 
   const { data: ornament, error: insertError } = await adminClient

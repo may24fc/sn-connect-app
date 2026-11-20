@@ -848,6 +848,9 @@ function ChristmasTreeCanvas({
   const treeRef = useRef<HTMLDivElement>(null);
   const [treeElement, setTreeElement] = useState<HTMLDivElement | null>(null);
   const [strandPreview, setStrandPreview] = useState<ChristmasStrandGeometry | null>(null);
+  const [lightPreview, setLightPreview] = useState<{ x: number; y: number } | null>(null);
+  const [movingLight, setMovingLight] = useState<{ id: string; x: number; y: number } | null>(null);
+  const movingLightRef = useRef<{ id: string; pointerId: number; startX: number; startY: number; x: number; y: number } | null>(null);
   const newStrandRef = useRef<{ pointerId: number; start: { x: number; y: number } } | null>(null);
   useEffect(() => {
     setTreeElement(treeRef.current);
@@ -868,6 +871,16 @@ function ChristmasTreeCanvas({
   const [movingOrnamentId, setMovingOrnamentId] = useState<string | null>(null);
   const canPlace = Boolean(onPlace && !isPlacementPending);
   const canMove = Boolean(onMove && !isMovePending);
+
+  const lightGeometryAt = (point: { x: number; y: number }) => {
+    const parsed = christmasStrandGeometrySchema.safeParse({
+      startX: point.x - 6,
+      endX: point.x + 6,
+      startY: point.y,
+      endY: point.y,
+    });
+    return parsed.success ? parsed.data : null;
+  };
 
   useEffect(() => {
     if (!(placementAssetType || movingOrnamentRef.current)) setPreviewPosition(null);
@@ -1020,7 +1033,7 @@ function ChristmasTreeCanvas({
             ((canPlace && placementAssetType) || strandPlacement) && 'cursor-crosshair'
           )}
           onPointerDown={(event) => {
-            if (!strandPlacement || !onSaveStrand) return;
+            if (strandPlacement !== 'garland' || !onSaveStrand) return;
             const point = pointFromClient(treeRef.current, event.clientX, event.clientY);
             if (!point) return;
             event.currentTarget.setPointerCapture(event.pointerId);
@@ -1049,11 +1062,25 @@ function ChristmasTreeCanvas({
             setStrandPreview(null);
           }}
           onClick={(event) => {
+            if (strandPlacement === 'lights' && onSaveStrand) {
+              const point = pointFromClient(treeRef.current, event.clientX, event.clientY);
+              if (!point) return;
+              const geometry = lightGeometryAt(point);
+              if (geometry) onSaveStrand('lights', geometry);
+              else onInvalidStrand?.();
+              return;
+            }
             if (placementAssetType && canPlace) {
               placeAtClientPoint(placementAssetType, event.clientX, event.clientY);
             }
           }}
           onKeyDown={(event) => {
+            if (strandPlacement === 'lights' && ['Enter', ' '].includes(event.key)) {
+              event.preventDefault();
+              const geometry = lightGeometryAt({ x: 50, y: 45 });
+              if (geometry) onSaveStrand?.('lights', geometry);
+              return;
+            }
             if (!(placementAssetType && canPlace) || !['Enter', ' '].includes(event.key)) return;
             event.preventDefault();
             const rect = event.currentTarget.getBoundingClientRect();
@@ -1065,8 +1092,14 @@ function ChristmasTreeCanvas({
           }}
           onPointerLeave={() => {
             if (!movingOrnamentRef.current) setPreviewPosition(null);
+            setLightPreview(null);
           }}
           onPointerMove={(event) => {
+            if (strandPlacement === 'lights') {
+              const point = pointFromClient(treeRef.current, event.clientX, event.clientY);
+              setLightPreview(point && lightGeometryAt(point) ? point : null);
+              return;
+            }
             const placing = newStrandRef.current;
             if (placing?.pointerId === event.pointerId) {
               const point = pointFromClient(treeRef.current, event.clientX, event.clientY);
@@ -1083,8 +1116,8 @@ function ChristmasTreeCanvas({
           }}
           data-testid="christmas-tree-drop-zone"
           ref={treeRef}
-          role={placementAssetType && canPlace ? 'button' : undefined}
-          tabIndex={placementAssetType && canPlace ? 0 : undefined}
+          role={(placementAssetType && canPlace) || strandPlacement === 'lights' ? 'button' : undefined}
+          tabIndex={(placementAssetType && canPlace) || strandPlacement === 'lights' ? 0 : undefined}
         >
           <svg
             aria-hidden="true"
@@ -1097,20 +1130,18 @@ function ChristmasTreeCanvas({
             <path d="M50 22 C43 31 29 49 13 68 Q50 63 87 68 C71 49 57 31 50 22Z" fill="#06694f" />
             <path d="M50 7 C45 15 32 34 17 55 Q50 51 83 55 C68 34 55 15 50 7Z" fill="#078662" />
           </svg>
-          {strandPlacement ? (
+          {strandPlacement === 'garland' ? (
             <div
               aria-label={`Drag to place ${strandPlacement}`}
               className="absolute inset-0 z-30 cursor-crosshair touch-none"
               data-testid="christmas-strand-placement-zone"
             />
           ) : null}
-          {(['garland', 'lights'] as const).flatMap((kind) => {
+          {(['garland'] as const).flatMap((kind) => {
             const saved = strands?.filter((strand) => strand.kind === kind) ?? [];
-            const isVisible =
-              kind === 'garland' ? decoration?.garland_unlocked : decoration?.lights_unlocked;
             const displayed = saved.length
               ? saved
-              : isVisible
+              : decoration?.garland_unlocked
                 ? [{ id: `legacy-${kind}`, kind, geometry: DEFAULT_STRANDS[kind] }]
                 : [];
             return displayed.map((strand) => (
@@ -1130,7 +1161,52 @@ function ChristmasTreeCanvas({
               />
             ));
           })}
-          {strandPlacement && strandPreview ? (
+          {(strands?.filter((strand) => strand.kind === 'lights') ?? []).map((strand, index) => (
+            <button
+              aria-label={`Move Christmas light ${index + 1}`}
+              className="christmas-light absolute z-[6] grid h-10 w-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-white/70 shadow-[0_0_12px_rgba(255,224,142,.35)] touch-none disabled:cursor-default"
+              data-testid="christmas-tree-light"
+              disabled={!canEditStrands || Boolean(strandPlacement)}
+              key={strand.id}
+              onClick={(event) => event.stopPropagation()}
+              onPointerDown={(event) => {
+                if (!canEditStrands || strandPlacement) return;
+                event.stopPropagation();
+                event.currentTarget.setPointerCapture(event.pointerId);
+                const x = (strand.geometry.startX + strand.geometry.endX) / 2;
+                const y = (strand.geometry.startY + strand.geometry.endY) / 2;
+                movingLightRef.current = { id: strand.id, pointerId: event.pointerId, startX: x, startY: y, x, y };
+              }}
+              onPointerMove={(event) => {
+                const moving = movingLightRef.current;
+                if (!moving || moving.pointerId !== event.pointerId) return;
+                event.stopPropagation();
+                const point = pointFromClient(treeRef.current, event.clientX, event.clientY);
+                if (!point || !lightGeometryAt(point)) return;
+                movingLightRef.current = { ...moving, x: point.x, y: point.y };
+                setMovingLight({ id: strand.id, ...point });
+              }}
+              onPointerUp={(event) => {
+                const moving = movingLightRef.current;
+                if (!moving || moving.pointerId !== event.pointerId) return;
+                event.stopPropagation();
+                movingLightRef.current = null;
+                setMovingLight(null);
+                if (Math.hypot(moving.x - moving.startX, moving.y - moving.startY) < 1) return;
+                const geometry = lightGeometryAt({ x: moving.x, y: moving.y });
+                if (geometry) onSaveStrand?.('lights', geometry, strand.id);
+              }}
+              onPointerCancel={() => { movingLightRef.current = null; setMovingLight(null); }}
+              style={{ left: `${movingLight?.id === strand.id ? movingLight?.x : (strand.geometry.startX + strand.geometry.endX) / 2}%`, top: `${movingLight?.id === strand.id ? movingLight?.y : (strand.geometry.startY + strand.geometry.endY) / 2}%`, backgroundColor: ['#fbbf24', '#f87171', '#7dd3fc', '#fde68a'][index % 4], animationDelay: `${(index % 5) * -0.8}s` }}
+              type="button"
+            >
+              <span className="h-2 w-2 rounded-full bg-white/70" />
+            </button>
+          ))}
+          {strandPlacement === 'lights' && lightPreview ? (
+            <span aria-hidden="true" className="pointer-events-none absolute z-30 h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/70 bg-amber-300/55 shadow-[0_0_12px_rgba(255,224,142,.25)]" style={{ left: `${lightPreview.x}%`, top: `${lightPreview.y}%` }} />
+          ) : null}
+          {strandPlacement === 'garland' && strandPreview ? (
             <ChristmasTreeStrand
               editable={false}
               geometry={strandPreview}
@@ -1139,6 +1215,22 @@ function ChristmasTreeCanvas({
               treeElement={treeElement}
             />
           ) : null}
+          <style jsx>{`
+            .christmas-light { animation: light-breathe 4.8s ease-in-out infinite; }
+            @keyframes light-breathe { 0%, 100% { opacity: .78; filter: brightness(.92); } 50% { opacity: 1; filter: brightness(1.12); } }
+            @media (prefers-reduced-motion: reduce) { .christmas-light { animation: none; } }
+            .christmas-tree-star-glow {
+              animation: christmas-star-breathe 3.8s ease-in-out infinite;
+              transform-origin: center;
+            }
+            @keyframes christmas-star-breathe {
+              0%, 100% { opacity: 0.55; transform: scale(0.88); }
+              50% { opacity: 0.9; transform: scale(1.12); }
+            }
+            @media (prefers-reduced-motion: reduce) {
+              .christmas-tree-star-glow { animation: none; opacity: 0.7; }
+            }
+          `}</style>
           {decoration?.star_unlocked ? (
             <div
               className="pointer-events-none absolute left-1/2 top-[2%] z-20 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center"
@@ -1157,19 +1249,6 @@ function ChristmasTreeCanvas({
                 aria-hidden="true"
                 className="relative h-12 w-12 fill-amber-300 text-amber-400 drop-shadow-[0_0_8px_rgba(253,230,138,.8)]"
               />
-              <style jsx>{`
-                .christmas-tree-star-glow {
-                  animation: christmas-star-breathe 3.8s ease-in-out infinite;
-                  transform-origin: center;
-                }
-                @keyframes christmas-star-breathe {
-                  0%, 100% { opacity: 0.55; transform: scale(0.88); }
-                  50% { opacity: 0.9; transform: scale(1.12); }
-                }
-                @media (prefers-reduced-motion: reduce) {
-                  .christmas-tree-star-glow { animation: none; opacity: 0.7; }
-                }
-              `}</style>
             </div>
           ) : null}
           {ornaments.map((ornament) => (
@@ -1530,7 +1609,7 @@ function OrnamentDialog({
                 </Button>
                 <p className="mt-2 text-xs text-muted-foreground">
                   {isUsersOrnament
-                    ? 'This removes your ball and its visible wishes from the tree. You can place a new ball afterward.'
+                    ? 'This hides your ball and its wishes. If you place another ball, your saved wishes will return.'
                     : 'Admin action: this removes the ball and hides its owner’s visible wishes.'}
                 </p>
               </div>
@@ -1570,8 +1649,7 @@ function AdminDecorationControls({
       <CardHeader className="pb-3">
         <CardTitle className="text-lg">Tree decorations</CardTitle>
         <CardDescription>
-          Choose Garland or Lights, then drag across the branches. Drag a placed strand to move it,
-          or pull its ends to resize it.
+          Drag Garland across the branches, or choose Lights and tap a spot to add one bulb. Drag a placed bulb to move it.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">

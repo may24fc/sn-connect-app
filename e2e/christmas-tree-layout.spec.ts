@@ -137,6 +137,86 @@ async function useMockManager(
 }
 
 test.describe('Christmas Tree layout stability', () => {
+  test('restores saved wishes when a user removes and replaces their ball', async ({
+    page,
+  }, testInfo) => {
+    test.setTimeout(180_000);
+    let hasOrnament = true;
+    const preservedWish = {
+      ornament_id: 'ornament-1',
+      category: 'personal' as const,
+      item_number: 1,
+      content: 'A preserved Christmas wish',
+      link_url: 'https://example.com/preserved-wish',
+      submitted_at: '2026-10-19T00:34:43Z',
+    };
+    const restoredSnapshot = {
+      ...populatedSnapshot,
+      ornaments: populatedSnapshot.ornaments.map((ornament) => ({
+        ...ornament,
+        wishes: [preservedWish],
+      })),
+    };
+    const consoleErrors: Array<string> = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error') consoleErrors.push(message.text());
+    });
+    await useMockEmployee(page);
+    await page.addInitScript(() => {
+      localStorage.setItem('christmas-tree-music-enabled', 'false');
+    });
+    await page.route('**/api/christmas-tree/current', async (route) => {
+      await route.fulfill({ json: { data: hasOrnament ? restoredSnapshot : emptySnapshot } });
+    });
+    await page.route('**/api/christmas-tree/ornament', async (route) => {
+      if (route.request().method() === 'DELETE') {
+        hasOrnament = false;
+        await route.fulfill({ json: { data: emptySnapshot } });
+        return;
+      }
+      if (route.request().method() === 'POST') {
+        hasOrnament = true;
+        await route.fulfill({ status: 201, json: { data: restoredSnapshot } });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto('/christmas-tree');
+    const ownBall = page.getByRole('button', { name: 'Open or move your Christmas ball' });
+    await ownBall.press('Enter');
+    await expect(page.getByRole('dialog').getByText(preservedWish.content)).toBeVisible();
+    await page.getByRole('button', { name: 'Remove my Christmas ball' }).click();
+    await expect(page.getByRole('heading', { name: 'Place your Christmas ball' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Place red Christmas ball' }).click();
+    const dropZone = page.getByTestId('christmas-tree-drop-zone');
+    const dropBox = await dropZone.boundingBox();
+    if (!dropBox) throw new Error('Christmas Tree drop zone was not measurable');
+    await dropZone.click({ position: { x: dropBox.width * 0.5, y: dropBox.height * 0.45 } });
+
+    await expect(page.getByPlaceholder('Personal wish 1')).toHaveValue(preservedWish.content);
+    await page.getByRole('button', { name: 'Open or move your Christmas ball' }).press('Enter');
+    await expect(page.getByRole('dialog').getByText(preservedWish.content)).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Open link' })).toHaveAttribute(
+      'href',
+      preservedWish.link_url
+    );
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({
+      path: testInfo.outputPath('mobile-restored-wishes.png'),
+      fullPage: true,
+    });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth
+      )
+    ).toBe(false);
+    expect(consoleErrors).toEqual([]);
+  });
+
   test('keeps the tree canvas stable when placement reveals the long wish panel', async ({
     page,
   }, testInfo) => {
@@ -772,13 +852,17 @@ test.describe('Christmas Tree layout stability', () => {
         const dropZone = page.getByTestId('christmas-tree-drop-zone');
         const box = await dropZone.boundingBox();
         if (!box) throw new Error('Tree drop zone is not measurable');
-        await page.mouse.move(box.x + box.width * 0.4, box.y + box.height * control.y);
-        await page.mouse.down();
-        await page.mouse.move(box.x + box.width * 0.6, box.y + box.height * control.y, {
-          steps: 8,
-        });
-        await page.mouse.up();
-        await expect(page.getByTestId(`christmas-tree-${control.kind}`)).toBeVisible();
+        if (control.kind === 'lights') {
+          await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * control.y);
+        } else {
+          await page.mouse.move(box.x + box.width * 0.4, box.y + box.height * control.y);
+          await page.mouse.down();
+          await page.mouse.move(box.x + box.width * 0.6, box.y + box.height * control.y, {
+            steps: 8,
+          });
+          await page.mouse.up();
+        }
+        await expect(page.getByTestId(control.kind === 'lights' ? 'christmas-tree-light' : 'christmas-tree-garland')).toBeVisible();
         await expect(
           page.getByRole('button', {
             name: `Add another ${control.kind === 'garland' ? 'Garland' : 'Lights'}`,
@@ -792,44 +876,32 @@ test.describe('Christmas Tree layout stability', () => {
         await page.getByRole('button', { name: `Add another ${control.label}` }).click();
         const box = await page.getByTestId('christmas-tree-drop-zone').boundingBox();
         if (!box) throw new Error('Tree drop zone is not measurable');
-        await page.mouse.move(box.x + box.width * 0.36, box.y + box.height * control.y);
-        await page.mouse.down();
-        await page.mouse.move(box.x + box.width * 0.64, box.y + box.height * control.y, {
-          steps: 8,
-        });
-        await page.mouse.up();
-        await expect(page.getByTestId(`christmas-tree-${control.kind}`)).toHaveCount(2);
+        if (control.kind === 'lights') {
+          await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * control.y);
+        } else {
+          await page.mouse.move(box.x + box.width * 0.36, box.y + box.height * control.y);
+          await page.mouse.down();
+          await page.mouse.move(box.x + box.width * 0.64, box.y + box.height * control.y, {
+            steps: 8,
+          });
+          await page.mouse.up();
+        }
+        await expect(page.getByTestId(control.kind === 'lights' ? 'christmas-tree-light' : 'christmas-tree-garland')).toHaveCount(2);
       }
       expect(strands.filter((strand) => strand.kind === 'garland')).toHaveLength(2);
       expect(strands.filter((strand) => strand.kind === 'lights')).toHaveLength(2);
-      const lightsBefore = strands.find((strand) => strand.kind === 'lights')?.geometry;
-      const startHandle = page.getByRole('button', { name: 'Move lights start end' }).first();
-      const startBox = await startHandle.boundingBox();
-      if (!(startBox && lightsBefore)) throw new Error('Lights start handle was not measurable');
-      const bulbBefore = await page
-        .getByTestId('christmas-tree-lights')
-        .first()
-        .locator('span')
-        .first()
-        .evaluate((node) => node.getBoundingClientRect().width);
-      await page.mouse.move(startBox.x + startBox.width / 2, startBox.y + startBox.height / 2);
+      await expect(page.getByTestId('christmas-tree-lights')).toHaveCount(0);
+      await expect(page.getByTestId('christmas-tree-light').first()).toHaveCSS('animation-name', /light-breathe/);
+      const firstLight = page.getByTestId('christmas-tree-light').first();
+      const lightBefore = strands.find((strand) => strand.kind === 'lights')?.geometry.startX;
+      const lightBox = await firstLight.boundingBox();
+      if (!lightBox || lightBefore === undefined) throw new Error('Light was not measurable');
+      await page.mouse.move(lightBox.x + lightBox.width / 2, lightBox.y + lightBox.height / 2);
       await page.mouse.down();
-      await page.mouse.move(
-        startBox.x + startBox.width / 2 - 45,
-        startBox.y + startBox.height / 2,
-        { steps: 8 }
-      );
+      await page.mouse.move(lightBox.x + lightBox.width / 2 + 25, lightBox.y + lightBox.height / 2, { steps: 8 });
       await page.mouse.up();
-      await expect
-        .poll(() => strands.find((strand) => strand.kind === 'lights')?.geometry.startX)
-        .toBeLessThan(lightsBefore.startX);
-      const bulbAfter = await page
-        .getByTestId('christmas-tree-lights')
-        .first()
-        .locator('span')
-        .first()
-        .evaluate((node) => node.getBoundingClientRect().width);
-      expect(bulbAfter).toBe(bulbBefore);
+      await expect.poll(() => strands.find((strand) => strand.kind === 'lights')?.geometry.startX).toBeGreaterThan(lightBefore);
+      await page.screenshot({ path: testInfo.outputPath(`${role}-individual-lights-desktop.png`), fullPage: true });
       const garlandBefore = strands.find((strand) => strand.kind === 'garland')?.geometry.startX;
       const wireCenter = await page
         .getByTestId('christmas-tree-garland')
@@ -852,7 +924,7 @@ test.describe('Christmas Tree layout stability', () => {
         .toBeGreaterThan(garlandBefore ?? 0);
       await page.reload();
       await expect(page.getByTestId('christmas-tree-garland')).toHaveCount(2);
-      await expect(page.getByTestId('christmas-tree-lights')).toHaveCount(2);
+      await expect(page.getByTestId('christmas-tree-light')).toHaveCount(2);
 
       await page.getByRole('button', { name: 'Add Tree star' }).click();
       await expect(page.getByRole('button', { name: 'Tree star added' })).toBeDisabled();
@@ -861,16 +933,17 @@ test.describe('Christmas Tree layout stability', () => {
       await expect(starGlow).toHaveCSS('animation-name', /christmas-star-breathe/);
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await expect(starGlow).toHaveCSS('animation-name', 'none');
+      await expect(page.getByTestId('christmas-tree-light').first()).toHaveCSS('animation-name', 'none');
       await page.emulateMedia({ reducedMotion: 'no-preference' });
 
       for (const label of ['Garland', 'Lights'] as const) {
         page.once('dialog', (dialog) => dialog.accept());
         await page.getByRole('button', { name: `Remove ${label} 1` }).click();
-        await expect(page.getByTestId(`christmas-tree-${label.toLowerCase()}`)).toHaveCount(1);
+        await expect(page.getByTestId(label === 'Lights' ? 'christmas-tree-light' : 'christmas-tree-garland')).toHaveCount(1);
       }
       await page.reload();
       await expect(page.getByTestId('christmas-tree-garland')).toHaveCount(1);
-      await expect(page.getByTestId('christmas-tree-lights')).toHaveCount(1);
+      await expect(page.getByTestId('christmas-tree-light')).toHaveCount(1);
 
       await page.getByRole('button', { name: "Open Sample Employee's Christmas ball" }).click();
       await expect(page.getByText('Admin action:')).toBeVisible();
@@ -886,17 +959,18 @@ test.describe('Christmas Tree layout stability', () => {
       });
       await page.setViewportSize({ width: 390, height: 844 });
       await expect(page.getByRole('heading', { name: 'Tree decorations' })).toBeVisible();
+      await page.screenshot({ path: testInfo.outputPath(`${role}-individual-lights-mobile.png`), fullPage: true });
       for (const label of ['Garland', 'Lights'] as const) {
         page.once('dialog', (dialog) => dialog.accept());
         await page.getByRole('button', { name: `Remove ${label} 1` }).click();
-        await expect(page.getByTestId(`christmas-tree-${label.toLowerCase()}`)).toHaveCount(0);
+        await expect(page.getByTestId(label === 'Lights' ? 'christmas-tree-light' : 'christmas-tree-garland')).toHaveCount(0);
       }
       page.once('dialog', (dialog) => dialog.accept());
       await page.getByRole('button', { name: 'Remove tree star' }).click();
       await expect(page.getByTestId('christmas-tree-star')).toHaveCount(0);
       await page.reload();
       await expect(page.getByTestId('christmas-tree-garland')).toHaveCount(0);
-      await expect(page.getByTestId('christmas-tree-lights')).toHaveCount(0);
+      await expect(page.getByTestId('christmas-tree-light')).toHaveCount(0);
       await expect(page.getByTestId('christmas-tree-star')).toHaveCount(0);
       expect(
         await page.evaluate(
