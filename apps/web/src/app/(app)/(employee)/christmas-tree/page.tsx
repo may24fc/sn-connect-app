@@ -44,17 +44,12 @@ import {
   TabsList,
   TabsTrigger,
   Textarea,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
   cn,
 } from '@hr-portal/ui';
 import {
   ArrowRight,
   ExternalLink,
   Gift,
-  LockKeyhole,
   MapPin,
   Maximize,
   Minimize,
@@ -363,7 +358,6 @@ export default function ChristmasTreePage() {
           <Button onClick={() => void togglePresentationMode()} size="sm" variant="outline">
             <Maximize /> Present tree
           </Button>
-          <MilestoneBadges decoration={data.decoration} />
         </div>
       </header>
 
@@ -1775,63 +1769,6 @@ function AdminDecorationControls({
         ))}
       </CardContent>
     </Card>
-  );
-}
-
-function MilestoneBadges({ decoration }: { decoration: ChristmasTreeSnapshot['decoration'] }) {
-  const activeParticipantCount = Number(decoration?.active_participant_count ?? 0);
-  const milestones = [
-    {
-      label: 'Garland',
-      unlocked: decoration?.garland_unlocked,
-      completed: Number(decoration?.october_complete_count ?? 0),
-      requirement: 'every active team member submits their three Personal Wishes',
-    },
-    {
-      label: 'Lights',
-      unlocked: decoration?.lights_unlocked,
-      completed: Number(decoration?.november_complete_count ?? 0),
-      requirement: 'every active team member submits a Wish for Others',
-    },
-    {
-      label: 'Tree star',
-      unlocked: decoration?.star_unlocked,
-      completed: Number(decoration?.december_complete_count ?? 0),
-      requirement: 'every active team member submits a Wish for SN',
-    },
-  ];
-
-  return (
-    <TooltipProvider delayDuration={150}>
-      <div className="flex flex-wrap gap-2">
-        {milestones.map((milestone) => {
-          const progress = `${milestone.completed}/${activeParticipantCount}`;
-          const tooltip = milestone.unlocked
-            ? `Unlocked — ${progress} team members completed this milestone.`
-            : `Locked until ${milestone.requirement}. Progress: ${progress}.`;
-          return (
-            <Tooltip key={milestone.label}>
-              <TooltipTrigger asChild>
-                <span>
-                  <Badge
-                    className={milestone.unlocked ? 'bg-emerald-700 text-white' : 'cursor-help'}
-                    variant={milestone.unlocked ? 'default' : 'secondary'}
-                  >
-                    {milestone.unlocked ? (
-                      <Gift className="mr-1 h-3 w-3" />
-                    ) : (
-                      <LockKeyhole className="mr-1 h-3 w-3" />
-                    )}
-                    {milestone.label}
-                  </Badge>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-64 text-center">{tooltip}</TooltipContent>
-            </Tooltip>
-          );
-        })}
-      </div>
-    </TooltipProvider>
   );
 }
 
