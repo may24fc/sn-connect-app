@@ -6,11 +6,6 @@ import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } f
 
 export type StrandKind = 'garland' | 'lights';
 
-export const DEFAULT_STRANDS: Record<StrandKind, ChristmasStrandGeometry> = {
-  garland: { startX: 24, startY: 50, endX: 76, endY: 50 },
-  lights: { startX: 20, startY: 64, endX: 80, endY: 64 },
-};
-
 type Point = { x: number; y: number };
 type DragMode = 'start' | 'end' | 'body';
 
@@ -41,20 +36,17 @@ function positionOnCurve(geometry: ChristmasStrandGeometry, t: number): Point {
 }
 
 export function ChristmasTreeStrand({
-  kind,
   geometry,
   editable,
   treeElement,
   onSave,
 }: {
-  kind: StrandKind;
   geometry: ChristmasStrandGeometry;
   editable: boolean;
   treeElement: HTMLElement | null;
   onSave?: (geometry: ChristmasStrandGeometry) => Promise<boolean>;
 }) {
   const [draft, setDraft] = useState<ChristmasStrandGeometry | null>(null);
-  const [treeWidth, setTreeWidth] = useState(640);
   const dragRef = useRef<{
     pointerId: number;
     mode: DragMode;
@@ -71,24 +63,10 @@ export function ChristmasTreeStrand({
     }
   }, [draft, geometry]);
 
-  useEffect(() => {
-    if (!treeElement) return;
-    const observer = new ResizeObserver(([entry]) => {
-      if (entry) setTreeWidth(entry.contentRect.width);
-    });
-    observer.observe(treeElement);
-    return () => observer.disconnect();
-  }, [treeElement]);
-
   const start = positionOnCurve(visible, 0);
   const end = positionOnCurve(visible, 1);
   const middle = positionOnCurve(visible, 0.5);
   const path = `M ${start.x} ${start.y} Q ${(start.x + end.x) / 2} ${middle.y * 2 - (start.y + end.y) / 2} ${end.x} ${end.y}`;
-  const bulbCount = Math.max(
-    3,
-    Math.min(14, Math.round((((end.x - start.x) / 100) * treeWidth) / 39))
-  );
-  const colors = ['#fde047', '#fb7185', '#7dd3fc', '#fbbf24', '#fef3c7'];
 
   const beginDrag = (
     event: ReactPointerEvent<SVGPathElement | HTMLButtonElement>,
@@ -181,7 +159,7 @@ export function ChristmasTreeStrand({
   return (
     <div
       className="pointer-events-none absolute inset-0 z-[5]"
-      data-testid={`christmas-tree-${kind}`}
+      data-testid="christmas-tree-garland"
     >
       <svg
         aria-hidden="true"
@@ -192,9 +170,9 @@ export function ChristmasTreeStrand({
         <path
           d={path}
           fill="none"
-          stroke={kind === 'garland' ? '#f9d66a' : '#365f50'}
+          stroke="#f9d66a"
           strokeLinecap="round"
-          strokeWidth={kind === 'garland' ? 3 : 2}
+          strokeWidth={3}
           vectorEffect="non-scaling-stroke"
         />
         {editable ? (
@@ -212,27 +190,10 @@ export function ChristmasTreeStrand({
           />
         ) : null}
       </svg>
-      {kind === 'lights'
-        ? Array.from({ length: bulbCount }, (_, index) => {
-            const point = positionOnCurve(visible, (index + 0.5) / bulbCount);
-            return (
-              <span
-                aria-hidden="true"
-                className="absolute h-2.5 w-2.5 -translate-x-1/2 rounded-full border border-white/80 shadow-[0_0_7px_rgba(254,240,138,.8)]"
-                key={`bulb-${(index + 0.5) / bulbCount}`}
-                style={{
-                  left: `${point.x}%`,
-                  top: `calc(${point.y}% + 5px)`,
-                  backgroundColor: colors[index % colors.length],
-                }}
-              />
-            );
-          })
-        : null}
       {editable
         ? (['start', 'end'] as const).map((mode) => (
             <button
-              aria-label={`Move ${kind} ${mode} end`}
+              aria-label={`Move garland ${mode} end`}
               className="pointer-events-auto absolute z-20 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 touch-none cursor-grab items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
               key={mode}
               onKeyDown={(event) => {

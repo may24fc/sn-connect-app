@@ -1,9 +1,18 @@
 import {
   christmasExchangeGiftAddressSchema,
+  christmasLightGeometryAt,
   christmasOrnamentPlacementSchema,
   christmasWishUpsertSchema,
 } from '@/lib/schemas/christmas-tree.schema';
 import { describe, expect, it } from 'vitest';
+
+describe('Christmas light position', () => {
+  it('keeps a safe database span for fractional branch positions', () => {
+    const geometry = christmasLightGeometryAt(60.1, 50);
+    expect(geometry).not.toBeNull();
+    expect((geometry?.endX ?? 0) - (geometry?.startX ?? 0)).toBeGreaterThanOrEqual(13.99);
+  });
+});
 
 describe('christmas ornament placement schema', () => {
   it('accepts each approved Christmas ball design', () => {

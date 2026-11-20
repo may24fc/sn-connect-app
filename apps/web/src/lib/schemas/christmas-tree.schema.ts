@@ -86,6 +86,19 @@ export const christmasStrandGeometrySchema = z
     { message: 'Attach both ends to the green branches' }
   );
 
+export function christmasLightGeometryAt(x: number, y: number): ChristmasStrandGeometry | null {
+  const centerX = Math.round(x * 100) / 100;
+  const centerY = Math.round(y * 100) / 100;
+  // Keep a margin above the database's 12% minimum span after decimal conversion.
+  const parsed = christmasStrandGeometrySchema.safeParse({
+    startX: centerX - 7,
+    endX: centerX + 7,
+    startY: centerY,
+    endY: centerY,
+  });
+  return parsed.success ? parsed.data : null;
+}
+
 export const christmasStrandSaveSchema = z.object({
   decoration: z.enum(['garland', 'lights']),
   strandId: z.string().uuid().optional(),

@@ -10,6 +10,9 @@ Optimization record: [optimization.md](./optimization.md)
 
 ### Done
 
+- [x] Correct individual Lights sizing, save span, and removal confirmation - 2026-11-20; changed the Christmas Tree page, Garland renderer, schema, API error mapping, focused schema/Playwright tests, and this tracker. Bulbs use the former strand bulb size with a larger drag target; new and moved Lights save rounded positions with a 14% backing span to clear the existing 12% database check. Removed the old Lights wire renderer and synthetic Garland fallback. Decoration and admin ball removal use the shared confirmation dialog with Cancel and pending state. Focused schema tests passed 10/10, web type-check passed after route type regeneration, and focused Playwright passed for admin and super-admin desktop/mobile flows; admin Cancel was also verified and the dialog screenshot inspected. Local Supabase integration was unavailable because Docker Desktop was stopped. See [optimization.md](./optimization.md).
+
+
 - [x] Replace Lights strings with individual bulbs - 2026-11-20; changed `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `e2e/christmas-tree-layout.spec.ts`, and `docs/apps/web/architecture/optimistic-ui.md`. Admin and super-admin can tap a valid branch spot to add a bulb, drag an existing bulb to move it, and remove bulbs individually from the decoration panel. Previously saved Lights render as one bulb at each saved geometry midpoint, so no database migration is needed. Bulbs match the ball diameter, use a slow staggered brightness/opacity pulse, and stop animating under reduced-motion preferences. Web type-check passed; focused Playwright passed 2/2 for admin and super-admin with desktop placement/movement and desktop/mobile removal, no light strings, responsive overflow check, and screenshots inspected at `test-results/christmas-tree-layout-*/{admin,super_admin}-individual-lights-{desktop,mobile}.png`.
 
 - [x] Preserve wishes when a user removes and replaces their Christmas ball - 2026-11-18; production lookup found Ariana Ricardo's three active Personal wishes attached to her removed ball while her replacement ball had none. Recovered all three wishes and their links onto her current production ball with guarded reads, content/link verification, and an audit record. Changed ornament placement to restore the latest soft-deleted ball at the newly chosen style and position instead of inserting an empty replacement, and clarified the removal copy. Focused API tests passed 4/4, web type-check passed, and focused Playwright passed the desktop/mobile remove-and-replace journey with the phone screenshot inspected and no horizontal overflow. Production deployment of the preventive code fix has not been verified.
@@ -48,6 +51,9 @@ Optimization record: [optimization.md](./optimization.md)
 ### Blocked
 
 ## Session History
+
+- 2026-11-20: Addressed the reported Lights save failure and clarified bulb size. The exact 12% floating point span could fall below the database minimum; the new 14% rounded span passes local schema and browser payload checks. Native removal prompts were replaced with the existing dialog. Browser verification passed after prewarming the local Next server; Docker was unavailable for direct database testing. Remaining risk: a live database insert has not been retested in this session.
+
 
 - 2026-11-20: Replaced Lights strands with separately placed, movable 40px bulbs while retaining stored records and Garland behavior. Focused type-check and admin/super-admin Playwright passed; desktop and mobile screenshots were reviewed. Existing 12%-span geometry validation limits new bulbs near the narrow tree tip and edges; invalid placements show the existing placement error.
 

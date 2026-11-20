@@ -909,7 +909,17 @@ export async function saveChristmasStrand(
         .insert({ event_id: event.id, kind: decoration, created_by: userId, ...coordinates })
         .select('id')
         .single();
-  if (saved.error) throw new Error('Failed to save Christmas Tree strand');
+  if (saved.error) {
+    if (saved.error.code === '23514') {
+      throw new ChristmasTreeRequestError(
+        'Place the decoration farther inside the green branches.',
+        400
+      );
+    }
+    throw new Error(
+      `Failed to save Christmas Tree ${decoration === 'lights' ? 'light' : 'garland'}`
+    );
+  }
   if (!saved.data) throw new ChristmasTreeRequestError('Christmas Tree strand not found', 404);
 
   const { error: eventError } = await adminClient

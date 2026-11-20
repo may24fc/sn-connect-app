@@ -1,5 +1,6 @@
 'use client';
 
+import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
 import type { ChristmasTreeSnapshot } from '@/hooks/useChristmasTree';
 import {
   useAdminDeleteChristmasOrnament,
@@ -20,6 +21,7 @@ import {
   type ChristmasOrnamentPlacementInput,
   type ChristmasStrandGeometry,
   christmasExchangeGiftAddressSchema,
+  christmasLightGeometryAt,
   christmasStrandGeometrySchema,
 } from '@/lib/schemas/christmas-tree.schema';
 import {
@@ -70,12 +72,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import {
-  ChristmasTreeStrand,
-  DEFAULT_STRANDS,
-  type StrandKind,
-  pointFromClient,
-} from './ChristmasTreeStrand';
+import { ChristmasTreeStrand, type StrandKind, pointFromClient } from './ChristmasTreeStrand';
 
 const ornamentColors: Record<(typeof CHRISTMAS_ORNAMENT_ASSETS)[number], string> = {
   red: 'bg-red-600 ring-red-200',
@@ -188,6 +185,11 @@ export default function ChristmasTreePage() {
   } | null>(null);
   const [placementMessage, setPlacementMessage] = useState<string | null>(null);
   const [strandPlacement, setStrandPlacement] = useState<StrandKind | null>(null);
+  const [pendingRemoval, setPendingRemoval] = useState<
+    | { kind: 'decoration'; label: string; target: { decoration: 'star' } | { strandId: string } }
+    | { kind: 'ornament'; label: string; ornamentId: string }
+    | null
+  >(null);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [isMusicEnabled, setIsMusicEnabled] = useState<boolean | null>(null);
 
@@ -226,10 +228,11 @@ export default function ChristmasTreePage() {
       return;
     }
     if (!data.permissions.canManage) return;
-    const confirmed = window.confirm(
-      `Remove ${selectedOrnament.ownerName}'s Christmas ball and hide its wishes?`
-    );
-    if (confirmed) adminDeleteOrnament.mutate(selectedOrnament.id, { onSuccess });
+    setPendingRemoval({
+      kind: 'ornament',
+      label: `${selectedOrnament.ownerName}'s Christmas ball`,
+      ornamentId: selectedOrnament.id,
+    });
   };
   const handlePlaceOrnament = (assetType: OrnamentAsset, positionX: number, positionY: number) => {
     setPlacementMessage(null);
@@ -264,10 +267,22 @@ export default function ChristmasTreePage() {
       0
     );
   };
-  const handleRemoveDecoration = (target: { decoration: 'star' } | { strandId: string }) => {
-    const label = 'decoration' in target ? 'tree star' : 'strand';
-    if (window.confirm(`Remove this ${label} from the tree?`)) {
-      removeDecoration.mutate(target);
+  const handleRemoveDecoration = (
+    target: { decoration: 'star' } | { strandId: string },
+    label: string
+  ) => setPendingRemoval({ kind: 'decoration', label, target });
+  const confirmRemoval = async () => {
+    if (!pendingRemoval) return;
+    try {
+      if (pendingRemoval.kind === 'decoration') {
+        await removeDecoration.mutateAsync(pendingRemoval.target);
+      } else {
+        await adminDeleteOrnament.mutateAsync(pendingRemoval.ornamentId);
+        setSelectedOrnament(null);
+      }
+      setPendingRemoval(null);
+    } catch {
+      // The existing mutation error banner explains the failure and the dialog stays open.
     }
   };
   const togglePresentationMode = async () => {
@@ -476,6 +491,21 @@ export default function ChristmasTreePage() {
         ornament={selectedOrnament}
         onOpenChange={(open) => !open && setSelectedOrnament(null)}
         onRemove={handleRemoveOrnament}
+      />
+      <ConfirmActionDialog
+        open={Boolean(pendingRemoval)}
+        onOpenChange={(open) => !open && setPendingRemoval(null)}
+        title={`Remove ${pendingRemoval?.label ?? 'decoration'}?`}
+        description={
+          pendingRemoval?.kind === 'ornament'
+            ? 'The ball and its visible wishes will be hidden from the tree. Its owner can place another ball later.'
+            : 'This decoration will be removed from the tree.'
+        }
+        confirmLabel={
+          pendingRemoval?.kind === 'ornament' ? 'Remove Christmas ball' : 'Remove decoration'
+        }
+        isPending={removeDecoration.isPending || adminDeleteOrnament.isPending}
+        onConfirm={() => void confirmRemoval()}
       />
     </div>
   );
@@ -850,7 +880,14 @@ function ChristmasTreeCanvas({
   const [strandPreview, setStrandPreview] = useState<ChristmasStrandGeometry | null>(null);
   const [lightPreview, setLightPreview] = useState<{ x: number; y: number } | null>(null);
   const [movingLight, setMovingLight] = useState<{ id: string; x: number; y: number } | null>(null);
-  const movingLightRef = useRef<{ id: string; pointerId: number; startX: number; startY: number; x: number; y: number } | null>(null);
+  const movingLightRef = useRef<{
+    id: string;
+    pointerId: number;
+    startX: number;
+    startY: number;
+    x: number;
+    y: number;
+  } | null>(null);
   const newStrandRef = useRef<{ pointerId: number; start: { x: number; y: number } } | null>(null);
   useEffect(() => {
     setTreeElement(treeRef.current);
@@ -872,15 +909,8 @@ function ChristmasTreeCanvas({
   const canPlace = Boolean(onPlace && !isPlacementPending);
   const canMove = Boolean(onMove && !isMovePending);
 
-  const lightGeometryAt = (point: { x: number; y: number }) => {
-    const parsed = christmasStrandGeometrySchema.safeParse({
-      startX: point.x - 6,
-      endX: point.x + 6,
-      startY: point.y,
-      endY: point.y,
-    });
-    return parsed.success ? parsed.data : null;
-  };
+  const lightGeometryAt = (point: { x: number; y: number }) =>
+    christmasLightGeometryAt(point.x, point.y);
 
   useEffect(() => {
     if (!(placementAssetType || movingOrnamentRef.current)) setPreviewPosition(null);
@@ -1116,8 +1146,12 @@ function ChristmasTreeCanvas({
           }}
           data-testid="christmas-tree-drop-zone"
           ref={treeRef}
-          role={(placementAssetType && canPlace) || strandPlacement === 'lights' ? 'button' : undefined}
-          tabIndex={(placementAssetType && canPlace) || strandPlacement === 'lights' ? 0 : undefined}
+          role={
+            (placementAssetType && canPlace) || strandPlacement === 'lights' ? 'button' : undefined
+          }
+          tabIndex={
+            (placementAssetType && canPlace) || strandPlacement === 'lights' ? 0 : undefined
+          }
         >
           <svg
             aria-hidden="true"
@@ -1137,34 +1171,21 @@ function ChristmasTreeCanvas({
               data-testid="christmas-strand-placement-zone"
             />
           ) : null}
-          {(['garland'] as const).flatMap((kind) => {
-            const saved = strands?.filter((strand) => strand.kind === kind) ?? [];
-            const displayed = saved.length
-              ? saved
-              : decoration?.garland_unlocked
-                ? [{ id: `legacy-${kind}`, kind, geometry: DEFAULT_STRANDS[kind] }]
-                : [];
-            return displayed.map((strand) => (
-              <ChristmasTreeStrand
-                editable={canEditStrands && !strandPlacement}
-                geometry={strand.geometry}
-                key={strand.id}
-                kind={kind}
-                onSave={(geometry) =>
-                  onSaveStrand?.(
-                    kind,
-                    geometry,
-                    strand.id.startsWith('legacy-') ? undefined : strand.id
-                  ) ?? Promise.resolve(false)
-                }
-                treeElement={treeElement}
-              />
-            ));
-          })}
+          {(strands?.filter((strand) => strand.kind === 'garland') ?? []).map((strand) => (
+            <ChristmasTreeStrand
+              editable={canEditStrands && !strandPlacement}
+              geometry={strand.geometry}
+              key={strand.id}
+              onSave={(geometry) =>
+                onSaveStrand?.('garland', geometry, strand.id) ?? Promise.resolve(false)
+              }
+              treeElement={treeElement}
+            />
+          ))}
           {(strands?.filter((strand) => strand.kind === 'lights') ?? []).map((strand, index) => (
             <button
               aria-label={`Move Christmas light ${index + 1}`}
-              className="christmas-light absolute z-[6] grid h-10 w-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-white/70 shadow-[0_0_12px_rgba(255,224,142,.35)] touch-none disabled:cursor-default"
+              className="absolute z-[6] grid h-7 w-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full touch-none disabled:cursor-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
               data-testid="christmas-tree-light"
               disabled={!canEditStrands || Boolean(strandPlacement)}
               key={strand.id}
@@ -1175,7 +1196,14 @@ function ChristmasTreeCanvas({
                 event.currentTarget.setPointerCapture(event.pointerId);
                 const x = (strand.geometry.startX + strand.geometry.endX) / 2;
                 const y = (strand.geometry.startY + strand.geometry.endY) / 2;
-                movingLightRef.current = { id: strand.id, pointerId: event.pointerId, startX: x, startY: y, x, y };
+                movingLightRef.current = {
+                  id: strand.id,
+                  pointerId: event.pointerId,
+                  startX: x,
+                  startY: y,
+                  x,
+                  y,
+                };
               }}
               onPointerMove={(event) => {
                 const moving = movingLightRef.current;
@@ -1196,22 +1224,41 @@ function ChristmasTreeCanvas({
                 const geometry = lightGeometryAt({ x: moving.x, y: moving.y });
                 if (geometry) onSaveStrand?.('lights', geometry, strand.id);
               }}
-              onPointerCancel={() => { movingLightRef.current = null; setMovingLight(null); }}
-              style={{ left: `${movingLight?.id === strand.id ? movingLight?.x : (strand.geometry.startX + strand.geometry.endX) / 2}%`, top: `${movingLight?.id === strand.id ? movingLight?.y : (strand.geometry.startY + strand.geometry.endY) / 2}%`, backgroundColor: ['#fbbf24', '#f87171', '#7dd3fc', '#fde68a'][index % 4], animationDelay: `${(index % 5) * -0.8}s` }}
+              onPointerCancel={() => {
+                movingLightRef.current = null;
+                setMovingLight(null);
+              }}
+              style={{
+                left: `${movingLight?.id === strand.id ? movingLight?.x : (strand.geometry.startX + strand.geometry.endX) / 2}%`,
+                top: `${movingLight?.id === strand.id ? movingLight?.y : (strand.geometry.startY + strand.geometry.endY) / 2}%`,
+              }}
               type="button"
             >
-              <span className="h-2 w-2 rounded-full bg-white/70" />
+              <span
+                aria-hidden="true"
+                className="christmas-light h-2.5 w-2.5 rounded-full border border-white/80 shadow-[0_0_7px_rgba(254,240,138,.55)]"
+                data-testid="christmas-tree-light-bulb"
+                style={{
+                  backgroundColor: ['#fde047', '#fb7185', '#7dd3fc', '#fbbf24', '#fef3c7'][
+                    index % 5
+                  ],
+                  animationDelay: `${(index % 5) * -0.8}s`,
+                }}
+              />
             </button>
           ))}
           {strandPlacement === 'lights' && lightPreview ? (
-            <span aria-hidden="true" className="pointer-events-none absolute z-30 h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/70 bg-amber-300/55 shadow-[0_0_12px_rgba(255,224,142,.25)]" style={{ left: `${lightPreview.x}%`, top: `${lightPreview.y}%` }} />
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute z-30 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/70 bg-amber-300/55 shadow-[0_0_7px_rgba(255,224,142,.3)]"
+              style={{ left: `${lightPreview.x}%`, top: `${lightPreview.y}%` }}
+            />
           ) : null}
           {strandPlacement === 'garland' && strandPreview ? (
             <ChristmasTreeStrand
               editable={false}
               geometry={strandPreview}
               key="strand-preview"
-              kind={strandPlacement}
               treeElement={treeElement}
             />
           ) : null}
@@ -1635,7 +1682,7 @@ function AdminDecorationControls({
   strands: ChristmasTreeSnapshot['strands'];
   isPending: boolean;
   onEnable: (decoration: 'garland' | 'lights' | 'star') => void;
-  onRemove: (target: { decoration: 'star' } | { strandId: string }) => void;
+  onRemove: (target: { decoration: 'star' } | { strandId: string }, label: string) => void;
   placementMode: StrandKind | null;
 }) {
   const controls = [
@@ -1649,7 +1696,8 @@ function AdminDecorationControls({
       <CardHeader className="pb-3">
         <CardTitle className="text-lg">Tree decorations</CardTitle>
         <CardDescription>
-          Drag Garland across the branches, or choose Lights and tap a spot to add one bulb. Drag a placed bulb to move it.
+          Drag Garland across the branches, or choose Lights and tap a spot to add one bulb. Drag a
+          placed bulb to move it.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
@@ -1684,7 +1732,7 @@ function AdminDecorationControls({
                 <Button
                   aria-label="Remove tree star"
                   disabled={isPending}
-                  onClick={() => onRemove({ decoration: 'star' })}
+                  onClick={() => onRemove({ decoration: 'star' }, 'tree star')}
                   size="icon"
                   title="Remove manually added tree star"
                   type="button"
@@ -1709,7 +1757,9 @@ function AdminDecorationControls({
                       <Button
                         aria-label={`Remove ${control.label} ${index + 1}`}
                         disabled={isPending}
-                        onClick={() => onRemove({ strandId: strand.id })}
+                        onClick={() =>
+                          onRemove({ strandId: strand.id }, `${control.label} ${index + 1}`)
+                        }
                         size="icon"
                         title={`Remove ${control.label} ${index + 1}`}
                         type="button"

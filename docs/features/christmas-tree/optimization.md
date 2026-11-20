@@ -2,15 +2,16 @@
 
 ## Current Status
 
-Christmas wish persistence respects the soft-delete uniqueness model, all wish categories are available through a compact tabbed editor, and the soundtrack has an explicit user control with a remembered opt-out. Admins can place multiple independent Garland and Lights strands directly on the tree; saved strands now remain visibly at their dropped position while a move is saved. The ₱500 exchange-gift draw atomically creates one private, stable, no-self assignment per current Christmas ball owner without duplicate recipients. Browser autoplay policy and the cost of loading a third-party player remain external constraints.
+Christmas wish persistence respects the soft-delete uniqueness model, all wish categories are available through a compact tabbed editor, and the soundtrack has an explicit user control with a remembered opt-out. Admins can place multiple Garland strands and individual Lights bulbs directly on the tree; saved decorations remain visibly at their dropped position while a move is saved. The ₱500 exchange-gift draw atomically creates one private, stable, no-self assignment per current Christmas ball owner without duplicate recipients. Browser autoplay policy and the cost of loading a third-party player remain external constraints.
 
 ## Relevant Code Map
 
 - [Christmas Tree page](../../../apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx) - soundtrack preference, YouTube player, and visible control.
-- [Strand interaction](../../../apps/web/src/app/(app)/(employee)/christmas-tree/ChristmasTreeStrand.tsx) - fixed-size bulbs, sagging wire, independent drag and endpoint resize controls.
+- [Strand interaction](../../../apps/web/src/app/(app)/(employee)/christmas-tree/ChristmasTreeStrand.tsx) - Garland drag and endpoint resize controls; Lights no longer render through this component.
 - [Christmas Tree client mutations](../../../apps/web/src/hooks/useChristmasTree.ts) - optimistic saved-strand geometry, ordered writes, rollback, and server reconciliation.
 - [Christmas Tree API helpers](../../../apps/web/src/app/api/christmas-tree/_lib.ts) - active-wish update/insert persistence and concurrent-save recovery.
-- [Christmas Tree schema](../../../apps/web/src/lib/schemas/christmas-tree.schema.ts) - wish-category limits and personal-only link normalization.
+- [Christmas Tree schema](../../../apps/web/src/lib/schemas/christmas-tree.schema.ts) - wish-category limits, personal-only link normalization, and safe rounded bulb geometry.
+- [Shared confirmation dialog](../../../apps/web/src/components/ConfirmActionDialog.tsx) - cancellation and pending state for decoration and admin ball removals.
 - [Christmas Tree Playwright coverage](../../../e2e/christmas-tree-layout.spec.ts) - enable/disable, persistence, responsive, and error-state coverage.
 - [Christmas Tree API tests](../../../tests/api/christmas-tree-wish-write.test.ts) - first-save and edit persistence coverage.
 - [Admin API tests](../../../tests/api/christmas-tree-admin-controls.test.ts) - strand create/update and admin authorization coverage.
@@ -20,10 +21,19 @@ Christmas wish persistence respects the soft-delete uniqueness model, all wish c
 - [Exchange gift SQL test](../../../tests/sql/christmas-exchange-gift-local.sql) - no-self/no-duplicate invariants, stable repeat reveal, and finalized-roster behavior.
 - [Strand migration](../../../supabase/migrations/20261022000002_add_christmas_tree_strand_geometry.sql) - independent rows per Garland or Lights strand.
 - [Always-available wish migration](../../../supabase/migrations/20261021000001_remove_christmas_wish_windows.sql) - removes month-based write and visibility restrictions while retaining event safeguards.
-- [Christmas Tree schema tests](../../../tests/schemas/christmas-tree.test.ts) - link policy and wish payload validation.
+- [Christmas Tree schema tests](../../../tests/schemas/christmas-tree.test.ts) - link policy, wish payload validation, and bulb span regression coverage.
 - [Task tracker](./task-tracker.md) - delivery status and validation history.
 
 ## Optimizations
+
+### Individual Lights save reliability and removal flow
+
+- **Status:** Implemented
+- **Problem/evidence:** Individual Lights inherited the strand table's 12% minimum span. A center coordinate such as `60.1` produces a floating point span slightly below 12 when computed as `x ± 6`, and PostgreSQL can reject the insert with a check violation. The Lights UI also rendered bulbs at ball size and used native browser confirmation for removals.
+- **Solution:** Round bulb center coordinates to two decimals and save a 14% backing span, leaving margin above the existing database constraint. Render bulbs at the former strand bulb size (`h-2.5 w-2.5`) inside a larger drag target. Remove the obsolete Lights wire renderer and synthetic legacy Garland fallback. Use the shared `ConfirmActionDialog` for decoration and admin ball removal, preserving cancel and pending behavior. Keep the existing strand table for saved decoration compatibility; no database migration is required.
+- **Code paths:** `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `apps/web/src/app/(app)/(employee)/christmas-tree/ChristmasTreeStrand.tsx`, `apps/web/src/lib/schemas/christmas-tree.schema.ts`, `apps/web/src/app/api/christmas-tree/_lib.ts`, `tests/schemas/christmas-tree.test.ts`, `e2e/christmas-tree-layout.spec.ts`.
+- **Validation:** The focused schema suite passed 10/10, web type-check passed after regenerating stale Next route types, and focused Playwright passed for admin and super-admin desktop/mobile decoration flows. The admin rerun exercised cancellation and confirmation; the dialog, desktop tree, and mobile screenshots were inspected. Local Supabase integration could not run because Docker Desktop's engine was unavailable; the browser test asserts every Lights save uses a span of at least 13.99%.
+
 
 ### Race-safe exchange-gift assignment
 
@@ -156,8 +166,10 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    A[Admin drags across branches] --> B[Preview curved strand]
-    B --> C[Server validates and saves a new row]
+    A[Admin drags Garland] --> B[Preview curved strand]
+    A2[Admin taps to place Light] --> B2[Round center and save 14% backing span]
+    B2 --> C[Server validates and saves a new row]
+    B --> C
     C --> D[Tree snapshot and realtime refresh]
     D --> E[Drag wire to move or endpoint to resize]
     E --> F[Keep dropped shape and update local cache]
@@ -181,6 +193,9 @@ flowchart LR
 ```
 
 ## Change Log
+
+- 2026-11-20: Kept individual bulbs at the former strand bulb size, removed the old Lights wire renderer and synthetic Garland fallback, and added a rounded 14% backing span to avoid the strand table's minimum-span save failure. Replaced native removal confirmations with the shared dialog. Focused schema, type-check, and admin/super-admin Playwright checks passed; local database integration remains unavailable while Docker Desktop is stopped.
+
 
 - 2026-11-18: Recovered Ariana Ricardo's three preserved production wishes onto her current ball and added restore-on-replacement behavior so future users retain wishes when placing a ball again.
 
