@@ -37,9 +37,26 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Already completed' }, { status: 409 });
   }
 
-  if ((milestone.progress_pct ?? 0) < 100) {
+  const { data: checklist, error: checklistError } = await supabaseAdmin
+    .from('project_checklist_items')
+    .select('status')
+    .eq('milestone_id', id);
+  if (checklistError) {
+    return NextResponse.json({ error: checklistError.message }, { status: 500 });
+  }
+
+  // The milestone card measures its checklist directly. Task rollups are a separate
+  // progress signal and must not override an entirely completed checklist.
+  const checklistComplete = checklist?.length
+    ? checklist.every((item) => item.status === 'done')
+    : (milestone.progress_pct ?? 0) >= 100;
+  if (!checklistComplete) {
     return NextResponse.json(
-      { error: 'All checklist items must be completed before marking the milestone complete' },
+      {
+        error: checklist?.length
+          ? 'All checklist items must be completed before marking the milestone complete'
+          : 'All linked tasks must be completed before marking the milestone complete',
+      },
       { status: 400 }
     );
   }

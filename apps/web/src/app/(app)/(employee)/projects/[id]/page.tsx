@@ -1131,7 +1131,7 @@ function MonthColumn({
       await completeMilestone.mutateAsync({ milestoneId: month.id, projectId });
       addToast({
         title: 'Milestone completed',
-        description: 'XP was distributed from completed tasks.',
+        description: 'Milestone is now complete.',
         variant: 'success',
       });
     } catch (error) {
@@ -1346,6 +1346,7 @@ function WeekCard({
   const deleteMilestone = useDeleteMilestone();
   const completeMilestone = useCompleteMilestone();
   const { addToast } = useToast();
+  const { data: weekChecklistResp } = useMilestoneChecklist(week.id);
 
   async function handleDelete() {
     try {
@@ -1366,7 +1367,7 @@ function WeekCard({
       await completeMilestone.mutateAsync({ milestoneId: week.id, projectId });
       addToast({
         title: 'Milestone completed',
-        description: 'XP was distributed from completed tasks.',
+        description: 'Milestone is now complete.',
         variant: 'success',
       });
     } catch (error) {
@@ -1379,6 +1380,10 @@ function WeekCard({
   }
 
   const canManage = canEdit;
+  const weekChecklistItems = weekChecklistResp?.data ?? [];
+  const displayProgressPct = weekChecklistItems.length
+    ? (weekChecklistItems.filter((item) => item.status === 'done').length / weekChecklistItems.length) * 100
+    : week.progress_pct;
   const tier = (week.complexity_tier as MilestoneComplexityTier) ?? 'standard';
   const celebrating = useMilestoneApprovalCelebration(week.id, week.status);
 
@@ -1429,9 +1434,9 @@ function WeekCard({
                 <ComplexityXpBadge tier={tier} status={week.status} />
               </div>
               <div className="flex items-center gap-2 pl-5">
-                <Progress value={week.progress_pct} className="h-1.5 flex-1" />
+                <Progress value={displayProgressPct} className="h-1.5 flex-1" />
                 <span className="mt-2 text-xs tabular-nums text-zinc-500">
-                  {Math.round(week.progress_pct)}%
+                  {Math.round(displayProgressPct)}%
                 </span>
               </div>
             </button>
@@ -1439,7 +1444,7 @@ function WeekCard({
           {open ? (
             <div className="mt-2 border-t border-zinc-100 pt-2 dark:border-zinc-800">
               {canComplete &&
-              week.progress_pct >= 100 &&
+              displayProgressPct >= 100 &&
               !['approved', 'completed'].includes(week.status) ? (
                 <Button
                   size="sm"
