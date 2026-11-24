@@ -46,7 +46,7 @@ export interface UseAIChatOptions {
 
 interface UseAIChatReturn {
   messages: Array<Message>;
-  sendMessage: (content: string, overrideConversationId?: string | null) => Promise<void>;
+  sendMessage: (content: string, overrideConversationId?: string | null, mode?: 'standard' | 'bsb') => Promise<void>;
   isLoading: boolean;
   error: Error | null;
   clearHistory: () => void;
@@ -163,8 +163,8 @@ export function useAIChat(options?: UseAIChatOptions): UseAIChatReturn {
   // -----------------------------------------------------------------------
   // Core streaming logic wrapped in useMutation for TanStack Query integration
   // -----------------------------------------------------------------------
-  const mutation = useMutation<void, Error, { content: string; conversationId?: string | null }>({
-    mutationFn: async ({ content, conversationId: overrideConversationId }) => {
+  const mutation = useMutation<void, Error, { content: string; conversationId?: string | null; mode?: 'standard' | 'bsb' }>({
+    mutationFn: async ({ content, conversationId: overrideConversationId, mode }) => {
       setError(null);
 
       // Append the user message immediately (optimistic).
@@ -197,12 +197,12 @@ export function useAIChat(options?: UseAIChatOptions): UseAIChatReturn {
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
-      const response = await fetch('/api/ai/chat', {
+      const response = await fetch(mode === 'bsb' ? '/api/bsb/chat' : '/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: historyForApi,
-          ...((overrideConversationId ?? conversationIdRef.current)
+          ...(mode !== 'bsb' && (overrideConversationId ?? conversationIdRef.current)
             ? { conversationId: overrideConversationId ?? conversationIdRef.current }
             : {}),
         }),
@@ -366,12 +366,12 @@ export function useAIChat(options?: UseAIChatOptions): UseAIChatReturn {
   // -----------------------------------------------------------------------
 
   const sendMessage = useCallback(
-    async (content: string, overrideConversationId?: string | null): Promise<void> => {
+    async (content: string, overrideConversationId?: string | null, mode: 'standard' | 'bsb' = 'standard'): Promise<void> => {
       const trimmed = content.trim();
       if (!trimmed) return;
       if (mutation.isPending) return;
 
-      await mutation.mutateAsync({ content: trimmed, conversationId: overrideConversationId ?? null });
+      await mutation.mutateAsync({ content: trimmed, conversationId: overrideConversationId ?? null, mode });
     },
     [mutation]
   );
