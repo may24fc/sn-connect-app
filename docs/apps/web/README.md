@@ -94,3 +94,6 @@ Start here: **[Admin Guides](admin/README.md)**
 |----------|-------------|
 | [audit-2026-03-29.md](audit-2026-03-29.md) | Live page audit — immediate fix list |
 | *(Additional March 2026 planning docs were archived or moved; this index now lists only files currently present in `docs/apps/web`.)* | |
+# UHP Outreach manual Telegram report
+
+Set `N8N_UHP_OUTREACH_WEBHOOK_URL` on the Control Hub web deployment to the production URL of the **Manual Send Webhook** node in `[Control Hub] UHP Outreach Weekly Summary` (path `uhp-outreach-manual-send`). The webhook uses the existing **Control Hub Callback** Header Auth credential, matching the web deployment's `N8N_CALLBACK_SECRET`. Configure `destinationsJson` in **Configure Telegram Destinations** with the intended recipients. The Outreach Tracker button is available to users granted Client Tracker access; n8n accepts the request and sends the latest seven-day summary asynchronously. The scheduled Friday delivery remains separately controlled by workflow activation.

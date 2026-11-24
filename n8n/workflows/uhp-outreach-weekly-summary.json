@@ -5,11 +5,21 @@
   "nodes": [
     {
       "id": "weekly-trigger",
-      "name": "Friday 17:00 PHT",
+      "name": "Friday 09:00 PHT",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [240, 300],
       "parameters": { "rule": { "interval": [{ "field": "cronExpression", "expression": "0 9 * * 5" }] } }
+    },
+    {
+      "id": "manual-trigger",
+      "name": "Manual Send Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [240, 460],
+      "webhookId": "uhp-outreach-manual-send",
+      "parameters": { "httpMethod": "POST", "path": "uhp-outreach-manual-send", "authentication": "headerAuth", "responseMode": "onReceived", "options": {} },
+      "credentials": { "httpHeaderAuth": { "id": "REPLACE_WITH_CONTROL_HUB_CALLBACK_CREDENTIAL_ID", "name": "Control Hub Callback" } }
     },
     {
       "id": "configure-destinations",
@@ -20,7 +30,8 @@
       "parameters": {
         "assignments": { "assignments": [
           { "id": "destinations", "name": "destinationsJson", "type": "string", "value": "[]" },
-          { "id": "control-hub-url", "name": "controlHubUrl", "type": "string", "value": "https://app.sngroup.com.au" }
+          { "id": "control-hub-url", "name": "controlHubUrl", "type": "string", "value": "https://app.sngroup.com.au" },
+          { "id": "delivery-mode", "name": "deliveryMode", "type": "string", "value": "={{ $json.headers ? 'manual' : 'scheduled' }}" }
         ] },
         "options": {}
       }
@@ -52,7 +63,7 @@
       "typeVersion": 2,
       "position": [930, 300],
       "parameters": {
-        "jsCode": "const digest = $json.data;\nconst s = digest.summary;\nconst cfg = $('Configure Telegram Destinations').first().json;\nconst destinations = JSON.parse(cfg.destinationsJson || '[]');\nconst formatDate = (value) => new Date(value).toLocaleDateString('en-US', { day: 'numeric', month: 'short', timeZone: 'Asia/Manila' });\nconst range = `${formatDate(digest.intervalStartedAt)} – ${formatDate(digest.intervalEndedAt)}`;\nconst text = [\n  '📣 UHP outreach',\n  `Weekly summary · ${range}`,\n  '',\n  'REACH & RESPONSE',\n  `• Clients contacted: ${s.clientsReachedOut} (${s.outreachAttempts} messages)`,\n  `• Replied: ${s.clientsReplied} · Response rate: ${s.responseRate}%`,\n  `• No response yet: ${s.noResponse}`,\n  '',\n  'PROSPECTS',\n  `• Interested: ${s.interested} · Declined: ${s.declined}`,\n  `• New clients added: ${s.newClients}`,\n  '',\n  'BOOKINGS',\n  `• Wellness Evaluation Form: ${s.wellnessEvaluationForms ?? 0}`,\n  `• Wellness Evaluation Calls: ${s.wellnessEvaluationCalls ?? 0}`,\n  `• Calls: ${s.callsScheduled}`,\n].join('\\n');\nreturn destinations.map((destination) => ({ json: { ...digest, controlHubUrl: cfg.controlHubUrl, destinationKey: destination.key, chatId: destination.chatId, telegramText: text, idempotencyKey: `outreach-digest:${digest.intervalEndedAt.slice(0, 10)}:${destination.key}` } }));"
+        "jsCode": "const digest = $json.data;\nconst s = digest.summary;\nconst cfg = $('Configure Telegram Destinations').first().json;\nconst destinations = JSON.parse(cfg.destinationsJson || '[]');\nconst formatDate = (value) => new Date(value).toLocaleDateString('en-US', { day: 'numeric', month: 'short', timeZone: 'Asia/Manila' });\nconst range = `${formatDate(digest.intervalStartedAt)} – ${formatDate(digest.intervalEndedAt)}`;\nconst text = [\n  '📣 UHP outreach',\n  `Weekly summary · ${range}`,\n  '',\n  'REACH & RESPONSE',\n  `• Clients contacted: ${s.clientsReachedOut} (${s.outreachAttempts} messages)`,\n  `• Replied: ${s.clientsReplied} · Response rate: ${s.responseRate}%`,\n  `• No response yet: ${s.noResponse}`,\n  '',\n  'SOURCES',\n  ...(digest.sources?.length ? digest.sources.map((source) => `• ${source.name}: ${source.count}`) : ['• No outreach sources recorded']),\n  '',\n  'PROSPECTS',\n  `• Interested: ${s.interested} · Declined: ${s.declined}`,\n  `• New clients added: ${s.newClients}`,\n  '',\n  'BOOKINGS',\n  `• Wellness Evaluation Form: ${s.wellnessEvaluationForms ?? 0}`,\n  `• Wellness Evaluation Calls: ${s.wellnessEvaluationCalls ?? 0}`,\n  `• Calls: ${s.callsScheduled}`,\n].join('\\n');\nreturn destinations.map((destination) => ({ json: { ...digest, controlHubUrl: cfg.controlHubUrl, destinationKey: destination.key, chatId: destination.chatId, telegramText: text, idempotencyKey: cfg.deliveryMode === 'manual' ? `outreach-digest:manual:${$execution.id}:${destination.key}` : `outreach-digest:${digest.intervalEndedAt.slice(0, 10)}:${destination.key}` } }));"
       }
     },
     {
@@ -124,7 +135,8 @@
     }
   ],
   "connections": {
-    "Friday 17:00 PHT": { "main": [[{ "node": "Configure Telegram Destinations", "type": "main", "index": 0 }]] },
+    "Friday 09:00 PHT": { "main": [[{ "node": "Configure Telegram Destinations", "type": "main", "index": 0 }]] },
+    "Manual Send Webhook": { "main": [[{ "node": "Configure Telegram Destinations", "type": "main", "index": 0 }]] },
     "Configure Telegram Destinations": { "main": [[{ "node": "Fetch Outreach Summary", "type": "main", "index": 0 }]] },
     "Fetch Outreach Summary": { "main": [[{ "node": "Build Weekly Summary", "type": "main", "index": 0 }]] },
     "Build Weekly Summary": { "main": [[{ "node": "Send Telegram Summary", "type": "main", "index": 0 }]] },

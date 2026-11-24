@@ -26,11 +26,22 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to build digest' }, { status: 500 });
   }
 
+  const reachedBySource = new Map<string, Set<string>>();
+  for (const row of activitiesResult.rows) {
+    if (row.direction !== 'outbound' || !row.client_id) continue;
+    const source = row.client?.source_name?.trim() || 'Unspecified';
+    if (!reachedBySource.has(source)) reachedBySource.set(source, new Set());
+    reachedBySource.get(source)?.add(row.client_id);
+  }
+  const sources = [...reachedBySource].map(([name, clients]) => ({ name, count: clients.size }));
+  sources.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
   return NextResponse.json({
     data: {
       intervalStartedAt,
       intervalEndedAt,
       summary: summarizeUhpOutreach(activitiesResult.rows, newClientsResult.count ?? 0),
+      sources,
     },
   });
 }

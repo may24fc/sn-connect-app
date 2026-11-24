@@ -20,6 +20,15 @@ test('Outreach result filters and row toggles work on desktop and mobile', async
   let weCall = false;
   const clientRequests: Array<URL> = [];
   const errors: Array<string> = [];
+  let manualReportRequests = 0;
+  await page.route('**/api/uhp/clients/send-telegram', async (route) => {
+    manualReportRequests += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: { accepted: true } }),
+    });
+  });
   const client = () => ({
     id: clientId,
     name: 'Call Test Client',
@@ -149,6 +158,9 @@ test('Outreach result filters and row toggles work on desktop and mobile', async
   await signIn(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/uhp/clients');
+  await page.getByRole('button', { name: 'Send Telegram report' }).click();
+  await expect(page.getByText('Weekly report requested')).toBeVisible();
+  expect(manualReportRequests).toBe(1);
 
   const outreachResultFilter = page.getByLabel('Filter by outreach result');
   await expect(page.getByText('Replied: 1', { exact: true })).toBeVisible();

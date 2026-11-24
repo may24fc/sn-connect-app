@@ -135,7 +135,7 @@ export async function fetchUhpOutreachRows(
     const { data, error } = await admin
       .from('uhp_client_activities')
       .select(
-        'client_id, occurred_at, title, direction, reply_received, prospect_outcome, appointment_type, client:uhp_clients!inner(interest_state, replied, deleted_at, migration_review_required)'
+        'client_id, occurred_at, title, direction, reply_received, prospect_outcome, appointment_type, client:uhp_clients!inner(interest_state, replied, source_name, deleted_at, migration_review_required)'
       )
       .is('deleted_at', null)
       .eq('migration_review_required', false)
