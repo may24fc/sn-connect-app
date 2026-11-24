@@ -32,6 +32,7 @@ export function BsbApprovalRegister() {
   const [form, setForm] = useState<Record<string, string>>({});
   const [revokeId, setRevokeId] = useState<string | null>(null);
   const [revokeReason, setRevokeReason] = useState('');
+  const [docSource, setDocSource] = useState('');
 
   async function refresh() {
     const response = await fetch('/api/bsb/sources', { cache: 'no-store' });
@@ -49,7 +50,8 @@ export function BsbApprovalRegister() {
       const result = await response.json() as { error?: string };
       if (!response.ok) throw new Error(result.error ?? 'Request failed');
       await refresh();
-      setSelected(null); setRevokeId(null); setRevokeReason('');
+      setSelected(null); setRevokeId(null); setRevokeReason(''); setForm({});
+      if (method === 'POST') setDocSource('');
       setMessage(method === 'POST' ? 'Private draft imported.' : 'Decision saved.');
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Request failed'); }
     finally { setPending(false); }
@@ -66,9 +68,15 @@ export function BsbApprovalRegister() {
   return <Card role="region" aria-label="BSB Approval Register" className="mt-5 p-4">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div><h2 className="text-base font-semibold">BSB Approval Register</h2>
-        <p className="text-sm text-muted-foreground">One Google Doc. Review its passages, reader access, and retention before publishing.</p></div>
-      <Button type="button" size="sm" disabled={pending} onClick={() => void act('POST')}>Import configured note</Button>
+        <p className="text-sm text-muted-foreground">Each Google Doc is approved separately. Share the Doc with the BSB service account as Editor (needed to verify readers), import it, then review its passages, readers, and retention.</p></div>
     </div>
+    <form className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end"
+      onSubmit={(event) => { event.preventDefault(); void act('POST', { source: docSource }); }}>
+      <div className="min-w-0 flex-1 space-y-1"><Label htmlFor="bsb-doc-source">Google Doc link or file ID</Label>
+        <Input id="bsb-doc-source" value={docSource} placeholder="https://docs.google.com/document/d/…"
+          onChange={(event) => setDocSource(event.target.value)} /></div>
+      <Button type="submit" size="sm" disabled={pending || !docSource.trim()}>Import Doc</Button>
+    </form>
     {message && <p role="status" className="mt-2 text-sm">{message}</p>}
 
     <div className="mt-3">
@@ -88,7 +96,7 @@ export function BsbApprovalRegister() {
           <TableCell className="p-2 align-top">{row.revoked_at ?? '—'}</TableCell>
           <TableCell className="space-y-1 p-2 align-top">
             {row.decision === 'draft' && <Button type="button" variant="link" size="xs"
-              onClick={() => setSelected(selected === row.id ? null : row.id)}>Review</Button>}
+              onClick={() => { setForm({}); setSelected(selected === row.id ? null : row.id); }}>Review</Button>}
             {row.decision === 'approved' && <Button type="button" variant="destructive" size="xs"
               disabled={pending} onClick={() => setRevokeId(row.id)}>Revoke</Button>}
           </TableCell>

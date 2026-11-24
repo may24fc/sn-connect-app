@@ -2,7 +2,9 @@
 
 ## Scope and identity
 
-- One SN Connect / SN Group Google Doc is selected by `BSB_GOOGLE_DOC_ID` in server configuration. The ID is never sent in the import request or shipped in client code.
+- Any number of SN Connect / SN Group Google Docs can be sources. An admin pastes a `docs.google.com/document` link or bare file ID into the Approval Register; the server parses it strictly (`parseGoogleDocId`) and rejects anything else. There is no Drive crawling or folder import. `BSB_GOOGLE_DOC_ID` is no longer used (changed 2026-11-24).
+- Import opt-in is file-scoped sharing: the service account can only read Docs explicitly shared with it. Each Doc must be shared with the service account as **Editor**, because `permissions.list` returns 403 to a Viewer and approval/chat must read the complete ACL. The API credential keeps the `drive.readonly` scope.
+- Each Doc is its own row with its own draft → approved → revoked lifecycle, classification, retention, processor, and reader list. Chat searches only approved, unrevoked rows that list the asking reader, ranks passages locally, then rechecks the live version (metadata only) and the reader's direct ACL for just the Docs that contributed passages. A Doc that fails is dropped from that answer; if all fail, chat returns 404.
 - A confirmed Supabase account email maps to a Google Workspace principal by normalized exact email match. An approved row must explicitly list that principal. Chat also rechecks a direct user permission on the current Google Doc. Domain-wide and link-wide sharing do not grant BSB access.
 - The Supabase service role is used only by server routes. `bsb_okf_sources` has no client RLS policies. Draft OKF content is separate from the ordinary AI Knowledge tables and embeddings.
 

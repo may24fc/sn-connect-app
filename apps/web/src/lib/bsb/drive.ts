@@ -26,6 +26,15 @@ export async function readExactDoc(fileId: string) {
     ownerEmail: metadata.data.owners?.[0]?.emailAddress ?? null };
 }
 
+// Chat-time freshness check: metadata only, no export. Throws if the Doc is missing, trashed or not a Doc.
+export async function readDocVersion(fileId: string): Promise<string> {
+  const { data } = await driveClient().files.get({ fileId,
+    fields: 'id,mimeType,modifiedTime,trashed', supportsAllDrives: true }, { timeout: 10_000 });
+  if (data.id !== fileId || data.trashed || data.mimeType !== 'application/vnd.google-apps.document'
+    || !data.modifiedTime) throw new Error('The configured source is unavailable');
+  return data.modifiedTime;
+}
+
 // Only a direct user permission is accepted. If Google does not expose the ACL, fail closed.
 export async function hasCurrentDirectAccess(fileId: string, email: string): Promise<boolean> {
   const drive = driveClient();

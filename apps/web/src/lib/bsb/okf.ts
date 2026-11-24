@@ -32,6 +32,19 @@ export function isOkfV02(value: unknown): value is OkfV02 {
       && fact.exactQuote.length > 0 && okf.sourceText?.includes(fact.exactQuote));
 }
 
+const DRIVE_ID = /^[A-Za-z0-9_-]{20,128}$/;
+
+// Accept a docs.google.com/document link or a bare file ID. Anything else is rejected, never guessed.
+export function parseGoogleDocId(input: string): string | null {
+  const value = input.trim();
+  if (DRIVE_ID.test(value)) return value;
+  let url: URL;
+  try { url = new URL(value); } catch { return null; }
+  if (url.protocol !== 'https:' || url.hostname !== 'docs.google.com') return null;
+  const match = url.pathname.match(/^\/document\/(?:u\/\d+\/)?d\/([^/]+)/);
+  return match?.[1] && DRIVE_ID.test(match[1]) ? match[1] : null;
+}
+
 export function normalizePrincipal(email: string): string {
   return email.trim().toLowerCase();
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isOkfV02, isPublishable, isSameInstant, parseOkfV02 } from '../../apps/web/src/lib/bsb/okf';
+import { isOkfV02, isPublishable, isSameInstant, parseGoogleDocId, parseOkfV02 } from '../../apps/web/src/lib/bsb/okf';
 
 const now = new Date('2026-11-24T00:00:00Z');
 const approved = {
@@ -37,5 +37,17 @@ describe('BSB OKF publication gate', () => {
     expect(isSameInstant('2026-11-24T02:01:16.986Z', '2026-11-24T02:01:16.987+00:00')).toBe(false);
     expect(isSameInstant('2026-11-24T02:01:16.986Z', null)).toBe(false);
     expect(isSameInstant('not-a-date', 'not-a-date')).toBe(false);
+  });
+
+  it('accepts only Google Doc links or bare file IDs', () => {
+    const id = '1AbCdEfGhIjKlMnOpQrStUvWxYz_0123456789-xy';
+    expect(parseGoogleDocId(id)).toBe(id);
+    expect(parseGoogleDocId(`https://docs.google.com/document/d/${id}/edit?tab=t.0`)).toBe(id);
+    expect(parseGoogleDocId(`https://docs.google.com/document/u/1/d/${id}/edit`)).toBe(id);
+    expect(parseGoogleDocId(`https://drive.google.com/file/d/${id}/view`)).toBeNull();
+    expect(parseGoogleDocId(`http://docs.google.com/document/d/${id}/edit`)).toBeNull();
+    expect(parseGoogleDocId(`https://docs.google.com.evil.test/document/d/${id}/edit`)).toBeNull();
+    expect(parseGoogleDocId('short')).toBeNull();
+    expect(parseGoogleDocId('../../etc/passwd-and-more-characters')).toBeNull();
   });
 });

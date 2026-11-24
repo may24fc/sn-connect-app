@@ -8,7 +8,7 @@ vi.mock('@/app/api/ai/_lib', () => ({
   isAiAdmin: vi.fn(() => true),
 }));
 vi.mock('@/lib/bsb/drive', () => ({
-  readExactDoc: vi.fn(),
+  readDocVersion: vi.fn(),
   hasCurrentDirectAccess: vi.fn(),
 }));
 vi.mock('openai', () => ({
@@ -17,7 +17,7 @@ vi.mock('openai', () => ({
 
 import { POST } from '@/app/api/bsb/chat/route';
 import { getAdminClient, getAuthedSupabase } from '@/app/api/ai/_lib';
-import { hasCurrentDirectAccess, readExactDoc } from '@/lib/bsb/drive';
+import { hasCurrentDirectAccess, readDocVersion } from '@/lib/bsb/drive';
 import { parseOkfV02 } from '@/lib/bsb/okf';
 import type { NextRequest } from 'next/server';
 
@@ -32,23 +32,26 @@ const approvedRow = {
   retention_until: null, processor: 'openai', acl_checked_at: '2026-11-24T03:00:00+00:00', expires_at: null,
   allowed_principals: [READER], revoked_at: null, okf,
 };
-const liveDoc = { title: 'Meeting note', text: okf.sourceText, modifiedAt: '2026-11-24T02:01:16.986Z', ownerEmail: 'owner@example.com' };
+const LIVE_VERSION = '2026-11-24T02:01:16.986Z';
+const secondRow = { ...approvedRow, id: 'source-2', title: 'Second note', drive_file_id: 'second-doc-id',
+  okf: parseOkfV02('The hiring freeze ends in January.\n\nThe team agreed to ship the onboarding checklist on Monday instead.') };
 
 function chainable(result: unknown) {
   const builder: Record<string, unknown> = {};
-  for (const method of ['select', 'eq', 'is']) builder[method] = vi.fn(() => builder);
+  for (const method of ['select', 'eq', 'is', 'contains']) builder[method] = vi.fn(() => builder);
   builder.maybeSingle = vi.fn().mockResolvedValue(result);
+  builder.limit = vi.fn().mockResolvedValue(result);
   return builder;
 }
 
-function mockSession(row: unknown) {
+function mockSession(rows: unknown[]) {
   vi.mocked(getAuthedSupabase).mockResolvedValue({
     supabase: { from: vi.fn(() => chainable({ data: { status: 'active' }, error: null })) },
     user: { id: 'user-1', email: READER, email_confirmed_at: '2026-11-24T00:00:00Z' },
     role: 'admin', error: null,
   } as unknown as Awaited<ReturnType<typeof getAuthedSupabase>>);
   vi.mocked(getAdminClient).mockReturnValue({
-    from: vi.fn(() => chainable({ data: row, error: null })),
+    from: vi.fn(() => chainable({ data: rows, error: null })),
     rpc: vi.fn().mockResolvedValue({ data: true, error: null }),
   } as unknown as ReturnType<typeof getAdminClient>);
 }
@@ -62,15 +65,14 @@ function ask(content: string) {
 describe('/api/bsb/chat live source checks', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.BSB_GOOGLE_DOC_ID = FILE_ID;
     process.env.OPENAI_API_KEY = 'test-key';
-    mockSession(approvedRow);
-    vi.mocked(readExactDoc).mockResolvedValue(liveDoc);
+    mockSession([approvedRow]);
+    vi.mocked(readDocVersion).mockResolvedValue(LIVE_VERSION);
     vi.mocked(hasCurrentDirectAccess).mockResolvedValue(true);
   });
 
   it('answers an authorized reader with a verbatim cited passage when the source is unchanged', async () => {
-    openAiCreate.mockResolvedValue({ choices: [{ message: { content: '{"id":"F1"}' } }] });
+    openAiCreate.mockResolvedValue({ choices: [{ message: { content: '{"id":"S1-F1"}' } }] });
     const response = await ask('When will the team ship the onboarding checklist?');
     expect(response.status).toBe(200);
     const body = await response.text();
@@ -80,14 +82,14 @@ describe('/api/bsb/chat live source checks', () => {
   });
 
   it('denies and never calls the model when the Doc was edited after approval', async () => {
-    vi.mocked(readExactDoc).mockResolvedValue({ ...liveDoc, modifiedAt: '2026-11-24T05:00:00.000Z' });
+    vi.mocked(readDocVersion).mockResolvedValue('2026-11-24T05:00:00.000Z');
     const response = await ask('When will the team ship the onboarding checklist?');
     expect(response.status).toBe(404);
     expect(openAiCreate).not.toHaveBeenCalled();
   });
 
   it('denies and never calls the model when the Doc was deleted or trashed', async () => {
-    vi.mocked(readExactDoc).mockRejectedValue(new Error('The configured source is unavailable'));
+    vi.mocked(readDocVersion).mockRejectedValue(new Error('The configured source is unavailable'));
     const response = await ask('When will the team ship the onboarding checklist?');
     expect(response.status).toBe(404);
     expect(openAiCreate).not.toHaveBeenCalled();
@@ -107,9 +109,41 @@ describe('/api/bsb/chat live source checks', () => {
     expect(body).not.toContain('"sources"');
   });
 
+  it('returns 404 when the reader is on no approved source', async () => {
+    mockSession([]);
+    const response = await ask('When will the team ship the onboarding checklist?');
+    expect(response.status).toBe(404);
+    expect(readDocVersion).not.toHaveBeenCalled();
+  });
+
+  it('searches every approved Doc and cites the right one', async () => {
+    mockSession([approvedRow, secondRow]);
+    openAiCreate.mockResolvedValue({ choices: [{ message: { content: '{"id":"S2-F1"}' } }] });
+    const body = await (await ask('When does the hiring freeze end?')).text();
+    expect(body).toContain('"exactQuote":"The hiring freeze ends in January."');
+    expect(body).toContain('"sourceId":"source-2"');
+    expect(body).toContain('"sourceName":"Second note"');
+    // Only the Doc that contributed passages is checked live.
+    expect(readDocVersion).toHaveBeenCalledTimes(1);
+    expect(readDocVersion).toHaveBeenCalledWith('second-doc-id');
+  });
+
+  it('drops an edited Doc but still answers from a live one', async () => {
+    mockSession([approvedRow, secondRow]);
+    vi.mocked(readDocVersion).mockImplementation(async (fileId) =>
+      fileId === FILE_ID ? '2026-11-24T05:00:00.000Z' : LIVE_VERSION);
+    openAiCreate.mockResolvedValue({ choices: [{ message: { content: '{"id":"S2-F2"}' } }] });
+    const response = await ask('When will the team ship the onboarding checklist?');
+    expect(response.status).toBe(200);
+    const sent = JSON.parse(openAiCreate.mock.calls[0][0].messages[1].content) as { passages: Array<{ id: string }> };
+    expect(sent.passages.map((passage) => passage.id)).toEqual(['S2-F2']);
+    expect(await response.text()).toContain('"sourceId":"source-2"');
+  });
+
   it('abstains without a model call when no passage matches the question', async () => {
     const body = await (await ask('Quarterly penguin migration?')).text();
     expect(body).toContain('I cannot find an approved source passage');
     expect(openAiCreate).not.toHaveBeenCalled();
+    expect(readDocVersion).not.toHaveBeenCalled();
   });
 });

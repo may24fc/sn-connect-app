@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
   })));
   await page.route('**/api/bsb/sources', async (route) => {
     if (route.request().method() === 'GET') return route.fulfill({ json: { data: [] } });
-    return route.fulfill({ status: 503, json: { error: 'Exact source ID is not configured' } });
+    return route.fulfill({ status: 502, json: { error: 'Google Doc cannot be imported. Share it with the BSB service account as Editor and try again.' } });
   });
 });
 
@@ -19,12 +19,19 @@ test('approval register and BSB chatbot mode render on desktop and mobile', asyn
     await page.goto('/admin/ai-knowledge');
     await expect(page.getByRole('region', { name: 'BSB Approval Register' })).toBeVisible();
     await expect(page.getByText('No source imported.')).toBeVisible();
-    await page.getByRole('button', { name: 'Import configured note' }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Exact source ID is not configured' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Import Doc' })).toBeDisabled();
+    const docLink = 'https://docs.google.com/document/d/1AbCdEfGhIjKlMnOpQrStUvWxYz_0123456789-xy/edit';
+    await page.getByLabel('Google Doc link or file ID').fill(docLink);
+    const importRequest = page.waitForRequest((request) => request.url().endsWith('/api/bsb/sources') && request.method() === 'POST');
+    await page.getByRole('button', { name: 'Import Doc' }).click();
+    expect((await importRequest).postDataJSON()).toEqual({ source: docLink });
+    await expect(page.getByRole('status').filter({ hasText: 'Share it with the BSB service account' })).toBeVisible();
+    await expect(page.getByLabel('Google Doc link or file ID')).toHaveValue(docLink);
+    await page.getByRole('region', { name: 'BSB Approval Register' }).screenshot({ path: testInfo.outputPath(`bsb-register-${width}.png`) });
     await page.getByRole('button', { name: 'Open AI Assistant' }).click();
     await page.getByRole('button', { name: 'Toggle Business Second Brain' }).click();
     await expect(page.getByText('Business Second Brain')).toBeVisible();
-    await expect(page.getByPlaceholder('Ask about the approved note...')).toBeVisible();
+    await expect(page.getByPlaceholder('Ask about approved notes...')).toBeVisible();
     await expect.poll(() => page.getByText('Conversations', { exact: true })
       .evaluate((element) => element.parentElement?.parentElement?.getBoundingClientRect().width)).toBeLessThan(2);
     await page.screenshot({ path: testInfo.outputPath(`bsb-${width}.png`) });
@@ -33,6 +40,7 @@ test('approval register and BSB chatbot mode render on desktop and mobile', asyn
 });
 
 test('non-admin chatbot does not offer Business Second Brain mode', async ({ page }, testInfo) => {
+  test.setTimeout(120_000); // next dev compiles /dashboard on first visit
   await page.addInitScript(() => localStorage.setItem('auth_user', JSON.stringify({
     id: 'emp-1', name: 'Employee', email: 'employee@test.com', role: 'employee',
     accountKind: 'workforce', isOnboardingComplete: true,

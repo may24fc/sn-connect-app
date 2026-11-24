@@ -595,7 +595,7 @@ export function AIChatbot({
 
                   {/* Greeting */}
                   <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight mb-1.5">
-                    {chatMode === 'bsb' ? 'Ask an approved note' : getGreeting()}
+                    {chatMode === 'bsb' ? 'Ask approved notes' : getGreeting()}
                   </h2>
                   <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8">
                     {chatMode === 'bsb' ? 'Answers include an exact source passage.' : 'How can I help you today?'}
@@ -670,7 +670,7 @@ export function AIChatbot({
                     onSendMessage={handleChatInputSend}
                     isLoading={currentIsLoading}
                     onAbort={isStreamingMode ? onAbort : undefined}
-                    placeholder={chatMode === 'bsb' ? 'Ask about the approved note...' : placeholder}
+                    placeholder={chatMode === 'bsb' ? 'Ask about approved notes...' : placeholder}
                     autoFocus={isOpen}
                     className="w-full max-w-lg"
                   />
@@ -819,7 +819,7 @@ export function AIChatbot({
                       onSendMessage={handleChatInputSend}
                       isLoading={currentIsLoading}
                       onAbort={isStreamingMode ? onAbort : undefined}
-                      placeholder={chatMode === 'bsb' ? 'Ask about the approved note...' : placeholder}
+                      placeholder={chatMode === 'bsb' ? 'Ask about approved notes...' : placeholder}
                       autoFocus={isOpen}
                     />
                     <p className="mt-2 text-center text-[11px] text-zinc-400 dark:text-zinc-500">

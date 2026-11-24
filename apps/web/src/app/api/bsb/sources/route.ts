@@ -1,8 +1,10 @@
 import { getAdminClient, getAuthedSupabase, isAiAdmin } from '@/app/api/ai/_lib';
 import { hasCurrentDirectAccess, readExactDoc } from '@/lib/bsb/drive';
-import { isPublishable, isSameInstant, normalizePrincipal, parseOkfV02 } from '@/lib/bsb/okf';
+import { isPublishable, isSameInstant, normalizePrincipal, parseGoogleDocId, parseOkfV02 } from '@/lib/bsb/okf';
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
+
+const importSchema = z.object({ source: z.string().trim().min(1).max(500) });
 
 const reviewSchema = z.object({
   id: z.string().uuid(), action: z.enum(['approve', 'revoke']),
@@ -26,16 +28,17 @@ export async function GET() {
   const user = await adminIdentity();
   if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   const { data, error } = await getAdminClient().from('bsb_okf_sources').select('*')
-    .order('created_at', { ascending: false }).limit(20);
+    .order('created_at', { ascending: false }).limit(100);
   if (error) return NextResponse.json({ error: 'Unable to load register' }, { status: 500 });
   return NextResponse.json({ data }, { headers: { 'Cache-Control': 'no-store' } });
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const user = await adminIdentity();
   if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  const fileId = process.env.BSB_GOOGLE_DOC_ID?.trim();
-  if (!fileId) return NextResponse.json({ error: 'Exact source ID is not configured' }, { status: 503 });
+  const parsed = importSchema.safeParse(await request.json().catch(() => null));
+  const fileId = parsed.success ? parseGoogleDocId(parsed.data.source) : null;
+  if (!fileId) return NextResponse.json({ error: 'Enter a Google Doc link or file ID' }, { status: 400 });
   const admin = getAdminClient();
   const { data: existing } = await admin.from('bsb_okf_sources').select('id,decision').eq('drive_file_id', fileId).maybeSingle();
   if (existing && existing.decision !== 'draft')
@@ -55,7 +58,8 @@ export async function POST() {
     if (error) return NextResponse.json({ error: 'Unable to save draft' }, { status: 500 });
     return NextResponse.json({ data }, { status: existing ? 200 : 201 });
   } catch {
-    return NextResponse.json({ error: 'Configured Google Doc cannot be imported' }, { status: 502 });
+    // The service account can only read Docs explicitly shared with it; sharing is the import opt-in.
+    return NextResponse.json({ error: 'Google Doc cannot be imported. Share it with the BSB service account as Editor and try again.' }, { status: 502 });
   }
 }
 
@@ -67,8 +71,7 @@ export async function PATCH(request: NextRequest) {
   const input = parsed.data;
   const admin = getAdminClient();
   const { data: row, error } = await admin.from('bsb_okf_sources').select('*').eq('id', input.id).single();
-  if (error || !row || row.drive_file_id !== process.env.BSB_GOOGLE_DOC_ID?.trim())
-    return NextResponse.json({ error: 'Source unavailable' }, { status: 404 });
+  if (error || !row) return NextResponse.json({ error: 'Source unavailable' }, { status: 404 });
 
   if (input.action === 'revoke') {
     if (!input.reason) return NextResponse.json({ error: 'Revocation reason required' }, { status: 400 });
