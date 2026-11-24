@@ -133,7 +133,7 @@ export type UhpOutreachActivityRow = {
   /** Marks the synthetic row produced from uhp_clients.called_at. */
   manual_call?: boolean;
   /** The client's current state, embedded by fetchUhpOutreachRows. */
-  client?: { interest_state: string; replied: boolean } | null;
+  client?: { interest_state: string; replied: boolean; source_name?: string | null } | null;
 };
 
 /** Replies belong to the period in which the client was reached, even if received later. */

@@ -50,7 +50,7 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import { format } from 'date-fns';
-import { AlertTriangle, ExternalLink, ImageUp, Loader2, Plus, RefreshCw } from 'lucide-react';
+import { AlertTriangle, ExternalLink, ImageUp, Loader2, Plus, RefreshCw, Send } from 'lucide-react';
 import {
   type ClipboardEvent,
   type FormEvent,
@@ -234,6 +234,29 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
   const [deleting, setDeleting] = useState(false);
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [extracting, setExtracting] = useState(false);
+  const [sendingTelegram, setSendingTelegram] = useState(false);
+
+  async function sendTelegramUpdate() {
+    setSendingTelegram(true);
+    try {
+      const response = await fetch('/api/uhp/clients/send-telegram', { method: 'POST' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? 'Failed to start Telegram delivery');
+      addToast({
+        variant: 'success',
+        title: 'Weekly report requested',
+        description: 'The outreach summary is being sent to the configured Telegram recipients.',
+      });
+    } catch (error) {
+      addToast({
+        variant: 'error',
+        title: 'Could not send weekly report',
+        description: error instanceof Error ? error.message : 'Please try again.',
+      });
+    } finally {
+      setSendingTelegram(false);
+    }
+  }
 
   const loadClients = useCallback(async () => {
     setLoading(true);
@@ -562,8 +585,20 @@ export function UhpClientTrackerPage({ isAdmin = false }: { isAdmin?: boolean })
         title="Outreach Tracker"
         description="The UHP source of truth for prospects, communication activity, outcomes, and scheduled appointments."
         actions={
-          <div className="flex gap-2">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             {isAdmin && <UhpAccessManagerButton module="client_tracker" label="Outreach Tracker" />}
+            <Button
+              variant="outline"
+              disabled={sendingTelegram}
+              onClick={() => void sendTelegramUpdate()}
+            >
+              {sendingTelegram ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="mr-2 h-4 w-4" />
+              )}
+              {sendingTelegram ? 'Sending report...' : 'Send Telegram report'}
+            </Button>
             <Button onClick={() => (showForm ? closeForm() : setShowForm(true))}>
               <Plus className="mr-2 h-4 w-4" /> Add client
             </Button>
