@@ -1,6 +1,7 @@
 'use client';
 
 import { useAIChat } from '@/hooks/useAIChat';
+import { BsbApprovalRegister } from '@/components/admin/BsbApprovalRegister';
 import {
   useAISources,
   useDeleteSource,
@@ -96,15 +97,16 @@ export default function SuperAdminAIKnowledgePage(): React.ReactNode {
   );
 
   return (
-    <div className="h-full flex flex-col p-6">
+    <div className="h-full flex flex-col overflow-auto p-6">
       <div className="mb-4 flex-shrink-0">
         <PageTitle>AI Knowledge Base</PageTitle>
         <p className="mt-1 text-sm text-muted-foreground">
           Manage policy documents and test the HR AI assistant
         </p>
       </div>
+      <div data-testid="ai-knowledge-manager" className="h-[65vh] min-h-[520px] shrink-0 overflow-hidden">
       <AIKnowledgeManager
-        className="flex-1 min-h-0"
+        className="h-full"
         sources={sources}
         isSourcesLoading={isSourcesLoading}
         onUploadFiles={handleUploadFiles}
@@ -117,6 +119,8 @@ export default function SuperAdminAIKnowledgePage(): React.ReactNode {
         chatError={chatError?.message ?? null}
         onAbortChat={abort}
       />
+      </div>
+      <BsbApprovalRegister />
     </div>
   );
 }

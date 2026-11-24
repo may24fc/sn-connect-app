@@ -74,6 +74,7 @@ The initial rollout added optimistic updates with rollback and reconciliation to
 | Failure feedback | Offboarding task create and employee notification mark-all/delete retain optimistic rollback; failed requests now show an error toast. |
 | Community recognition | Nominations, draft saves, approvals, rejections, and Telegram publication are server-confirmed. They create auditable HR records or externally visible side effects and must use current authorization and database state. |
 | Reflection insights (Ask AI) | Conversation rename and delete (after confirmation) are optimistic with rollback: both are owner-only, deterministic, and reversible. Sending a question is server-confirmed streaming: the question and partial answer render locally, but the conversation cache is updated only after the server has persisted both turns, because the answer is non-deterministic, rate-limited, audited, and can fail or be stopped mid-stream. |
+| Business Second Brain | Exact-ID Google Doc import, source approval, and revocation are server-confirmed. They depend on live Drive access and current authorization. BSB chat requests are server-confirmed; the local question is shown while the server checks access and selects a cited passage. |
 
 The rollout also corrected rollback coverage in `useUpdateTask` and `useToggleResourceFeatured`: both now snapshot every matching list cache rather than only an umbrella key. Kanban task moves use the same task-cache mutation path, so cards move immediately and roll back to their prior column if the request fails.
 

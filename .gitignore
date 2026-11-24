@@ -8,6 +8,8 @@ dist/
 .next-build/
 .next-perf/
 .next-playwright-*/
+.next-milestone-*/
+scratch/
 out/
 build/
 

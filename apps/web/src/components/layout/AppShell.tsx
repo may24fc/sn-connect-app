@@ -410,7 +410,7 @@ function AppShellNotificationBell(): ReactNode {
 function AppShellAIChatbot(): ReactNode {
   const pathname = usePathname();
   const { user } = useAuth();
-  // Suggestion-click analytics are only defined for the admin chatbot surface.
+  // Suggestion-click analytics and the BSB toggle are only defined for the admin chatbot surface.
   const tracksSuggestionClicks = user?.role === 'admin' || user?.role === 'super_admin';
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const activeConversationIdRef = useRef<string | null>(null);
@@ -462,7 +462,8 @@ function AppShellAIChatbot(): ReactNode {
   };
 
   const guardedSendMessage = useCallback(
-    async (content: string): Promise<void> => {
+    async (content: string, mode: 'standard' | 'bsb' = 'standard'): Promise<void> => {
+      if (mode === 'bsb') return sendMessage(content, null, 'bsb');
       const currentConversationId = activeConversationIdRef.current;
 
       if (currentConversationId) {
@@ -523,6 +524,7 @@ function AppShellAIChatbot(): ReactNode {
       userAvatarUrl={user?.avatarUrl ?? null}
       messages={chatMessages}
       onStreamMessage={guardedSendMessage}
+      showBsbMode={tracksSuggestionClicks}
       isStreamLoading={isLoading}
       onAbort={abort}
       onClearHistory={clearHistory}

@@ -66,7 +66,9 @@ export interface AIChatbotProps {
   /** Streaming mode: externally-managed messages array. */
   messages?: Array<ChatMessage>;
   /** Streaming mode: send a message through the streaming pipeline. */
-  onStreamMessage?: (content: string) => Promise<void>;
+  onStreamMessage?: (content: string, mode?: 'standard' | 'bsb') => Promise<void>;
+  /** Show the Business Second Brain toggle. The server still enforces reader access. */
+  showBsbMode?: boolean;
   /** Streaming mode: is the assistant currently streaming / loading? */
   isStreamLoading?: boolean;
   /** Streaming mode: abort current stream. */
@@ -147,6 +149,7 @@ export function AIChatbot({
   onSendMessage,
   messages: externalMessages,
   onStreamMessage,
+  showBsbMode = false,
   isStreamLoading,
   onAbort,
   onClearHistory,
@@ -175,6 +178,7 @@ export function AIChatbot({
   const isPersistenceMode = !!(externalConversations && onSelectConversation);
 
   const [isOpen, setIsOpen] = React.useState(false);
+  const [chatMode, setChatMode] = React.useState<'standard' | 'bsb'>('standard');
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [showHistory, setShowHistory] = React.useState(true);
   const [conversations, setConversations] = React.useState<Array<Conversation>>([
@@ -257,7 +261,7 @@ export function AIChatbot({
 
     // Streaming mode — delegate to external handler
     if (isStreamingMode) {
-      await onStreamMessage(content.trim());
+      await onStreamMessage(content.trim(), chatMode);
       return;
     }
 
@@ -329,7 +333,7 @@ export function AIChatbot({
     } finally {
       setIsLoading(false);
     }
-  }, [activeConversationId, currentIsLoading, isStreamingMode, onSendMessage, onStreamMessage]);
+  }, [activeConversationId, chatMode, currentIsLoading, isStreamingMode, onSendMessage, onStreamMessage]);
 
   const handleCitationClick = (id: number, citations: Citation[]): void => {
     setActiveCitations(citations);
@@ -375,9 +379,9 @@ export function AIChatbot({
     : groupConversationsByDate(conversations);
 
   const currentActiveId = isPersistenceMode ? (externalActiveConversationId ?? '') : activeConversationId;
-  const shouldShowSuggestionButtons = isEmptyState && !currentIsLoading && suggestions.length > 0;
+  const shouldShowSuggestionButtons = chatMode === 'standard' && isEmptyState && !currentIsLoading && suggestions.length > 0;
   const shouldRenderSuggestionArea =
-    isEmptyState && (isSuggestionsLoading || suggestions.length > 0 || Boolean(liveSync?.hasSyncedGoogleDocs));
+    chatMode === 'standard' && isEmptyState && (isSuggestionsLoading || suggestions.length > 0 || Boolean(liveSync?.hasSyncedGoogleDocs));
 
   const updateOpenState = (nextOpen: boolean): void => {
     setIsOpen(nextOpen);
@@ -496,9 +500,9 @@ export function AIChatbot({
           <div className="flex flex-1 flex-col min-w-0">
             {/* Panel Header */}
             <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-4 h-14 flex-shrink-0">
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2">
                 {/* History toggle */}
-                <Button
+                {chatMode === 'standard' && <Button
                   variant="ghost"
                   size="icon"
                   className={cn(
@@ -511,21 +515,21 @@ export function AIChatbot({
                   aria-label="Toggle conversation history"
                 >
                   <PanelLeft className="h-4 w-4" strokeWidth={1.5} />
-                </Button>
-                <div className="flex items-center gap-2.5">
+                </Button>}
+                <div className="flex min-w-0 items-center gap-2.5">
                   <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-900/10 dark:bg-zinc-800/15">
                     <Sparkles className="h-3.5 w-3.5 text-zinc-700 dark:text-zinc-400" strokeWidth={1.5} />
                   </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
-                      Control Hub AI
+                  <div className="min-w-0">
+                    <h3 className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
+                      {chatMode === 'bsb' ? 'Business Second Brain' : 'Control Hub AI'}
                     </h3>
-                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                      HR Assistant · Powered by AI
+                    <p className="hidden min-[480px]:block text-[11px] text-zinc-500 dark:text-zinc-400">
+                      {chatMode === 'bsb' ? 'Approved meeting knowledge' : 'HR Assistant · Powered by AI'}
                     </p>
                   </div>
                 </div>
-                {liveSync?.hasSyncedGoogleDocs && (
+                {chatMode === 'standard' && liveSync?.hasSyncedGoogleDocs && (
                   <div className="hidden min-[920px]:inline-flex items-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50/90 px-2.5 py-1 text-[11px] font-medium text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                     <span>Docs synced {formatRelativeSyncTime(liveSync.lastSyncedAt)}</span>
@@ -533,9 +537,16 @@ export function AIChatbot({
                 )}
               </div>
 
-              <div className="flex items-center gap-1">
+              <div className="flex shrink-0 items-center gap-1">
+                {isStreamingMode && showBsbMode && (
+                  <Button type="button" variant="outline" size="xs" aria-label="Toggle Business Second Brain"
+                    aria-pressed={chatMode === 'bsb'}
+                    onClick={() => { onClearHistory?.(); setShowHistory(false); setChatMode(chatMode === 'bsb' ? 'standard' : 'bsb'); }}>
+                    {chatMode === 'bsb' ? 'Back to HR' : 'Ask BSB'}
+                  </Button>
+                )}
                 {/* New Chat — visible when history is hidden */}
-                {!showHistory && (
+                {!showHistory && chatMode === 'standard' && (
                   <Button
                     variant="ghost"
                     size="icon"
@@ -584,10 +595,10 @@ export function AIChatbot({
 
                   {/* Greeting */}
                   <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight mb-1.5">
-                    {getGreeting()}
+                    {chatMode === 'bsb' ? 'Ask approved notes' : getGreeting()}
                   </h2>
                   <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8">
-                    How can I help you today?
+                    {chatMode === 'bsb' ? 'Answers include an exact source passage.' : 'How can I help you today?'}
                   </p>
 
                   <AnimatePresence initial={false}>
@@ -659,7 +670,7 @@ export function AIChatbot({
                     onSendMessage={handleChatInputSend}
                     isLoading={currentIsLoading}
                     onAbort={isStreamingMode ? onAbort : undefined}
-                    placeholder={placeholder}
+                    placeholder={chatMode === 'bsb' ? 'Ask about approved notes...' : placeholder}
                     autoFocus={isOpen}
                     className="w-full max-w-lg"
                   />
@@ -808,7 +819,7 @@ export function AIChatbot({
                       onSendMessage={handleChatInputSend}
                       isLoading={currentIsLoading}
                       onAbort={isStreamingMode ? onAbort : undefined}
-                      placeholder={placeholder}
+                      placeholder={chatMode === 'bsb' ? 'Ask about approved notes...' : placeholder}
                       autoFocus={isOpen}
                     />
                     <p className="mt-2 text-center text-[11px] text-zinc-400 dark:text-zinc-500">
