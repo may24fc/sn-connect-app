@@ -76,6 +76,7 @@ test('draft review sends Never retention and the named reader for server confirm
     const registerBox = await page.getByRole('region', { name: 'BSB Approval Register' }).boundingBox();
     return Boolean(managerBox && registerBox && registerBox.y >= managerBox.y + managerBox.height);
   }).toBe(true);
+  await expect(page.getByRole('button', { name: 'Re-import Configured meeting note' })).toBeVisible();
   await page.getByRole('button', { name: 'Review' }).click();
   await page.getByRole('combobox', { name: 'Retention rule' }).click();
   await page.getByRole('option', { name: 'Never' }).click();

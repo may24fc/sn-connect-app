@@ -1,10 +1,15 @@
 import { getAdminClient, getAuthedSupabase, isAiAdmin } from '@/app/api/ai/_lib';
-import { hasCurrentDirectAccess, readExactDoc } from '@/lib/bsb/drive';
+import { listDirectUserEmails, readDocVersion, readExactDoc } from '@/lib/bsb/drive';
 import { isPublishable, isSameInstant, normalizePrincipal, parseGoogleDocId, parseOkfV02 } from '@/lib/bsb/okf';
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 
 const importSchema = z.object({ source: z.string().trim().min(1).max(500) });
+const DRAFT_RESET = {
+  decision: 'draft', classification: null, retention_rule: 'pending', retention_until: null, processor: null,
+  expires_at: null, allowed_principals: [], acl_checked_at: null, reviewer_id: null, decided_at: null,
+  revoked_at: null, revoked_by: null, revocation_reason: null,
+};
 
 const reviewSchema = z.object({
   id: z.string().uuid(), action: z.enum(['approve', 'revoke']),
@@ -41,8 +46,6 @@ export async function POST(request: NextRequest) {
   if (!fileId) return NextResponse.json({ error: 'Enter a Google Doc link or file ID' }, { status: 400 });
   const admin = getAdminClient();
   const { data: existing } = await admin.from('bsb_okf_sources').select('id,decision').eq('drive_file_id', fileId).maybeSingle();
-  if (existing && existing.decision !== 'draft')
-    return NextResponse.json({ error: 'Published or revoked source cannot be reimported' }, { status: 409 });
   try {
     const source = await readExactDoc(fileId);
     const okf = parseOkfV02(source.text);
@@ -50,12 +53,21 @@ export async function POST(request: NextRequest) {
       drive_file_id: fileId, title: source.title, source_modified_at: source.modifiedAt,
       source_owner_email: source.ownerEmail, okf, imported_by: user.id,
     };
+    // Re-importing an approved or revoked Doc (e.g. after it was edited) takes a fresh snapshot and
+    // returns it to an unpublished draft. It stops answering until an admin approves it again.
     const mutation = existing
-      ? admin.from('bsb_okf_sources').update({ ...payload, updated_at: new Date().toISOString() })
-        .eq('id', existing.id).eq('decision', 'draft')
+      ? admin.from('bsb_okf_sources').update({ ...payload, ...(existing.decision === 'draft' ? {} : DRAFT_RESET),
+        updated_at: new Date().toISOString() }).eq('id', existing.id).eq('decision', existing.decision)
       : admin.from('bsb_okf_sources').insert(payload);
     const { data, error } = await mutation.select('id,title,decision,created_at').single();
     if (error) return NextResponse.json({ error: 'Unable to save draft' }, { status: 500 });
+    if (existing && existing.decision !== 'draft') {
+      const { error: auditError } = await admin.from('audit_logs').insert({
+        performed_by: user.id, action: 'bsb_source_reimported_to_draft', table_name: 'bsb_okf_sources',
+        record_id: existing.id, operation: 'UPDATE', metadata: { previous_decision: existing.decision },
+      });
+      if (auditError) console.error('Failed to audit BSB source re-import');
+    }
     return NextResponse.json({ data }, { status: existing ? 200 : 201 });
   } catch {
     // The service account can only read Docs explicitly shared with it; sharing is the import opt-in.
@@ -95,15 +107,19 @@ export async function PATCH(request: NextRequest) {
     acl_checked_at: new Date().toISOString(),
   };
   if (!isPublishable(candidate)) return NextResponse.json({ error: 'Complete the approval evidence and valid dates' }, { status: 400 });
-  try {
-    const current = await readExactDoc(row.drive_file_id);
-    if (!isSameInstant(current.modifiedAt, row.source_modified_at)) throw new Error('Source changed since import');
-    for (const email of principals) {
-      if (!(await hasCurrentDirectAccess(row.drive_file_id, email))) throw new Error('Reader ACL unavailable');
-    }
-  } catch {
-    return NextResponse.json({ error: 'Current source or direct reader ACL could not be verified' }, { status: 409 });
-  }
+  // Admin-only route: say which live check failed so the admin can fix it. Every failure still blocks approval.
+  const conflict = (message: string) => NextResponse.json({ error: message }, { status: 409 });
+  let version: string;
+  try { version = await readDocVersion(row.drive_file_id); }
+  catch { return conflict('The BSB service account can no longer open this Google Doc. Check it is not deleted and is still shared with the service account.'); }
+  if (!isSameInstant(version, row.source_modified_at))
+    return conflict('The Google Doc changed after it was imported. Import the same link again to refresh the draft, then approve.');
+  let readers: Set<string>;
+  try { readers = await listDirectUserEmails(row.drive_file_id); }
+  catch { return conflict('The BSB service account cannot read this Doc\'s sharing list. Share the Doc with the service account as Editor, then approve again.'); }
+  const missing = principals.filter((email) => !readers.has(email));
+  if (missing.length > 0)
+    return conflict(`These readers need their own direct access to the Google Doc (link, domain or group sharing does not count): ${missing.join(', ')}`);
   const { error: updateError } = await admin.from('bsb_okf_sources').update({
     ...candidate, reviewer_id: user.id, decision: 'approved', decided_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),

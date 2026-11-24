@@ -52,7 +52,7 @@ export function BsbApprovalRegister() {
       await refresh();
       setSelected(null); setRevokeId(null); setRevokeReason(''); setForm({});
       if (method === 'POST') setDocSource('');
-      setMessage(method === 'POST' ? 'Private draft imported.' : 'Decision saved.');
+      setMessage(method === 'POST' ? 'Private draft imported. Review and approve it to publish.' : 'Decision saved.');
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Request failed'); }
     finally { setPending(false); }
   }
@@ -70,6 +70,7 @@ export function BsbApprovalRegister() {
       <div><h2 className="text-base font-semibold">BSB Approval Register</h2>
         <p className="text-sm text-muted-foreground">Each Google Doc is approved separately. Share the Doc with the BSB service account as Editor (needed to verify readers), import it, then review its passages, readers, and retention.</p></div>
     </div>
+    <p className="mt-2 text-xs text-muted-foreground">If a Doc is edited, re-import it. A re-imported Doc returns to draft and stops answering until it is approved again.</p>
     <form className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end"
       onSubmit={(event) => { event.preventDefault(); void act('POST', { source: docSource }); }}>
       <div className="min-w-0 flex-1 space-y-1"><Label htmlFor="bsb-doc-source">Google Doc link or file ID</Label>
@@ -99,6 +100,9 @@ export function BsbApprovalRegister() {
               onClick={() => { setForm({}); setSelected(selected === row.id ? null : row.id); }}>Review</Button>}
             {row.decision === 'approved' && <Button type="button" variant="destructive" size="xs"
               disabled={pending} onClick={() => setRevokeId(row.id)}>Revoke</Button>}
+            <Button type="button" variant="outline" size="xs" disabled={pending}
+              aria-label={`Re-import ${row.title}`}
+              onClick={() => void act('POST', { source: row.drive_file_id })}>Re-import</Button>
           </TableCell>
         </TableRow>)}</TableBody>
       </Table>

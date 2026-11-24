@@ -35,13 +35,18 @@ export async function readDocVersion(fileId: string): Promise<string> {
   return data.modifiedTime;
 }
 
-// Only a direct user permission is accepted. If Google does not expose the ACL, fail closed.
-export async function hasCurrentDirectAccess(fileId: string, email: string): Promise<boolean> {
-  const drive = driveClient();
-  const permissions = await drive.permissions.list({ fileId, supportsAllDrives: true,
+// Emails with a direct user permission. Throws if Google does not expose the complete ACL
+// (e.g. the service account is only a Viewer, or the list is paginated); callers fail closed.
+export async function listDirectUserEmails(fileId: string): Promise<Set<string>> {
+  const permissions = await driveClient().permissions.list({ fileId, supportsAllDrives: true,
     fields: 'nextPageToken,permissions(type,emailAddress,role,deleted)', pageSize: 100 }, { timeout: 10_000 });
-  if (permissions.data.nextPageToken) return false;
-  return (permissions.data.permissions ?? []).some((permission) =>
-    permission.type === 'user' && !permission.deleted
-    && permission.role !== 'none' && normalizePrincipal(permission.emailAddress ?? '') === normalizePrincipal(email));
+  if (permissions.data.nextPageToken) throw new Error('Incomplete ACL');
+  return new Set((permissions.data.permissions ?? [])
+    .filter((permission) => permission.type === 'user' && !permission.deleted && permission.role !== 'none')
+    .map((permission) => normalizePrincipal(permission.emailAddress ?? '')).filter(Boolean));
+}
+
+// Only a direct user permission is accepted. Link, domain and group sharing do not count.
+export async function hasCurrentDirectAccess(fileId: string, email: string): Promise<boolean> {
+  return (await listDirectUserEmails(fileId)).has(normalizePrincipal(email));
 }
