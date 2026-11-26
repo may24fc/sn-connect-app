@@ -46,6 +46,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **BSB source privacy** — The approval register lists source metadata without note text. Draft passages load only after the reviewing admin's current direct Google Doc permission and source version are checked. Import and approval also require that admin's direct Doc access.
+
 - **Compact filter toolbar** — The PA Task Tracker, expense ledger, expense analytics, and the four performance review screens (Monthly Self-Evaluation, Quarterly Temperature Check, Monthly Call Feedback, 5% Reflection) replace labelled filter cards with a single toolbar: filters read as their name when unset and `Name: Value` (highlighted) when set, with a Clear button only while filters are active. Shared controls live in `components/data-display/FilterControls.tsx`. Expense Export CSV / XLSX / Monthly Report are now one Export menu; expense analytics Week/Month is a toggle
 - **PA Task Tracker quick add** — The 8-field Quick Add card is now a one-line composer (title, assignee, due date; Enter to add) with status and priority defaulted and Date Given set to today's local date. "Add with full details" opens the full form, managers get an "Add person…" shortcut to Grant Access in the assignee list, and the header "New Task" button was removed
 - **Tour system** — Replaced TourGuideJS dependency with a custom modal-based onboarding tour system (no external dependency)
