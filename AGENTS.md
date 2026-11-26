@@ -102,6 +102,10 @@ Measured numbers are required when the task's goal is to improve latency, load t
 - Do not describe a change as faster without numbers. If measurement is impossible, record why and the exact command to run later; the task stays `Deferred` or `Blocked`, not `Done`.
 - Measure against local services only, unless the user explicitly requests production measurement.
 
+## Existing UI Components
+
+Before any UI change, read the installed `reuse-existing-ui` skill (`$CODEX_HOME/skills/reuse-existing-ui/SKILL.md`, or `~/.codex/skills/reuse-existing-ui/SKILL.md` when `CODEX_HOME` is unset). Inspect `packages/ui/src/index.ts`, relevant shared components, and comparable screens. Reuse existing controls and patterns where they fit instead of rebuilding them with raw HTML and ad hoc classes. Apply this to new screens and edits of existing screens.
+
 ## UI/UX Reference Review
 
 For a UI/UX audit, plan, or material redesign of a user-facing screen or workflow, read and use `.github/skills/ui-ux-reference-review/SKILL.md`. Small copy, spacing, color, or localized component changes do not require the reference review. Ground recommendations in the current app and verified, relevant product references; keep review-only requests read-only. This complements, and does not replace, the Playwright verification rules below.
