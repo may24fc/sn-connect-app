@@ -5,7 +5,7 @@ test.beforeEach(async ({ page }) => {
     id: 'admin-1', name: 'Admin', email: 'admin@test.com', role: 'admin',
     accountKind: 'workforce', isOnboardingComplete: true,
   })));
-  await page.route('**/api/bsb/sources', async (route) => {
+  await page.route('**/api/bsb/sources**', async (route) => {
     if (route.request().method() === 'GET') return route.fulfill({ json: { data: [] } });
     return route.fulfill({ status: 502, json: { error: 'Google Doc cannot be imported. Share it with the BSB service account as Editor and try again.' } });
   });
@@ -59,31 +59,41 @@ test('non-admin chatbot does not offer Business Second Brain mode', async ({ pag
 });
 
 test('draft review sends Never retention and the named reader for server confirmation', async ({ page }, testInfo) => {
-  await page.route('**/api/bsb/sources', async (route) => {
+  test.setTimeout(120_000); // Cold local dev builds can delay unrelated page resources.
+  const pageErrors: string[] = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  await page.route('**/api/bsb/sources**', async (route) => {
+    if (route.request().method() === 'GET' && new URL(route.request().url()).searchParams.has('id'))
+      return route.fulfill({ json: { data: { id: '11111111-1111-4111-8111-111111111111',
+        facts: [{ id: 'F1', exactQuote: 'A source passage for review.' }] } } });
     if (route.request().method() === 'GET') return route.fulfill({ json: { data: [{
       id: '11111111-1111-4111-8111-111111111111', title: 'Configured meeting note', drive_file_id: 'configured-source',
       decision: 'draft', classification: null, source_owner_email: 'owner@example.com', retention_rule: 'pending',
       retention_until: null, organizer_approval_ref: null, business_approval_ref: null, notice_ref: null,
       independent_review_ref: null, acl_checked_at: null, acl_evidence_ref: null, reviewer_id: null,
       expires_at: null, revoked_at: null, allowed_principals: [],
-      okf: { facts: [{ id: 'F1', exactQuote: 'A source passage for review.' }] },
     }] } });
     return route.fulfill({ status: 400, json: { error: 'Complete the source details' } });
   });
-  await page.goto('/admin/ai-knowledge');
+  await page.goto('/admin/ai-knowledge', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('region', { name: 'BSB Approval Register' })).toBeVisible({ timeout: 60_000 });
   await expect.poll(async () => {
     const managerBox = await page.getByTestId('ai-knowledge-manager').boundingBox();
     const registerBox = await page.getByRole('region', { name: 'BSB Approval Register' }).boundingBox();
     return Boolean(managerBox && registerBox && registerBox.y >= managerBox.y + managerBox.height);
-  }).toBe(true);
+  }, { timeout: 30_000 }).toBe(true);
   await expect(page.getByRole('button', { name: 'Re-import Configured meeting note' })).toBeVisible();
   await page.getByRole('button', { name: 'Review' }).click();
+  await expect(page.getByText('Read 1 imported passages')).toBeVisible();
   await page.getByRole('combobox', { name: 'Retention rule' }).click();
   await page.getByRole('option', { name: 'Never' }).click();
   await expect(page.getByLabel('Retention until (ISO date/time, if applicable)')).toHaveCount(0);
   await page.getByLabel('Classification').fill('Recording');
   await page.getByLabel('Approved reader emails (one per line)').fill('cefjumaoas29@gmail.com');
-  await page.screenshot({ path: testInfo.outputPath('bsb-review-form.png'), fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath('bsb-review-form-1440.png'), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 900 });
+  await expect(page.getByRole('button', { name: 'Approve with OpenAI' })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('bsb-review-form-390.png'), fullPage: true });
   const requestPromise = page.waitForRequest((request) => request.url().endsWith('/api/bsb/sources') && request.method() === 'PATCH');
   await page.getByRole('button', { name: 'Approve with OpenAI' }).click();
   const payload = (await requestPromise).postDataJSON();
@@ -91,4 +101,22 @@ test('draft review sends Never retention and the named reader for server confirm
     classification: 'Recording', allowedPrincipals: ['cefjumaoas29@gmail.com'] });
   await expect(page.getByRole('status').filter({ hasText: 'Complete the source details' })).toBeVisible();
   await expect(page.getByText('draft', { exact: true })).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});
+
+test('a denied draft review does not show passages or approval controls', async ({ page }, testInfo) => {
+  await page.route('**/api/bsb/sources**', async (route) => {
+    if (new URL(route.request().url()).searchParams.has('id'))
+      return route.fulfill({ status: 404, json: { error: 'Source unavailable' } });
+    return route.fulfill({ json: { data: [{ id: '11111111-1111-4111-8111-111111111111',
+      title: 'Restricted note', drive_file_id: 'configured-source', decision: 'draft',
+      retention_rule: 'pending', source_owner_email: 'owner@example.com' }] } });
+  });
+  await page.goto('/admin/ai-knowledge');
+  await page.getByRole('button', { name: 'Review' }).click();
+  await expect(page.getByRole('alert').filter({ hasText: 'Source unavailable' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Approve with OpenAI' })).toHaveCount(0);
+  await expect(page.getByText('Read 1 imported passages')).toHaveCount(0);
+  await page.getByRole('region', { name: 'BSB Approval Register' })
+    .screenshot({ path: testInfo.outputPath('bsb-review-denied.png') });
 });
