@@ -5,15 +5,16 @@ import {
   DialogTitle, Input, Label, Select, SelectContent, SelectItem, SelectTrigger,
   SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Textarea,
 } from '@hr-portal/ui';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface SourceRow {
   id: string; title: string; drive_file_id: string; decision: 'draft' | 'approved' | 'revoked';
   classification: string | null; source_owner_email: string | null; retention_rule: string; retention_until: string | null;
   acl_checked_at: string | null;
   reviewer_id: string | null; expires_at: string | null; revoked_at: string | null;
-  allowed_principals: string[]; okf: { facts: Array<{ id: string; exactQuote: string }> };
 }
+
+interface SourceDetail { id: string; facts: Array<{ id: string; exactQuote: string }> }
 
 const fields = [
   ['classification', 'Classification'], ['retentionUntil', 'Retention until (ISO date/time, if applicable)'],
@@ -29,6 +30,10 @@ export function BsbApprovalRegister() {
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
+  const [detail, setDetail] = useState<SourceDetail | null>(null);
+  const [detailPending, setDetailPending] = useState(false);
+  const [detailError, setDetailError] = useState('');
+  const reviewRequest = useRef(0);
   const [form, setForm] = useState<Record<string, string>>({});
   const [revokeId, setRevokeId] = useState<string | null>(null);
   const [revokeReason, setRevokeReason] = useState('');
@@ -50,7 +55,8 @@ export function BsbApprovalRegister() {
       const result = await response.json() as { error?: string };
       if (!response.ok) throw new Error(result.error ?? 'Request failed');
       await refresh();
-      setSelected(null); setRevokeId(null); setRevokeReason(''); setForm({});
+      reviewRequest.current += 1;
+      setSelected(null); setDetail(null); setRevokeId(null); setRevokeReason(''); setForm({});
       if (method === 'POST') setDocSource('');
       setMessage(method === 'POST' ? 'Private draft imported. Review and approve it to publish.' : 'Decision saved.');
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Request failed'); }
@@ -63,6 +69,21 @@ export function BsbApprovalRegister() {
         key !== 'allowedPrincipals' && value.trim() !== '')),
       allowedPrincipals: (form.allowedPrincipals ?? '').split(/\r?\n/).map((email) => email.trim()).filter(Boolean),
     });
+  }
+
+  async function review(row: SourceRow) {
+    const requestId = ++reviewRequest.current;
+    if (selected === row.id) { setSelected(null); setDetail(null); setDetailPending(false); return; }
+    setSelected(row.id); setDetail(null); setDetailError(''); setDetailPending(true); setForm({});
+    try {
+      const response = await fetch(`/api/bsb/sources?id=${encodeURIComponent(row.id)}`, { cache: 'no-store' });
+      const result = await response.json() as { data?: SourceDetail; error?: string };
+      if (!response.ok || !result.data) throw new Error(result.error ?? 'Source review is unavailable');
+      if (requestId === reviewRequest.current) setDetail(result.data);
+    } catch (error) {
+      if (requestId === reviewRequest.current)
+        setDetailError(error instanceof Error ? error.message : 'Source review is unavailable');
+    } finally { if (requestId === reviewRequest.current) setDetailPending(false); }
   }
 
   return <Card role="region" aria-label="BSB Approval Register" className="mt-5 p-4">
@@ -97,7 +118,7 @@ export function BsbApprovalRegister() {
           <TableCell className="p-2 align-top">{row.revoked_at ?? '—'}</TableCell>
           <TableCell className="space-y-1 p-2 align-top">
             {row.decision === 'draft' && <Button type="button" variant="link" size="xs"
-              onClick={() => { setForm({}); setSelected(selected === row.id ? null : row.id); }}>Review</Button>}
+              onClick={() => void review(row)}>Review</Button>}
             {row.decision === 'approved' && <Button type="button" variant="destructive" size="xs"
               disabled={pending} onClick={() => setRevokeId(row.id)}>Revoke</Button>}
             <Button type="button" variant="outline" size="xs" disabled={pending}
@@ -112,8 +133,11 @@ export function BsbApprovalRegister() {
     {rows.filter((row) => row.id === selected).map((row) => <Card key={row.id} className="mt-4 p-3">
       <h3 className="font-medium">Review source passages and access</h3>
       <p className="text-xs text-muted-foreground">Source owner: {row.source_owner_email ?? 'Not available'}. The current Google ACL is checked again at approval and every chat request.</p>
-      <details className="my-3 max-h-64 overflow-auto text-sm"><summary className="cursor-pointer">Read {row.okf.facts.length} imported passages</summary>
-        {row.okf.facts.map((fact) => <p key={fact.id} className="my-2 whitespace-pre-wrap border-b pb-2"><strong>{fact.id}</strong> {fact.exactQuote}</p>)}
+      {detailPending && !detail && <p role="status" className="mt-3 text-sm">Checking Google Doc access...</p>}
+      {detailError && <p role="alert" className="mt-3 text-sm">{detailError}</p>}
+      {detail?.id === row.id && <>
+      <details className="my-3 max-h-64 overflow-auto text-sm"><summary className="cursor-pointer">Read {detail.facts.length} imported passages</summary>
+        {detail.facts.map((fact) => <p key={fact.id} className="my-2 whitespace-pre-wrap border-b pb-2"><strong>{fact.id}</strong> {fact.exactQuote}</p>)}
       </details>
       <div className="grid gap-3 md:grid-cols-2">
         <div className="space-y-1"><Label htmlFor="bsb-retention-rule">Retention rule</Label>
@@ -136,6 +160,7 @@ export function BsbApprovalRegister() {
       <Button type="button" size="sm" className="mt-3" disabled={pending} onClick={() => approve(row.id)}>
         Approve with OpenAI
       </Button>
+      </>}
     </Card>)}
 
     <Dialog open={revokeId !== null} onOpenChange={(open) => { if (!open) { setRevokeId(null); setRevokeReason(''); } }}>
