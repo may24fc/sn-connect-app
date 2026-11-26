@@ -9,11 +9,12 @@ vi.mock('@/lib/bsb/drive', () => ({
   readExactDoc: vi.fn(),
   readDocVersion: vi.fn(),
   listDirectUserEmails: vi.fn(),
+  hasCurrentDirectAccess: vi.fn(),
 }));
 
-import { PATCH, POST } from '@/app/api/bsb/sources/route';
+import { GET, PATCH, POST } from '@/app/api/bsb/sources/route';
 import { getAdminClient, getAuthedSupabase } from '@/app/api/ai/_lib';
-import { listDirectUserEmails, readDocVersion, readExactDoc } from '@/lib/bsb/drive';
+import { hasCurrentDirectAccess, listDirectUserEmails, readDocVersion, readExactDoc } from '@/lib/bsb/drive';
 import { parseOkfV02 } from '@/lib/bsb/okf';
 import type { NextRequest } from 'next/server';
 
@@ -49,13 +50,50 @@ describe('/api/bsb/sources approval live checks', () => {
     vi.clearAllMocks();
     vi.mocked(getAuthedSupabase).mockResolvedValue({
       supabase: { from: vi.fn(() => builder({ data: { status: 'active' }, error: null })) },
-      user: { id: 'admin-1' }, role: 'admin', error: null,
+      user: { id: 'admin-1', email: 'admin@example.com', email_confirmed_at: '2026-11-24T00:00:00Z' }, role: 'admin', error: null,
     } as unknown as Awaited<ReturnType<typeof getAuthedSupabase>>);
     vi.mocked(getAdminClient).mockReturnValue({
       from: vi.fn(() => builder({ data: draft, error: null })),
     } as unknown as ReturnType<typeof getAdminClient>);
     vi.mocked(readDocVersion).mockResolvedValue('2026-11-24T02:01:16.986Z');
-    vi.mocked(listDirectUserEmails).mockResolvedValue(new Set(['reader@example.com', 'owner@example.com']));
+    vi.mocked(listDirectUserEmails).mockResolvedValue(new Set(['reader@example.com', 'owner@example.com', 'admin@example.com']));
+    vi.mocked(hasCurrentDirectAccess).mockResolvedValue(true);
+  });
+
+  it('lists metadata without sending the verbatim note to an admin', async () => {
+    const select = vi.fn(() => ({ order: vi.fn(() => ({ limit: vi.fn().mockResolvedValue({
+      data: [{ id: ROW_ID, title: 'Meeting note', decision: 'draft' }], error: null,
+    }) })) }));
+    vi.mocked(getAdminClient).mockReturnValue({ from: vi.fn(() => ({ select })) } as unknown as ReturnType<typeof getAdminClient>);
+    const response = await GET(new Request('http://localhost/api/bsb/sources') as unknown as NextRequest);
+    expect(response.status).toBe(200);
+    expect(select).toHaveBeenCalledWith('id,title,drive_file_id,decision,classification,source_owner_email,retention_rule,retention_until,acl_checked_at,reviewer_id,expires_at,revoked_at');
+    expect(await response.text()).not.toContain(draft.okf.sourceText);
+  });
+
+  it('does not return draft passages when the admin lacks direct Doc access', async () => {
+    vi.mocked(hasCurrentDirectAccess).mockResolvedValue(false);
+    const response = await GET(new Request(`http://localhost/api/bsb/sources?id=${ROW_ID}`) as unknown as NextRequest);
+    expect(response.status).toBe(404);
+    expect(await response.text()).not.toContain(draft.okf.facts[0].exactQuote);
+    expect(readDocVersion).not.toHaveBeenCalled();
+  });
+
+  it('returns only passages to an admin with current direct access and an unchanged Doc', async () => {
+    const response = await GET(new Request(`http://localhost/api/bsb/sources?id=${ROW_ID}`) as unknown as NextRequest);
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.data.facts).toEqual(draft.okf.facts);
+    expect(body.data.sourceText).toBeUndefined();
+  });
+
+  it('blocks import before export when the admin lacks direct Doc access', async () => {
+    vi.mocked(hasCurrentDirectAccess).mockResolvedValue(false);
+    const response = await POST(new Request('http://localhost/api/bsb/sources', { method: 'POST',
+      body: JSON.stringify({ source: 'https://docs.google.com/document/d/1AbCdEfGhIjKlMnOpQrStUvWxYz_0123456789-xy/edit' }),
+    }) as unknown as NextRequest);
+    expect(response.status).toBe(403);
+    expect(readExactDoc).not.toHaveBeenCalled();
   });
 
   it('approves when the Doc is unchanged and every reader has direct access', async () => {
@@ -68,6 +106,13 @@ describe('/api/bsb/sources approval live checks', () => {
     const response = await approve(['reader@example.com', 'Link.Only@Example.com']);
     expect(response.status).toBe(409);
     expect((await response.json()).error).toContain('link.only@example.com');
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('blocks approval when the approving admin lacks direct Doc access', async () => {
+    vi.mocked(listDirectUserEmails).mockResolvedValue(new Set(['reader@example.com']));
+    const response = await approve();
+    expect(response.status).toBe(409);
     expect(update).not.toHaveBeenCalled();
   });
 

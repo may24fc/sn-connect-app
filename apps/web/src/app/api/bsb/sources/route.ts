@@ -1,6 +1,6 @@
 import { getAdminClient, getAuthedSupabase, isAiAdmin } from '@/app/api/ai/_lib';
-import { listDirectUserEmails, readDocVersion, readExactDoc } from '@/lib/bsb/drive';
-import { isPublishable, isSameInstant, normalizePrincipal, parseGoogleDocId, parseOkfV02 } from '@/lib/bsb/okf';
+import { hasCurrentDirectAccess, listDirectUserEmails, readDocVersion, readExactDoc } from '@/lib/bsb/drive';
+import { isOkfV02, isPublishable, isSameInstant, normalizePrincipal, parseGoogleDocId, parseOkfV02 } from '@/lib/bsb/okf';
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 
@@ -24,15 +24,35 @@ const reviewSchema = z.object({
 
 async function adminIdentity() {
   const auth = await getAuthedSupabase();
-  if (auth.error || !auth.user || !isAiAdmin(auth.role)) return null;
+  if (auth.error || !auth.user?.email || !auth.user.email_confirmed_at || !isAiAdmin(auth.role)) return null;
   const { data } = await auth.supabase.from('users').select('status').eq('id', auth.user.id).maybeSingle();
   return data?.status === 'active' ? auth.user : null;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const user = await adminIdentity();
   if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  const { data, error } = await getAdminClient().from('bsb_okf_sources').select('*')
+  const id = new URL(request.url).searchParams.get('id');
+  if (id !== null) {
+    if (!z.string().uuid().safeParse(id).success) return NextResponse.json({ error: 'Invalid source' }, { status: 400 });
+    const { data: row, error } = await getAdminClient().from('bsb_okf_sources')
+      .select('id,drive_file_id,source_modified_at,decision,okf').eq('id', id).maybeSingle();
+    if (error || !row || row.decision !== 'draft' || !isOkfV02(row.okf))
+      return NextResponse.json({ error: 'Source unavailable' }, { status: 404 });
+    try {
+      if (!(await hasCurrentDirectAccess(row.drive_file_id, user.email!)))
+        return NextResponse.json({ error: 'Source unavailable' }, { status: 404 });
+      if (!isSameInstant(await readDocVersion(row.drive_file_id), row.source_modified_at))
+        return NextResponse.json({ error: 'The Google Doc changed. Re-import it before review.' }, { status: 409 });
+    } catch {
+      return NextResponse.json({ error: 'Source unavailable' }, { status: 404 });
+    }
+    return NextResponse.json({ data: { id: row.id, facts: row.okf.facts } },
+      { headers: { 'Cache-Control': 'no-store' } });
+  }
+  // The register can show metadata to admins; raw note text is fetched only after a live ACL check.
+  const { data, error } = await getAdminClient().from('bsb_okf_sources')
+    .select('id,title,drive_file_id,decision,classification,source_owner_email,retention_rule,retention_until,acl_checked_at,reviewer_id,expires_at,revoked_at')
     .order('created_at', { ascending: false }).limit(100);
   if (error) return NextResponse.json({ error: 'Unable to load register' }, { status: 500 });
   return NextResponse.json({ data }, { headers: { 'Cache-Control': 'no-store' } });
@@ -44,6 +64,12 @@ export async function POST(request: NextRequest) {
   const parsed = importSchema.safeParse(await request.json().catch(() => null));
   const fileId = parsed.success ? parseGoogleDocId(parsed.data.source) : null;
   if (!fileId) return NextResponse.json({ error: 'Enter a Google Doc link or file ID' }, { status: 400 });
+  try {
+    if (!(await hasCurrentDirectAccess(fileId, user.email!)))
+      return NextResponse.json({ error: 'Your admin email needs direct access to this Google Doc before import.' }, { status: 403 });
+  } catch {
+    return NextResponse.json({ error: 'Unable to verify this Doc\'s sharing list. Share it with the BSB service account as Editor.' }, { status: 502 });
+  }
   const admin = getAdminClient();
   const { data: existing } = await admin.from('bsb_okf_sources').select('id,decision').eq('drive_file_id', fileId).maybeSingle();
   try {
@@ -117,6 +143,8 @@ export async function PATCH(request: NextRequest) {
   let readers: Set<string>;
   try { readers = await listDirectUserEmails(row.drive_file_id); }
   catch { return conflict('The BSB service account cannot read this Doc\'s sharing list. Share the Doc with the service account as Editor, then approve again.'); }
+  if (!readers.has(normalizePrincipal(user.email!)))
+    return conflict('Your admin email needs direct access to this Google Doc before approval.');
   const missing = principals.filter((email) => !readers.has(email));
   if (missing.length > 0)
     return conflict(`These readers need their own direct access to the Google Doc (link, domain or group sharing does not count): ${missing.join(', ')}`);
