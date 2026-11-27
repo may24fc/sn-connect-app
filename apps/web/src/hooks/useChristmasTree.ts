@@ -175,7 +175,37 @@ export function useRemoveChristmasDecoration() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       }),
+    onMutate: async (payload) => {
+      if (!('strandId' in payload)) return { previousSnapshot: null, removedLight: false };
+      const queryKey = queryKeys.christmasTree.current();
+      await queryClient.cancelQueries({ queryKey });
+      const previousSnapshot = queryClient.getQueryData<ChristmasTreeSnapshot>(queryKey);
+      const removedLight =
+        previousSnapshot?.strands.some(
+          (strand) => strand.id === payload.strandId && strand.kind === 'lights'
+        ) ?? false;
+      if (removedLight) {
+        queryClient.setQueryData<ChristmasTreeSnapshot>(queryKey, (old) =>
+          old
+            ? { ...old, strands: old.strands.filter((strand) => strand.id !== payload.strandId) }
+            : old
+        );
+        localSnapshotUpdatedAt.set(queryClient, Date.now());
+      }
+      return { previousSnapshot, removedLight };
+    },
+    onError: (_error, _payload, context) => {
+      if (context?.removedLight && context.previousSnapshot) {
+        queryClient.setQueryData(queryKeys.christmasTree.current(), context.previousSnapshot);
+        localSnapshotUpdatedAt.set(queryClient, Date.now());
+      }
+    },
     onSuccess: (data) => cacheLocalMutationSnapshot(queryClient, data),
+    onSettled: (_data, _error, _payload, context) => {
+      if (context?.removedLight) {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.christmasTree.current() });
+      }
+    },
   });
 }
 
@@ -205,7 +235,31 @@ export function useSaveChristmasStrand() {
     },
     onMutate: async (payload) => {
       const strandId = payload.strandId;
-      if (!strandId) return { strandId: null, version: 0 };
+      if (!strandId) {
+        if (payload.decoration !== 'lights')
+          return { strandId: null, version: 0, optimisticId: null, previousSnapshot: null };
+        const queryKey = queryKeys.christmasTree.current();
+        await queryClient.cancelQueries({ queryKey });
+        const previousSnapshot = queryClient.getQueryData<ChristmasTreeSnapshot>(queryKey);
+        const optimisticId = `optimistic-light-${crypto.randomUUID()}`;
+        queryClient.setQueryData<ChristmasTreeSnapshot>(queryKey, (old) =>
+          old
+            ? {
+                ...old,
+                decoration: old.decoration
+                  ? { ...old.decoration, lights_unlocked: true }
+                  : old.decoration,
+                manualDecorations: { ...old.manualDecorations, lights: true },
+                strands: [
+                  ...old.strands,
+                  { id: optimisticId, kind: 'lights', geometry: payload.geometry },
+                ],
+              }
+            : old
+        );
+        localSnapshotUpdatedAt.set(queryClient, Date.now());
+        return { strandId: null, version: 0, optimisticId, previousSnapshot };
+      }
       const version = (versions.current.get(strandId) ?? 0) + 1;
       versions.current.set(strandId, version);
       const queryKey = queryKeys.christmasTree.current();
@@ -228,9 +282,27 @@ export function useSaveChristmasStrand() {
         );
         localSnapshotUpdatedAt.set(queryClient, Date.now());
       }
-      return { strandId, version };
+      return { strandId, version, optimisticId: null, previousSnapshot: null };
     },
     onError: (_error, _payload, context) => {
+      if (context?.optimisticId) {
+        queryClient.setQueryData<ChristmasTreeSnapshot>(
+          queryKeys.christmasTree.current(),
+          (old) => {
+            if (!old) return old;
+            const strands = old.strands.filter((strand) => strand.id !== context.optimisticId);
+            return {
+              ...old,
+              strands,
+              manualDecorations:
+                context.previousSnapshot?.manualDecorations ?? old.manualDecorations,
+              decoration: context.previousSnapshot?.decoration ?? old.decoration,
+            };
+          }
+        );
+        localSnapshotUpdatedAt.set(queryClient, Date.now());
+        return;
+      }
       if (!context?.strandId || versions.current.get(context.strandId) !== context.version) return;
       const previousGeometry = confirmed.current.get(context.strandId);
       if (!previousGeometry) return;

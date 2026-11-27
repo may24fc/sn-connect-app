@@ -26,6 +26,14 @@ Christmas wish persistence respects the soft-delete uniqueness model, all wish c
 
 ## Optimizations
 
+### Immediate individual Light placement and removal
+
+- **Status:** Implemented
+- **Problem/evidence:** New Lights appeared only after the decoration PATCH and removed Lights stayed visible until DELETE returned. With a controlled 250 ms response delay, 30 browser samples after 3 warmups measured action-to-visible p50/p95 of 287.9/300.2 ms for add and 304.7/325.8 ms for remove. This made a valid tap or confirmed removal appear unresponsive.
+- **Solution:** Add a temporary bulb to the Christmas Tree cache at placement, remove a saved bulb from the cache after confirmation, and reconcile both with the server snapshot. Failed saves remove the temporary bulb; failed deletes restore the prior tree. Disable interaction with a temporary bulb and block another decoration action while its save is pending. Garland and star mutations keep their existing server-confirmed behavior.
+- **Code paths:** `apps/web/src/hooks/useChristmasTree.ts`, `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `e2e/christmas-tree-layout.spec.ts`, `docs/apps/web/architecture/optimistic-ui.md`.
+- **Validation:** Focused admin Playwright passed at 1440 px desktop and 390 px mobile, covering delayed add/delete, both 500-error rollbacks, no mobile overflow, and screenshot inspection. Biome check passed with existing complexity warnings. See the Measurements section for 30-sample before/after results. No server or network speed change is claimed.
+
 ### Individual Lights save reliability and removal flow
 
 - **Status:** Implemented
@@ -79,7 +87,7 @@ Christmas wish persistence respects the soft-delete uniqueness model, all wish c
 
 - **Status:** Implemented
 - **Problem/evidence:** Releasing a moved strand cleared its local drag geometry before the PATCH returned, briefly snapping it back to the old position. With a controlled 250 ms save delay, 30 browser samples measured release-to-stable visual p50 295.3 ms and p95 307.3 ms.
-- **Solution:** Keep the dropped geometry visible until the shared snapshot reflects it. For existing strands, update the Christmas Tree cache optimistically, serialize writes per strand to preserve drag order, and roll back to the last confirmed geometry on failure. New strand creation remains server-confirmed.
+- **Solution:** Keep the dropped geometry visible until the shared snapshot reflects it. For existing strands, update the Christmas Tree cache optimistically, serialize writes per strand to preserve drag order, and roll back to the last confirmed geometry on failure. New Garland creation remains server-confirmed; individual Light creation became optimistic on 2026-11-27.
 - **Code paths:** `apps/web/src/app/(app)/(employee)/christmas-tree/ChristmasTreeStrand.tsx`, `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `apps/web/src/hooks/useChristmasTree.ts`, `e2e/christmas-tree-layout.spec.ts`, `docs/apps/web/architecture/optimistic-ui.md`.
 - **Validation:** Web type-check passed. Final focused Playwright with an intercepted 250 ms PATCH measured 30 after samples at p50 28.4 ms and p95 41.5 ms, verified rollback after a 500 response, and checked mobile overflow. The admin/super-admin placement regression passed in the same 3/3 browser run.
 
@@ -126,6 +134,19 @@ Christmas wish persistence respects the soft-delete uniqueness model, all wish c
 
 ## Measurements
 
+### Individual Light action-to-visible, 2026-11-27
+
+- **Status:** Implemented
+- **Environment:** Baseline commit `2aba93f7`, dirty worktree before and after for the focused Playwright spec and unrelated files; Windows local machine, Next dev with mock admin auth on port 3002. The decoration API was intercepted with the same controlled 250 ms response delay for both runs. No production or staging traffic.
+- **Samples:** 30 measured add/remove pairs after 3 warmups in each run. The test also exercises a failed create and delete with 500 responses, which are excluded from the measurements. Because the target is a UI mutation, read-only `pnpm performance:latency` GET sampling would not measure the affected interaction; this browser action-to-visible measurement uses the same route, viewport, role, and delay before and after.
+
+| Metric | Before p50 | After p50 | Delta p50 | Before p95 | After p95 | Delta p95 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Add Light action to visible bulb | 287.9 ms | 42.2 ms | -245.7 ms | 300.2 ms | 48.0 ms | -252.2 ms |
+| Remove Light action to hidden bulb | 304.7 ms | 65.0 ms | -239.7 ms | 325.8 ms | 74.8 ms | -251.0 ms |
+
+The measured change is local visual response while the server request remains in progress. Both operations still reconcile or roll back after the response.
+
 ### Strand drag release, 2026-10-22
 
 - **Status:** Implemented
@@ -152,6 +173,16 @@ The measured improvement is the local visual response after release, not server 
 
 ```mermaid
 flowchart LR
+    A[Admin places or confirms removal] --> B[Update local tree immediately]
+    B --> C[Send authorized decoration request]
+    C -->|Success| D[Replace with server snapshot]
+    C -->|Failure| E[Restore prior bulb state and show error]
+    D --> F[Refetch to reconcile concurrent changes]
+    E --> F
+```
+
+```mermaid
+flowchart LR
     A[User clicks Draw] --> B[Authenticated server endpoint]
     B --> C[Event-scoped transaction advisory lock]
     C --> D{Assignments already exist?}
@@ -167,7 +198,7 @@ flowchart LR
 ```mermaid
 flowchart LR
     A[Admin drags Garland] --> B[Preview curved strand]
-    A2[Admin taps to place Light] --> B2[Round center and save 14% backing span]
+    A2[Admin taps to place Light] --> B2[Show temporary bulb and save rounded 14% backing span]
     B2 --> C[Server validates and saves a new row]
     B --> C
     C --> D[Tree snapshot and realtime refresh]
@@ -193,6 +224,8 @@ flowchart LR
 ```
 
 ## Change Log
+
+- 2026-11-27: Made individual Light creation and removal visually immediate with temporary-bulb creation, cache removal after confirmation, rollback on 500 errors, and server reconciliation. Controlled 250 ms browser measurements improved add p50/p95 from 287.9/300.2 ms to 42.2/48.0 ms and remove from 304.7/325.8 ms to 65.0/74.8 ms. Focused desktop/mobile Playwright passed; no API speed change is claimed.
 
 - 2026-11-20: Kept individual bulbs at the former strand bulb size, removed the old Lights wire renderer and synthetic Garland fallback, and added a rounded 14% backing span to avoid the strand table's minimum-span save failure. Replaced native removal confirmations with the shared dialog. Focused schema, type-check, and admin/super-admin Playwright checks passed; local database integration remains unavailable while Docker Desktop is stopped.
 

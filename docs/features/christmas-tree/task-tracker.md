@@ -10,6 +10,8 @@ Optimization record: [optimization.md](./optimization.md)
 
 ### Done
 
+- [x] Make individual Lights appear and disappear immediately - 2026-11-27; changed `apps/web/src/hooks/useChristmasTree.ts`, `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `e2e/christmas-tree-layout.spec.ts`, `docs/apps/web/architecture/optimistic-ui.md`, this tracker, and `optimization.md`. Light placement now inserts a temporary bulb immediately, confirmed removal hides the bulb immediately, and failed requests roll back. A focused admin Playwright test passed at 1440 px desktop and 390 px mobile with 30 samples plus 3 warmups, two 500-error rollback cases, screenshot inspection, and no mobile overflow. With a controlled 250 ms API delay, add action-to-visible p50/p95 changed from 287.9/300.2 ms to 42.2/48.0 ms (deltas -245.7/-252.2 ms); remove changed from 304.7/325.8 ms to 65.0/74.8 ms (deltas -239.7/-251.0 ms). Web type-check and scoped Biome check passed; Biome reported existing complexity warnings. See [optimization.md](./optimization.md).
+
 - [x] Correct individual Lights sizing, save span, and removal confirmation - 2026-11-20; changed the Christmas Tree page, Garland renderer, schema, API error mapping, focused schema/Playwright tests, and this tracker. Bulbs use the former strand bulb size with a larger drag target; new and moved Lights save rounded positions with a 14% backing span to clear the existing 12% database check. Removed the old Lights wire renderer and synthetic Garland fallback. Decoration and admin ball removal use the shared confirmation dialog with Cancel and pending state. Focused schema tests passed 10/10, web type-check passed after route type regeneration, and focused Playwright passed for admin and super-admin desktop/mobile flows; admin Cancel was also verified and the dialog screenshot inspected. Local Supabase integration was unavailable because Docker Desktop was stopped. See [optimization.md](./optimization.md).
 
 
@@ -51,6 +53,8 @@ Optimization record: [optimization.md](./optimization.md)
 ### Blocked
 
 ## Session History
+
+- 2026-11-27: Kept Garland and star mutations server-confirmed while making individual Light add/remove visually immediate with rollback and reconciliation. A controlled 250 ms browser delay showed lower action-to-visible p50/p95 for both operations; the focused admin desktop/mobile Playwright test, web type-check, and scoped Biome check passed. No production deployment or server latency improvement was claimed. The branch contains unrelated worktree files that were left untouched.
 
 - 2026-11-20: Addressed the reported Lights save failure and clarified bulb size. The exact 12% floating point span could fall below the database minimum; the new 14% rounded span passes local schema and browser payload checks. Native removal prompts were replaced with the existing dialog. Browser verification passed after prewarming the local Next server; Docker was unavailable for direct database testing. Remaining risk: a live database insert has not been retested in this session.
 
