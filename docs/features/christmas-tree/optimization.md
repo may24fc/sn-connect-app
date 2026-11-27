@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Christmas wish persistence respects the soft-delete uniqueness model, all wish categories are available through a compact tabbed editor, and the soundtrack has an explicit user control with a remembered opt-out. Admins can place multiple Garland strands and individual Lights bulbs directly on the tree; saved decorations remain visibly at their dropped position while a move is saved. The ₱500 exchange-gift draw atomically creates one private, stable, no-self assignment per current Christmas ball owner without duplicate recipients. Browser autoplay policy and the cost of loading a third-party player remain external constraints.
+Christmas wish persistence respects the soft-delete uniqueness model, all wish categories are available through a compact tabbed editor, and the soundtrack has an explicit user control with a remembered opt-out. Admins can place multiple Garland strands and individual Lights bulbs directly on the tree; saved decorations remain visibly at their dropped position while a move is saved. The ₱1,000 exchange-gift draw atomically creates one private, stable, no-self assignment per current Christmas ball owner without duplicate recipients. Browser autoplay policy and the cost of loading a third-party player remain external constraints.
 
 ## Relevant Code Map
 
@@ -20,11 +20,21 @@ Christmas wish persistence respects the soft-delete uniqueness model, all wish c
 - [Exchange gift API tests](../../../tests/api/christmas-tree-exchange-gift.test.ts) - RPC delegation, conflict, and audit coverage.
 - [Exchange gift SQL test](../../../tests/sql/christmas-exchange-gift-local.sql) - no-self/no-duplicate invariants, stable repeat reveal, and finalized-roster behavior.
 - [Strand migration](../../../supabase/migrations/20261022000002_add_christmas_tree_strand_geometry.sql) - independent rows per Garland or Lights strand.
+- [Point Lights migration](../../../supabase/migrations/20261127000001_christmas_lights_as_points.sql) - retains the width constraint for Garland while allowing a Light at one point.
+- [Point Lights SQL check](../../../tests/sql/christmas-tree-lights-as-points-local.sql) - rollback-only local insert and constraint check.
 - [Always-available wish migration](../../../supabase/migrations/20261021000001_remove_christmas_wish_windows.sql) - removes month-based write and visibility restrictions while retaining event safeguards.
 - [Christmas Tree schema tests](../../../tests/schemas/christmas-tree.test.ts) - link policy, wish payload validation, and bulb span regression coverage.
 - [Task tracker](./task-tracker.md) - delivery status and validation history.
 
 ## Optimizations
+
+### Remove the invisible Light span constraint
+
+- **Status:** Implemented.
+- **Problem/evidence:** Individual bulbs still saved a hidden 14% strand. The shared validation required both invisible endpoints on the green branches, rejecting a bulb that was visibly inside the tree near an edge. The UI then showed a Garland-specific “attach both ends” error while Lights placement remained selected.
+- **Solution:** Save a Light as one point in both coordinate pairs. Validation now checks that point against the green tree; the database's 12% span constraint applies only to Garland. Existing saved Lights keep rendering at their midpoint and can be moved to the new point format. Light pointer coordinates are read without Garland's branch clamping, so an outside click shows the light-specific placement message. The exchange gift budget value is also updated at the snapshot source to ₱1,000 and rendered with a thousands separator.
+- **Code paths:** `apps/web/src/lib/schemas/christmas-tree.schema.ts`, `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `apps/web/src/app/(app)/(employee)/christmas-tree/ChristmasTreeStrand.tsx`, `apps/web/src/app/api/christmas-tree/_lib.ts`, `supabase/migrations/20261127000001_christmas_lights_as_points.sql`, `tests/schemas/christmas-tree.test.ts`, `tests/sql/christmas-tree-lights-as-points-local.sql`, `e2e/christmas-tree-layout.spec.ts`.
+- **Validation:** Local migration applied from an isolated worktree; rollback-only SQL confirmed a point Light inserts and a zero-width Garland fails. Focused schema/admin API tests passed 22/22; web type-check and Biome check passed with existing complexity warnings. Focused admin Playwright passed at 1440 px desktop and 390 px mobile, including near-edge placement, a Light-specific invalid-placement message, the ₱1,000 label, optimistic rollback, no mobile overflow, and inspected screenshots. The production dry run listed only `20261127000001`; it was applied to project `tccdupkjmwwxcvpqnpeb`, linked history matched, and the follow-up dry run was clean. Code commit `5a5d50fd` deployed successfully to Control Hub on Vercel. No new server latency improvement is claimed.
 
 ### Immediate individual Light placement and removal
 
@@ -198,7 +208,7 @@ flowchart LR
 ```mermaid
 flowchart LR
     A[Admin drags Garland] --> B[Preview curved strand]
-    A2[Admin taps to place Light] --> B2[Show temporary bulb and save rounded 14% backing span]
+    A2[Admin taps to place Light] --> B2[Show temporary bulb and save one tree point]
     B2 --> C[Server validates and saves a new row]
     B --> C
     C --> D[Tree snapshot and realtime refresh]
@@ -224,6 +234,8 @@ flowchart LR
 ```
 
 ## Change Log
+
+- 2026-11-27: Removed the hidden backing span from newly placed Lights, narrowed the database span rule to Garland, and raised the displayed exchange gift budget to ₱1,000. Local and production migration validation passed; focused schema/API tests, type-check, Biome, and desktop/mobile Playwright passed. Vercel deployed code commit `5a5d50fd` successfully.
 
 - 2026-11-27: Made individual Light creation and removal visually immediate with temporary-bulb creation, cache removal after confirmation, rollback on 500 errors, and server reconciliation. Controlled 250 ms browser measurements improved add p50/p95 from 287.9/300.2 ms to 42.2/48.0 ms and remove from 304.7/325.8 ms to 65.0/74.8 ms. Focused desktop/mobile Playwright passed; no API speed change is claimed.
 
