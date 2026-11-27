@@ -1050,6 +1050,183 @@ test.describe('Christmas Tree layout stability', () => {
     });
   }
 
+  test('light add and removal respond before delayed saves and roll back failures', async ({
+    page,
+  }, testInfo) => {
+    test.setTimeout(180_000);
+    const strands: Array<{
+      id: string;
+      kind: 'lights';
+      geometry: { startX: number; startY: number; endX: number; endY: number };
+    }> = [];
+    let nextId = 1;
+    let failNext: 'create' | 'delete' | null = null;
+    const snapshot = () => ({
+      ...emptySnapshot,
+      decoration: { ...decoration, lights_unlocked: strands.length > 0 },
+      manualDecorations: { garland: false, lights: strands.length > 0, star: false },
+      strands: [...strands],
+      permissions: { canManage: true },
+    });
+    const consoleErrors: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error') consoleErrors.push(message.text());
+    });
+    await useMockManager(page, 'admin');
+    await page.route('**/api/christmas-tree/current', (route) =>
+      route.fulfill({ json: { data: snapshot() } })
+    );
+    await page.route('**/api/christmas-tree/decorations', async (route) => {
+      const payload = route.request().postDataJSON() as {
+        strandId?: string;
+        geometry?: (typeof strands)[number]['geometry'];
+      };
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      if (
+        (route.request().method() === 'DELETE' && failNext === 'delete') ||
+        (route.request().method() === 'PATCH' && failNext === 'create')
+      ) {
+        failNext = null;
+        await route.fulfill({ status: 500, json: { error: 'Light save denied for test' } });
+        return;
+      }
+      if (route.request().method() === 'DELETE') {
+        const index = strands.findIndex((strand) => strand.id === payload.strandId);
+        if (index >= 0) strands.splice(index, 1);
+      } else if (payload.geometry) {
+        strands.push({
+          id: `11111111-1111-4111-8111-${String(nextId++).padStart(12, '0')}`,
+          kind: 'lights',
+          geometry: payload.geometry,
+        });
+      }
+      await route.fulfill({ json: { data: snapshot() } });
+    });
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto('/christmas-tree');
+    await expect(page.getByRole('heading', { name: 'Tree decorations' })).toBeVisible();
+    const samples = { create: [] as number[], delete: [] as number[] };
+    const armVisualChange = async (eventType: 'pointerup' | 'click', targetCount: number) => {
+      await page.evaluate(
+        ({ eventType, targetCount }) => {
+          const scopedWindow = window as Window & { lightVisualReady?: Promise<number> };
+          scopedWindow.lightVisualReady = new Promise<number>((resolve) => {
+            document.addEventListener(
+              eventType,
+              () => {
+                const startedAt = performance.now();
+                const check = () => {
+                  if (
+                    document.querySelectorAll('[data-testid="christmas-tree-light"]').length ===
+                    targetCount
+                  ) {
+                    resolve(performance.now() - startedAt);
+                  } else requestAnimationFrame(check);
+                };
+                requestAnimationFrame(check);
+              },
+              { capture: true, once: true }
+            );
+          });
+        },
+        { eventType, targetCount }
+      );
+    };
+    const visualMs = () =>
+      page.evaluate(
+        () => (window as Window & { lightVisualReady: Promise<number> }).lightVisualReady
+      );
+    for (let sample = 0; sample < 33; sample += 1) {
+      await page.getByRole('button', { name: 'Add Lights' }).click();
+      const box = await page.getByTestId('christmas-tree-drop-zone').boundingBox();
+      if (!box) throw new Error('Tree drop zone is not measurable');
+      await armVisualChange('pointerup', 1);
+      const created = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/christmas-tree/decorations') &&
+          response.request().method() === 'PATCH'
+      );
+      await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.55);
+      const createMs = await visualMs();
+      await created;
+      await expect(page.getByTestId('christmas-tree-light')).toHaveCount(1);
+      await page.getByRole('button', { name: 'Remove Lights 1' }).click();
+      const dialog = page.getByRole('dialog', { name: 'Remove Lights 1?' });
+      await armVisualChange('click', 0);
+      const deleted = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/christmas-tree/decorations') &&
+          response.request().method() === 'DELETE'
+      );
+      await dialog.getByRole('button', { name: 'Remove decoration' }).click();
+      const deleteMs = await visualMs();
+      await deleted;
+      await expect(page.getByTestId('christmas-tree-light')).toHaveCount(0);
+      if (sample >= 3) {
+        samples.create.push(createMs);
+        samples.delete.push(deleteMs);
+      }
+    }
+    for (const [operation, values] of Object.entries(samples)) {
+      const sorted = [...values].sort((a, b) => a - b);
+      const p50 = sorted[Math.ceil(sorted.length * 0.5) - 1];
+      const p95 = sorted[Math.ceil(sorted.length * 0.95) - 1];
+      console.info(
+        `Light ${operation} action-to-visible: n=${values.length}, p50=${p50?.toFixed(1)}ms, p95=${p95?.toFixed(1)}ms`
+      );
+      if (!process.env.LIGHT_VISUAL_BASELINE) expect(p95).toBeLessThan(100);
+    }
+    await page.getByRole('button', { name: 'Add Lights' }).click();
+    const box = await page.getByTestId('christmas-tree-drop-zone').boundingBox();
+    if (!box) throw new Error('Tree drop zone is not measurable');
+    failNext = 'create';
+    const failedCreate = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/christmas-tree/decorations') &&
+        response.request().method() === 'PATCH'
+    );
+    await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.55);
+    await expect(page.getByTestId('christmas-tree-light')).toHaveCount(1);
+    expect((await failedCreate).status()).toBe(500);
+    await expect(page.getByTestId('christmas-tree-light')).toHaveCount(0);
+    await expect(page.getByText('Light save denied for test')).toBeVisible();
+    await page.getByRole('button', { name: 'Add Lights' }).click();
+    await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.55);
+    await expect(page.getByTestId('christmas-tree-light')).toHaveCount(1);
+    failNext = 'delete';
+    await page.getByRole('button', { name: 'Remove Lights 1' }).click();
+    const failedDelete = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/christmas-tree/decorations') &&
+        response.request().method() === 'DELETE'
+    );
+    await page
+      .getByRole('dialog', { name: 'Remove Lights 1?' })
+      .getByRole('button', { name: 'Remove decoration' })
+      .click();
+    await expect(page.getByTestId('christmas-tree-light')).toHaveCount(0);
+    expect((await failedDelete).status()).toBe(500);
+    await expect(page.getByTestId('christmas-tree-light')).toHaveCount(1);
+    await page.screenshot({
+      path: testInfo.outputPath('light-optimistic-desktop.png'),
+      fullPage: true,
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.getByTestId('christmas-tree-light')).toHaveCount(1);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth
+      )
+    ).toBe(false);
+    await page.screenshot({
+      path: testInfo.outputPath('light-optimistic-mobile.png'),
+      fullPage: true,
+    });
+    expect(
+      consoleErrors.filter((error) => !error.includes('server responded with a status of 500'))
+    ).toEqual([]);
+  });
+
   test('strand stays at its dropped position while save is pending', async ({ page }) => {
     test.setTimeout(120_000);
     const strand = {

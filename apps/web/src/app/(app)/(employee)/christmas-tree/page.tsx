@@ -241,10 +241,13 @@ export default function ChristmasTreePage() {
     geometry: ChristmasStrandGeometry,
     strandId?: string
   ) => {
+    if (decoration === 'lights' && (saveStrand.isPending || removeDecoration.isPending))
+      return false;
     setPlacementMessage(null);
+    if (decoration === 'lights' && !strandId) setStrandPlacement(null);
     try {
       await saveStrand.mutateAsync({ decoration, geometry, strandId });
-      if (!strandId) setStrandPlacement(null);
+      if (!strandId && decoration !== 'lights') setStrandPlacement(null);
       return true;
     } catch {
       return false;
@@ -270,7 +273,13 @@ export default function ChristmasTreePage() {
     if (!pendingRemoval) return;
     try {
       if (pendingRemoval.kind === 'decoration') {
-        await removeDecoration.mutateAsync(pendingRemoval.target);
+        const target = pendingRemoval.target;
+        const isLight =
+          'strandId' in target &&
+          data.strands.some((strand) => strand.id === target.strandId && strand.kind === 'lights');
+        const removal = removeDecoration.mutateAsync(target);
+        if (isLight) setPendingRemoval(null);
+        await removal;
       } else {
         await adminDeleteOrnament.mutateAsync(pendingRemoval.ornamentId);
         setSelectedOrnament(null);
@@ -373,7 +382,9 @@ export default function ChristmasTreePage() {
             decoration={data.decoration}
             manualDecorations={data.manualDecorations}
             strands={data.strands}
-            isPending={enableDecoration.isPending || removeDecoration.isPending}
+            isPending={
+              enableDecoration.isPending || removeDecoration.isPending || saveStrand.isPending
+            }
             onEnable={(decoration) =>
               decoration === 'star'
                 ? enableDecoration.mutate({ decoration })
@@ -426,7 +437,9 @@ export default function ChristmasTreePage() {
                 decoration={data.decoration}
                 manualDecorations={data.manualDecorations}
                 strands={data.strands}
-                isPending={enableDecoration.isPending || removeDecoration.isPending}
+                isPending={
+                  enableDecoration.isPending || removeDecoration.isPending || saveStrand.isPending
+                }
                 onEnable={(decoration) =>
                   decoration === 'star'
                     ? enableDecoration.mutate({ decoration })
@@ -1181,11 +1194,16 @@ function ChristmasTreeCanvas({
               aria-label={`Move Christmas light ${index + 1}`}
               className="absolute z-[6] grid h-7 w-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full touch-none disabled:cursor-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
               data-testid="christmas-tree-light"
-              disabled={!canEditStrands || Boolean(strandPlacement)}
+              disabled={
+                !canEditStrands ||
+                Boolean(strandPlacement) ||
+                strand.id.startsWith('optimistic-light-')
+              }
               key={strand.id}
               onClick={(event) => event.stopPropagation()}
               onPointerDown={(event) => {
-                if (!canEditStrands || strandPlacement) return;
+                if (!canEditStrands || strandPlacement || strand.id.startsWith('optimistic-light-'))
+                  return;
                 event.stopPropagation();
                 event.currentTarget.setPointerCapture(event.pointerId);
                 const x = (strand.geometry.startX + strand.geometry.endX) / 2;
