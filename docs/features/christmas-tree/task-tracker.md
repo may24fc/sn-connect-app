@@ -2,13 +2,15 @@
 
 ## Current Status
 
-The Christmas Tree is implemented with ornament placement, always-available tabbed wish creation and editing, optional personal-wish links, realtime updates, responsive presentation, user-controlled seasonal music, locally validated admin/super-admin decoration controls, and a race-safe ₱500 exchange-gift draw for current Christmas ball owners.
+The Christmas Tree is implemented with ornament placement, always-available tabbed wish creation and editing, optional personal-wish links, realtime updates, responsive presentation, user-controlled seasonal music, locally validated admin/super-admin decoration controls, and a race-safe ₱1,000 exchange-gift draw for current Christmas ball owners.
 
 Optimization record: [optimization.md](./optimization.md)
 
 ## Tasks
 
 ### Done
+
+- [x] Replace the legacy Light strand span and raise the exchange gift budget - 2026-11-27; changed `apps/web/src/lib/schemas/christmas-tree.schema.ts`, `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `ChristmasTreeStrand.tsx`, `apps/web/src/app/api/christmas-tree/_lib.ts`, migration `supabase/migrations/20261127000001_christmas_lights_as_points.sql`, focused schema/SQL/Playwright tests, this tracker, and `optimization.md`. Lights now save as one point, while Garland retains its 12% span rule; invalid Light placement shows a Light-specific message, and the exchange gift budget displays ₱1,000. Local migration and rollback-only SQL validation passed; the production dry run listed only this migration, it applied to project `tccdupkjmwwxcvpqnpeb`, linked history matched, and the follow-up dry run was clean. Focused schema/admin API tests passed 22/22, web type-check and scoped Biome check passed, and focused admin Playwright passed at 1440 px desktop and 390 px mobile with screenshots inspected, near-edge placement, invalid placement wording, and optimistic rollback. Code commit `5a5d50fd` deployed successfully to Control Hub via Vercel. See [optimization.md](./optimization.md).
 
 - [x] Make individual Lights appear and disappear immediately - 2026-11-27; changed `apps/web/src/hooks/useChristmasTree.ts`, `apps/web/src/app/(app)/(employee)/christmas-tree/page.tsx`, `e2e/christmas-tree-layout.spec.ts`, `docs/apps/web/architecture/optimistic-ui.md`, this tracker, and `optimization.md`. Light placement now inserts a temporary bulb immediately, confirmed removal hides the bulb immediately, and failed requests roll back. A focused admin Playwright test passed at 1440 px desktop and 390 px mobile with 30 samples plus 3 warmups, two 500-error rollback cases, screenshot inspection, and no mobile overflow. With a controlled 250 ms API delay, add action-to-visible p50/p95 changed from 287.9/300.2 ms to 42.2/48.0 ms (deltas -245.7/-252.2 ms); remove changed from 304.7/325.8 ms to 65.0/74.8 ms (deltas -239.7/-251.0 ms). Web type-check and scoped Biome check passed; Biome reported existing complexity warnings. See [optimization.md](./optimization.md).
 
@@ -53,6 +55,8 @@ Optimization record: [optimization.md](./optimization.md)
 ### Blocked
 
 ## Session History
+
+- 2026-11-27: Replaced the invisible 14% Light backing span with a saved point and kept Garland's minimum span. Local SQL, focused schema/API tests, web type-check, scoped Biome check, and desktop/mobile Playwright passed. Applied only migration `20261127000001` to local and production, verified a clean production dry run, and deployed code commit `5a5d50fd` successfully on Vercel. Raised the exchange gift budget shown by the snapshot and UI to ₱1,000. Unrelated SFO worktree files were untouched.
 
 - 2026-11-27: Kept Garland and star mutations server-confirmed while making individual Light add/remove visually immediate with rollback and reconciliation. A controlled 250 ms browser delay showed lower action-to-visible p50/p95 for both operations; the focused admin desktop/mobile Playwright test, web type-check, and scoped Biome check passed. No production deployment or server latency improvement was claimed. The branch contains unrelated worktree files that were left untouched.
 
