@@ -257,6 +257,8 @@ export default function ChristmasTreePage() {
     setSelectedAssetType(null);
     setStrandPlacement((selected) => (selected === decoration ? null : decoration));
     setPlacementMessage(null);
+    saveStrand.reset();
+    removeDecoration.reset();
     window.setTimeout(
       () =>
         document
@@ -403,9 +405,11 @@ export default function ChristmasTreePage() {
           canEditStrands={data.permissions.canManage}
           strandPlacement={strandPlacement}
           onSaveStrand={handleSaveStrand}
-          onInvalidStrand={() =>
+          onInvalidDecorationPlacement={(kind) =>
             setPlacementMessage(
-              'Attach both ends to the branches and make the strand at least 12% of the tree width.'
+              kind === 'lights'
+                ? 'Place the light on the green branches.'
+                : 'Attach both Garland ends to the branches at least 12% of the tree width apart.'
             )
           }
           isDraggingNewBall={isDraggingNewBall}
@@ -626,7 +630,7 @@ function ExchangeGiftDrawCard({
             </CardDescription>
           </div>
           <Badge className="shrink-0 whitespace-nowrap" variant="secondary">
-            ₱{exchangeGift.budgetPhp} budget
+            ₱{exchangeGift.budgetPhp.toLocaleString('en-PH')} budget
           </Badge>
         </div>
       </CardHeader>
@@ -843,7 +847,7 @@ function ChristmasTreeCanvas({
   canEditStrands = false,
   strandPlacement = null,
   onSaveStrand,
-  onInvalidStrand,
+  onInvalidDecorationPlacement,
   ornaments,
   onSelect,
   fillHeight = false,
@@ -867,7 +871,7 @@ function ChristmasTreeCanvas({
     geometry: ChristmasStrandGeometry,
     strandId?: string
   ) => Promise<boolean>;
-  onInvalidStrand?: () => void;
+  onInvalidDecorationPlacement?: (kind: StrandKind) => void;
   ornaments: Array<Ornament>;
   onSelect: (ornament: Ornament) => void;
   fillHeight?: boolean;
@@ -1092,7 +1096,7 @@ function ChristmasTreeCanvas({
             };
             const parsed = christmasStrandGeometrySchema.safeParse(geometry);
             if (parsed.success) onSaveStrand?.(strandPlacement, parsed.data);
-            else onInvalidStrand?.();
+            else onInvalidDecorationPlacement?.('garland');
           }}
           onPointerCancel={() => {
             newStrandRef.current = null;
@@ -1100,11 +1104,11 @@ function ChristmasTreeCanvas({
           }}
           onClick={(event) => {
             if (strandPlacement === 'lights' && onSaveStrand) {
-              const point = pointFromClient(treeRef.current, event.clientX, event.clientY);
+              const point = pointFromClient(treeRef.current, event.clientX, event.clientY, false);
               if (!point) return;
               const geometry = lightGeometryAt(point);
               if (geometry) onSaveStrand('lights', geometry);
-              else onInvalidStrand?.();
+              else onInvalidDecorationPlacement?.('lights');
               return;
             }
             if (placementAssetType && canPlace) {
@@ -1133,7 +1137,7 @@ function ChristmasTreeCanvas({
           }}
           onPointerMove={(event) => {
             if (strandPlacement === 'lights') {
-              const point = pointFromClient(treeRef.current, event.clientX, event.clientY);
+              const point = pointFromClient(treeRef.current, event.clientX, event.clientY, false);
               setLightPreview(point && lightGeometryAt(point) ? point : null);
               return;
             }
@@ -1221,7 +1225,7 @@ function ChristmasTreeCanvas({
                 const moving = movingLightRef.current;
                 if (!moving || moving.pointerId !== event.pointerId) return;
                 event.stopPropagation();
-                const point = pointFromClient(treeRef.current, event.clientX, event.clientY);
+                const point = pointFromClient(treeRef.current, event.clientX, event.clientY, false);
                 if (!point || !lightGeometryAt(point)) return;
                 movingLightRef.current = { ...moving, x: point.x, y: point.y };
                 setMovingLight({ id: strand.id, ...point });

@@ -305,7 +305,7 @@ export function buildExchangeGiftState({
     : null;
 
   return {
-    budgetPhp: 500,
+    budgetPhp: 1000,
     participantCount: isDrawFinalized ? assignments.length : participantUserIds.length,
     isDrawFinalized,
     isEligible: Boolean(mine || (!isDrawFinalized && hasOrnament)),

@@ -2,15 +2,28 @@ import {
   christmasExchangeGiftAddressSchema,
   christmasLightGeometryAt,
   christmasOrnamentPlacementSchema,
+  christmasStrandSaveSchema,
   christmasWishUpsertSchema,
 } from '@/lib/schemas/christmas-tree.schema';
 import { describe, expect, it } from 'vitest';
 
 describe('Christmas light position', () => {
-  it('keeps a safe database span for fractional branch positions', () => {
-    const geometry = christmasLightGeometryAt(60.1, 50);
-    expect(geometry).not.toBeNull();
-    expect((geometry?.endX ?? 0) - (geometry?.startX ?? 0)).toBeGreaterThanOrEqual(13.99);
+  it('saves a bulb as one point, including valid positions near branch edges', () => {
+    const geometry = christmasLightGeometryAt(75, 55);
+    expect(geometry).toEqual({ startX: 75, endX: 75, startY: 55, endY: 55 });
+    expect(christmasStrandSaveSchema.safeParse({ decoration: 'lights', geometry }).success).toBe(
+      true
+    );
+  });
+
+  it('rejects bulbs outside the tree and preserves the Garland span rule', () => {
+    expect(christmasLightGeometryAt(90, 55)).toBeNull();
+    expect(
+      christmasStrandSaveSchema.safeParse({
+        decoration: 'garland',
+        geometry: { startX: 50, endX: 50, startY: 55, endY: 55 },
+      }).success
+    ).toBe(false);
   });
 });
 

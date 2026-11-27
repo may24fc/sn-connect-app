@@ -12,16 +12,17 @@ type DragMode = 'start' | 'end' | 'body';
 export function pointFromClient(
   tree: HTMLElement | null,
   clientX: number,
-  clientY: number
+  clientY: number,
+  clampToBranches = true
 ): Point | null {
   if (!tree) return null;
   const rect = tree.getBoundingClientRect();
-  const y = Math.max(20, Math.min(78, ((clientY - rect.top) / rect.height) * 100));
+  const rawX = ((clientX - rect.left) / rect.width) * 100;
+  const rawY = ((clientY - rect.top) / rect.height) * 100;
+  if (!clampToBranches) return { x: rawX, y: rawY };
+  const y = Math.max(20, Math.min(78, rawY));
   const spread = (y - 7) * 0.57;
-  const x = Math.max(
-    50 - spread,
-    Math.min(50 + spread, ((clientX - rect.left) / rect.width) * 100)
-  );
+  const x = Math.max(50 - spread, Math.min(50 + spread, rawX));
   return { x, y };
 }
 
