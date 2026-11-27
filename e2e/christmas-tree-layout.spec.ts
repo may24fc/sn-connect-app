@@ -27,7 +27,7 @@ const decoration = {
 };
 
 const pendingExchangeGift = {
-  budgetPhp: 500,
+  budgetPhp: 1000,
   participantCount: 2,
   isDrawFinalized: false,
   isEligible: false,
@@ -802,7 +802,8 @@ test.describe('Christmas Tree layout stability', () => {
         }
         if (payload.geometry && payload.decoration !== 'star') {
           if (payload.decoration === 'lights') {
-            expect(payload.geometry.endX - payload.geometry.startX).toBeGreaterThanOrEqual(13.99);
+            expect(payload.geometry.endX).toBe(payload.geometry.startX);
+            expect(payload.geometry.endY).toBe(payload.geometry.startY);
           }
           const existing = strands.find((strand) => strand.id === payload.strandId);
           if (existing) existing.geometry = payload.geometry;
@@ -1105,6 +1106,7 @@ test.describe('Christmas Tree layout stability', () => {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto('/christmas-tree');
     await expect(page.getByRole('heading', { name: 'Tree decorations' })).toBeVisible();
+    await expect(page.getByText('₱1,000 budget')).toBeVisible();
     const samples = { create: [] as number[], delete: [] as number[] };
     const armVisualChange = async (eventType: 'pointerup' | 'click', targetCount: number) => {
       await page.evaluate(
@@ -1146,7 +1148,7 @@ test.describe('Christmas Tree layout stability', () => {
           response.url().includes('/api/christmas-tree/decorations') &&
           response.request().method() === 'PATCH'
       );
-      await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.55);
+      await page.mouse.click(box.x + box.width * 0.75, box.y + box.height * 0.55);
       const createMs = await visualMs();
       await created;
       await expect(page.getByTestId('christmas-tree-light')).toHaveCount(1);
@@ -1185,13 +1187,15 @@ test.describe('Christmas Tree layout stability', () => {
         response.url().includes('/api/christmas-tree/decorations') &&
         response.request().method() === 'PATCH'
     );
-    await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.55);
+    await page.mouse.click(box.x + box.width * 0.75, box.y + box.height * 0.55);
     await expect(page.getByTestId('christmas-tree-light')).toHaveCount(1);
     expect((await failedCreate).status()).toBe(500);
     await expect(page.getByTestId('christmas-tree-light')).toHaveCount(0);
     await expect(page.getByText('Light save denied for test')).toBeVisible();
     await page.getByRole('button', { name: 'Add Lights' }).click();
-    await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.55);
+    const retryBox = await page.getByTestId('christmas-tree-drop-zone').boundingBox();
+    if (!retryBox) throw new Error('Tree drop zone is not measurable after save failure');
+    await page.mouse.click(retryBox.x + retryBox.width * 0.75, retryBox.y + retryBox.height * 0.55);
     await expect(page.getByTestId('christmas-tree-light')).toHaveCount(1);
     failNext = 'delete';
     await page.getByRole('button', { name: 'Remove Lights 1' }).click();
@@ -1222,6 +1226,15 @@ test.describe('Christmas Tree layout stability', () => {
       path: testInfo.outputPath('light-optimistic-mobile.png'),
       fullPage: true,
     });
+    await page.getByRole('button', { name: 'Add another Lights' }).click();
+    const mobileBox = await page.getByTestId('christmas-tree-drop-zone').boundingBox();
+    if (!mobileBox) throw new Error('Mobile tree drop zone is not measurable');
+    await page.mouse.click(
+      mobileBox.x + mobileBox.width * 0.9,
+      mobileBox.y + mobileBox.height * 0.5
+    );
+    await expect(page.getByText('Place the light on the green branches.')).toBeVisible();
+    await expect(page.getByText(/Attach both ends to the branches/)).toHaveCount(0);
     expect(
       consoleErrors.filter((error) => !error.includes('server responded with a status of 500'))
     ).toEqual([]);

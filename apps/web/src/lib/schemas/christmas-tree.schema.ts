@@ -67,13 +67,14 @@ export const christmasDecorationRemoveSchema = z.union([
 ]);
 export type ChristmasDecorationRemoveInput = z.infer<typeof christmasDecorationRemoveSchema>;
 
-export const christmasStrandGeometrySchema = z
-  .object({
-    startX: z.number().finite().min(6).max(94),
-    startY: z.number().finite().min(10).max(80),
-    endX: z.number().finite().min(6).max(94),
-    endY: z.number().finite().min(10).max(80),
-  })
+const christmasDecorationGeometryBoundsSchema = z.object({
+  startX: z.number().finite().min(6).max(94),
+  startY: z.number().finite().min(10).max(80),
+  endX: z.number().finite().min(6).max(94),
+  endY: z.number().finite().min(10).max(80),
+});
+
+export const christmasStrandGeometrySchema = christmasDecorationGeometryBoundsSchema
   .refine((value) => value.endX - value.startX >= 12, {
     message: 'The strand must span at least 12% of the tree width',
   })
@@ -86,24 +87,47 @@ export const christmasStrandGeometrySchema = z
     { message: 'Attach both ends to the green branches' }
   );
 
+const christmasLightGeometrySchema = christmasDecorationGeometryBoundsSchema.refine(
+  (value) =>
+    value.startX === value.endX &&
+    value.startY === value.endY &&
+    Math.abs(value.startX - 50) <= (value.startY - 7) * 0.57,
+  { message: 'Place the light on the green branches' }
+);
+
 export function christmasLightGeometryAt(x: number, y: number): ChristmasStrandGeometry | null {
   const centerX = Math.round(x * 100) / 100;
   const centerY = Math.round(y * 100) / 100;
-  // Keep a margin above the database's 12% minimum span after decimal conversion.
-  const parsed = christmasStrandGeometrySchema.safeParse({
-    startX: centerX - 7,
-    endX: centerX + 7,
+  const parsed = christmasLightGeometrySchema.safeParse({
+    startX: centerX,
+    endX: centerX,
     startY: centerY,
     endY: centerY,
   });
   return parsed.success ? parsed.data : null;
 }
 
-export const christmasStrandSaveSchema = z.object({
-  decoration: z.enum(['garland', 'lights']),
-  strandId: z.string().uuid().optional(),
-  geometry: christmasStrandGeometrySchema,
-});
+export const christmasStrandSaveSchema = z
+  .object({
+    decoration: z.enum(['garland', 'lights']),
+    strandId: z.string().uuid().optional(),
+    geometry: christmasDecorationGeometryBoundsSchema,
+  })
+  .superRefine(({ decoration, geometry }, context) => {
+    const valid = (
+      decoration === 'lights' ? christmasLightGeometrySchema : christmasStrandGeometrySchema
+    ).safeParse(geometry);
+    if (!valid.success) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          decoration === 'lights'
+            ? 'Place the light on the green branches'
+            : 'Attach both ends to the green branches at least 12% apart',
+        path: ['geometry'],
+      });
+    }
+  });
 
 export const christmasWishUpsertSchema = z
   .object({
